@@ -1,0 +1,61 @@
+{
+    "version": "2.0.0",
+    "command": "sh",
+    "args": [
+        "-c"
+    ],
+    "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new"
+    },
+    "tasks": [
+        {
+            "label": "cmake",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceRoot}/build"
+            },
+            "args": [
+                "cmake .."
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "make",
+            "type": "shell",
+            "args": [
+                "make -j"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build"
+            },
+            "dependsOn": [
+                "cmake"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "test",
+            "type": "shell",
+            "args": [
+                "make test"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build"
+            },
+            "dependsOn": [
+                "make"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ]
+}

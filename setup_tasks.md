@@ -1,0 +1,5 @@
+- Change gitlab to github CI
+- Align .clang-format to NESO 
+- Decide on which test folders to keep
+- Add NESO-Particles submodule
+- Add preqs to Readme
