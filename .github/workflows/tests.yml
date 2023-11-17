@@ -36,7 +36,7 @@ jobs:
             lib/
       - name: unit-tests
         run: |
-          apt install gcovr
+          sudo apt install gcovr
           cd build
           cmake .. -DBUILD_TYPE=TEST
           make -j
