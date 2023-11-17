@@ -1,0 +1,51 @@
+name: tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    paths:
+      - .github/workflows/tests.yml
+      - src/**
+      - test/**
+    branches:
+      - main
+      - gadgil48/setup_tasks
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make -j
+          cd ..
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build/
+            bin/
+            lib/
+      - name: unit-tests
+        run: |
+          apt install gcovr
+          cd build
+          cmake .. -DBUILD_TYPE=TEST
+          make -j
+          ../bin/unit_tests
+          make gcovr
+          mv gcovr unit_test_coverage
+      - name: Archive unit-tests artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-tests-artifacts
+          path: |
+            build/unit_test_coverage    
