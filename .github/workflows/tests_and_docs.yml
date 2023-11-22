@@ -57,6 +57,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Download unit-test-coverage artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: unit-tests-artifacts
+          path: |
+            build/unit_test_coverage 
       - name: Build
         run: |
           sudo apt install doxygen
