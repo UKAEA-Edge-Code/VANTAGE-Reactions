@@ -5,8 +5,7 @@ on:
   pull_request:
   push:
     paths:
-      - .github/workflows/tests.yml
-      - .github/workflows/docs.yml
+      - .github/workflows/tests_and_docs.yml
       - src/**
       - test/**
     branches:
