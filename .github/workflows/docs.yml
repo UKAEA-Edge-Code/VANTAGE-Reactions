@@ -19,7 +19,6 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-20.04
-    needs: tests
 
     steps:
       - name: Checkout
