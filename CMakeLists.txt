@@ -20,6 +20,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 ############################################################
 if(BUILD_TYPE STREQUAL "TEST")
   set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0;--coverage")
+  link_libraries(gcov)
   set(TEST_LIBRARIES "gcov")
 elseif(BUILD_TYPE STREQUAL "DEBUG")
   set(BUILD_TYPE_COMPILE_FLAGS "-g -O0")
