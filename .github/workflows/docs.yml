@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Build
         run: |
+          sudo apt install doxygen
           mkdir builddoc && cd builddoc
           cmake ..
           make doc
