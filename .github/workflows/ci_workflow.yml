@@ -1,4 +1,4 @@
-name: Tests & Docs
+name: CI-Workflow
 
 on:
   workflow_dispatch:
