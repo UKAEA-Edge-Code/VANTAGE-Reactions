@@ -10,5 +10,6 @@ int main() {
   const auto messageFromData = data.message();
   std::cout << messageFromData << std::endl;
 
+
   return 0;
 }
