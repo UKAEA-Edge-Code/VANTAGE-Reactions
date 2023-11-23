@@ -1,9 +1,6 @@
-[submodule "python/pybind11"]
-	path = python/pybind11
-	url = https://github.com/pybind/pybind11.git
-[submodule "NESO-Particles"]
-	path = NESO-Particles
-	url = https://github.com/ExCALIBUR-NEPTUNE/NESO-Particles.git
 [submodule "NESO-Spack"]
 	path = NESO-Spack
 	url = https://github.com/ExCALIBUR-NEPTUNE/NESO-Spack.git
+[submodule "neso-particles"]
+	path = neso-particles
+	url = https://github.com/ExCALIBUR-NEPTUNE/NESO-Particles.git
