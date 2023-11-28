@@ -1,0 +1,102 @@
+name: CI-Workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    paths:
+      - .github/workflows/tests_and_docs.yml
+      - src/**
+      - test/**
+    branches:
+      - main
+      - gadgil48/setup_tasks
+
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make -j
+          cd ..
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            build/
+            bin/
+            lib/
+      - name: unit-tests
+        run: |
+          sudo apt install gcovr
+          cd build
+          cmake .. -DBUILD_TYPE=TEST
+          make -j
+          ../bin/unit_tests
+          make gcovr
+          mv gcovr unit_test_coverage
+      - name: Archive unit-tests artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-tests-artifacts
+          path: |
+            build/unit_test_coverage
+
+  docs:
+    runs-on: ubuntu-20.04
+    needs: tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download unit-test-coverage artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: unit-tests-artifacts
+          path: |
+            build/unit_test_coverage 
+      - name: Build
+        run: |
+          sudo apt install doxygen
+          mkdir builddoc && cd builddoc
+          cmake ..
+          make doc
+          mv public/html ../public
+          cd ..
+          mv build/unit_test_coverage public/unit_coverage
+      - name: Archive generated documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: |
+            ./public
+
+      # - name: Setup Pages
+      #   id: pages
+      #   uses: actions/configure-pages@v3
+      # - name: Build with Jekyll
+      #   uses: actions/jekyll-build-pages@v1
+      #   with:
+      #     source: ./public
+      # - name: Upload artifact
+      #   uses: actions/upload-pages-artifact@v2
+
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: docs
+
+  #   steps:
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v2
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }} 

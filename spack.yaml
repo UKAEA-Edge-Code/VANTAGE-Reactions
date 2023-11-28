@@ -1,0 +1,27 @@
+# This is a Spack Environment file.
+#
+# It describes the set of packages to be installed when developing
+# NESO, along with configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - neso.neso-particles%gcc@11.3.0 ^openblas ^neso.hipsycl ^hdf5@1.12.2
+#  - neso.neso-particles+nvcxx%gcc@11.3.0 ^openblas ^neso.hipsycl+nvcxx~omp_llvm ^hdf5@1.12.2 ^cuda@12.2.1
+  view: false
+  concretizer:
+    unify: when_possible
+  repos:
+  - ./NESO-Spack
+  - $spack/var/spack/repos/builtin
+  packages:
+    openmpi:
+      externals:
+      - spec: openmpi@4.1.1~cuda~cxx~cxx_exceptions~java~memchecker+pmi+static~wrapper-rpath
+          fabrics=ucx schedulers=slurm
+        prefix: /usr/local/software/spack/spack-rhel8-20210927/opt/spack/linux-centos8-zen2/gcc-9.4.0/openmpi-4.1.1-epagguvqfrwuokz2ftiyzbxibae5afnn
+    all:
+      providers:
+        mpi: [openmpi, mpich]
+  develop:
+    neso-particles:
+      spec: neso-particles@working
