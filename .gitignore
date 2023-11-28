@@ -2,3 +2,9 @@ build
 builddoc
 lib
 bin
+.spack-env
+spack-build-*.txt
+spack-configure-args.txt
+spack-build-*/
+spack.lock
+views/
