@@ -70,23 +70,18 @@ Start-up the spack environment:
 spack env activate -p -d .
 ```
 You can exit the spack environment using the (`spack env deactivate` command).
-Concretize the current spec to be installed and then install:
-```
-spack concretize -f
-spack install -j 16
-```
-This should create a build directory for NESO-Particles in `neso-particles/`. The format should be in the form of `spack-build-*` where there will be a hash in place of `*` that can be used to keep track of different builds. Note down the hash for the new build and note that this will only work on CPUs.
 
-To create a build that'll work on GPUs, edit the `spack.yaml` file and comment out the `neso.neso-particles%gcc@11.3.0` spec definition directly under the `specs` field, and uncomment the `neso.neso-particles+nvcxx%gcc@11.3.0` (both lines).
-
-Exit the spack environment and re-enter it (this is necessary for spack to recognise the previous CPU spack build and do some internal bookkeeping), then concretize and install again:
+Concretize first (choose the appropriate scope) then install. For example, for a non-CSD3 install using a non-nvcxx compiler:
 ```
-spack env deactivate
-spack env activate
-spack concretize -f
-spack install -j 16
+spack -C ./scopes/general concretize -f -U
+spack install --only-concrete neso-particles~nvcxx
 ```
-This should create a new `spack-build-*` directory with a different hash (note this one down as well).
+For a CSD3 install using a nvcxx compiler:
+```
+spack -C ./scopes/CSD3_GPU_node concretize -f -U
+spack install --only-concrete neso-particles+nvcxx
+```
+This should create a build directory for NESO-Particles in `neso-particles/`. The format should be in the form of `spack-build-*` where there will be a hash in place of `*` that can be used to keep track of different builds.
 ***********************
 To test both builds, navigate to the `test` directory that should be present within both builds. 
 
@@ -100,6 +95,23 @@ SYCL_DEVICE_FILTER=GPU ./testNESOParticles
 ```
 
 ## Installation of Reactions code:
+Before installing, if the spack environment is not activated then activate it:
+```
+spack env activate -p -d .
+```
+Load `neso-particles`, `hipsycl` and either `mpich` or `openmpi` depending on which is installed. If there are multiple versions of `neso-particles` and `hipsycl` (as there will be if both CPU and GPU variants are installed) then find details on these using the commands:
+```
+spack find -v -l neso-particles
+spack find -v -l hipsycl
+```
+will list both variants and their associated variant flags and hashes (look for `~nvcxx` or `+nvcxx` flags for CPU and GPU variants respectively). Load by:
+```
+spack load neso-particles /<HASH>
+spack load hipsycl /<HASH>
+```
+(replace `<HASH>` with the hash for the build you want to load). And then either `spack load mpich` or `spack load openmpi`.
+
+To install the main Reactions code:
 ```
 mkdir build && cd build
 cmake -G "Unix Makefiles" ..

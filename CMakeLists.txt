@@ -14,6 +14,12 @@ enable_testing()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 ## put all libraries in lib
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+# Produce compile_commands.json for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
+find_package(MPI REQUIRED)
+find_package(NESO-PARTICLES REQUIRED)
+find_package(hipSYCL REQUIRED)
 
 ############################################################
 # Set the build type environment variable
