@@ -8,3 +8,4 @@ spack-configure-args.txt
 spack-build-*/
 spack.lock
 views/
+.cache/
