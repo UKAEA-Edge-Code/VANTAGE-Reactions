@@ -1,4 +1,7 @@
 #include "containers/local_array.hpp"
+#include "containers/sym_vector.hpp"
+#include "loop/particle_loop_index.hpp"
+#include "particle_group.hpp"
 #include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
 #include "typedefs.hpp"
@@ -10,7 +13,6 @@
 using namespace NESO::Particles;
 
 template <int in_state_id>
-
 struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_state_id> {
 
     TestReaction() = default;
@@ -20,69 +22,62 @@ struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_sta
         REAL rate_
     ) :
         LinearReactionBase<TestReaction<in_state_id>, in_state_id>(
+            total_reaction_rate_,
             std::vector<Sym<REAL>>(),
-            std::vector<Sym<REAL>> {total_reaction_rate_},
+            std::vector<Sym<REAL>>(),
             std::vector<Sym<INT>>(),
             std::vector<Sym<INT>>()
         ),
-        total_reaction_rate(total_reaction_rate_),
         rate(rate_)
     {}
 
-    void calc_rate(ParticleGroupSharedPtr particle_group, INT cell_idx) {
-        auto device_rate_buffer = std::make_shared<LocalArray<REAL>>(
-            particle_group->sycl_target,
-            this->get_rate_buffer().size(),
-            0
-        );
+    REAL calc_rate(Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars) const {
 
-        auto atomic_counter = std::make_shared<LocalArray<INT>>(
-            particle_group->sycl_target,
-            1,
-            0
-        );
-
-        auto loop = particle_loop(
-            "test_calc_rate_loop",
-            particle_group,
-            [=](auto particle_index, auto req_reals, auto buffer, auto counter){
-                INT current_count = counter.fetch_add(0, 1);
-                buffer[current_count] = this->rate;
-                req_reals.at(0, particle_index, 0) += this->rate;
-            },
-            Access::read(ParticleLoopIndex{}),
-            Access::write(sym_vector<REAL>(particle_group, this->get_write_req_dats_real())),
-            Access::write(device_rate_buffer),
-            Access::add(atomic_counter)
-        );
-
-        loop->execute();
-
-        this->set_rate_buffer(device_rate_buffer->get());
-
-        return;
+        return this->rate;
     }
 
     private:
         REAL rate;
-        Sym<REAL> total_reaction_rate;
 };
 
-TEST(LinearReactionBase, calc_rate) {
-    const int N_total = 1000;
-    const int Nsteps_warmup = 1024;
-    const int Nsteps = 2048;
+template <int in_state_id>
+struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<in_state_id>, in_state_id> {
+
+    TestReactionVarRate() = default;
+
+    TestReactionVarRate(
+        Sym<REAL> total_reaction_rate_,
+        Sym<REAL> read_var
+    ) :
+        LinearReactionBase<TestReactionVarRate<in_state_id>, in_state_id>(
+            total_reaction_rate_,
+            std::vector<Sym<REAL>>{read_var},
+            std::vector<Sym<REAL>>(),
+            std::vector<Sym<INT>>(),
+            std::vector<Sym<INT>>()
+        )
+    {}
+
+    REAL calc_rate(Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars) const {
+
+        return vars.at(0,index,0);
+    }
+
+};
+
+// TODO: Generalise and clean this up
+auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
 
     const int ndim = 2;
     std::vector<int> dims(ndim);
-    dims[0] = 16;
-    dims[1] = 16;
+    dims[0] = 2;
+    dims[1] = 2;
 
     const double cell_extent = 1.0;
     const int subdivision_order = 1;
     const int stencil_width = 1;
     
-    const int global_cell_count = 1;
+    const int global_cell_count = dims[0] * dims[1] * std::pow(std::pow(2, subdivision_order), ndim);
     const int npart_per_cell = std::round((double) N_total / (double) global_cell_count);
 
     auto mesh = std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
@@ -102,9 +97,6 @@ TEST(LinearReactionBase, calc_rate) {
 
     auto particle_group = std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
 
-    particle_group->add_particle_dat(ParticleDat(sycl_target, ParticleProp(Sym<REAL>("FOO"), 3),
-                                    domain->mesh->get_cell_count()));
-
     const int rank = sycl_target->comm_pair.rank_parent;
     const int size = sycl_target->comm_pair.size_parent;
 
@@ -112,10 +104,8 @@ TEST(LinearReactionBase, calc_rate) {
     std::mt19937 rng_vel(52234231 + rank);
     std::mt19937 rng_rank(18241);
 
-    const REAL dt = 0.001;
     const int cell_count = domain->mesh->get_cell_count();
     const int N = npart_per_cell * cell_count;
-    const int N_total_actual = npart_per_cell * global_cell_count;
 
     std::vector<std::vector<double>> positions;
     std::vector<int> cells;
@@ -147,27 +137,67 @@ TEST(LinearReactionBase, calc_rate) {
 
     MPI_Barrier(sycl_target->comm_pair.comm_parent);
 
+    return particle_group;
+
+}
+
+TEST(LinearReactionBase, calc_rate) {
+    const int N_total = 1000;
+
+    auto particle_group = create_test_particle_group(N_total);
+
     REAL test_rate = 5.0;  //example rate
 
     auto test_reaction = TestReaction<0>(Sym<REAL>("TOT_REACTION_RATE"), test_rate);
 
-    test_reaction.flush_buffer(static_cast<size_t>(N));
+    test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
 
     auto cell_id_arg = (*particle_group)[Sym<INT>("CELL_ID")]->cell_dat.device_ptr();
 
-    test_reaction.calc_rate(particle_group, cell_id_arg[0][0][0]);
+    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
+    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
 
     auto loop = particle_loop(
             "Verify calc_rate execution",
             particle_group,
             [=](auto T){
-                EXPECT_EQ(T.at(0), test_rate) << "calc_rate did not set TOT_REACTION_RATE correctly...";
+                EXPECT_EQ(T.at(0), 2*test_rate) << "calc_rate did not set TOT_REACTION_RATE correctly...";
             },
             Access::read(Sym<REAL>("TOT_REACTION_RATE"))
     );
 
     loop->execute();
 
-    mesh->free();
+    particle_group->domain->mesh->free(); // Explicit free? Yuck
+
+}
+
+TEST(LinearReactionBase, calc_var_rate) {
+    const int N_total = 1000;
+
+    auto particle_group = create_test_particle_group(N_total);
+
+    auto test_reaction = TestReactionVarRate<0>(Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P"));
+
+    test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+
+    auto cell_id_arg = (*particle_group)[Sym<INT>("CELL_ID")]->cell_dat.device_ptr();
+
+    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
+    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
+
+    auto loop = particle_loop(
+            "Verify calc_rate execution",
+            particle_group,
+            [=](auto T,auto P){
+                EXPECT_EQ(T.at(0), 2*P.at(0)) << "calc_rate dP not set TOT_REACTION_RATE correctly...";
+            },
+            Access::read(Sym<REAL>("TOT_REACTION_RATE")),
+            Access::read(Sym<REAL>("P"))
+    );
+
+    loop->execute();
+
+    particle_group->domain->mesh->free(); // Explicit free? Yuck
 
 }

@@ -10,23 +10,59 @@ struct LinearReactionBase {
   LinearReactionBase() = default;
 
   LinearReactionBase(
+    const Sym<REAL> total_rate_dat,
     const std::vector<Sym<REAL>> required_dats_real_read,
     std::vector<Sym<REAL>> required_dats_real_write,
     const std::vector<Sym<INT>> required_dats_int_read,
     std::vector<Sym<INT>> required_dats_int_write
   ): 
+  total_reaction_rate(total_rate_dat),
   read_required_particle_dats_real(required_dats_real_read),
   write_required_particle_dats_real(required_dats_real_write),
   read_required_particle_dats_int(required_dats_int_read),
   write_required_particle_dats_int(required_dats_int_write)
   {}
 
-  void calc_rate(ParticleGroupSharedPtr particle_group, INT cell_idx) const {
+  // void calc_rate(ParticleGroupSharedPtr particle_group, INT cell_idx) const {
+  //   const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
+
+  //   return underlying.template calc_rate(particle_group, cell_idx);
+  // }
+
+  REAL calc_rate(Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars) const {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
-    return underlying.template calc_rate(particle_group, cell_idx);
+    return underlying.template calc_rate(index,vars);
   }
 
+  void run_rate_loop(ParticleGroupSharedPtr particle_group, INT cell_idx) {
+          auto device_rate_buffer = std::make_shared<LocalArray<REAL>>(
+              particle_group->sycl_target,
+              this->get_rate_buffer().size(),
+              0
+          );
+          // TODO: Make proper use of cell_idx
+          auto loop = particle_loop(
+              "calc_rate_loop",
+              particle_group,
+              [=](auto particle_index, auto req_reals, auto tot_rate, auto buffer){
+                  INT current_count = particle_index.get_loop_linear_index();
+                  REAL rate = this->calc_rate(particle_index, req_reals);
+                  buffer[current_count] = rate;
+                  tot_rate[0] += rate;
+              },
+              Access::read(ParticleLoopIndex{}),
+              Access::read(sym_vector<REAL>(particle_group, this->get_read_req_dats_real())),
+              Access::write(this->total_reaction_rate),
+              Access::write(device_rate_buffer)
+          );
+
+          loop->execute();
+
+          this->set_rate_buffer(device_rate_buffer->get());
+
+          return;
+      }
   std::vector<REAL> scattering_kernel() const {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
@@ -99,4 +135,5 @@ struct LinearReactionBase {
     std::vector<Sym<INT>> read_required_particle_dats_int;
     std::vector<Sym<INT>> write_required_particle_dats_int;
     std::vector<REAL> rate_buffer;
+    Sym<REAL> total_reaction_rate;
 };
