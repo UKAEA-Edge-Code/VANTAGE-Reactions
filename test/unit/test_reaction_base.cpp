@@ -152,21 +152,25 @@ TEST(LinearReactionBase, calc_rate) {
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
 
-    auto cell_id_arg = (*particle_group)[Sym<INT>("CELL_ID")]->cell_dat.device_ptr();
+    int cell_count = particle_group->domain->mesh->get_cell_count();
 
-    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
-    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
+    for (int i=0; i < cell_count;i++){
 
-    auto loop = particle_loop(
-            "Verify calc_rate execution",
-            particle_group,
-            [=](auto T){
-                EXPECT_EQ(T.at(0), 2*test_rate) << "calc_rate did not set TOT_REACTION_RATE correctly...";
-            },
-            Access::read(Sym<REAL>("TOT_REACTION_RATE"))
-    );
+        test_reaction.run_rate_loop(particle_group, i);
+        test_reaction.run_rate_loop(particle_group, i);
 
-    loop->execute();
+        auto loop = particle_loop(
+                "Verify calc_rate execution",
+                particle_group,
+                [=](auto T){
+                    EXPECT_EQ(T.at(0), 2*test_rate) << "calc_rate did not set TOT_REACTION_RATE correctly...";
+                },
+                Access::read(Sym<REAL>("TOT_REACTION_RATE"))
+        );
+
+        loop->execute(i);
+
+    }
 
     particle_group->domain->mesh->free(); // Explicit free? Yuck
 
@@ -181,22 +185,25 @@ TEST(LinearReactionBase, calc_var_rate) {
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
 
-    auto cell_id_arg = (*particle_group)[Sym<INT>("CELL_ID")]->cell_dat.device_ptr();
+    int cell_count = particle_group->domain->mesh->get_cell_count();
 
-    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
-    test_reaction.run_rate_loop(particle_group, cell_id_arg[0][0][0]);
+    for (int i=0; i < cell_count;i++){
 
-    auto loop = particle_loop(
-            "Verify calc_rate execution",
-            particle_group,
-            [=](auto T,auto P){
-                EXPECT_EQ(T.at(0), 2*P.at(0)) << "calc_rate dP not set TOT_REACTION_RATE correctly...";
-            },
-            Access::read(Sym<REAL>("TOT_REACTION_RATE")),
-            Access::read(Sym<REAL>("P"))
-    );
+        test_reaction.run_rate_loop(particle_group, i);
+        test_reaction.run_rate_loop(particle_group, i);
 
-    loop->execute();
+        auto loop = particle_loop(
+                "Verify calc_rate execution",
+                particle_group,
+                [=](auto T,auto P){
+                    EXPECT_EQ(T.at(0), 2*P.at(0)) << "calc_rate dP not set TOT_REACTION_RATE correctly...";
+                },
+                Access::read(Sym<REAL>("TOT_REACTION_RATE")),
+                Access::read(Sym<REAL>("P"))
+        );
+
+        loop->execute(i);
+    }
 
     particle_group->domain->mesh->free(); // Explicit free? Yuck
 

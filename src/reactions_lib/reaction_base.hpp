@@ -1,3 +1,4 @@
+#include <memory>
 #include <neso_particles.hpp>
 #include <vector>
 
@@ -41,7 +42,7 @@ struct LinearReactionBase {
               this->get_rate_buffer().size(),
               0
           );
-          // TODO: Make proper use of cell_idx
+  
           auto loop = particle_loop(
               "calc_rate_loop",
               particle_group,
@@ -57,7 +58,7 @@ struct LinearReactionBase {
               Access::write(device_rate_buffer)
           );
 
-          loop->execute();
+          loop->execute(cell_idx);
 
           this->set_rate_buffer(device_rate_buffer->get());
 
