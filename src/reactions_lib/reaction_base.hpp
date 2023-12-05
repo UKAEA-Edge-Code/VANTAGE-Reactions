@@ -29,7 +29,7 @@ struct LinearReactionBase {
   //   return underlying.template calc_rate(particle_group, cell_idx);
   // }
 
-  REAL calc_rate(Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars) const {
+  REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
     return underlying.template calc_rate(index,vars);
@@ -68,6 +68,12 @@ struct LinearReactionBase {
 
     return underlying.template scattering_kernel();
   }
+
+  // void feedback_kernel(REAL& weight_fraction,Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars,Access::SymVector::Write<REAL> write_vars) {
+  //   const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
+
+  //   return underlying.template feedback_kernel(reactionData, weight_fraction);
+  // }
 
   // void feedback_kernel(ioniseData& reactionData, REAL& weight_fraction) {
   //   const auto& underlying = static_cast<const LinearReactionDerived&>(*this);

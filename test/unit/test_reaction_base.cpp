@@ -31,7 +31,7 @@ struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_sta
         rate(rate_)
     {}
 
-    REAL calc_rate(Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars) const {
+    REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
 
         return this->rate;
     }
@@ -58,7 +58,7 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<in_sta
         )
     {}
 
-    REAL calc_rate(Access::LoopIndex::Read index,Access::SymVector::Read<REAL> vars) const {
+    REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
 
         return vars.at(0,index,0);
     }
