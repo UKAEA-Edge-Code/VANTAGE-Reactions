@@ -1,39 +1,80 @@
+#include "compute_target.hpp"
 #include "containers/local_array.hpp"
 #include "containers/sym_vector.hpp"
 #include "particle_group.hpp"
+#include "particle_sub_group.hpp"
+#include <exception>
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 
-template <typename LinearReactionDerived, typename ReactionDataDerived, INT in_state_id>
+//TODO: Remove ReactionData templating and create the contract that LinearReactionDerived definition should contain ReactionDataDerived class
+template <typename LinearReactionDerived, INT in_state_id>
 
 struct LinearReactionBase {
 
   LinearReactionBase() = default;
 
   LinearReactionBase(
+    SYCLTargetSharedPtr sycl_target,
     const Sym<REAL> total_rate_dat,
     const std::vector<Sym<REAL>> required_dats_real_read,
     std::vector<Sym<REAL>> required_dats_real_write,
     const std::vector<Sym<INT>> required_dats_int_read,
-    std::vector<Sym<INT>> required_dats_int_write,
-    ReactionDataDerived reaction_data_
+    std::vector<Sym<INT>> required_dats_int_write
   ): 
+  sycl_target_stored(sycl_target),
   total_reaction_rate(total_rate_dat),
   read_required_particle_dats_real(required_dats_real_read),
   write_required_particle_dats_real(required_dats_real_write),
   read_required_particle_dats_int(required_dats_int_read),
   write_required_particle_dats_int(required_dats_int_write),
-  reaction_data(reaction_data_)
+  device_rate_buffer(LocalArray<REAL>(sycl_target,0,0))
   {}
 
-  void run_rate_loop(ParticleGroupSharedPtr particle_group, INT cell_idx) {
-    const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
+  //TODO:Go from ParticleGroup to ParticleSubGroup
+  void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
 
-    return underlying.template run_rate_loop(particle_group, cell_idx);
-  }
+        const auto& underlying = static_cast<LinearReactionDerived&>(*this);
+        auto reaction_data_buffer = underlying.get_reaction_data();
+
+        //TODO: check if particle_group->sycl_target is equal to the stored target
+        try {
+          // The ->get_particle_group() is temporary since ParticleSubGroup doesn't have a sycl_target member
+          if (particle_sub_group->get_particle_group()->sycl_target != sycl_target_stored) {
+            throw;
+          }
+        }
+        catch (...) {
+          std::cout << "sycl_target assigned to particle_group is not the same as the sycl_target passed to Reaction object..." << std::endl;
+        }
+
+        auto loop = particle_loop(
+            "calc_rate_loop",
+            particle_sub_group,
+            [=](auto particle_index, auto req_reals, auto tot_rate, auto buffer){
+                INT current_count = particle_index.get_loop_linear_index();
+                REAL rate = reaction_data_buffer.calc_rate(particle_index, req_reals);
+                buffer[current_count] = rate;
+                tot_rate[0] += rate;
+            },
+            Access::read(ParticleLoopIndex{}),
+            // The ->get_particle_group() is temporary until sym_vector accepts ParticleSubGroup as an argument
+            Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(), this->get_read_req_dats_real())),
+            Access::write(this->get_total_reaction_rate()),
+            Access::write(this->device_rate_buffer)
+        );
+
+        loop->execute(cell_idx);
+
+        this->set_rate_buffer(this->device_rate_buffer.get());
+
+        underlying.set_reaction_data(reaction_data_buffer);
+
+        return;
+    }
 
   std::vector<REAL> scattering_kernel() const {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
@@ -78,6 +119,12 @@ struct LinearReactionBase {
   void flush_buffer(size_t buffer_size) {
     std::vector<REAL> empty_rate_buffer(buffer_size);
     set_rate_buffer(empty_rate_buffer);
+    //TODO: Check if this works, if not use make_shared
+    this->device_rate_buffer = LocalArray<REAL>(
+            this->sycl_target_stored,
+            buffer_size,
+            0
+        );
     this->flush_buffer();
   }
 
@@ -102,6 +149,7 @@ struct LinearReactionBase {
       return rate_buffer;
     }
     
+    //TODO: Consider removing (not needed in public interface)
     void set_rate_buffer(const std::vector<REAL>& rate_buffer_) {
       rate_buffer = rate_buffer_;
     }
@@ -114,14 +162,6 @@ struct LinearReactionBase {
       total_reaction_rate = total_reaction_rate_;
     }
 
-    const ReactionDataDerived& get_reaction_data() {
-      return reaction_data;
-    }
-
-    void set_reaction_data(const ReactionDataDerived& reaction_data_) {
-      reaction_data = reaction_data_;
-    }
-
   private:
     // std::vector<int> out_test_states;
     std::vector<Sym<REAL>> read_required_particle_dats_real;
@@ -130,5 +170,6 @@ struct LinearReactionBase {
     std::vector<Sym<INT>> write_required_particle_dats_int;
     std::vector<REAL> rate_buffer;
     Sym<REAL> total_reaction_rate;
-    ReactionDataDerived reaction_data;
+    LocalArray<REAL> device_rate_buffer;
+    SYCLTargetSharedPtr sycl_target_stored;
 };

@@ -1,3 +1,4 @@
+#include "compute_target.hpp"
 #include "containers/local_array.hpp"
 #include "containers/sym_vector.hpp"
 #include "loop/particle_loop_index.hpp"
@@ -13,149 +14,132 @@
 
 using namespace NESO::Particles;
 
-struct TestReactionData: public ReactionDataBase<TestReactionData> {
+// struct TestReactionData: public ReactionDataBase<TestReactionData> {
     
-    TestReactionData() = default;
+//     TestReactionData() = default;
 
-    TestReactionData(
-        REAL rate_
-    ) : rate(rate_) {};
+//     TestReactionData(
+//         REAL rate_
+//     ) : rate(rate_) {};
 
-    REAL calc_rate() const {
+//     REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
 
-        return this->rate;
-    }
+//         return this->rate;
+//     }
 
-    private:
-        REAL rate;
-};
+//     private:
+//         REAL rate;
+// };
 
-struct TestReactionVarData: public ReactionDataBase<TestReactionVarData> {
-    TestReactionVarData() = default;
+// struct TestReactionVarData: public ReactionDataBase<TestReactionVarData> {
+//     TestReactionVarData() = default;
 
-    REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
+//     REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
 
-        return vars.at(0,index,0);
-    }    
-};
+//         return vars.at(0,index,0);
+//     }    
+// };
 
-template <typename ReactionDataType, int in_state_id>
-struct TestReaction: public LinearReactionBase<TestReaction<ReactionDataType, in_state_id>, ReactionDataType, in_state_id> {
+template <int in_state_id>
+struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_state_id> {
+
+    friend struct LinearReactionBase<TestReaction, in_state_id>;
 
     TestReaction() = default;
 
     TestReaction(
+        SYCLTargetSharedPtr sycl_target_,
         Sym<REAL> total_reaction_rate_,
-        ReactionDataType reaction_data_
+        REAL rate_
     ) :
-        LinearReactionBase<TestReaction<ReactionDataType, in_state_id>, ReactionDataType, in_state_id>(
+        LinearReactionBase<TestReaction<in_state_id>, in_state_id>(
+            sycl_target_,
             total_reaction_rate_,
             std::vector<Sym<REAL>>(),
             std::vector<Sym<REAL>>(),
             std::vector<Sym<INT>>(),
-            std::vector<Sym<INT>>(),
-            reaction_data_
-        )
-    {}
-
-    void run_rate_loop(ParticleGroupSharedPtr particle_group, INT cell_idx) {
-        auto reaction_data_buffer = this->get_reaction_data();
-
-        auto device_rate_buffer = std::make_shared<LocalArray<REAL>>(
-            particle_group->sycl_target,
-            this->get_rate_buffer().size(),
-            0
-        );
-
-        auto total_reaction_rate_buffer = this->get_total_reaction_rate();
-
-        auto req_dats_real = sym_vector<REAL>(
-            particle_group, this->get_read_req_dats_real()
-        );
-
-        auto loop = particle_loop(
-            "calc_rate_loop",
-            particle_group,
-            [=](auto particle_index, auto req_reals, auto tot_rate, auto buffer){
-                INT current_count = particle_index.get_loop_linear_index();
-                REAL rate = reaction_data_buffer.calc_rate();
-                buffer[current_count] = rate;
-                tot_rate[0] += rate;
-            },
-            Access::read(ParticleLoopIndex{}),
-            Access::read(req_dats_real),
-            Access::write(total_reaction_rate_buffer),
-            Access::write(device_rate_buffer)
-        );
-
-        loop->execute(cell_idx);
-
-        this->set_rate_buffer(device_rate_buffer->get());
-
-        this->set_reaction_data(reaction_data_buffer);
-
-        return;
+            std::vector<Sym<INT>>()
+        ),
+        rate(rate_)
+    {
+        this->set_reaction_data(TestReactionData(this->rate));
     }
+
+    private:
+        struct TestReactionData: public ReactionDataBase<TestReactionData> {
+            TestReactionData() = default;
+
+            TestReactionData(
+                REAL rate_
+            ) : rate(rate_) {};
+
+            REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
+
+                return this->rate;
+            }
+
+            private:
+                REAL rate;
+        };
+
+        mutable TestReactionData test_reaction_data;
+        REAL rate;
+
+    protected:
+        TestReactionData& get_reaction_data() const {
+            return test_reaction_data;
+        }
+
+        void set_reaction_data(const TestReactionData& reaction_data_) const {
+            test_reaction_data = reaction_data_;
+        }
+
 };
 
-template <typename ReactionDataType, int in_state_id>
-struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<ReactionDataType, in_state_id>, ReactionDataType, in_state_id> {
+template <int in_state_id>
+struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<in_state_id>, in_state_id> {
+
+    friend struct LinearReactionBase<TestReactionVarRate, in_state_id>;
 
     TestReactionVarRate() = default;
 
     TestReactionVarRate(
+        SYCLTargetSharedPtr sycl_target_,
         Sym<REAL> total_reaction_rate_,
-        Sym<REAL> read_var,
-        ReactionDataType reaction_data_
+        Sym<REAL> read_var
     ) :
-        LinearReactionBase<TestReactionVarRate<ReactionDataType, in_state_id>, ReactionDataType, in_state_id>(
+        LinearReactionBase<TestReactionVarRate<in_state_id>, in_state_id>(
+            sycl_target_,
             total_reaction_rate_,
             std::vector<Sym<REAL>>{read_var},
             std::vector<Sym<REAL>>(),
             std::vector<Sym<INT>>(),
-            std::vector<Sym<INT>>(),
-            reaction_data_
+            std::vector<Sym<INT>>()
         )
-    {}
-
-    void run_rate_loop(ParticleGroupSharedPtr particle_group, INT cell_idx) {
-        auto reaction_data_buffer = this->get_reaction_data();
-
-        auto device_rate_buffer = std::make_shared<LocalArray<REAL>>(
-            particle_group->sycl_target,
-            this->get_rate_buffer().size(),
-            0
-        );
-
-        auto total_reaction_rate_buffer = this->get_total_reaction_rate();
-
-        auto req_dats_real = sym_vector<REAL>(
-            particle_group, this->get_read_req_dats_real()
-        );
-
-        auto loop = particle_loop(
-            "calc_rate_loop",
-            particle_group,
-            [=](auto particle_index, auto req_reals, auto tot_rate, auto buffer){
-                INT current_count = particle_index.get_loop_linear_index();
-                REAL rate = reaction_data_buffer.calc_rate(particle_index, req_reals);
-                buffer[current_count] = rate;
-                tot_rate[0] += rate;
-            },
-            Access::read(ParticleLoopIndex{}),
-            Access::read(req_dats_real),
-            Access::write(total_reaction_rate_buffer),
-            Access::write(device_rate_buffer)
-        );
-
-        loop->execute(cell_idx);
-
-        this->set_rate_buffer(device_rate_buffer->get());
-
-        this->set_reaction_data(reaction_data_buffer);
-
-        return;
+    {
+        this->set_reaction_data(TestReactionVarData());
     }
+
+    private:
+        struct TestReactionVarData: public ReactionDataBase<TestReactionVarData> {
+            TestReactionVarData() = default;
+
+            REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
+
+                return vars.at(0,index,0);
+            }    
+        };        
+
+        mutable TestReactionVarData test_reaction_data;
+    
+    protected:
+        TestReactionVarData& get_reaction_data() const {
+            return test_reaction_data;
+        }
+
+        void set_reaction_data(const TestReactionVarData& reaction_data_) const {
+            test_reaction_data = reaction_data_;
+        }
 
 };
 
@@ -239,12 +223,13 @@ TEST(LinearReactionBase, calc_rate) {
     const int N_total = 1000;
 
     auto particle_group = create_test_particle_group(N_total);
+    auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
     REAL test_rate = 5.0;  //example rate
 
-    auto test_reaction_data = TestReactionData(test_rate);
-
-    auto test_reaction = TestReaction<TestReactionData, 0>(Sym<REAL>("TOT_REACTION_RATE"), test_reaction_data);
+    auto test_reaction = TestReaction<0>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate
+    );
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
 
@@ -252,8 +237,8 @@ TEST(LinearReactionBase, calc_rate) {
 
     for (int i=0; i < cell_count;i++){
 
-        test_reaction.run_rate_loop(particle_group, i);
-        test_reaction.run_rate_loop(particle_group, i);
+        test_reaction.run_rate_loop(particle_sub_group, i);
+        test_reaction.run_rate_loop(particle_sub_group, i);
 
         auto loop = particle_loop(
                 "Verify calc_rate execution",
@@ -276,11 +261,10 @@ TEST(LinearReactionBase, calc_var_rate) {
     const int N_total = 1000;
 
     auto particle_group = create_test_particle_group(N_total);
+    auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-    auto test_reaction_data = TestReactionVarData();
-
-    auto test_reaction = TestReactionVarRate<TestReactionVarData, 0>(
-        Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P"), test_reaction_data
+    auto test_reaction = TestReactionVarRate<0>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P")
     );
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
@@ -289,8 +273,8 @@ TEST(LinearReactionBase, calc_var_rate) {
 
     for (int i=0; i < cell_count;i++){
 
-        test_reaction.run_rate_loop(particle_group, i);
-        test_reaction.run_rate_loop(particle_group, i);
+        test_reaction.run_rate_loop(particle_sub_group, i);
+        test_reaction.run_rate_loop(particle_sub_group, i);
 
         auto loop = particle_loop(
                 "Verify calc_rate execution",
