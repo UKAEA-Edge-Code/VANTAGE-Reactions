@@ -1,5 +1,7 @@
 Find_package(Threads REQUIRED)
 
+add_definitions(-DGPU_SELECTOR=0)
+
 include(ExternalProject)
 
 ExternalProject_Add(

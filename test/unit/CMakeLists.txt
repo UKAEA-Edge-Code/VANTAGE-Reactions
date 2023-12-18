@@ -16,3 +16,5 @@ target_link_libraries(unit_tests PUBLIC ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lib${P
 
 include(GoogleTest)
 gtest_discover_tests(unit_tests)
+
+install(TARGETS unit_tests DESTINATION bin)

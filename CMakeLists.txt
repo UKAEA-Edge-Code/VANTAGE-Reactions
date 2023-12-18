@@ -6,6 +6,8 @@ set(PROJECT_LIB_NAME ${PROJECT_NAME}-lib)
 
 project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+
 #include(${CMAKE_SOURCE_DIR}/cmake/SetBuildType.cmake)
 
 enable_testing()

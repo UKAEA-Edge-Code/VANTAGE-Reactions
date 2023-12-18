@@ -128,7 +128,7 @@ auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
     auto mesh = std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
                         subdivision_order, stencil_width);
 
-    auto sycl_target = std::make_shared<SYCLTarget>(0, mesh->get_comm());
+    auto sycl_target = std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
 
     auto cart_local_mapper = CartesianHMeshLocalMapper(sycl_target, mesh);
 
@@ -207,21 +207,17 @@ TEST(LinearReactionBase, calc_rate) {
         test_reaction.run_rate_loop(particle_sub_group, i);
         test_reaction.run_rate_loop(particle_sub_group, i);
 
-        auto loop = particle_loop(
-                "Verify calc_rate execution",
-                particle_group,
-                [=](auto T){
-                    EXPECT_EQ(T.at(0), 2*test_rate) << "calc_rate did not set TOT_REACTION_RATE correctly...";
-                },
-                Access::read(Sym<REAL>("TOT_REACTION_RATE"))
-        );
+        auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+        auto tot_reaction_rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+        const int nrow = position->nrow;
 
-        loop->execute(i);
+        for (int rowx = 0; rowx < nrow; rowx++) {
+            EXPECT_EQ(tot_reaction_rate->at(rowx, 0), 2*test_rate) << "calc_rate did not set TOT_REACTION_RATE correctly...";
+        }
 
     }
 
     particle_group->domain->mesh->free(); // Explicit free? Yuck
-
 }
 
 TEST(LinearReactionBase, calc_var_rate) {
@@ -243,17 +239,13 @@ TEST(LinearReactionBase, calc_var_rate) {
         test_reaction.run_rate_loop(particle_sub_group, i);
         test_reaction.run_rate_loop(particle_sub_group, i);
 
-        auto loop = particle_loop(
-                "Verify calc_rate execution",
-                particle_group,
-                [=](auto T,auto P){
-                    EXPECT_EQ(T.at(0), 2*P.at(0)) << "calc_rate dP not set TOT_REACTION_RATE correctly...";
-                },
-                Access::read(Sym<REAL>("TOT_REACTION_RATE")),
-                Access::read(Sym<REAL>("P"))
-        );
+        auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+        auto tot_reaction_rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+        const int nrow = position->nrow;
 
-        loop->execute(i);
+        for (int rowx = 0; rowx < nrow; rowx++) {
+            EXPECT_EQ(tot_reaction_rate->at(rowx, 0), 2*position->at(rowx, 0)) << "calc_rate dP not set TOT_REACTION_RATE correctly...";
+        }
     }
 
     particle_group->domain->mesh->free(); // Explicit free? Yuck
