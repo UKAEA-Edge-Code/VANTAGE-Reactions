@@ -68,8 +68,6 @@ struct LinearReactionBase {
 
         this->set_rate_buffer(this->device_rate_buffer.get());
 
-        underlying.set_reaction_data(reaction_data_buffer);
-
         return;
     }
 

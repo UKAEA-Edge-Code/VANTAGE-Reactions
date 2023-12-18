@@ -34,10 +34,8 @@ struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_sta
             std::vector<Sym<INT>>(),
             std::vector<Sym<INT>>()
         ),
-        rate(rate_)
-    {
-        this->set_reaction_data(TestReactionData(this->rate));
-    }
+        test_reaction_data(TestReactionData(rate_))
+    {}
 
     private:
         struct TestReactionData: public ReactionDataBase<TestReactionData> {
@@ -56,16 +54,11 @@ struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_sta
                 REAL rate;
         };
 
-        mutable TestReactionData test_reaction_data;
-        REAL rate;
+        TestReactionData test_reaction_data;
 
     protected:
-        TestReactionData& get_reaction_data() const {
+        const TestReactionData& get_reaction_data() const {
             return test_reaction_data;
-        }
-
-        void set_reaction_data(const TestReactionData& reaction_data_) const {
-            test_reaction_data = reaction_data_;
         }
 
 };
