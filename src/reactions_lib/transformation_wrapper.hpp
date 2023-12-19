@@ -1,6 +1,7 @@
 #ifndef TRANSFORM_WRAPPER_H
 #define TRANSFORM_WRAPPER_H
 
+#include "particle_sub_group.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
@@ -8,13 +9,13 @@
 using namespace NESO::Particles;
 
 /**
- * @brief Abstract base class for marking strategies. All marking strategies produce a ParticleSubGroupSharedPtr from a ParticleGroupSharedPtr
+ * @brief Abstract base class for marking strategies. All marking strategies produce a ParticleSubGroupSharedPtr from another ParticleSubGroupSharedPtr
  using some selection criterion.
  * 
  */
 struct MarkingStrategy {
 
-  virtual ParticleSubGroupSharedPtr make_marker_subgroup(ParticleGroupSharedPtr particle_group){};
+  virtual ParticleSubGroupSharedPtr make_marker_subgroup(ParticleSubGroupSharedPtr particle_group){};
 
 };
 
@@ -65,7 +66,7 @@ struct TransformationWrapper {
   TransformationWrapper() = delete;
 
   TransformationWrapper(
-    std::shared_ptr<MarkingStrategy> marking_strategy,
+    std::vector<std::shared_ptr<MarkingStrategy>> marking_strategy,
     std::shared_ptr<TransformationStrategy> transformation_strategy
   ): 
   marking_strat(marking_strategy),
@@ -79,14 +80,18 @@ struct TransformationWrapper {
    */
   void transform(ParticleGroupSharedPtr target_group) {
 
-      auto marker_subgroup = this->marking_strat->make_marker_subgroup(target_group);
+      auto marker_subgroup= make_shared<ParticleSubGroup>(target_group);
+
+      for (auto& strat: this->marking_strat){
+        marker_subgroup = strat->make_marker_subgroup(marker_subgroup);
+      }
 
       this->transformation_strat->transform(marker_subgroup);
 
   }
 
   private: 
-    std::shared_ptr<MarkingStrategy> marking_strat;
+    std::vector<std::shared_ptr<MarkingStrategy>> marking_strat;
     std::shared_ptr<TransformationStrategy> transformation_strat;
 };
 
@@ -114,18 +119,18 @@ struct MarkingStrategyBase: MarkingStrategy {
   required_particle_dats_int(required_dats_int_read)
   {}
 
-  ParticleSubGroupSharedPtr make_marker_subgroup(ParticleGroupSharedPtr particle_group) override {
+  ParticleSubGroupSharedPtr make_marker_subgroup(ParticleSubGroupSharedPtr particle_sub_group) override {
   
           const auto& underlying = static_cast<MarkingStrategyDerived&>(*this);
           auto device_type = underlying.get_device_data();
 
           auto marker_subgroup = std::make_shared<ParticleSubGroup>(
-              particle_group,
+              particle_sub_group,
               [=](auto req_reals, auto req_ints){
                   return device_type.marking_condition(req_reals,req_ints);
               },
-              Access::read(sym_vector<REAL>(particle_group, this->required_particle_dats_real)),
-              Access::read(sym_vector<INT>(particle_group, this->required_particle_dats_int))
+              Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(), this->required_particle_dats_real)),
+              Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(), this->required_particle_dats_int))
           );
 
           return marker_subgroup;
