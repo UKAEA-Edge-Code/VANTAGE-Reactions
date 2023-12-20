@@ -79,6 +79,8 @@ Similarly the `neso-gpu-hash` and `hipsycl-gpu-hash` refers to the hashes of the
 These hashes can be found by using the `spack find -v -L neso-particles hipsycl`. In the output from the command look for the `+nvcxx` and `~nvcxx` flags to find the relevant hashes.
 
 NOTE that for now every reinstall of the `reactions` package overwrites the `bin` and `lib` directories in the main repo directory.
+
+NOTE when switching between CPU and GPU builds it is necessary to manually delete `bin` and `lib` directories in the main repo directory and depending on which variant is currently installed run either `spack clean reactions~nvcxx` or `spack clean reactions+nvcxx`. After this the normal installation procedure in this section can be followed.
 ***********************
 To test the CPU build, install `reactions~nvcxx` and run from the repo directory:
 ```
@@ -86,5 +88,5 @@ OMP_NUM_THREADS=1 mpirun -n 1 bin/unit_tests
 ```
 For the GPU build, install `reactions+nvcxx` and run from the repo directory:
 ```
-SYCL_DEVICE_FILTER=GPU mpirun -n 1 ./unit_tests
+SYCL_DEVICE_FILTER=GPU mpirun -n 1 bin/unit_tests
 ```
