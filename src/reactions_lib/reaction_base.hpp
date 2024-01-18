@@ -1,7 +1,10 @@
 #include "compute_target.hpp"
 #include "containers/local_array.hpp"
 #include "containers/sym_vector.hpp"
+#include "containers/descendant_products.hpp"
+#include "loop/access_descriptors.hpp"
 #include "particle_group.hpp"
+#include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
 #include <exception>
 #include <memory>
@@ -10,7 +13,7 @@
 
 using namespace NESO::Particles;
 
-template <typename LinearReactionDerived, INT in_state_id>
+template <typename LinearReactionDerived, INT in_state_id, int num_products_per_parent>
 
 struct LinearReactionBase {
 
@@ -48,25 +51,62 @@ struct LinearReactionBase {
           std::cout << "sycl_target assigned to particle_group is not the same as the sycl_target passed to Reaction object..." << std::endl;
         }
 
+        auto descendant_particles_spec = product_matrix_spec(
+          ParticleSpec(
+            ParticleProp(Sym<REAL>("V"), 2),
+            ParticleProp(Sym<REAL>("TOT_REACTION_RATE"), 1),
+            ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1),
+            ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)
+          )
+        );
+
+        auto descendant_particles = std::make_shared<DescendantProducts>(
+          particle_sub_group->get_particle_group()->sycl_target,
+          descendant_particles_spec,
+          num_products_per_parent
+        );
+
         auto loop = particle_loop(
             "calc_rate_loop",
             particle_sub_group,
-            [=](auto particle_index, auto req_reals, auto tot_rate, auto buffer){
+            [=](auto descendant_particle, auto particle_index, auto req_reals, auto req_ints, auto tot_rate, auto buffer){
                 INT current_count = particle_index.get_loop_linear_index();
                 REAL rate = reaction_data_buffer.calc_rate(particle_index, req_reals);
                 buffer[current_count] = rate;
                 tot_rate[0] += rate;
+
+                for (int childx=0 ; childx < num_products_per_parent; childx++) {
+                  descendant_particle.set_parent(particle_index, childx);
+
+                  for (int dimx = 0 ; dimx < 2 ; dimx++) {
+                    descendant_particle.at_real(particle_index, childx, 0, dimx) = -1 * req_reals.at(0, particle_index, dimx);
+                  }
+
+                  descendant_particle.at_real(particle_index, childx, 1, 0) = rate;
+
+                  descendant_particle.at_real(particle_index, childx, 2, 0) = req_reals.at(1, particle_index, 0);
+
+                  descendant_particle.at_int(particle_index, childx, 0, 0) = 1;
+                }
             },
+            Access::write(descendant_particles),
             Access::read(ParticleLoopIndex{}),
             // The ->get_particle_group() is temporary until sym_vector accepts ParticleSubGroup as an argument
             Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(), this->get_read_req_dats_real())),
+            Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(), this->get_read_req_dats_int())),
             Access::write(this->get_total_reaction_rate()),
             Access::write(this->device_rate_buffer)
         );
 
+        descendant_particles->reset(particle_sub_group->get_npart_local());
+
         loop->execute(cell_idx);
 
         this->set_rate_buffer(this->device_rate_buffer.get());
+
+        if (num_products_per_parent > 0) {
+          particle_sub_group->get_particle_group()->add_particles_local(descendant_particles);
+        }
 
         return;
     }
