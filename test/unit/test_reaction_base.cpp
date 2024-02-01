@@ -4,6 +4,7 @@
 #include "loop/particle_loop_index.hpp"
 #include "packing_unpacking.hpp"
 #include "particle_group.hpp"
+#include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
 #include "reaction_data.hpp"
@@ -15,10 +16,10 @@
 
 using namespace NESO::Particles;
 
-template <INT in_state_id>
-struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_state_id> {
+template <INT num_products_per_parent>
+struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_parent>, num_products_per_parent> {
 
-    friend struct LinearReactionBase<TestReaction, in_state_id>;
+    friend struct LinearReactionBase<TestReaction, num_products_per_parent>;
 
     TestReaction() = default;
 
@@ -27,7 +28,7 @@ struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_sta
         Sym<REAL> total_reaction_rate_,
         REAL rate_
     ) :
-        LinearReactionBase<TestReaction<in_state_id>, in_state_id>(
+        LinearReactionBase<TestReaction<num_products_per_parent>, num_products_per_parent>(
             sycl_target_,
             total_reaction_rate_,
             std::vector<Sym<REAL>> {
@@ -69,10 +70,10 @@ struct TestReaction: public LinearReactionBase<TestReaction<in_state_id>, in_sta
 
 };
 
-template <INT in_state_id>
-struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<in_state_id>, in_state_id> {
+template <INT num_products_per_parent>
+struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<num_products_per_parent>, num_products_per_parent> {
 
-    friend struct LinearReactionBase<TestReactionVarRate, in_state_id>;
+    friend struct LinearReactionBase<TestReactionVarRate, num_products_per_parent>;
 
     TestReactionVarRate() = default;
 
@@ -81,7 +82,7 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<in_sta
         Sym<REAL> total_reaction_rate_,
         Sym<REAL> read_var
     ) :
-        LinearReactionBase<TestReactionVarRate<in_state_id>, in_state_id>(
+        LinearReactionBase<TestReactionVarRate<num_products_per_parent>, num_products_per_parent>(
             sycl_target_,
             total_reaction_rate_,
             std::vector<Sym<REAL>>{read_var},
@@ -116,6 +117,66 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<in_sta
 
 };
 
+struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
+
+    friend struct LinearReactionBase<IoniseReaction, 0>;
+
+    IoniseReaction() = default;
+
+    IoniseReaction(
+        SYCLTargetSharedPtr sycl_target_,
+        Sym<REAL> total_reaction_rate_
+    ) :
+        LinearReactionBase<IoniseReaction, 0>(
+            sycl_target_,
+            total_reaction_rate_,
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("ELECTRON_TEMPERATURE")
+            },
+            std::vector<Sym<REAL>>(),
+            std::vector<Sym<INT>>(),
+            std::vector<Sym<INT>>()
+        )
+    {
+        this->set_reaction_data(IoniseReactionData());
+    }
+
+    private:
+        struct IoniseReactionData: public ReactionDataBase<IoniseReactionData> {
+            IoniseReactionData() = default;
+
+            double inv_tanh(const double& x) const {
+                return ((1.0 / std::tanh(x)) - 1.0);
+            }
+
+            REAL calc_rate(Access::LoopIndex::Read& index, Access::SymVector::Read<REAL>& vars) const {
+                REAL TeV = vars.at(0, index, 0);
+                const double invratio = 13.6 / TeV;
+                const double k_rate_factor = -1.0 * 6.7e7 * 4.0e-14 * 1e-6;
+                const double k_b_i_expc_i = 0.6 * std::exp(0.56);
+                const double k_c_i = 0.56;
+
+                const REAL rate = -k_rate_factor / (TeV * std::sqrt(TeV)) *
+                                  (inv_tanh(invratio) / invratio + 
+                                  (k_b_i_expc_i / (invratio + k_c_i)) * 
+                                  inv_tanh(invratio + k_c_i));
+
+                return rate;
+            }
+        };
+
+        mutable IoniseReactionData test_reaction_data;
+
+    protected:
+        IoniseReactionData& get_reaction_data() const {
+            return test_reaction_data;
+        }
+
+        void set_reaction_data(const IoniseReactionData& reaction_data_) const {
+            test_reaction_data = reaction_data_;
+        }
+};
+
 // TODO: Generalise and clean this up
 auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
 
@@ -146,7 +207,9 @@ auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
                                ParticleProp(Sym<INT>("ID"), 1),
                                ParticleProp(Sym<REAL>("TOT_REACTION_RATE"), 1),
                                ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1),
-                               ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)};    
+                               ParticleProp(Sym<INT>("INTERNAL_STATE"), 1),
+                               ParticleProp(Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
+                               ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1)};    
     auto particle_group = std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
 
     const int rank = sycl_target->comm_pair.rank_parent;
@@ -178,6 +241,8 @@ auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
         initial_distribution[Sym<REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
         initial_distribution[Sym<REAL>("COMPUTATIONAL_WEIGHT")][px][0] = 1.0;
         initial_distribution[Sym<INT>("INTERNAL_STATE")][px][0] = 0;
+        initial_distribution[Sym<REAL>("ELECTRON_TEMPERATURE")][px][0] = 2.0;
+        initial_distribution[Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
     }
     particle_group->add_particles_local(initial_distribution);
 
@@ -209,7 +274,9 @@ TEST(LinearReactionBase, calc_rate) {
 
     REAL test_rate = 5.0;  //example rate
 
-    auto test_reaction = TestReaction<0>(
+    const INT num_products_per_parent = 1;
+
+    auto test_reaction = TestReaction<num_products_per_parent>(
         particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate
     );
 
@@ -217,14 +284,12 @@ TEST(LinearReactionBase, calc_rate) {
 
     int cell_count = particle_group->domain->mesh->get_cell_count();
 
-    const INT num_products_per_parent = 1;
-
     for (int i=0; i < cell_count;i++){
 
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i, num_products_per_parent);
+        test_reaction.descendant_product_loop(particle_sub_group, i);
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i, num_products_per_parent);
+        test_reaction.descendant_product_loop(particle_sub_group, i);
 
         auto descendant_particle_sub_group = std::make_shared<ParticleSubGroup>(
             particle_group,
@@ -268,7 +333,9 @@ TEST(LinearReactionBase, calc_var_rate) {
     auto particle_group = create_test_particle_group(N_total);
     auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-    auto test_reaction = TestReactionVarRate<0>(
+    const INT num_products_per_parent = 0;
+
+    auto test_reaction = TestReactionVarRate<num_products_per_parent>(
         particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P")
     );
 
@@ -292,4 +359,40 @@ TEST(LinearReactionBase, calc_var_rate) {
 
     particle_group->domain->mesh->free(); // Explicit free? Yuck
 
+}
+
+TEST(IoniseReaction, calc_rate) {
+    const int N_total = 100;
+
+    auto particle_group = create_test_particle_group(N_total);
+    auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+    auto test_reaction = IoniseReaction(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE")
+    );
+
+    test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+
+    int cell_count = particle_group->domain->mesh->get_cell_count();
+
+    REAL weight_fraction, deltaweight;
+
+    for (int i=0; i < cell_count; i++) {
+        test_reaction.run_rate_loop(particle_sub_group, i);
+
+        auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+        const int nrow = position->nrow;
+
+        auto tot_reaction_rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+        auto electron_density = particle_group->get_cell(Sym<REAL>("ELECTRON_DENSITY"), i);
+        auto weight = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+        for (int rowx = 0; rowx < nrow; rowx++) {
+            weight_fraction = -tot_reaction_rate->at(rowx, 0) * electron_density->at(rowx, 0);
+            deltaweight = weight_fraction * weight->at(rowx, 0);
+            weight->at(rowx, 0) += deltaweight;
+            EXPECT_LT(weight->at(rowx, 0), 0.0);
+        }
+    }
+
+    particle_group->domain->mesh->free();
 }

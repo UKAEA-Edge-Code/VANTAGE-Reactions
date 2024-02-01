@@ -14,7 +14,7 @@
 
 using namespace NESO::Particles;
 
-template <typename LinearReactionDerived, INT in_state_id>
+template <typename LinearReactionDerived, INT num_products_per_parent>
 
 struct LinearReactionBase {
 
@@ -76,7 +76,7 @@ struct LinearReactionBase {
         return;
     }
 
-  void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx, INT num_products_per_parent) {
+  void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
     auto descendant_particles_spec = product_matrix_spec(
       ParticleSpec(
         ParticleProp(Sym<REAL>("V"), 2),
@@ -95,10 +95,10 @@ struct LinearReactionBase {
     auto loop = particle_loop(
       "descendant_products_loop",
       particle_sub_group,
-      [=](auto descendant_particle, auto particle_index, auto req_reals, auto req_ints) {
+      [=](auto descendant_particle, auto particle_index, auto req_reals, auto req_ints, auto rate_buffer) {
         for (int childx=0 ; childx < num_products_per_parent; childx++) {
           INT current_count = particle_index.get_loop_linear_index();
-          REAL rate = this->get_rate_buffer().at(current_count);
+          REAL rate = rate_buffer.at(current_count);
 
           descendant_particle.set_parent(particle_index, childx);
 
@@ -117,7 +117,8 @@ struct LinearReactionBase {
       Access::read(ParticleLoopIndex{}),
       // The ->get_particle_group() is temporary until sym_vector accepts ParticleSubGroup as an argument
       Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(), this->get_read_req_dats_real())),
-      Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(), this->get_read_req_dats_int()))
+      Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(), this->get_read_req_dats_int())),
+      Access::read(this->device_rate_buffer)
     );
 
     descendant_particles->reset(particle_sub_group->get_npart_local());
@@ -141,7 +142,9 @@ struct LinearReactionBase {
     Access::SymVector::Read<INT> read_req_ints,
     Access::SymVector::Write<INT> write_req_ints,
     Access::SymVector::Read<REAL> read_req_reals,
-    Access::SymVector::Write<REAL> write_req_reals
+    Access::SymVector::Write<REAL> write_req_reals,
+    Access::DescendantProducts::Write descendant_products,
+    Access::LocalArray::Read<REAL> pre_req_data 
   ) {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
