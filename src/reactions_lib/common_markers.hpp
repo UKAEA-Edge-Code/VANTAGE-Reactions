@@ -1,156 +1,149 @@
+#ifndef COMMON_MARKERS_H
+#define COMMON_MARKERS_H
 #include <memory>
 #include <neso_particles.hpp>
-#include <vector>
 #include <transformation_wrapper.hpp>
+#include <vector>
 
 using namespace NESO::Particles;
 
-//TODO: improve documentation
+namespace Reactions {
+// TODO: improve documentation
 
 /**
- * @brief Wrapper for less than comparison to be used by the the comparison marking strategy
- * 
+ * @brief Wrapper for less than comparison to be used by the the comparison
+ * marking strategy
+ *
  * @tparam T REAL or INT
  */
-template <typename T>
-struct LessThanComp{
+template <typename T> struct LessThanComp {
 
-  bool operator()(const T& var,const T& comp_val) const {
+  bool operator()(const T &var, const T &comp_val) const {
 
-          return var < comp_val;
-        }
+    return var < comp_val;
+  }
 };
 
 /**
- * @brief Wrapper for equals comparison to be used by the the comparison marking strategy
- * 
+ * @brief Wrapper for equals comparison to be used by the the comparison marking
+ * strategy
+ *
  * @tparam T REAL or INT
  */
-template <typename T>
-struct EqualsComp{
+template <typename T> struct EqualsComp {
 
-  bool operator()(const T& var,const T& comp_val) const {
+  bool operator()(const T &var, const T &comp_val) const {
 
-          return var == comp_val;
-        }
+    return var == comp_val;
+  }
 };
 /**
- * @brief Marking strategy that performs a comparison of a given INT or REAL valued ParticleDat
- * 
- * @tparam T Comparison wrapper class that has an overloaded operator() taking in two INTs or two REALs
+ * @brief Marking strategy that performs a comparison of a given INT or REAL
+ * valued ParticleDat
+ *
+ * @tparam T Comparison wrapper class that has an overloaded operator() taking
+ * in two INTs or two REALs
  * @tparam U REAL or INT, same as the templating on T
  */
 template <typename T, typename U>
-struct ComparisonMarkerSingle: MarkingStrategyBase<ComparisonMarkerSingle<T,U>> {
+struct ComparisonMarkerSingle
+    : MarkingStrategyBase<ComparisonMarkerSingle<T, U>> {
 
-  friend struct MarkingStrategyBase<ComparisonMarkerSingle<T,U>>;
-  
-  private: 
+  friend struct MarkingStrategyBase<ComparisonMarkerSingle<T, U>>;
+
+private:
   /**
    * @brief Device type wrapping the comparison call
-   * 
+   *
    */
-    struct ComparisonMarkerSingleRealDevice: MarkingFunctionWrapperBase<ComparisonMarkerSingleRealDevice> {
+  struct ComparisonMarkerSingleDevice
+      : MarkingFunctionWrapperBase<ComparisonMarkerSingleDevice> {
 
-        ComparisonMarkerSingleRealDevice():
-          comparison_val(0),
-          comparison_component(0),
-          comparison_wrapper(T())
-        {}
-     
-        ComparisonMarkerSingleRealDevice(
-          U comparison_value,
-          INT comparison_component
-        ):
-        comparison_val(comparison_value),
-        comparison_component(comparison_component),
-        comparison_wrapper(T())
-        {}
+    ComparisonMarkerSingleDevice()
+        : comparison_val(0), comparison_component(0), comparison_wrapper(T()) {}
 
-        bool marking_condition(Access::SymVector::Read<REAL>& real_vars,Access::SymVector::Read<INT>& int_vars) const {
+    ComparisonMarkerSingleDevice(U comparison_value, INT comparison_component)
+        : comparison_val(comparison_value),
+          comparison_component(comparison_component), comparison_wrapper(T()) {}
 
-          static_assert(std::is_same<REAL,U>::value || std::is_same<INT,U>::value,"Only REAL or INT templating allowed for U on ComparisonMarkerSingle");
+    bool marking_condition(Access::SymVector::Read<REAL> &real_vars,
+                           Access::SymVector::Read<INT> &int_vars) const {
 
-          if constexpr (std::is_same<REAL,U>::value)
- 
-            return this->comparison_wrapper(real_vars.at(0,this->comparison_component),this->comparison_val);
- 
-          else
- 
-            return this->comparison_wrapper(int_vars.at(0,this->comparison_component),this->comparison_val);
-        }
+      static_assert(std::is_same<REAL, U>::value || std::is_same<INT, U>::value,
+                    "Only REAL or INT templating allowed for U on "
+                    "ComparisonMarkerSingle");
 
-        private:
-          U comparison_val; //!< Value to compare the real-valued ParticleDat passed to marking_condition against using <
-          INT comparison_component; //!< Component of the passed real-valued ParticleDat to compare
-          T comparison_wrapper; //!< Comparison function wrapper (see ComparisonMarkerSingle description for requirements on this)
-      };
+      if constexpr (std::is_same<REAL, U>::value)
 
-  public:
+        return this->comparison_wrapper(
+            real_vars.at(0, this->comparison_component), this->comparison_val);
 
-    ComparisonMarkerSingle() = delete;
+      else
 
-    ComparisonMarkerSingle(
-      const Sym<REAL> comparison_var
-    ): 
-    MarkingStrategyBase<ComparisonMarkerSingle<T,U>>(std::vector<Sym<REAL>>{comparison_var},
-                        std::vector<Sym<INT>>()),
-    device_wrapper(ComparisonMarkerSingleRealDevice())
-    {}
-
-    ComparisonMarkerSingle(
-      const Sym<INT> comparison_var
-    ): 
-    MarkingStrategyBase<ComparisonMarkerSingle<T,U>>(std::vector<Sym<REAL>>(),
-                        std::vector<Sym<INT>>{comparison_var}),
-    device_wrapper(ComparisonMarkerSingleRealDevice())
-    {}
-
-    ComparisonMarkerSingle(
-      const Sym<REAL> comparison_var,
-      const REAL comparison_value
-    ): 
-    MarkingStrategyBase<ComparisonMarkerSingle<T,U>>(std::vector<Sym<REAL>>{comparison_var},
-                        std::vector<Sym<INT>>()),
-    device_wrapper(ComparisonMarkerSingleRealDevice(comparison_value,0))
-    {}
-
-    ComparisonMarkerSingle(
-      const Sym<INT> comparison_var,
-      const INT comparison_value
-    ): 
-    MarkingStrategyBase<ComparisonMarkerSingle<T,U>>(std::vector<Sym<REAL>>(),
-                        std::vector<Sym<INT>>{comparison_var}),
-    device_wrapper(ComparisonMarkerSingleRealDevice(comparison_value,0))
-    {}
-
-    ComparisonMarkerSingle(
-      const Sym<REAL> comparison_var,
-      const REAL comparison_value,
-      const INT comparison_component
-    ): 
-    MarkingStrategyBase<ComparisonMarkerSingle<T,U>>(std::vector<Sym<REAL>>{comparison_var},
-                        std::vector<Sym<INT>>()),
-    device_wrapper(ComparisonMarkerSingleRealDevice(comparison_value,comparison_component))
-    {}
-
-    ComparisonMarkerSingle(
-      const Sym<INT> comparison_var,
-      const INT comparison_value,
-      const INT comparison_component
-    ): 
-    MarkingStrategyBase<ComparisonMarkerSingle<T,U>>(std::vector<Sym<REAL>>(),
-                        std::vector<Sym<INT>>{comparison_var}),
-    device_wrapper(ComparisonMarkerSingleRealDevice(comparison_value,comparison_component))
-    {}
-
-  protected:
-
-    ComparisonMarkerSingleRealDevice get_device_data() const {
-      return this->device_wrapper;
+        return this->comparison_wrapper(
+            int_vars.at(0, this->comparison_component), this->comparison_val);
     }
 
   private:
-    ComparisonMarkerSingleRealDevice device_wrapper; //!< Device copyable wrapper for the comparison function
+    U comparison_val; //!< Value to compare the real-valued ParticleDat passed
+                      //!< to marking_condition against using <
+    INT comparison_component; //!< Component of the passed real-valued
+                              //!< ParticleDat to compare
+    T comparison_wrapper;     //!< Comparison function wrapper (see
+                              //!< ComparisonMarkerSingle description for
+                              //!< requirements on this)
+  };
 
+public:
+  ComparisonMarkerSingle() = delete;
+
+  ComparisonMarkerSingle(const Sym<REAL> comparison_var)
+      : MarkingStrategyBase<ComparisonMarkerSingle<T, U>>(
+            std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()),
+        device_wrapper(ComparisonMarkerSingleDevice()) {}
+
+  ComparisonMarkerSingle(const Sym<INT> comparison_var)
+      : MarkingStrategyBase<ComparisonMarkerSingle<T, U>>(
+            std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}),
+        device_wrapper(ComparisonMarkerSingleDevice()) {}
+
+  ComparisonMarkerSingle(const Sym<REAL> comparison_var,
+                         const REAL comparison_value)
+      : MarkingStrategyBase<ComparisonMarkerSingle<T, U>>(
+            std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()),
+        device_wrapper(ComparisonMarkerSingleDevice(comparison_value, 0)) {}
+
+  ComparisonMarkerSingle(const Sym<INT> comparison_var,
+                         const INT comparison_value)
+      : MarkingStrategyBase<ComparisonMarkerSingle<T, U>>(
+            std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}),
+        device_wrapper(ComparisonMarkerSingleDevice(comparison_value, 0)) {}
+
+  ComparisonMarkerSingle(const Sym<REAL> comparison_var,
+                         const REAL comparison_value,
+                         const INT comparison_component)
+      : MarkingStrategyBase<ComparisonMarkerSingle<T, U>>(
+            std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()),
+        device_wrapper(ComparisonMarkerSingleDevice(comparison_value,
+                                                    comparison_component)) {}
+
+  ComparisonMarkerSingle(const Sym<INT> comparison_var,
+                         const INT comparison_value,
+                         const INT comparison_component)
+      : MarkingStrategyBase<ComparisonMarkerSingle<T, U>>(
+            std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}),
+        device_wrapper(ComparisonMarkerSingleDevice(comparison_value,
+                                                    comparison_component)) {}
+
+protected:
+  ComparisonMarkerSingleDevice get_device_data() const {
+    return this->device_wrapper;
+  }
+
+private:
+  ComparisonMarkerSingleDevice
+      device_wrapper; //!< Device copyable wrapper for the comparison function
 };
+
+} // namespace Reactions
+#endif
