@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.14)
 set(PROJECT_NAME reactions) 
 set(PROJECT_LIB_NAME ${PROJECT_NAME}-lib)
 
+set(CMAKE_CXX_STANDARD 17)
 project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
 #include(${CMAKE_SOURCE_DIR}/cmake/SetBuildType.cmake)
