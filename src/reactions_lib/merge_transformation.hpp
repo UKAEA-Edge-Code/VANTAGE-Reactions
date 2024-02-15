@@ -2,6 +2,7 @@
 #define MERGE_TRANSFORMATION_H
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -18,7 +19,7 @@ namespace Reactions {
 template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
-  MergeTransformationStrategy() = default;
+  MergeTransformationStrategy() = delete;
 
   MergeTransformationStrategy(const Sym<REAL> &position,
                               const Sym<REAL> &weight,
@@ -34,6 +35,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
 
+    //TODO: better asserts (maybe use NESOASSERT?)
+    assert(part_group->domain->mesh->get_ndim() == ndim);
+    
     /*Buffers for the reduction quantities. Scalars are stored in the order
     weight,total energy
 
@@ -166,7 +170,6 @@ struct MergeTransformationStrategy : TransformationStrategy {
         std::transform(mom_perp.begin(), mom_perp.end(), mom_perp.begin(),
                        std::bind(std::multiplies<REAL>(), std::placeholders::_1,
                                  p_perp / (pt * rotation_axis_norm)));
-
         for (int i = 0; i < 3; i++) {
           mom_a[i] += mom_perp[i];
           mom_b[i] -= mom_perp[i];

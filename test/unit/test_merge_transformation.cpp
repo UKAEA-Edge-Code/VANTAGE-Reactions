@@ -1,83 +1,226 @@
-#include "particle_spec.hpp"
-#include "transformation_wrapper.hpp"
+#include "containers/cell_dat_const.hpp"
+#include "loop/access_descriptors.hpp"
 #include "merge_transformation.hpp"
+#include "particle_spec.hpp"
+#include "particle_sub_group.hpp"
+#include "transformation_wrapper.hpp"
+#include "typedefs.hpp"
 #include <CL/sycl.hpp>
 #include <gtest/gtest.h>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 using namespace NESO::Particles;
 using namespace Reactions;
 
-auto create_test_particle_group_merging(int N_total,int ndim) -> shared_ptr<ParticleGroup> {
+auto create_test_particle_group_merging(int N_total, int ndim)
+    -> shared_ptr<ParticleGroup> {
 
-    std::vector<int> dims(ndim);
-    dims[0] = 2;
-    dims[1] = 2;
+  std::vector<int> dims(ndim);
+  for (int dim = 0; dim < ndim; dim++) {
+    dims[dim]=2;
+  }
 
-    const double cell_extent = 1.0;
-    const int subdivision_order = 1;
-    const int stencil_width = 1;
-    
-    const int global_cell_count = dims[0] * dims[1] * std::pow(std::pow(2, subdivision_order), ndim);
-    const int npart_per_cell = std::round((double) N_total / (double) global_cell_count);
+  const double cell_extent = 1.0;
+  const int subdivision_order = 1;
+  const int stencil_width = 1;
 
-    auto mesh = std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
-                        subdivision_order, stencil_width);
+  const int global_cell_count =
+      std::pow(2 * std::pow(2, subdivision_order), ndim);
+  const int npart_per_cell =
+      std::round((double)N_total / (double)global_cell_count);
 
-    auto sycl_target = std::make_shared<SYCLTarget>(0, mesh->get_comm());
+  auto mesh =
+      std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
+                                       subdivision_order, stencil_width);
 
-    auto cart_local_mapper = CartesianHMeshLocalMapper(sycl_target, mesh);
+  auto sycl_target = std::make_shared<SYCLTarget>(0, mesh->get_comm());
 
-    auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
+  auto cart_local_mapper = CartesianHMeshLocalMapper(sycl_target, mesh);
 
-    ParticleSpec particle_spec{ParticleProp(Sym<REAL>("P"), ndim, true),
-                               ParticleProp(Sym<INT>("CELL_ID"), 1, true),
-                               ParticleProp(Sym<REAL>("WEIGHT"), 1),
-                               ParticleProp(Sym<REAL>("V"),ndim)};
+  auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
 
-    auto particle_group = std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
+  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("P"), ndim, true),
+                             ParticleProp(Sym<INT>("CELL_ID"), 1, true),
+                             ParticleProp(Sym<REAL>("WEIGHT"), 1),
+                             ParticleProp(Sym<REAL>("V"), ndim)};
 
-    const int rank = sycl_target->comm_pair.rank_parent;
-    const int size = sycl_target->comm_pair.size_parent;
+  auto particle_group =
+      std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
 
-    std::mt19937 rng_pos(52234234 + rank);
+  const int rank = sycl_target->comm_pair.rank_parent;
+  const int size = sycl_target->comm_pair.size_parent;
 
-    const int cell_count = domain->mesh->get_cell_count();
-    const int N = npart_per_cell * cell_count;
+  std::mt19937 rng_pos(52234234 + rank);
+  std::mt19937 rng_vel(52234231 + rank);
+  const int cell_count = domain->mesh->get_cell_count();
+  const int N = npart_per_cell * cell_count;
 
-    std::vector<std::vector<double>> positions;
-    std::vector<int> cells;
-    uniform_within_cartesian_cells(mesh, npart_per_cell, positions, cells, rng_pos);
-
-    ParticleSet initial_distribution(N, particle_group->get_particle_spec());
-    for (int px = 0; px < N; px++) {
-        for (int dimx = 0; dimx < ndim; dimx++) {
-            initial_distribution[Sym<REAL>("P")][px][dimx] = positions.at(dimx).at(px);
-        }
-        initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
-        initial_distribution[Sym<REAL>("WEIGHT")][px][0] = (px >= N/2) ? 0.2 : 1.0 ;
-        initial_distribution[Sym<INT>("ID")][px][0] = (px >= N/2) ? 1 : 2 ;
+  std::vector<std::vector<double>> positions;
+  std::vector<int> cells;
+  uniform_within_cartesian_cells(mesh, npart_per_cell, positions, cells,
+                                 rng_pos);
+  auto velocities =
+      NESO::Particles::normal_distribution(N, ndim, 0.0, 1.0, rng_vel);
+  ParticleSet initial_distribution(N, particle_group->get_particle_spec());
+  for (int px = 0; px < N; px++) {
+    for (int dimx = 0; dimx < ndim; dimx++) {
+      initial_distribution[Sym<REAL>("P")][px][dimx] =
+          positions.at(dimx).at(px);
+      initial_distribution[Sym<REAL>("V")][px][dimx] =
+          velocities.at(dimx).at(px);
     }
-    particle_group->add_particles_local(initial_distribution);
+    initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
+    initial_distribution[Sym<REAL>("WEIGHT")][px][0] = 1.0;
+  }
+  particle_group->add_particles_local(initial_distribution);
 
-    auto pbc = std::make_shared<CartesianPeriodic>(sycl_target, mesh, particle_group->position_dat);
-    auto ccb = std::make_shared<CartesianCellBin>(sycl_target, mesh, particle_group->position_dat, particle_group->cell_id_dat);
+  auto pbc = std::make_shared<CartesianPeriodic>(sycl_target, mesh,
+                                                 particle_group->position_dat);
+  auto ccb = std::make_shared<CartesianCellBin>(sycl_target, mesh,
+                                                particle_group->position_dat,
+                                                particle_group->cell_id_dat);
 
-    pbc->execute();
-    particle_group->hybrid_move();
-    ccb->execute();
-    particle_group->cell_move();
+  pbc->execute();
+  particle_group->hybrid_move();
+  ccb->execute();
+  particle_group->cell_move();
 
-    MPI_Barrier(sycl_target->comm_pair.comm_parent);
+  MPI_Barrier(sycl_target->comm_pair.comm_parent);
 
-    return particle_group;
-
+  return particle_group;
 }
 
+TEST(MergeTransformationStrategy, transform_2D) {
 
-TEST(MergeTransformationStrategy, transform) {
-   
+  const INT N_total = 1600;
 
+  auto particle_group = create_test_particle_group_merging(N_total, 2);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_merger = MergeTransformationStrategy<2>(
+      Sym<REAL>("P"), Sym<REAL>("WEIGHT"), Sym<REAL>("V"));
+
+  auto subgroup = make_shared<ParticleSubGroup>(
+      particle_group, [=](auto W) { return true; },
+      Access::read(Sym<REAL>("WEIGHT")));
+
+  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+                                                   cell_count, 5, 1);
+
+  particle_loop(
+      subgroup,
+      [=](auto W, auto P, auto V, auto GA) {
+        GA.fetch_add(0, 0, W[0] * P[0]);
+        GA.fetch_add(1, 0, W[0] * P[1]);
+        GA.fetch_add(2, 0, W[0] * V[0]);
+        GA.fetch_add(3, 0, W[0] * V[1]);
+        GA.fetch_add(4, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("P")),
+      Access::read(Sym<REAL>("V")), Access::add(reduction))
+      ->execute();
+
+  test_merger.transform(subgroup);
+
+  REAL wt = 100.0;
+
+  for (int ncell = 0; ncell < 16; ncell++) {
+    auto reduction_data = reduction->get_cell(ncell);
+
+    EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
+
+    std::vector<INT> cells = {ncell, ncell};
+    std::vector<INT> layers = {0, 1};
+
+    auto particles = particle_group->get_particles(cells, layers);
+    REAL energy_tot = reduction_data->at(4, 0);
+    REAL energy_merged = 0;
+    for (int i = 0; i < 2; i++) {
+      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("P"), i, 0),
+                  reduction_data->at(0, 0) / wt, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("P"), i, 1),
+                  reduction_data->at(1, 0) / wt, 1e-12);
+      energy_merged += particles->at(Sym<REAL>("V"), i, 0) *
+                           particles->at(Sym<REAL>("V"), i, 0) +
+                       particles->at(Sym<REAL>("V"), i, 1) *
+                           particles->at(Sym<REAL>("V"), i, 1);
+      EXPECT_NEAR(particles->at(Sym<REAL>("V"), 0, i) +
+                      particles->at(Sym<REAL>("V"), 1, i),
+                  reduction_data->at(2 + i, 0) * 2 / wt, 1e-12);
+    }
+    EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
+  }
+}
+
+TEST(MergeTransformationStrategy, transform_3D) {
+
+  const INT N_total = 1600 * 4;
+
+  auto particle_group = create_test_particle_group_merging(N_total, 3);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_merger = MergeTransformationStrategy<3>(
+      Sym<REAL>("P"), Sym<REAL>("WEIGHT"), Sym<REAL>("V"));
+
+  auto subgroup = make_shared<ParticleSubGroup>(
+      particle_group, [=](auto W) { return true; },
+      Access::read(Sym<REAL>("WEIGHT")));
+
+  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+                                                   cell_count, 7, 1);
+
+  particle_loop(
+      subgroup,
+      [=](auto W, auto P, auto V, auto GA) {
+        GA.fetch_add(0, 0, W[0] * P[0]);
+        GA.fetch_add(1, 0, W[0] * P[1]);
+        GA.fetch_add(2, 0, W[0] * P[2]);
+        GA.fetch_add(3, 0, W[0] * V[0]);
+        GA.fetch_add(4, 0, W[0] * V[1]);
+        GA.fetch_add(5, 0, W[0] * V[2]);
+        GA.fetch_add(6, 0, W[0] * (V[0] * V[0] + V[1] * V[1] + V[2] * V[2]));
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("P")),
+      Access::read(Sym<REAL>("V")), Access::add(reduction))
+      ->execute();
+
+  test_merger.transform(subgroup);
+
+  REAL wt = 100.0;
+
+  for (int ncell = 0; ncell < 16 * 4; ncell++) {
+    auto reduction_data = reduction->get_cell(ncell);
+
+    EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
+
+    std::vector<INT> cells = {ncell, ncell};
+    std::vector<INT> layers = {0, 1};
+
+    auto particles = particle_group->get_particles(cells, layers);
+    REAL energy_tot = reduction_data->at(6, 0);
+    REAL energy_merged = 0;
+
+    std::vector<REAL> tot_mom_merged = {0, 0, 0};
+    for (int i = 0; i < 2; i++) {
+
+      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
+      for (int dim = 0; dim < 3; dim++) {
+        EXPECT_NEAR(particles->at(Sym<REAL>("P"), i, dim),
+                    reduction_data->at(dim, 0) / wt, 1e-12);
+        energy_merged += particles->at(Sym<REAL>("V"), i, dim) *
+                         particles->at(Sym<REAL>("V"), i, dim);
+        tot_mom_merged[dim] += particles->at(Sym<REAL>("V"), i, dim);
+      }
+
+    }
+    EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
+    for (int dim = 0; dim < 3; dim++) {
+      EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(3 + dim, 0) * 2 / wt,
+                  1e-12);
+    }
+    // TODO: add test for induced spread 
+  }
 }
