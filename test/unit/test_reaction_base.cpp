@@ -10,6 +10,7 @@
 #include "reaction_data.hpp"
 #include "typedefs.hpp"
 #include <CL/sycl.hpp>
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <memory>
 #include <iostream>
@@ -35,7 +36,9 @@ struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_par
                 Sym<REAL>("V"),
                 Sym<REAL>("COMPUTATIONAL_WEIGHT")
             },
-            std::vector<Sym<REAL>>(),
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")
+            },
             std::vector<Sym<INT>> {
                 Sym<INT>("INTERNAL_STATE")
             },
@@ -43,7 +46,18 @@ struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_par
         ),
         test_reaction_data(TestReactionData(rate_))
     {}
-
+    public:
+        void feedback_kernel(
+            REAL& modified_weight,
+            Access::LoopIndex::Read& index,
+            Access::SymVector::Write<INT>& write_req_ints,
+            Access::SymVector::Write<REAL>& write_req_reals,
+            Access::LocalArray::Read<REAL>& pre_req_data,
+            double dt 
+        ) const {
+            auto k_W = write_req_reals.at(0, index, 0);
+            write_req_reals.at(0, index, 0) += (k_W * modified_weight);
+        }
     private:
         struct TestReactionData: public ReactionDataBase<TestReactionData> {
             TestReactionData() = default;
@@ -52,6 +66,10 @@ struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_par
                 REAL rate_
             ) : rate(rate_) {};
 
+            const REAL& get_n_to_SI() const {
+                return n_to_SI;
+            }
+
             REAL calc_rate(Access::LoopIndex::Read& index,Access::SymVector::Read<REAL>& vars) const {
 
                 return this->rate;
@@ -59,6 +77,7 @@ struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_par
 
             private:
                 REAL rate;
+                const REAL n_to_SI = 3.0e18;
         };
 
         TestReactionData test_reaction_data;
@@ -85,15 +104,31 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<num_pr
         LinearReactionBase<TestReactionVarRate<num_products_per_parent>, num_products_per_parent>(
             sycl_target_,
             total_reaction_rate_,
-            std::vector<Sym<REAL>>{read_var},
-            std::vector<Sym<REAL>>(),
+            std::vector<Sym<REAL>>{
+                read_var,
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")
+            },
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")
+            },
             std::vector<Sym<INT>>(),
             std::vector<Sym<INT>>()
-        )
-    {
-        this->set_reaction_data(TestReactionVarData());
-    }
+        ),
+        test_reaction_data(TestReactionVarData())
+    {}
 
+    public:
+        void feedback_kernel(
+            REAL& modified_weight,
+            Access::LoopIndex::Read& index,
+            Access::SymVector::Write<INT>& write_req_ints,
+            Access::SymVector::Write<REAL>& write_req_reals,
+            Access::LocalArray::Read<REAL>& pre_req_data,
+            double dt 
+        ) const {
+            auto k_W = write_req_reals.at(0, index, 0);
+            write_req_reals.at(0, index, 0) += (k_W * modified_weight);
+        }
     private:
         struct TestReactionVarData: public ReactionDataBase<TestReactionVarData> {
             TestReactionVarData() = default;
@@ -110,11 +145,6 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<num_pr
         TestReactionVarData& get_reaction_data() const {
             return test_reaction_data;
         }
-
-        void set_reaction_data(const TestReactionVarData& reaction_data_) const {
-            test_reaction_data = reaction_data_;
-        }
-
 };
 
 struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
@@ -131,38 +161,80 @@ struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
             sycl_target_,
             total_reaction_rate_,
             std::vector<Sym<REAL>>{
-                Sym<REAL>("ELECTRON_TEMPERATURE")
+                Sym<REAL>("V"),
+                Sym<REAL>("ELECTRON_TEMPERATURE"),
+                Sym<REAL>("ELECTRON_DENSITY"),
+                Sym<REAL>("SOURCE_ENERGY"),
+                Sym<REAL>("SOURCE_MOMENTUM"),
+                Sym<REAL>("SOURCE_DENSITY"),
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")
             },
-            std::vector<Sym<REAL>>(),
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("V"),
+                Sym<REAL>("ELECTRON_TEMPERATURE"),
+                Sym<REAL>("ELECTRON_DENSITY"),
+                Sym<REAL>("SOURCE_ENERGY"),
+                Sym<REAL>("SOURCE_MOMENTUM"),
+                Sym<REAL>("SOURCE_DENSITY"),
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")
+            },
             std::vector<Sym<INT>>(),
             std::vector<Sym<INT>>()
-        )
-    {
-        this->set_reaction_data(IoniseReactionData());
-    }
+        ),
+        test_reaction_data(IoniseReactionData())
+    {}
+
+    public:
+        void feedback_kernel(
+            REAL& modified_weight,
+            Access::LoopIndex::Read& index,
+            Access::SymVector::Write<INT>& write_req_ints,
+            Access::SymVector::Write<REAL>& write_req_reals,
+            Access::LocalArray::Read<REAL>& pre_req_data,
+            double dt 
+        ) const {
+            auto k_V_0 = write_req_reals.at(0, index, 0);
+            auto k_V_1 = write_req_reals.at(0, index, 1);
+            const REAL vsquared = (k_V_0 * k_V_0) + (k_V_1 * k_V_1);
+            
+            REAL k_n_scale = 1.0 / test_reaction_data.get_n_to_SI();
+            REAL inv_k_dt = 1.0 / dt;
+            
+            auto nE = write_req_reals.at(2, index, 0);
+
+            // Set SOURCE_DENSITY
+            write_req_reals.at(5, index, 0) = -nE * modified_weight * k_n_scale * inv_k_dt;
+            
+            // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
+            auto k_SD = write_req_reals.at(5, index, 0);
+            write_req_reals.at(4, index, 0) = k_SD * k_V_0;
+            write_req_reals.at(4, index, 1) = k_SD * k_V_1;
+
+            // Set SOURCE_ENERGY
+            write_req_reals.at(3, index, 0) = k_SD * vsquared * 0.5;
+
+            // Get then set COMPUTATIONAL_WEIGHT
+            auto k_W = write_req_reals.at(6, index, 0);
+            write_req_reals.at(6, index, 0) += (k_W * modified_weight);
+        }
 
     private:
         struct IoniseReactionData: public ReactionDataBase<IoniseReactionData> {
             IoniseReactionData() = default;
 
-            double inv_tanh(const double& x) const {
-                return ((1.0 / std::tanh(x)) - 1.0);
+            IoniseReactionData(REAL& dt_) : ReactionDataBase<IoniseReactionData>(dt_) {}
+
+            const REAL& get_n_to_SI() const {
+                return n_to_SI;
             }
 
             REAL calc_rate(Access::LoopIndex::Read& index, Access::SymVector::Read<REAL>& vars) const {
-                REAL TeV = vars.at(0, index, 0);
-                const double invratio = 13.6 / TeV;
-                const double k_rate_factor = -1.0 * 6.7e7 * 4.0e-14 * 1e-6;
-                const double k_b_i_expc_i = 0.6 * std::exp(0.56);
-                const double k_c_i = 0.56;
 
-                const REAL rate = -k_rate_factor / (TeV * std::sqrt(TeV)) *
-                                  (inv_tanh(invratio) / invratio + 
-                                  (k_b_i_expc_i / (invratio + k_c_i)) * 
-                                  inv_tanh(invratio + k_c_i));
-
-                return rate;
+                return 1;
             }
+
+            private:
+                const REAL n_to_SI = 3.0e18;
         };
 
         mutable IoniseReactionData test_reaction_data;
@@ -170,10 +242,6 @@ struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
     protected:
         IoniseReactionData& get_reaction_data() const {
             return test_reaction_data;
-        }
-
-        void set_reaction_data(const IoniseReactionData& reaction_data_) const {
-            test_reaction_data = reaction_data_;
         }
 };
 
@@ -209,7 +277,10 @@ auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
                                ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1),
                                ParticleProp(Sym<INT>("INTERNAL_STATE"), 1),
                                ParticleProp(Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
-                               ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1)};    
+                               ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1),
+                               ParticleProp(Sym<REAL>("SOURCE_ENERGY"), 1),
+                               ParticleProp(Sym<REAL>("SOURCE_MOMENTUM"), ndim),
+                               ParticleProp(Sym<REAL>("SOURCE_DENSITY"), 1)};
     auto particle_group = std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
 
     const int rank = sycl_target->comm_pair.rank_parent;
@@ -235,6 +306,7 @@ auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
         for (int dimx = 0; dimx < ndim; dimx++) {
             initial_distribution[Sym<REAL>("P")][px][dimx] = positions.at(dimx).at(px);
             initial_distribution[Sym<REAL>("V")][px][dimx] = velocities.at(dimx).at(px);
+            initial_distribution[Sym<REAL>("SOURCE_MOMENTUM")][px][dimx] = 0.0;
         }
         initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
         initial_distribution[Sym<INT>("ID")][px][0] = px;
@@ -243,6 +315,8 @@ auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
         initial_distribution[Sym<INT>("INTERNAL_STATE")][px][0] = 0;
         initial_distribution[Sym<REAL>("ELECTRON_TEMPERATURE")][px][0] = 2.0;
         initial_distribution[Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
+        initial_distribution[Sym<REAL>("SOURCE_ENERGY")][px][0] = 0.0;
+        initial_distribution[Sym<REAL>("SOURCE_DENSITY")][px][0] = 0.0;
     }
     particle_group->add_particles_local(initial_distribution);
 
@@ -287,9 +361,9 @@ TEST(LinearReactionBase, calc_rate) {
     for (int i=0; i < cell_count;i++){
 
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i);
+        test_reaction.descendant_product_loop(particle_sub_group, i, 0.01);
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i);
+        test_reaction.descendant_product_loop(particle_sub_group, i, 0.01);
 
         auto descendant_particle_sub_group = std::make_shared<ParticleSubGroup>(
             particle_group,
@@ -361,6 +435,90 @@ TEST(LinearReactionBase, calc_var_rate) {
 
 }
 
+TEST(LinearReactionBase, multi_reaction) {
+    const int N_total = 100;
+
+    auto particle_group = create_test_particle_group(N_total);
+    auto loop = particle_loop(
+        "set_internal_state",
+        particle_group,
+        [=](auto internal_state) {
+            internal_state[0] = 1;
+        },
+        Access::write(Sym<INT>("INTERNAL_STATE"))
+    );
+
+    auto particle_group_2 = create_test_particle_group(N_total);
+    auto loop2 = particle_loop(
+        "set_internal_state2",
+        particle_group_2,
+        [=](auto internal_state) {
+            internal_state[0] = 2;
+        },
+        Access::write(Sym<INT>("INTERNAL_STATE"))
+    );
+
+    loop->execute();
+    loop2->execute();
+
+    particle_group->add_particles_local(particle_group_2);
+
+    auto test_reaction1 = TestReaction<0>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1
+    );
+
+    auto test_reaction2 = TestReaction<0>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 2
+    );
+
+    test_reaction1.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+    test_reaction2.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+
+    std::vector<TestReaction<0>> reactions = {test_reaction1, test_reaction2};
+    std::vector<shared_ptr<ParticleSubGroup>> subgroups;
+
+    int cell_count = particle_group->domain->mesh->get_cell_count();
+    int num_reactions = 2;
+    for (int i=0; i < cell_count; i++) {
+        auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+        const int nrow = position->nrow;
+
+        for (int reaction = 0; reaction < num_reactions; reaction++) {
+            auto particle_sub_group = std::make_shared<ParticleSubGroup>(
+                particle_group,
+                [=](auto ISTATE) {
+                    return (ISTATE[0] == (reaction + 1));  // temp solution to selecting correct ISTATE for each reaction.
+                },
+                Access::read(Sym<INT>("INTERNAL_STATE"))
+            );
+            subgroups.push_back( particle_sub_group);
+        }
+
+        for (int reaction = 0; reaction < num_reactions; reaction++) {
+            reactions[reaction].run_rate_loop(subgroups[reaction], i);
+        }
+
+        for (int reaction = 0; reaction < num_reactions; reaction++) {
+            reactions[reaction].descendant_product_loop(subgroups[reaction], i, 0.1);
+        }
+
+        auto internal_state = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+        auto weight = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+
+        for (int rowx = 0; rowx < nrow; rowx++) {
+            if (internal_state->at(rowx, 0) == 1) {
+                EXPECT_EQ(weight->at(rowx, 0), 0.9);
+            }
+            else if (internal_state->at(rowx, 0) == 2) {
+                EXPECT_EQ(weight->at(rowx, 0), 0.8);
+            }
+        }
+    }
+
+    particle_group->domain->mesh->free();
+    particle_group_2->domain->mesh->free();
+}
+
 TEST(IoniseReaction, calc_rate) {
     const int N_total = 100;
 
@@ -375,10 +533,11 @@ TEST(IoniseReaction, calc_rate) {
 
     int cell_count = particle_group->domain->mesh->get_cell_count();
 
-    REAL weight_fraction, deltaweight;
+    REAL weight_fraction;
 
     for (int i=0; i < cell_count; i++) {
         test_reaction.run_rate_loop(particle_sub_group, i);
+        test_reaction.descendant_product_loop(particle_sub_group, i, 0.1);
 
         auto position = particle_group->get_cell(Sym<REAL>("P"), i);
         const int nrow = position->nrow;
@@ -386,13 +545,28 @@ TEST(IoniseReaction, calc_rate) {
         auto tot_reaction_rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
         auto electron_density = particle_group->get_cell(Sym<REAL>("ELECTRON_DENSITY"), i);
         auto weight = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+
         for (int rowx = 0; rowx < nrow; rowx++) {
-            weight_fraction = -tot_reaction_rate->at(rowx, 0) * electron_density->at(rowx, 0);
-            deltaweight = weight_fraction * weight->at(rowx, 0);
-            weight->at(rowx, 0) += deltaweight;
-            EXPECT_LT(weight->at(rowx, 0), 0.0);
+            EXPECT_EQ(weight->at(rowx, 0), 0.9);
         }
     }
 
     particle_group->domain->mesh->free();
 }
+
+/*
+ReactionController : 
+loop over cells {
+    loop over Reactions {
+        generate reaction_sub_groups
+    }
+    loop over Reactions {
+        run_rate_loop(...)
+    }
+    loop over Reactions {
+        apply_kernel (currently descendant_products)
+    }
+    handle cell-wise products (need add_particles_local(DescendantProducts, ParentGroup))
+}
+
+*/
