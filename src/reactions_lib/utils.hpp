@@ -5,6 +5,13 @@
 #include <vector>
 
 namespace Reactions::utils{
+/**
+ * @brief Helper function to calculate the L2 norm of a vector of arithmetic types.
+ * 
+ * @tparam T Arithmetic type template parameter
+ * @param vec Vector to take norm of
+ * @return T sqrt(sum(x^2)) for x in vec 
+ */
 template<typename T>
 T norm2(const std::vector<T>& vec){
     static_assert(std::is_arithmetic<T>(),"Template type in norm2 must be arithmetic");
@@ -12,6 +19,13 @@ T norm2(const std::vector<T>& vec){
 }
 
 template<typename T>
+/**
+ * @brief Helper function to compute vector cross product of two length 3 vectors.
+ * 
+ * @param a first cross product argument
+ * @param b second cross product argument
+ * @return std::vector<T> a x b
+ */
 std::vector<T> cross_product(const std::vector<T>& a,const std::vector<T>& b){
     static_assert(std::is_arithmetic<T>(),"Template type in cross_product must be arithmetic");
     if (a.size()!=3 || b.size()!=3){
