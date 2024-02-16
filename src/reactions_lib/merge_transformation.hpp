@@ -16,6 +16,26 @@
 using namespace NESO::Particles;
 
 namespace Reactions {
+/**
+ * @brief  Implementation of simplified merging algorithm from M. Vranic et
+ * al. Computer Physics Communications 191 2015.
+ *
+ * The assumption is that all particles being merged are of the same species,
+ * i.e. have the same mass and that they are non-relativistic.
+ *
+ * Instead of merging cell-wise in momentum space, the entire space is treated
+ * as one cell. In 3D the bounding box of the subgroup in momentum space is used
+ * to compute the plane in which the momenta of the merged particles will lie.
+ *
+ * Particles are merged cell-wise into 2 particles. The properties modified are
+ * the positions, weights, and momenta/velocities. Other properties are sampled
+ * from 2 other particles in the passed subgroup, i.e. things like cell or
+ * particle ids will be copied consistently, but there is no reduction of other
+ * real quantities. This means that those values will be lost, so this algorithm
+ * should be called only AFTER they are no longer needed.
+ *
+ * @tparam ndim dimesion parameter - 2 and 3 supported
+ */
 template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
@@ -28,6 +48,12 @@ struct MergeTransformationStrategy : TransformationStrategy {
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
   };
+  /**
+   * @brief Perform merging on given subgroup. Will remove the subgroup and add
+   * 2 particles per cell.
+   *
+   * @param target_subgroup
+   */
   void transform(ParticleSubGroupSharedPtr target_subgroup) {
     // set subgroup to static so we can add particles before removing the
     // subgroup
@@ -35,9 +61,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
 
-    //TODO: better asserts (maybe use NESOASSERT?)
+    // TODO: better asserts (maybe use NESOASSERT?)
     assert(part_group->domain->mesh->get_ndim() == ndim);
-    
+
     /*Buffers for the reduction quantities. Scalars are stored in the order
     weight,total energy
 
@@ -55,43 +81,52 @@ struct MergeTransformationStrategy : TransformationStrategy {
     auto cell_dat_reduction_mom_max = make_shared<CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, 3, 1);
 
-    auto reduction_loop = particle_loop(
-        "merge_reduction_loop", target_subgroup,
-        [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom) {
-          GA_s.fetch_add(0, 0, W[0]);
-          for (int i = 0; i < ndim; i++) {
-            GA_pos.fetch_add(i, 0, W[0] * X[i]);
-            GA_mom.fetch_add(i, 0, W[0] * P[i]);
-            GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
-          }
-        },
-        Access::read(this->position), Access::read(this->weight),
-        Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
-        Access::add(cell_dat_reduction_pos),
-        Access::add(cell_dat_reduction_mom));
+    if constexpr (ndim == 2) {
+      auto reduction_loop = particle_loop(
+          "merge_reduction_loop", target_subgroup,
+          [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom) {
+            GA_s.fetch_add(0, 0, W[0]);
+            for (int i = 0; i < ndim; i++) {
+              GA_pos.fetch_add(i, 0, W[0] * X[i]);
+              GA_mom.fetch_add(i, 0, W[0] * P[i]);
+              GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
+            }
+          },
+          Access::read(this->position), Access::read(this->weight),
+          Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
+          Access::add(cell_dat_reduction_pos),
+          Access::add(cell_dat_reduction_mom));
 
-    reduction_loop->execute();
-
-    // loop to get min and max of momenta in case of 3D problem, could
-    // potentially be optimized to merge with the previous loop
+      reduction_loop->execute();
+    }
 
     if constexpr (ndim == 3) {
 
       cell_dat_reduction_mom_min->fill(std::numeric_limits<REAL>::max());
       cell_dat_reduction_mom_max->fill(std::numeric_limits<REAL>::min());
 
-      auto mom_minmax_loop = particle_loop(
-          "merge_mom_minmax_loop", target_subgroup,
-          [=](auto P, auto GA_mom_min, auto GA_mom_max) {
-            for (int i = 0; i < 3; i++) {
+      auto reduction_loop = particle_loop(
+          "merge_reduction_loop_3D", target_subgroup,
+          [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom,
+              auto GA_mom_min, auto GA_mom_max) {
+            GA_s.fetch_add(0, 0, W[0]);
+            for (int i = 0; i < ndim; i++) {
+              GA_pos.fetch_add(i, 0, W[0] * X[i]);
+              GA_mom.fetch_add(i, 0, W[0] * P[i]);
+              GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
+
               GA_mom_min.fetch_min(i, 0, P[i]);
               GA_mom_max.fetch_max(i, 0, P[i]);
             }
           },
-          Access::read(this->momentum), Access::min(cell_dat_reduction_mom_min),
+          Access::read(this->position), Access::read(this->weight),
+          Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
+          Access::add(cell_dat_reduction_pos),
+          Access::add(cell_dat_reduction_mom),
+          Access::min(cell_dat_reduction_mom_min),
           Access::max(cell_dat_reduction_mom_max));
 
-      mom_minmax_loop->execute();
+      reduction_loop->execute();
     }
 
     std::vector<INT> layers = {0, 1};

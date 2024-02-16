@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -19,7 +20,7 @@ auto create_test_particle_group_merging(int N_total, int ndim)
 
   std::vector<int> dims(ndim);
   for (int dim = 0; dim < ndim; dim++) {
-    dims[dim]=2;
+    dims[dim] = 2;
   }
 
   const double cell_extent = 1.0;
@@ -172,19 +173,27 @@ TEST(MergeTransformationStrategy, transform_3D) {
   auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 7, 1);
 
+  auto red_min = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+                                                 cell_count, 3, 1);
+  auto red_max = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+                                                 cell_count, 3, 1);
+
+  red_min->fill(1e16);
+  red_max->fill(-1e16);
   particle_loop(
       subgroup,
-      [=](auto W, auto P, auto V, auto GA) {
-        GA.fetch_add(0, 0, W[0] * P[0]);
-        GA.fetch_add(1, 0, W[0] * P[1]);
-        GA.fetch_add(2, 0, W[0] * P[2]);
-        GA.fetch_add(3, 0, W[0] * V[0]);
-        GA.fetch_add(4, 0, W[0] * V[1]);
-        GA.fetch_add(5, 0, W[0] * V[2]);
-        GA.fetch_add(6, 0, W[0] * (V[0] * V[0] + V[1] * V[1] + V[2] * V[2]));
+      [=](auto W, auto P, auto V, auto GA, auto GA_min, auto GA_max) {
+        for (int i = 0; i < 3; i++) {
+          GA.fetch_add(i, 0, W[0] * P[i]);
+          GA.fetch_add(3 + i, 0, W[0] * V[i]);
+          GA.fetch_add(6, 0, W[0] * V[i] * V[i]);
+          GA_min.fetch_min(i, 0, V[i]);
+          GA_max.fetch_max(i, 0, V[i]);
+        }
       },
       Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("P")),
-      Access::read(Sym<REAL>("V")), Access::add(reduction))
+      Access::read(Sym<REAL>("V")), Access::add(reduction),
+      Access::min(red_min), Access::max(red_max))
       ->execute();
 
   test_merger.transform(subgroup);
@@ -193,7 +202,8 @@ TEST(MergeTransformationStrategy, transform_3D) {
 
   for (int ncell = 0; ncell < 16 * 4; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
-
+    auto reduction_data_min = red_min->get_cell(ncell);
+    auto reduction_data_max = red_max->get_cell(ncell);
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
 
     std::vector<INT> cells = {ncell, ncell};
@@ -202,6 +212,13 @@ TEST(MergeTransformationStrategy, transform_3D) {
     auto particles = particle_group->get_particles(cells, layers);
     REAL energy_tot = reduction_data->at(6, 0);
     REAL energy_merged = 0;
+    std::vector<REAL> diag(3);
+    std::vector<REAL> mom_a(3);
+    for (int dim = 0; dim < 3; dim++) {
+      diag[dim] =
+          reduction_data_max->at(dim, 0) - reduction_data_min->at(dim, 0);
+      mom_a[dim] = particles->at(Sym<REAL>("V"),0,dim);
+    }
 
     std::vector<REAL> tot_mom_merged = {0, 0, 0};
     for (int i = 0; i < 2; i++) {
@@ -214,13 +231,15 @@ TEST(MergeTransformationStrategy, transform_3D) {
                          particles->at(Sym<REAL>("V"), i, dim);
         tot_mom_merged[dim] += particles->at(Sym<REAL>("V"), i, dim);
       }
-
     }
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
     for (int dim = 0; dim < 3; dim++) {
       EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(3 + dim, 0) * 2 / wt,
                   1e-12);
     }
-    // TODO: add test for induced spread 
-  }
+    
+    auto rotation_axis =utils::cross_product(tot_mom_merged, diag);
+
+    EXPECT_NEAR(std::inner_product(mom_a.begin(),mom_a.end(),rotation_axis.begin(),0.0),0,1e-12);
+  } 
 }
