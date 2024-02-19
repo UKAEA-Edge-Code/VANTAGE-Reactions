@@ -103,9 +103,7 @@ TEST(MergeTransformationStrategy, transform_2D) {
   auto test_merger = MergeTransformationStrategy<2>(
       Sym<REAL>("P"), Sym<REAL>("WEIGHT"), Sym<REAL>("V"));
 
-  auto subgroup = make_shared<ParticleSubGroup>(
-      particle_group, [=](auto W) { return true; },
-      Access::read(Sym<REAL>("WEIGHT")));
+  auto subgroup = make_shared<ParticleSubGroup>(particle_group);
 
   auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 5, 1);
@@ -166,9 +164,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
   auto test_merger = MergeTransformationStrategy<3>(
       Sym<REAL>("P"), Sym<REAL>("WEIGHT"), Sym<REAL>("V"));
 
-  auto subgroup = make_shared<ParticleSubGroup>(
-      particle_group, [=](auto W) { return true; },
-      Access::read(Sym<REAL>("WEIGHT")));
+  auto subgroup = make_shared<ParticleSubGroup>(particle_group);
 
   auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 7, 1);
@@ -217,7 +213,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
     for (int dim = 0; dim < 3; dim++) {
       diag[dim] =
           reduction_data_max->at(dim, 0) - reduction_data_min->at(dim, 0);
-      mom_a[dim] = particles->at(Sym<REAL>("V"),0,dim);
+      mom_a[dim] = particles->at(Sym<REAL>("V"), 0, dim);
     }
 
     std::vector<REAL> tot_mom_merged = {0, 0, 0};
@@ -237,9 +233,11 @@ TEST(MergeTransformationStrategy, transform_3D) {
       EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(3 + dim, 0) * 2 / wt,
                   1e-12);
     }
-    
-    auto rotation_axis =utils::cross_product(tot_mom_merged, diag);
 
-    EXPECT_NEAR(std::inner_product(mom_a.begin(),mom_a.end(),rotation_axis.begin(),0.0),0,1e-12);
-  } 
+    auto rotation_axis = utils::cross_product(tot_mom_merged, diag);
+
+    EXPECT_NEAR(std::inner_product(mom_a.begin(), mom_a.end(),
+                                   rotation_axis.begin(), 0.0),
+                0, 1e-12);
+  }
 }

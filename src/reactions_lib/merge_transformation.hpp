@@ -8,7 +8,6 @@
 #include <limits>
 #include <memory>
 #include <neso_particles.hpp>
-#include <numeric>
 #include <transformation_wrapper.hpp>
 #include <utils.hpp>
 #include <vector>
@@ -55,12 +54,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
    * @param target_subgroup
    */
   void transform(ParticleSubGroupSharedPtr target_subgroup) {
-    // set subgroup to static so we can add particles before removing the
-    // subgroup
-    target_subgroup->static_status(true);
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
-
+    auto new_particle_group = make_shared<ParticleGroup>(part_group->domain,part_group->particle_spec,part_group->sycl_target);
     // TODO: better asserts (maybe use NESOASSERT?)
     assert(part_group->domain->mesh->get_ndim() == ndim);
 
@@ -227,12 +223,13 @@ struct MergeTransformationStrategy : TransformationStrategy {
         new_particles->at(this->momentum, 1, dimx) = mom_b[dimx];
       }
 
-      part_group->add_particles_local(new_particles);
+      new_particle_group->add_particles_local(new_particles);
     }
 
     // remove the marked particles
 
     part_group->remove_particles(target_subgroup);
+    part_group->add_particles_local(new_particle_group);
   }
 
 private:
