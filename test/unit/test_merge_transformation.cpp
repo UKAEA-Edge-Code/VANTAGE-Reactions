@@ -152,6 +152,8 @@ TEST(MergeTransformationStrategy, transform_2D) {
     }
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
   }
+
+  particle_group->domain->mesh->free();
 }
 
 TEST(MergeTransformationStrategy, transform_3D) {
@@ -240,4 +242,6 @@ TEST(MergeTransformationStrategy, transform_3D) {
                                    rotation_axis.begin(), 0.0),
                 0, 1e-12);
   }
+
+  particle_group->domain->mesh->free();
 }

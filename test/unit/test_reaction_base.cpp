@@ -1,3 +1,4 @@
+#include "common_markers.hpp"
 #include "compute_target.hpp"
 #include "containers/local_array.hpp"
 #include "containers/sym_vector.hpp"
@@ -14,8 +15,11 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <iostream>
+#include <variant>
+#include "transformation_wrapper.hpp"
 
 using namespace NESO::Particles;
+using namespace Reactions;
 
 template <INT num_products_per_parent>
 struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_parent>, num_products_per_parent> {
@@ -27,7 +31,8 @@ struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_par
     TestReaction(
         SYCLTargetSharedPtr sycl_target_,
         Sym<REAL> total_reaction_rate_,
-        REAL rate_
+        REAL rate_,
+        std::vector<int> in_states_
     ) :
         LinearReactionBase<TestReaction<num_products_per_parent>, num_products_per_parent>(
             sycl_target_,
@@ -42,7 +47,8 @@ struct TestReaction: public LinearReactionBase<TestReaction<num_products_per_par
             std::vector<Sym<INT>> {
                 Sym<INT>("INTERNAL_STATE")
             },
-            std::vector<Sym<INT>>()
+            std::vector<Sym<INT>>(),
+            in_states_
         ),
         test_reaction_data(TestReactionData(rate_))
     {}
@@ -99,7 +105,8 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<num_pr
     TestReactionVarRate(
         SYCLTargetSharedPtr sycl_target_,
         Sym<REAL> total_reaction_rate_,
-        Sym<REAL> read_var
+        Sym<REAL> read_var,
+        std::vector<int> in_states_
     ) :
         LinearReactionBase<TestReactionVarRate<num_products_per_parent>, num_products_per_parent>(
             sycl_target_,
@@ -112,7 +119,8 @@ struct TestReactionVarRate: public LinearReactionBase<TestReactionVarRate<num_pr
                 Sym<REAL>("COMPUTATIONAL_WEIGHT")
             },
             std::vector<Sym<INT>>(),
-            std::vector<Sym<INT>>()
+            std::vector<Sym<INT>>(),
+            in_states_
         ),
         test_reaction_data(TestReactionVarData())
     {}
@@ -155,7 +163,8 @@ struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
 
     IoniseReaction(
         SYCLTargetSharedPtr sycl_target_,
-        Sym<REAL> total_reaction_rate_
+        Sym<REAL> total_reaction_rate_,
+        std::vector<int> in_states_
     ) :
         LinearReactionBase<IoniseReaction, 0>(
             sycl_target_,
@@ -179,7 +188,8 @@ struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
                 Sym<REAL>("COMPUTATIONAL_WEIGHT")
             },
             std::vector<Sym<INT>>(),
-            std::vector<Sym<INT>>()
+            std::vector<Sym<INT>>(),
+            in_states_
         ),
         test_reaction_data(IoniseReactionData())
     {}
@@ -230,7 +240,7 @@ struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
 
             REAL calc_rate(Access::LoopIndex::Read& index, Access::SymVector::Read<REAL>& vars) const {
 
-                return 1;
+                return 1.0;
             }
 
             private:
@@ -246,7 +256,7 @@ struct IoniseReaction: public LinearReactionBase<IoniseReaction, 0> {
 };
 
 // TODO: Generalise and clean this up
-auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
+inline auto create_test_particle_group(int N_total) -> shared_ptr<ParticleGroup> {
 
     const int ndim = 2;
     std::vector<int> dims(ndim);
@@ -351,41 +361,32 @@ TEST(LinearReactionBase, calc_rate) {
     const INT num_products_per_parent = 1;
 
     auto test_reaction = TestReaction<num_products_per_parent>(
-        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, std::vector<int>{0}
     );
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
 
     int cell_count = particle_group->domain->mesh->get_cell_count();
 
+    auto parent_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
+    auto descendant_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
+    parent_particles->add_particles_local(particle_sub_group);
+
     for (int i=0; i < cell_count;i++){
 
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i, 0.01);
+        test_reaction.descendant_product_loop(particle_sub_group, i, 0.01, descendant_particles);
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i, 0.01);
+        test_reaction.descendant_product_loop(particle_sub_group, i, 0.01, descendant_particles);
 
-        auto descendant_particle_sub_group = std::make_shared<ParticleSubGroup>(
-            particle_group,
-            [=](auto ISTATE) {
-                return (ISTATE[0] == 1);
-            },
-            Access::read(Sym<INT>("INTERNAL_STATE"))
-        );
-
-        auto parent_particles = std::make_shared<ParticleGroup>(
-            particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
-        );
-
-        auto descendant_particles = std::make_shared<ParticleGroup>(
-            particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
-        );
-
-        parent_particles->add_particles_local(particle_sub_group);
-        descendant_particles->add_particles_local(descendant_particle_sub_group);
-
-        auto position = parent_particles->get_cell(Sym<REAL>("P"), i);
-        auto tot_reaction_rate = parent_particles->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+        auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+        auto tot_reaction_rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
         
         // auto velocity = descendant_particles->get_cell(Sym<REAL>("V"), i);
         // auto weight = descendant_particles->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
@@ -399,6 +400,8 @@ TEST(LinearReactionBase, calc_rate) {
     }
 
     particle_group->domain->mesh->free(); // Explicit free? Yuck
+    parent_particles->domain->mesh->free();
+    descendant_particles->domain->mesh->free();
 }
 
 TEST(LinearReactionBase, calc_var_rate) {
@@ -410,7 +413,7 @@ TEST(LinearReactionBase, calc_var_rate) {
     const INT num_products_per_parent = 0;
 
     auto test_reaction = TestReactionVarRate<num_products_per_parent>(
-        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P")
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P"), std::vector<int>{0}
     );
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
@@ -435,7 +438,7 @@ TEST(LinearReactionBase, calc_var_rate) {
 
 }
 
-TEST(LinearReactionBase, multi_reaction) {
+TEST(LinearReactionBase, split_group_single_reaction) {
     const int N_total = 100;
 
     auto particle_group = create_test_particle_group(N_total);
@@ -443,7 +446,7 @@ TEST(LinearReactionBase, multi_reaction) {
         "set_internal_state",
         particle_group,
         [=](auto internal_state) {
-            internal_state[0] = 1;
+            internal_state[0] = 2;
         },
         Access::write(Sym<INT>("INTERNAL_STATE"))
     );
@@ -453,7 +456,7 @@ TEST(LinearReactionBase, multi_reaction) {
         "set_internal_state2",
         particle_group_2,
         [=](auto internal_state) {
-            internal_state[0] = 2;
+            internal_state[0] = 3;
         },
         Access::write(Sym<INT>("INTERNAL_STATE"))
     );
@@ -464,52 +467,69 @@ TEST(LinearReactionBase, multi_reaction) {
     particle_group->add_particles_local(particle_group_2);
 
     auto test_reaction1 = TestReaction<0>(
-        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1, std::vector<int>{2}
     );
 
-    auto test_reaction2 = TestReaction<0>(
-        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 2
+    auto test_reaction2 = TestReaction<1>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 2, std::vector<int>{3}
     );
 
     test_reaction1.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
     test_reaction2.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
 
-    std::vector<TestReaction<0>> reactions = {test_reaction1, test_reaction2};
+    std::vector<AbstractReaction *> reactions = {&test_reaction1, &test_reaction2};
     std::vector<shared_ptr<ParticleSubGroup>> subgroups;
 
+    auto parent_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
+    auto descendant_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
     int cell_count = particle_group->domain->mesh->get_cell_count();
-    int num_reactions = 2;
+    int num_reactions = static_cast<int>(reactions.size());
     for (int i=0; i < cell_count; i++) {
         auto position = particle_group->get_cell(Sym<REAL>("P"), i);
         const int nrow = position->nrow;
 
         for (int reaction = 0; reaction < num_reactions; reaction++) {
-            auto particle_sub_group = std::make_shared<ParticleSubGroup>(
-                particle_group,
-                [=](auto ISTATE) {
-                    return (ISTATE[0] == (reaction + 1));  // temp solution to selecting correct ISTATE for each reaction.
-                },
-                Access::read(Sym<INT>("INTERNAL_STATE"))
+            auto sub_group_selector = make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+                Sym<INT>("INTERNAL_STATE"), (reaction + 2)
+            );
+            auto particle_sub_group = sub_group_selector->make_marker_subgroup(
+                std::make_shared<ParticleSubGroup>(particle_group)
             );
             subgroups.push_back( particle_sub_group);
         }
 
         for (int reaction = 0; reaction < num_reactions; reaction++) {
-            reactions[reaction].run_rate_loop(subgroups[reaction], i);
+            reactions[reaction]->run_rate_loop(subgroups[reaction], i);
         }
 
         for (int reaction = 0; reaction < num_reactions; reaction++) {
-            reactions[reaction].descendant_product_loop(subgroups[reaction], i, 0.1);
+            reactions[reaction]->descendant_product_loop(subgroups[reaction], i, 0.1, descendant_particles);
         }
+
+        auto parent_selector = make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+            Sym<INT>("INTERNAL_STATE"), 0
+        );
+
+        auto parent_particle_sub_group = parent_selector->make_marker_subgroup(
+            std::make_shared<ParticleSubGroup>(particle_group)
+        );
+
+        parent_particles->add_particles_local(parent_particle_sub_group);
 
         auto internal_state = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
         auto weight = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
 
         for (int rowx = 0; rowx < nrow; rowx++) {
-            if (internal_state->at(rowx, 0) == 1) {
+            if (internal_state->at(rowx, 0) == 2) {
                 EXPECT_EQ(weight->at(rowx, 0), 0.9);
             }
-            else if (internal_state->at(rowx, 0) == 2) {
+            else if (internal_state->at(rowx, 0) == 3) {
                 EXPECT_EQ(weight->at(rowx, 0), 0.8);
             }
         }
@@ -517,6 +537,106 @@ TEST(LinearReactionBase, multi_reaction) {
 
     particle_group->domain->mesh->free();
     particle_group_2->domain->mesh->free();
+    parent_particles->domain->mesh->free();
+    descendant_particles->domain->mesh->free();
+}
+
+TEST(LinearReactionBase, single_group_multi_reaction) {
+    const int N_total = 100;
+
+    auto particle_group = create_test_particle_group(N_total);
+
+    auto sub_group_selector = make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+        Sym<INT>("INTERNAL_STATE"), 0
+    );
+
+    auto particle_sub_group = sub_group_selector->make_marker_subgroup(
+        std::make_shared<ParticleSubGroup>(particle_group)
+    );
+
+    auto test_reaction1 = TestReaction<0>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1, std::vector<int>{0}
+    );
+
+    auto test_reaction2 = TestReaction<0>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1, std::vector<int>{0}
+    );
+
+    const INT num_products_per_parent = 1;
+
+    auto test_reaction3 = TestReaction<num_products_per_parent>(
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 2, std::vector<int>{0}
+    );
+
+    test_reaction1.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+    test_reaction2.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+    test_reaction3.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
+
+    // std::vector<AbstractReaction *> reactions = {&test_reaction1, &test_reaction2, &test_reaction3};
+    std::vector<AbstractReaction *> reactions {};
+    reactions.push_back(&test_reaction1);
+    reactions.push_back(&test_reaction2);
+    reactions.push_back(&test_reaction3);
+
+    int cell_count = particle_group->domain->mesh->get_cell_count();
+    int num_reactions = static_cast<int>(reactions.size());
+
+    std::vector<shared_ptr<ParticleSubGroup>> subgroups;
+
+    auto parent_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
+    auto descendant_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
+    for (int i=0; i < cell_count; i++) {
+        auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+        const int nrow = position->nrow;
+
+        for (int reaction = 0; reaction < num_reactions; reaction++) {
+            auto particle_sub_group = std::make_shared<ParticleSubGroup>(
+                particle_group
+            );
+            subgroups.push_back(particle_sub_group);
+        }
+
+        for (int reaction = 0; reaction < num_reactions; reaction++) {
+            reactions[reaction]->run_rate_loop(subgroups[reaction], i);
+        }
+
+        for (int reaction = 0; reaction < num_reactions; reaction++) {
+            reactions[reaction]->descendant_product_loop(subgroups[reaction], i, 0.1, descendant_particles);
+        }
+
+        auto parent_selector = make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+            Sym<INT>("INTERNAL_STATE"), 0
+        );
+
+        auto parent_particle_sub_group = parent_selector->make_marker_subgroup(
+            std::make_shared<ParticleSubGroup>(particle_group)
+        );
+
+        parent_particles->add_particles_local(parent_particle_sub_group);
+        // descendant_particles->add_particles_local(descendant_particle_sub_group);
+
+        auto internal_state = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+        auto weight = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+
+        for (int rowx = 0; rowx < nrow; rowx++) {
+            if (internal_state->at(rowx, 0) == 2) {
+                EXPECT_EQ(weight->at(rowx, 0), 0.9);
+            }
+            else if (internal_state->at(rowx, 0) == 3) {
+                EXPECT_EQ(weight->at(rowx, 0), 0.8);
+            }
+        }
+    }
+
+    particle_group->domain->mesh->free();
+    parent_particles->domain->mesh->free();
+    descendant_particles->domain->mesh->free();
 }
 
 TEST(IoniseReaction, calc_rate) {
@@ -526,7 +646,7 @@ TEST(IoniseReaction, calc_rate) {
     auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
     auto test_reaction = IoniseReaction(
-        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE")
+        particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), std::vector<int>{0}
     );
 
     test_reaction.flush_buffer(static_cast<size_t>(particle_group->get_npart_local()));
@@ -535,9 +655,13 @@ TEST(IoniseReaction, calc_rate) {
 
     REAL weight_fraction;
 
+    auto descendant_particles = std::make_shared<ParticleGroup>(
+        particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+    );
+
     for (int i=0; i < cell_count; i++) {
         test_reaction.run_rate_loop(particle_sub_group, i);
-        test_reaction.descendant_product_loop(particle_sub_group, i, 0.1);
+        test_reaction.descendant_product_loop(particle_sub_group, i, 0.1, descendant_particles);
 
         auto position = particle_group->get_cell(Sym<REAL>("P"), i);
         const int nrow = position->nrow;
@@ -552,6 +676,7 @@ TEST(IoniseReaction, calc_rate) {
     }
 
     particle_group->domain->mesh->free();
+    descendant_particles->domain->mesh->free();
 }
 
 /*

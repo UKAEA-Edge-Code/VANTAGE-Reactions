@@ -1,3 +1,4 @@
+#pragma once
 #include "containers/local_array.hpp"
 #include "containers/sym_vector.hpp"
 #include "containers/descendant_products.hpp"
@@ -13,6 +14,31 @@
 
 using namespace NESO::Particles;
 
+namespace Reactions {
+
+/**
+ * @brief Abstract base class for reactions. All reactions operate on 
+ * particles in a ParticleSubGroup in a given cell and modify the
+ * ParticleSubGroup and, depending on the reaction, produce and 
+ * process descendants.
+ *
+ * @param sycl_target Compute device used by the instance.
+ * @param total_rate_dat Symbol index for a ParticleDat that's used to track
+ * the cumulative reaction rate modification imposed on all of the particles
+ * in the ParticleSubGroup passed to run_rate_loop(...).
+ * @param required_dats_real_read Symbol indices for real-valued ParticleDats
+ * that are required to be read by either run_rate_loop(...) or
+ * descendant_particle_loop(...)
+ * @param required_dats_real_write Symbol indices for real-valued ParticleDats
+ * that are required to be written by either run_rate_loop(...) or
+ * descendant_particle_loop(...)
+ * @param required_dats_int_read Symbol indices for integer-valued
+ * ParticleDats that are required to be read by either run_rate_loop(...) or
+ * descendant_particle_loop(...)
+ * @param required_dats_int_write Symbol indices for integer-valued
+ * ParticleDats that are required to be written by either run_rate_loop(...) or
+ * descendant_particle_loop(...)
+*/
 struct AbstractReaction {
   AbstractReaction() = default;
 
@@ -34,7 +60,22 @@ struct AbstractReaction {
   pre_req_data(LocalArray<REAL>(sycl_target, 0, 0.0))
   {}
 
+  public:
+    /**
+    * @brief Virtual functions to be overidden by an implementation in a derived struct.
+    */
+    virtual void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {}
+
+    virtual void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx, double dt, ParticleGroupSharedPtr child_group) {}
+
+    virtual std::vector<int> get_in_states() {return std::vector<int>{0};}
+
+    virtual void flush_buffer() {}
+
   protected:
+    /**
+    * @brief Setters and getters for private members.
+    */
     const std::vector<Sym<REAL>>& get_read_req_dats_real() {
       return read_required_particle_dats_real;
     }
@@ -72,23 +113,12 @@ struct AbstractReaction {
       return device_rate_buffer;
     }
 
+    void set_device_rate_buffer(LocalArray<REAL>& device_rate_buffer_) {
+      this->device_rate_buffer = device_rate_buffer_;
+    }
+
     const SYCLTargetSharedPtr& get_sycl_target() {
       return sycl_target_stored;
-    }
-
-    void flush_buffer() {
-    std::fill(this->rate_buffer.begin(), this->rate_buffer.end(), 0.0);
-    }
-
-    void flush_buffer(size_t buffer_size) {
-      std::vector<REAL> empty_rate_buffer(buffer_size);
-      set_rate_buffer(empty_rate_buffer);
-      this->device_rate_buffer = LocalArray<REAL>(
-              this->sycl_target_stored,
-              buffer_size,
-              0
-          );
-      this->flush_buffer();
     }
 
     const LocalArray<REAL>& get_pre_req_data() const {
@@ -108,16 +138,42 @@ struct AbstractReaction {
     Sym<REAL> total_reaction_rate;
     LocalArray<REAL> device_rate_buffer;
     SYCLTargetSharedPtr sycl_target_stored;
-    LocalArray<REAL> pre_req_data;
+    LocalArray<REAL> pre_req_data; //!< Real-valued local array for storing
+                                   //!< any pre-requisite data relating to a
+                                   //!< derived reaction.
     Sym<REAL> weight_sym = Sym<REAL>("COMPUTATIONAL_WEIGHT");
 };
 
 
+/**
+* @brief SYCL CRTP base linear reaction type. Specifically meant for 
+* reactions that only involve a single particle at the start of the reaction
+*
+* @tparam LinearReactionDerived SYCL CRTP template argument
+* @tparam num_products_per_parent The number of products produced per parent
+* by the derived linear reaction.
+* @param sycl_target Compute device used by the instance.
+* @param total_rate_dat Symbol index for a ParticleDat that's used to track
+* the cumulative reaction rate modification imposed on all of the particles
+* in the ParticleSubGroup passed to run_rate_loop(...).
+* @param required_dats_real_read Symbol indices for real-valued ParticleDats
+* that are required to be read by either run_rate_loop(...) or
+* descendant_particle_loop(...)
+* @param required_dats_real_write Symbol indices for real-valued ParticleDats
+* that are required to be written by either run_rate_loop(...) or
+* descendant_particle_loop(...)
+* @param required_dats_int_read Symbol indices for integer-valued
+* ParticleDats that are required to be read by either run_rate_loop(...) or
+* descendant_particle_loop(...)
+* @param required_dats_int_write Symbol indices for integer-valued
+* ParticleDats that are required to be written by either run_rate_loop(...) or
+* descendant_particle_loop(...)
+* @param in_states Vector of integers specifying the IDs of the species on
+* which the derived reaction is acting on.
+*/
 template <typename LinearReactionDerived, INT num_products_per_parent>
 
 struct LinearReactionBase: public AbstractReaction {
-
-  friend struct AbstractReaction;
 
   LinearReactionBase() = default;
 
@@ -127,7 +183,8 @@ struct LinearReactionBase: public AbstractReaction {
     const std::vector<Sym<REAL>> required_dats_real_read,
     std::vector<Sym<REAL>> required_dats_real_write,
     const std::vector<Sym<INT>> required_dats_int_read,
-    std::vector<Sym<INT>> required_dats_int_write
+    std::vector<Sym<INT>> required_dats_int_write,
+    std::vector<int> in_states
   ): 
   AbstractReaction(
     sycl_target,
@@ -136,11 +193,22 @@ struct LinearReactionBase: public AbstractReaction {
     required_dats_real_write,
     required_dats_int_read,
     required_dats_int_write
-  )
+  ),
+  in_states(in_states)
   {}
 
-  void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
-
+  /**
+   * @brief Calculates the reaction rates for all particles in the given
+   * particle sub group and cell. Stores the total rate for all particles
+   * within a property assigned to each particle (all particles know the
+   * total reaction rate) and stores the rate for each particle within a 
+   * buffer.
+   * @param particle_sub_group A ParticleSubGroupSharedPtr that contains
+   * particles with the relevant species ID out of the full ParticleGroup
+   * @param cell_idx The id of the cell over which to run the principle 
+   * ParticleLoop to calculate reaction rates.
+   */
+  void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) override {
         const auto& underlying = static_cast<LinearReactionDerived&>(*this);
         auto reaction_data_buffer = underlying.get_reaction_data();
 
@@ -181,7 +249,21 @@ struct LinearReactionBase: public AbstractReaction {
         return;
     }
 
-  void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx, double dt) {
+  /**
+   * @brief Creates and processes any descendant products from the reaction
+   * and modifies the appropriate background fields and/or parent particle
+   * properties based on a weight modification calculation that utilises
+   * results from run_rate_loop(...)
+   *
+   * @param particle_sub_group ParticleSubGroupSharedPtr that contains
+   * particles with the relevant species ID out of the full ParticleGroup
+   * @param cell_idx The id of the cell over which to run the principle 
+   * ParticleLoop to calculate reaction rates.
+   * @param dt The current time step size.
+   * @param child_group ParticleGroupSharedPtr that contains a particle group
+   * into which descendants are placed after generation.
+   */
+  void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx, double dt, ParticleGroupSharedPtr child_group) override {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
 
@@ -195,6 +277,9 @@ struct LinearReactionBase: public AbstractReaction {
       std::cout << "sycl_target assigned to particle_group is not the same as the sycl_target passed to Reaction object..." << std::endl;
     }
 
+    // Product matrix spec for descendant particles that specifies which
+    // properties of the descendant particles are to be modified in this
+    // reaction upon creation of the descendant particles
     auto descendant_particles_spec = product_matrix_spec(
       ParticleSpec(
         ParticleProp(Sym<REAL>("V"), 2),
@@ -243,9 +328,8 @@ struct LinearReactionBase: public AbstractReaction {
           //
           descendant_particle.at_real(particle_index, childx, 1, 0) = read_req_reals.at(1, particle_index, 0);
 
-          descendant_particle.at_int(particle_index, childx, 0, 0) = 1;
+          descendant_particle.at_int(particle_index, childx, 0, 0) = read_req_ints.at(0, particle_index, 0) + 1;  //!< Provisionally increment the species ID by 1 relative to the parent.
         }
-        // call feedback_kernel
         feedback_kernel(
           modified_weight,
           particle_index,
@@ -272,18 +356,40 @@ struct LinearReactionBase: public AbstractReaction {
 
     loop->execute(cell_idx);
 
-    particle_sub_group->get_particle_group()->add_particles_local(descendant_particles);
+    child_group->add_particles_local(descendant_particles, particle_sub_group->get_particle_group());
 
     return;
   }
 
+  /**
+   * @brief SYCL CRTP base scattering kernel for calculating and applying
+   * reaction-derived velocity modifications of the particles.
+   * @return std::vector<REAL>
+   */
   std::vector<REAL> scattering_kernel() const {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
     return underlying.template scattering_kernel();
   }
 
-  // Handle weight modifications of parents as well
+  /**
+   * @brief SYCL CRTP base feedback kernel for calculating and applying
+   * background field modifications from the reaction.
+   *
+   * @param modified_weight The weight modification needed for calculating
+   * the changes to the background fields.
+   * @param index Read-only accessor to a loop index for a ParticleLoop
+   * inside which calc_rate is called. Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param write_req_ints Symbol indices for integer-valued
+   * ParticleDats that need to be modified
+   * @param write_req_reals Symbol indices for real-valued
+   * ParticleDats that need to be modified
+   * @param pre_req_data Real-valued local array containing pre-requisite
+   * data relating to a derived reaction.
+   * @param dt The current time step size.
+   */
   void feedback_kernel(
     REAL& modified_weight,
     Access::LoopIndex::Read& index,
@@ -304,38 +410,73 @@ struct LinearReactionBase: public AbstractReaction {
     );
   }
 
+  /**
+   * @brief SYCL CRTP base transformation kernel for calculating and applying
+   * reaction-derived ID modifications of the particles.
+   */
   void transformation_kernel() {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
     return underlying.template transformation_kernel();
   }
 
+  /**
+   * @brief SYCL CRTP base weight kernel for calculating and applying
+   * reaction-derived weight modifications of the particles.
+   */
   void weight_kernel() {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
     return underlying.template weight_kernel();
   }
 
-  // void transformation_kernel() {    
-  //   for (auto& out_test_state : this->out_test_states) {
-  //     this->post_collision_internal_states.push_back(0);
-  //   }
-  // }
-
-  // void weight_kernel() {
-  //   for (auto& out_test_state : this->out_test_states) {
-  //     this->post_collision_weights.push_back(0.0);
-  //   }
-  // }
-
+  /**
+   * @brief SYCL CRTP base apply kernel which combines the calls to 
+   * scattering_kernel, transformation_kernel and weight_kernel
+   */
   void apply_kernel() const {
     const auto& underlying = static_cast<const LinearReactionDerived&>(*this);
 
     return underlying.template apply_kernel();
   }
 
+  /**
+   * @brief Flushes the stored rate_buffer and by setting all values to 0.0.
+   */
+  void flush_buffer() override {
+      std::vector<REAL> zeroed_rate_buffer = AbstractReaction::get_rate_buffer();
+      std::fill(zeroed_rate_buffer.begin(), zeroed_rate_buffer.end(), 0.0);
+      AbstractReaction::set_rate_buffer(zeroed_rate_buffer);
+    }
+
+  /**
+   * @brief Creates an empty rate buffer of a specified size
+   *
+   * @param buffer_size Size of the empty buffer that needs to be created and
+   * stored.
+   */
   void flush_buffer(size_t buffer_size) {
-    return AbstractReaction::flush_buffer(buffer_size);
+    std::vector<REAL> empty_rate_buffer(buffer_size);
+    AbstractReaction::set_rate_buffer(empty_rate_buffer);
+    auto empty_device_rate_buffer = LocalArray<REAL>(
+      AbstractReaction::get_sycl_target(),
+      buffer_size,
+      0
+    );
+    AbstractReaction::set_device_rate_buffer(empty_device_rate_buffer);
+    this->flush_buffer();
   }
 
+  /**
+   * @brief Getter for in_states that define which species the reaction is to
+   * be applied to.
+   * @return std::vector<int> Integer vectore of species IDs.
+   */
+  std::vector<int> get_in_states() override {
+    return in_states;
+  }
+
+  private:
+    std::vector<int> in_states;
 };
+}
