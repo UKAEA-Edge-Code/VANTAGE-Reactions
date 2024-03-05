@@ -40,16 +40,20 @@ public:
    * @tparam ReactionType The derived type of the reaction object to be added.
    * @param reaction The reaction to be added
    */
-  template<typename ReactionType>
-  void add_reaction(ReactionType& reaction) {
-    static_assert(std::is_base_of<AbstractReaction, ReactionType>()); //!< This is necessary due to the inherent flexibility of templating
+  template <typename ReactionType> void add_reaction(ReactionType &reaction) {
+    static_assert(
+        std::is_base_of<AbstractReaction,
+                        ReactionType>()); //!< This is necessary due to the
+                                          //!< inherent flexibility of
+                                          //!< templating
     reactions.push_back(&reaction);
   }
-  
+
   /**
-   * @brief Applies all reactions that have been added prior to calling this function.
-   * Internally, run_rate_loop and descendant_product_loop are called for each particle
-   * and any relevant descendants are handled and added back to the given ParticleGroup
+   * @brief Applies all reactions that have been added prior to calling this
+   * function. Internally, run_rate_loop and descendant_product_loop are called
+   * for each particle and any relevant descendants are handled and added back
+   * to the given ParticleGroup
    *
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
@@ -93,7 +97,7 @@ public:
         int in_state = reactions[r]->get_in_states()[0];
 
         reactions[r]->descendant_product_loop(species_groups[in_state], i, dt,
-                                   child_group);
+                                              child_group);
       }
 
       for (auto select_it = sub_group_selectors.begin();
@@ -107,7 +111,7 @@ public:
   }
 
 private:
-  std::vector<AbstractReaction*> reactions;
+  std::vector<AbstractReaction *> reactions;
   TransformationStrategy child_transform;
   Sym<INT> id_sym;
 };

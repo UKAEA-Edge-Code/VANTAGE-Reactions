@@ -355,8 +355,7 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto initial_particle_num = particle_group->get_npart_local();
 
-  auto reaction_controller =
-      ReactionController(Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
 
   auto ionise_reaction =
       IoniseReaction(particle_group->sycl_target,
