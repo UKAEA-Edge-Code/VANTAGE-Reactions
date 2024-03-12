@@ -70,6 +70,8 @@ public:
                           ParticleGroupSharedPtr child_group) {}
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
+  
+  virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
 
   virtual void flush_buffer() {}
 
@@ -163,7 +165,8 @@ private:
  */
 template <typename LinearReactionDerived, INT num_products_per_parent>
 
-struct LinearReactionBase : public AbstractReaction {
+struct LinearReactionBase
+    : public AbstractReaction {
 
   LinearReactionBase() = default;
 
@@ -173,11 +176,16 @@ struct LinearReactionBase : public AbstractReaction {
                      std::vector<Sym<REAL>> required_dats_real_write,
                      const std::vector<Sym<INT>> required_dats_int_read,
                      std::vector<Sym<INT>> required_dats_int_write,
-                     std::vector<int> in_states)
-      : AbstractReaction(sycl_target, total_rate_dat, required_dats_real_read,
-                         required_dats_real_write, required_dats_int_read,
-                         required_dats_int_write),
-        in_states(in_states) {}
+                     std::vector<int> in_states,
+                     std::vector<int> out_states)
+      : AbstractReaction(
+            sycl_target, total_rate_dat, required_dats_real_read,
+            required_dats_real_write, required_dats_int_read,
+            required_dats_int_write),
+        in_states(in_states), out_states(out_states) {
+          NESOASSERT(out_states.size() == (num_products_per_parent * in_states.size()),
+            "The number of output states don't match the number of products expected");
+        }
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -191,7 +199,7 @@ struct LinearReactionBase : public AbstractReaction {
    * ParticleLoop to calculate reaction rates.
    */
   void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
-                     INT cell_idx) override {
+                     INT cell_idx) {
     const auto &underlying = static_cast<LinearReactionDerived &>(*this);
     auto reaction_data_buffer = underlying.get_reaction_data();
 
@@ -253,9 +261,10 @@ struct LinearReactionBase : public AbstractReaction {
    */
   void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
                                INT cell_idx, double dt,
-                               ParticleGroupSharedPtr child_group) override {
+                               ParticleGroupSharedPtr child_group) {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
+    auto out_states_stored = this->get_out_states();
 
     try {
       // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
@@ -290,9 +299,9 @@ struct LinearReactionBase : public AbstractReaction {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = rate_buffer.at(current_count);
 
-          REAL deltaweight = -dt * rate * weight.at(0);
+          REAL deltaweight = dt * rate * weight.at(0);
           REAL total_deltaweight =
-              -dt * total_reaction_rate.at(0) * weight.at(0);
+              dt * total_reaction_rate.at(0) * weight.at(0);
           REAL modified_weight = std::min(
               deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
 
@@ -303,17 +312,15 @@ struct LinearReactionBase : public AbstractReaction {
             // move into scattering kernel
             for (int dimx = 0; dimx < 2; dimx++) {
               descendant_particle.at_real(particle_index, childx, 0, dimx) =
-                  -1 * read_req_reals.at(0, particle_index, dimx);
+                  read_req_reals.at(0, particle_index, dimx);
             }
 
             //
             descendant_particle.at_real(particle_index, childx, 1, 0) =
-                read_req_reals.at(1, particle_index, 0);
+                read_req_reals.at(1, particle_index, 0) * (1 + (modified_weight / num_products_per_parent));
 
-            descendant_particle.at_int(particle_index, childx, 0, 0) =
-                read_req_ints.at(0, particle_index, 0) +
-                1; //!< Provisionally increment the species ID by 1 relative to
-                   //!< the parent.
+            descendant_particle.at_int(particle_index, childx, 0,
+                                       0) = out_states_stored[childx];
           }
           feedback_kernel(modified_weight, particle_index, write_req_ints,
                           write_req_reals, pre_req_data, dt);
@@ -334,7 +341,7 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(this->get_weight_sym()),
         Access::read(this->get_total_reaction_rate()));
 
-    descendant_particles->reset(particle_sub_group->get_npart_local());
+    descendant_particles->reset(particle_sub_group->get_npart_cell(cell_idx));
 
     loop->execute(cell_idx);
 
@@ -442,11 +449,19 @@ struct LinearReactionBase : public AbstractReaction {
   /**
    * @brief Getter for in_states that define which species the reaction is to
    * be applied to.
-   * @return std::vector<int> Integer vectore of species IDs.
+   * @return std::vector<int> Integer vector of species IDs.
    */
-  std::vector<int> get_in_states() override { return in_states; }
+  std::vector<int> get_in_states() { return in_states; }
+
+  /**
+   * @brief Getter for out_states that define which species the reaction is to
+   * produce.
+   * @return std::vector<int> Integer vector of species IDs.
+   */
+  std::vector<int> get_out_states() { return out_states; }
 
 private:
   std::vector<int> in_states;
+  std::vector<int> out_states;
 };
 } // namespace Reactions

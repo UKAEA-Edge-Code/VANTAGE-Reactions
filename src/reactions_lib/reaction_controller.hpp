@@ -1,10 +1,12 @@
 #pragma once
 #include "common_markers.hpp"
+#include "loop/particle_loop.hpp"
 #include "particle_group.hpp"
 #include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
 #include "reaction_data.hpp"
 #include "transformation_wrapper.hpp"
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <type_traits>
@@ -29,7 +31,7 @@ struct ReactionController {
 
   ReactionController(Sym<INT> id_sym) : id_sym(id_sym) {}
 
-  ReactionController(TransformationStrategy child_transform, Sym<INT> id_sym)
+  ReactionController(std::shared_ptr<TransformationStrategy> child_transform, Sym<INT> id_sym)
       : child_transform(child_transform), id_sym(id_sym) {}
 
 public:
@@ -40,13 +42,9 @@ public:
    * @tparam ReactionType The derived type of the reaction object to be added.
    * @param reaction The reaction to be added
    */
-  template <typename ReactionType> void add_reaction(ReactionType &reaction) {
-    static_assert(
-        std::is_base_of<AbstractReaction,
-                        ReactionType>()); //!< This is necessary due to the
-                                          //!< inherent flexibility of
-                                          //!< templating
-    reactions.push_back(&reaction);
+   // TODO: Revert back to std::shared_ptr<AbstractReaction>
+  void add_reaction(std::shared_ptr<AbstractReaction> reaction) {
+    reactions.push_back(reaction);
   }
 
   /**
@@ -64,12 +62,14 @@ public:
 
     std::map<int, ParticleSubGroupSharedPtr> species_groups;
 
+    std::map<int, ParticleGroupSharedPtr> child_groups;
+
     for (int r = 0; r < reactions.size(); r++) {
       INT in_state = reactions[r]->get_in_states()[0];
 
-      auto it = species_groups.find(in_state);
+      auto in_it = species_groups.find(in_state);
 
-      if (it == species_groups.end()) {
+      if (in_it == species_groups.end()) {
 
         sub_group_selectors.emplace(std::make_pair(
             in_state,
@@ -80,39 +80,65 @@ public:
             in_state, sub_group_selectors[in_state]->make_marker_subgroup(
                           std::make_shared<ParticleSubGroup>(particle_group))));
       }
+
+      if (!reactions[r]->get_out_states().empty()) {
+        INT out_state = reactions[r]->get_out_states()[0];
+
+        auto out_it = child_groups.find(out_state);
+
+        if (out_it == child_groups.end()) {
+          child_groups.emplace(std::make_pair(
+            out_state, std::make_shared<ParticleGroup>(
+              particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+            )
+          ));
+        }
+      }
+      else {
+        child_groups.emplace(std::make_pair(
+          -1, std::make_shared<ParticleGroup>(
+            particle_group->domain, particle_group->get_particle_spec(), particle_group->sycl_target
+          )
+        ));
+      }
     }
 
     for (int i = 0; i < cell_count; i++) {
-      auto child_group = std::make_shared<ParticleGroup>(
-          particle_group->domain, particle_group->get_particle_spec(),
-          particle_group->sycl_target);
 
       for (int r = 0; r < reactions.size(); r++) {
-        int in_state = reactions[r]->get_in_states()[0];
+        
+        INT in_state = reactions[r]->get_in_states()[0];
 
         reactions[r]->run_rate_loop(species_groups[in_state], i);
       }
 
       for (int r = 0; r < reactions.size(); r++) {
-        int in_state = reactions[r]->get_in_states()[0];
+        INT in_state = reactions[r]->get_in_states()[0];
 
-        reactions[r]->descendant_product_loop(species_groups[in_state], i, dt,
-                                              child_group);
+        if (!reactions[r]->get_out_states().empty()) {
+          INT out_state = reactions[r]->get_out_states()[0];
+
+          reactions[r]->descendant_product_loop(species_groups[in_state], i, dt,
+                                              child_groups[out_state]);
+
+        }
+        else {
+          reactions[r]->descendant_product_loop(species_groups[in_state], i, dt,
+                                              child_groups[-1]);
+        }
       }
+    }
 
-      for (auto select_it = sub_group_selectors.begin();
-           select_it != sub_group_selectors.end(); ++select_it) {
-        child_transform.transform(select_it->second->make_marker_subgroup(
-            make_shared<ParticleSubGroup>(child_group)));
-      }
+    for (auto it = child_groups.begin(); it != child_groups.end(); it++) {
+      child_transform->transform(std::make_shared<ParticleSubGroup>(it->second));
 
-      particle_group->add_particles_local(child_group);
+      particle_group->add_particles_local(it->second);
     }
   }
 
 private:
-  std::vector<AbstractReaction *> reactions;
-  TransformationStrategy child_transform;
+  std::vector<std::shared_ptr<AbstractReaction>> reactions;
+  std::shared_ptr<TransformationStrategy> child_transform;
   Sym<INT> id_sym;
 };
 } // namespace Reactions
