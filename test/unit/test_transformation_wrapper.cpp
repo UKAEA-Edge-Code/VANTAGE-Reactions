@@ -149,12 +149,11 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
   auto test_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
           make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
-              Sym<INT>("ID"), 1),
-          make_marking_strategy<
-              ComparisonMarkerSingle<LessThanComp<REAL>, REAL>>(
-              Sym<REAL>("WEIGHT"), 0.5)},
+              Sym<INT>("ID"), 1)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
-
+  test_wrapper.add_marking_strategy(
+      make_marking_strategy<ComparisonMarkerSingle<LessThanComp<REAL>, REAL>>(
+          Sym<REAL>("WEIGHT"), 0.5));
   test_wrapper.transform(particle_group);
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();

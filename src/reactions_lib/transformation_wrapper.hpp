@@ -79,6 +79,10 @@ struct TransformationWrapper {
   TransformationWrapper() = delete;
 
   TransformationWrapper(
+      std::shared_ptr<TransformationStrategy> transformation_strategy)
+      : transformation_strat(transformation_strategy) {}
+
+  TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>> marking_strategy,
       std::shared_ptr<TransformationStrategy> transformation_strategy)
       : marking_strat(marking_strategy),
@@ -99,6 +103,15 @@ struct TransformationWrapper {
     }
 
     this->transformation_strat->transform(marker_subgroup);
+  }
+  /**
+   * @brief Add marking strategy to transfomation wrapper, adding its condition
+   * to the wrapper.
+   *
+   * @param marking_strategy Strategy to be added
+   */
+  void add_marking_strategy(std::shared_ptr<MarkingStrategy> marking_strategy) {
+    this->marking_strat.push_back(marking_strategy);
   }
 
 private:
