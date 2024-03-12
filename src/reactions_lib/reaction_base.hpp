@@ -7,6 +7,7 @@
 #include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
 #include "typedefs.hpp"
+#include <array>
 #include <exception>
 #include <memory>
 #include <neso_particles.hpp>
@@ -70,7 +71,7 @@ public:
                           ParticleGroupSharedPtr child_group) {}
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
-  
+
   virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
 
   virtual void flush_buffer() {}
@@ -165,8 +166,7 @@ private:
  */
 template <typename LinearReactionDerived, INT num_products_per_parent>
 
-struct LinearReactionBase
-    : public AbstractReaction {
+struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = default;
 
@@ -176,16 +176,12 @@ struct LinearReactionBase
                      std::vector<Sym<REAL>> required_dats_real_write,
                      const std::vector<Sym<INT>> required_dats_int_read,
                      std::vector<Sym<INT>> required_dats_int_write,
-                     std::vector<int> in_states,
-                     std::vector<int> out_states)
-      : AbstractReaction(
-            sycl_target, total_rate_dat, required_dats_real_read,
-            required_dats_real_write, required_dats_int_read,
-            required_dats_int_write),
-        in_states(in_states), out_states(out_states) {
-          NESOASSERT(out_states.size() == (num_products_per_parent * in_states.size()),
-            "The number of output states don't match the number of products expected");
-        }
+                     int in_state,
+                     std::array<int, num_products_per_parent> out_states)
+      : AbstractReaction(sycl_target, total_rate_dat, required_dats_real_read,
+                         required_dats_real_write, required_dats_int_read,
+                         required_dats_int_write),
+        in_state(in_state), out_states(out_states) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -264,8 +260,7 @@ struct LinearReactionBase
                                ParticleGroupSharedPtr child_group) {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
-    auto out_states_stored = this->get_out_states();
-
+    std::array<int, num_products_per_parent> out_states_arr = this->out_states;
     try {
       // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
       // have a sycl_target member
@@ -308,22 +303,39 @@ struct LinearReactionBase
           for (int childx = 0; childx < num_products_per_parent; childx++) {
 
             descendant_particle.set_parent(particle_index, childx);
-
-            // move into scattering kernel
-            for (int dimx = 0; dimx < 2; dimx++) {
-              descendant_particle.at_real(particle_index, childx, 0, dimx) =
-                  read_req_reals.at(0, particle_index, dimx);
-            }
-
-            //
-            descendant_particle.at_real(particle_index, childx, 1, 0) =
-                read_req_reals.at(1, particle_index, 0) * (1 + (modified_weight / num_products_per_parent));
-
-            descendant_particle.at_int(particle_index, childx, 0,
-                                       0) = out_states_stored[childx];
           }
-          feedback_kernel(modified_weight, particle_index, write_req_ints,
-                          write_req_reals, pre_req_data, dt);
+
+          scattering_kernel(modified_weight, particle_index,
+                            descendant_particle, read_req_ints, read_req_reals,
+                            write_req_ints, write_req_reals, out_states_arr,
+                            pre_req_data, dt);
+
+          weight_kernel(modified_weight, particle_index, descendant_particle,
+                        read_req_ints, read_req_reals, write_req_ints,
+                        write_req_reals, out_states_arr, pre_req_data, dt);
+
+          transformation_kernel(modified_weight, particle_index,
+                                descendant_particle, read_req_ints,
+                                read_req_reals, write_req_ints, write_req_reals,
+                                out_states_arr, pre_req_data, dt);
+
+          // // move into scattering kernel
+          // for (int dimx = 0; dimx < 2; dimx++) {
+          //   descendant_particle.at_real(particle_index, childx, 0, dimx) =
+          //       read_req_reals.at(0, particle_index, dimx);
+          // }
+
+          // //
+          // descendant_particle.at_real(particle_index, childx, 1, 0) =
+          //     read_req_reals.at(1, particle_index, 0) * (1 + (modified_weight
+          //     / num_products_per_parent));
+
+          // descendant_particle.at_int(particle_index, childx, 0,
+          //                            0) = out_states_arr[childx];
+
+          feedback_kernel(modified_weight, particle_index, descendant_particle,
+                          read_req_ints, read_req_reals, write_req_ints,
+                          write_req_reals, out_states_arr, pre_req_data, dt);
         },
         Access::write(descendant_particles), Access::read(ParticleLoopIndex{}),
         // The ->get_particle_group() is temporary until sym_vector accepts
@@ -356,10 +368,22 @@ struct LinearReactionBase
    * reaction-derived velocity modifications of the particles.
    * @return std::vector<REAL>
    */
-  std::vector<REAL> scattering_kernel() const {
+  void
+  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                    Access::DescendantProducts::Write &descendant_products,
+                    Access::SymVector::Read<INT> &read_req_ints,
+                    Access::SymVector::Read<REAL> &read_req_reals,
+                    Access::SymVector::Write<INT> &write_req_ints,
+                    Access::SymVector::Write<REAL> &write_req_reals,
+                    const std::array<int, num_products_per_parent> &out_states,
+                    Access::LocalArray::Read<REAL> &pre_req_data,
+                    double dt) const {
     const auto &underlying = static_cast<const LinearReactionDerived &>(*this);
 
-    return underlying.template scattering_kernel();
+    return underlying.template scattering_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
   }
 
   /**
@@ -380,47 +404,76 @@ struct LinearReactionBase
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                       Access::SymVector::Write<INT> &write_req_ints,
-                       Access::SymVector::Write<REAL> &write_req_reals,
-                       Access::LocalArray::Read<REAL> &pre_req_data,
-                       double dt) const {
+  void
+  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                  Access::DescendantProducts::Write &descendant_products,
+                  Access::SymVector::Read<INT> &read_req_ints,
+                  Access::SymVector::Read<REAL> &read_req_reals,
+                  Access::SymVector::Write<INT> &write_req_ints,
+                  Access::SymVector::Write<REAL> &write_req_reals,
+                  const std::array<int, num_products_per_parent> &out_states,
+                  Access::LocalArray::Read<REAL> &pre_req_data,
+                  double dt) const {
     const auto &underlying = static_cast<const LinearReactionDerived &>(*this);
 
-    return underlying.template feedback_kernel(modified_weight, index,
-                                               write_req_ints, write_req_reals,
-                                               pre_req_data, dt);
+    return underlying.template feedback_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
   }
 
   /**
    * @brief SYCL CRTP base transformation kernel for calculating and applying
    * reaction-derived ID modifications of the particles.
    */
-  void transformation_kernel() {
+  void transformation_kernel(
+      REAL &modified_weight, Access::LoopIndex::Read &index,
+      Access::DescendantProducts::Write &descendant_products,
+      Access::SymVector::Read<INT> &read_req_ints,
+      Access::SymVector::Read<REAL> &read_req_reals,
+      Access::SymVector::Write<INT> &write_req_ints,
+      Access::SymVector::Write<REAL> &write_req_reals,
+      const std::array<int, num_products_per_parent> &out_states,
+      Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     const auto &underlying = static_cast<const LinearReactionDerived &>(*this);
 
-    return underlying.template transformation_kernel();
+    return underlying.template transformation_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
   }
 
   /**
    * @brief SYCL CRTP base weight kernel for calculating and applying
    * reaction-derived weight modifications of the particles.
    */
-  void weight_kernel() {
+  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                     Access::DescendantProducts::Write &descendant_products,
+                     Access::SymVector::Read<INT> &read_req_ints,
+                     Access::SymVector::Read<REAL> &read_req_reals,
+                     Access::SymVector::Write<INT> &write_req_ints,
+                     Access::SymVector::Write<REAL> &write_req_reals,
+                     const std::array<int, num_products_per_parent> &out_states,
+                     Access::LocalArray::Read<REAL> &pre_req_data,
+                     double dt) const {
     const auto &underlying = static_cast<const LinearReactionDerived &>(*this);
 
-    return underlying.template weight_kernel();
+    return underlying.template weight_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
   }
 
   /**
    * @brief SYCL CRTP base apply kernel which combines the calls to
    * scattering_kernel, transformation_kernel and weight_kernel
    */
-  void apply_kernel() const {
-    const auto &underlying = static_cast<const LinearReactionDerived &>(*this);
+  // void apply_kernel() const {
+  //   const auto &underlying = static_cast<const LinearReactionDerived
+  //   &>(*this);
 
-    return underlying.template apply_kernel();
-  }
+  //   return underlying.template apply_kernel();
+  // }
 
   /**
    * @brief Flushes the stored rate_buffer and by setting all values to 0.0.
@@ -451,17 +504,19 @@ struct LinearReactionBase
    * be applied to.
    * @return std::vector<int> Integer vector of species IDs.
    */
-  std::vector<int> get_in_states() { return in_states; }
+  std::vector<int> get_in_states() { return std::vector<int>{in_state}; }
 
   /**
    * @brief Getter for out_states that define which species the reaction is to
    * produce.
    * @return std::vector<int> Integer vector of species IDs.
    */
-  std::vector<int> get_out_states() { return out_states; }
+  std::vector<int> get_out_states() {
+    return std::vector<int>(out_states.begin(), out_states.end());
+  }
 
 private:
-  std::vector<int> in_states;
-  std::vector<int> out_states;
+  int in_state;
+  std::array<int, num_products_per_parent> out_states;
 };
 } // namespace Reactions
