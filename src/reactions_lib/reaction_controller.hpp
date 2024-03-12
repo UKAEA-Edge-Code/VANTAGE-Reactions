@@ -129,10 +129,12 @@ public:
       }
     }
 
-    for (auto it = child_groups.begin(); it != child_groups.end(); it++) {
-      child_transform->transform(std::make_shared<ParticleSubGroup>(it->second));
+    if (child_groups.find(-1) == child_groups.end()) {
+      for (auto it = child_groups.begin(); it != child_groups.end(); it++) {
+        child_transform->transform(std::make_shared<ParticleSubGroup>(it->second));
 
-      particle_group->add_particles_local(it->second);
+        particle_group->add_particles_local(it->second);
+      }
     }
   }
 

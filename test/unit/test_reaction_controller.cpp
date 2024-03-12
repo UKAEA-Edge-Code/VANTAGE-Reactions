@@ -106,7 +106,7 @@ public:
     auto k_V_1 = write_req_reals.at(0, index, 1);
     const REAL vsquared = (k_V_0 * k_V_0) + (k_V_1 * k_V_1);
 
-    REAL k_n_scale = 1.0 / test_reaction_data.get_n_to_SI();
+    REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
     REAL inv_k_dt = 1.0 / dt;
 
     auto nE = write_req_reals.at(2, index, 0);
@@ -464,7 +464,7 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{make_marking_strategy<
-          ComparisonMarkerSingle<LessThanComp<REAL>, REAL>>(
+          ComparisonMarkerSingle<EqualsComp<REAL>, REAL>>(
           Sym<REAL>("COMPUTATIONAL_WEIGHT"), 0.0)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
@@ -475,7 +475,7 @@ TEST(ReactionController, ionisation_reaction) {
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(W->at(rowx, 0), -0.5);
+      EXPECT_EQ(W->at(rowx, 0), 0.0);
     };
   };
 

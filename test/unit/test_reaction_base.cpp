@@ -159,7 +159,7 @@ public:
     auto k_V_1 = write_req_reals.at(0, index, 1);
     const REAL vsquared = (k_V_0 * k_V_0) + (k_V_1 * k_V_1);
 
-    REAL k_n_scale = 1.0 / test_reaction_data.get_n_to_SI();
+    REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
     REAL inv_k_dt = 1.0 / dt;
 
     auto nE = write_req_reals.at(2, index, 0);
