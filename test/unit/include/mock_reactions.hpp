@@ -212,8 +212,6 @@ private:
   struct IoniseReactionData : public ReactionDataBase<IoniseReactionData> {
     IoniseReactionData() = default;
 
-    IoniseReactionData(REAL &dt_) : ReactionDataBase<IoniseReactionData>(dt_) {}
-
     const REAL &get_n_to_SI() const { return n_to_SI; }
 
     REAL calc_rate(Access::LoopIndex::Read &index,
