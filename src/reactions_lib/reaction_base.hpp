@@ -24,7 +24,7 @@ namespace Reactions {
  *
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
- * the cumulative weigthed reaction rate modification imposed on all of the
+ * the cumulative weighted reaction rate modification imposed on all of the
  * particles in the ParticleSubGroup passed to run_rate_loop(...).
  * @param required_dats_real_read Symbol indices for real-valued ParticleDats
  * that are required to be read by either run_rate_loop(...) or
