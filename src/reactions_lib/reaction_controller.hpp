@@ -46,9 +46,11 @@ public:
 
   /**
    * @brief Applies all reactions that have been added prior to calling this
-   * function. Internally, run_rate_loop and descendant_product_loop are called
-   * for each particle and any relevant descendants are handled and added back
-   * to the given ParticleGroup
+   * function. The reactions are effectively applied at the same time and the
+   * result should not depend on the ordering of the reactions. Any reaction
+   * products are added and they are transformed according to the transformation
+   * wrapper. The parent particles are not transformed. TODO: add a hook for
+   * parent transformation
    *
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
@@ -116,15 +118,15 @@ public:
                                               child_group);
       }
 
+      // TODO: add parent transform hook here (e.g. projection should be a transform)
       for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
         auto transform_buffer =
             std::make_shared<TransformationWrapper>(*child_transform);
         transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
         transform_buffer->transform(child_group);
-        
       }
       if (child_ids.size() > 0) {
-          particle_group->add_particles_local(child_group);
+        particle_group->add_particles_local(child_group);
       }
     }
   }
@@ -136,21 +138,3 @@ private:
   Sym<INT> id_sym;
 };
 } // namespace Reactions
-
-/*
-ReactionController :
-loop over cells {
-    loop over Reactions {
-        generate reaction_sub_groups
-    }
-    loop over Reactions {
-        run_rate_loop(...)
-    }
-    loop over Reactions {
-        apply_kernel (currently descendant_products)
-    }
-    handle cell-wise products (need add_particles_local(DescendantProducts,
-ParentGroup))
-}
-
-*/

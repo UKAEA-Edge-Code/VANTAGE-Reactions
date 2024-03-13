@@ -1,9 +1,4 @@
-#include "common_markers.hpp"
-#include "common_transformations.hpp"
-#include "containers/cell_dat_const.hpp"
-#include "merge_transformation.hpp"
 #include "particle_sub_group.hpp"
-#include "transformation_wrapper.hpp"
 #include "typedefs.hpp"
 #include <gtest/gtest.h>
 #include <memory>
