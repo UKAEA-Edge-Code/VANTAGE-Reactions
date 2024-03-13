@@ -218,11 +218,11 @@ struct LinearReactionBase : public AbstractReaction {
     auto loop = particle_loop(
         "calc_rate_loop", particle_sub_group,
         [=](auto particle_index, auto req_reals, auto req_ints, auto tot_rate,
-            auto buffer) {
+            auto buffer, auto weight) {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = reaction_data_buffer.calc_rate(particle_index, req_reals);
-          buffer[current_count] = rate;
-          tot_rate[0] += rate;
+          buffer[current_count] = rate*weight.at(0);
+          tot_rate[0] += rate*weight.at(0);
         },
         Access::read(ParticleLoopIndex{}),
         // The ->get_particle_group() is temporary until sym_vector accepts
@@ -232,7 +232,8 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
                                      this->get_read_req_dats_int())),
         Access::write(this->get_total_reaction_rate()),
-        Access::write(device_rate_buffer));
+        Access::write(device_rate_buffer),
+        Access::read(this->get_weight_sym()));
 
     loop->execute(cell_idx);
 
@@ -289,14 +290,14 @@ struct LinearReactionBase : public AbstractReaction {
         "descendant_products_loop", particle_sub_group,
         [=](auto descendant_particle, auto particle_index, auto read_req_reals,
             auto read_req_ints, auto write_req_reals, auto write_req_ints,
-            auto rate_buffer, auto pre_req_data, auto weight,
+            auto rate_buffer, auto pre_req_data,auto weight,
             auto total_reaction_rate) {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = rate_buffer.at(current_count);
 
-          REAL deltaweight = dt * rate * weight.at(0);
+          REAL deltaweight = dt * rate;
           REAL total_deltaweight =
-              dt * total_reaction_rate.at(0) * weight.at(0);
+              dt * total_reaction_rate.at(0);
           REAL modified_weight = std::min(
               deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
 
@@ -319,19 +320,6 @@ struct LinearReactionBase : public AbstractReaction {
                                 read_req_reals, write_req_ints, write_req_reals,
                                 out_states_arr, pre_req_data, dt);
 
-          // // move into scattering kernel
-          // for (int dimx = 0; dimx < 2; dimx++) {
-          //   descendant_particle.at_real(particle_index, childx, 0, dimx) =
-          //       read_req_reals.at(0, particle_index, dimx);
-          // }
-
-          // //
-          // descendant_particle.at_real(particle_index, childx, 1, 0) =
-          //     read_req_reals.at(1, particle_index, 0) * (1 + (modified_weight
-          //     / num_products_per_parent));
-
-          // descendant_particle.at_int(particle_index, childx, 0,
-          //                            0) = out_states_arr[childx];
 
           feedback_kernel(modified_weight, particle_index, descendant_particle,
                           read_req_ints, read_req_reals, write_req_ints,

@@ -26,10 +26,10 @@ TEST(ReactionController, single_reaction_multi_apply) {
       make_transformation_strategy<MergeTransformationStrategy<2>>(
           Sym<REAL>("P"), Sym<REAL>("COMPUTATIONAL_WEIGHT"), Sym<REAL>("V"));
 
+  auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller =
-      ReactionController(child_transform, Sym<INT>("INTERNAL_STATE"));
-
-  REAL test_rate = 5.0; // example rate
+      ReactionController(test_wrapper, Sym<INT>("INTERNAL_STATE"));
+  REAL test_rate = 5.0;
 
   const INT num_products_per_parent = 1;
 
@@ -43,40 +43,54 @@ TEST(ReactionController, single_reaction_multi_apply) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 0.01);
-
-  auto initial_weight_per_cell =
-      reaction_controller.get_tot_weight_per_cell(1)->get_cell(0)->at(0, 0);
-
   auto merged_group_marking =
       make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
           Sym<INT>("INTERNAL_STATE"), 1);
   auto merged_group = merged_group_marking->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
 
+  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+                                                   cell_count, 1, 1);
+
+  particle_loop(
+      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
+      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")), Access::add(reduction))
+      ->execute();
+
+  reaction_controller.apply_reactions(particle_group, 0.01);
+
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 2);
 
-    std::vector<INT> cells = {icell, icell};
-    std::vector<INT> layers = {0, 1};
+    auto reduction_after = make_shared<CellDatConst<REAL>>(
+        particle_group->sycl_target, cell_count, 1, 1);
 
-    auto merged_particles = merged_group->get_particles(cells, layers);
-    for (int i = 0; i < 2; i++) {
-      EXPECT_NEAR(merged_particles->at(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i, 0),
-                  initial_weight_per_cell / 2, 1e-12);
-    }
+    particle_loop(
+        particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
+        Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+        Access::add(reduction_after))
+        ->execute();
+
+    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
+                reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
   reaction_controller.apply_reactions(particle_group, 0.01);
 
-  merged_group = merged_group_marking->make_marker_subgroup(
-      std::make_shared<ParticleSubGroup>(particle_group));
-
-  // TODO: Find a way to check the weights of the descendant
-  // particles against the weight of the parent group after
-  // one time-step and after two time-steps.
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
+
+    auto reduction_after = make_shared<CellDatConst<REAL>>(
+        particle_group->sycl_target, cell_count, 1, 1);
+
+    particle_loop(
+        particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
+        Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+        Access::add(reduction_after))
+        ->execute();
+
+    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
+                reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
   particle_group->domain->mesh->free(); // Explicit free? Yuck
@@ -103,8 +117,9 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       make_transformation_strategy<MergeTransformationStrategy<2>>(
           Sym<REAL>("P"), Sym<REAL>("COMPUTATIONAL_WEIGHT"), Sym<REAL>("V"));
 
+  auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller =
-      ReactionController(child_transform, Sym<INT>("INTERNAL_STATE"));
+      ReactionController(test_wrapper, Sym<INT>("INTERNAL_STATE"));
 
   REAL test_rate = 5.0; // example rate
 
@@ -132,12 +147,23 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction2));
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+                                                   cell_count, 1, 1);
 
-  auto initial_weight_per_cell =
-      reaction_controller.get_tot_weight_per_cell(1)->get_cell(0)->at(0, 0);
-  auto initial_weight_per_cell2 =
-      reaction_controller.get_tot_weight_per_cell(3)->get_cell(0)->at(0, 0);
+  particle_loop(
+      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
+      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")), Access::add(reduction))
+      ->execute();
+
+  reaction_controller.apply_reactions(particle_group, 0.1);
+  auto reduction_after = make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 1, 1);
+
+  particle_loop(
+      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
+      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+      Access::add(reduction_after))
+      ->execute();
 
   auto merged_group_marking =
       make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
@@ -154,23 +180,11 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 2);
     EXPECT_EQ(merged_group2->get_npart_cell(icell), 2);
-
-    std::vector<INT> cells = {icell, icell};
-    std::vector<INT> layers = {0, 1};
-
-    auto merged_particles = merged_group->get_particles(cells, layers);
-    auto merged_particles2 = merged_group2->get_particles(cells, layers);
-    for (int i = 0; i < 2; i++) {
-      EXPECT_NEAR(merged_particles->at(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i, 0),
-                  initial_weight_per_cell / 2, 1e-12);
-      EXPECT_NEAR(
-          merged_particles2->at(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i, 0),
-          initial_weight_per_cell2 / 2, 1e-12);
-    }
+    
+    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0,0),reduction->get_cell(icell)->at(0,0),1e-12);
   }
 
   particle_group->domain->mesh->free();
-  particle_group_2->domain->mesh->free();
 }
 
 TEST(ReactionController, ionisation_reaction) {

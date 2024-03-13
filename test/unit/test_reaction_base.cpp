@@ -1,23 +1,16 @@
 #include "common_markers.hpp"
 #include "compute_target.hpp"
-#include "containers/local_array.hpp"
-#include "containers/sym_vector.hpp"
-#include "loop/particle_loop_index.hpp"
 #include "mock_reactions.hpp"
-#include "packing_unpacking.hpp"
 #include "particle_group.hpp"
 #include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
-#include "reaction_data.hpp"
 #include "transformation_wrapper.hpp"
 #include "typedefs.hpp"
 #include <CL/sycl.hpp>
 #include <cstddef>
 #include <gtest/gtest.h>
-#include <iostream>
 #include <memory>
-#include <variant>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -174,9 +167,9 @@ TEST(LinearReactionBase, split_group_single_reaction) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 2) {
-        EXPECT_EQ(weight->at(rowx, 0), 1.1);
+        EXPECT_EQ(weight->at(rowx, 0), 0.9);
       } else if (internal_state->at(rowx, 0) == 3) {
-        EXPECT_EQ(weight->at(rowx, 0), 1.2);
+        EXPECT_EQ(weight->at(rowx, 0), 0.8);
       }
     }
   }
@@ -220,8 +213,6 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
   test_reaction3.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
 
-  // std::vector<std::shared_ptr<BaseReaction>> reactions = {&test_reaction1,
-  // &test_reaction2, &test_reaction3};
   std::vector<std::shared_ptr<AbstractReaction>> reactions{};
   reactions.push_back(std::make_shared<TestReaction<0>>(test_reaction1));
   reactions.push_back(std::make_shared<TestReaction<0>>(test_reaction2));
@@ -229,8 +220,6 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   int num_reactions = static_cast<int>(reactions.size());
-
-  std::vector<shared_ptr<ParticleSubGroup>> subgroups;
 
   auto parent_particles = std::make_shared<ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
@@ -244,18 +233,15 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     auto position = particle_group->get_cell(Sym<REAL>("P"), i);
     const int nrow = position->nrow;
 
-    for (int reaction = 0; reaction < num_reactions; reaction++) {
       auto particle_sub_group =
           std::make_shared<ParticleSubGroup>(particle_group);
-      subgroups.push_back(particle_sub_group);
+
+    for (int reaction = 0; reaction < num_reactions; reaction++) {
+      reactions[reaction]->run_rate_loop(particle_sub_group, i);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(subgroups[reaction], i);
-    }
-
-    for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->descendant_product_loop(subgroups[reaction], i, 0.1,
+      reactions[reaction]->descendant_product_loop(particle_sub_group, i, 0.1,
                                                    descendant_particles);
     }
 
@@ -266,7 +252,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {
-        EXPECT_NEAR(weight->at(rowx, 0), 1.5191682, 1e-12);
+        EXPECT_NEAR(weight->at(rowx, 0),0.6 , 1e-12);
       }
     }
   }
