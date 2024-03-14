@@ -56,7 +56,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
   void transform(ParticleSubGroupSharedPtr target_subgroup) {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
-    auto new_particle_group = make_shared<ParticleGroup>(part_group->domain,part_group->particle_spec,part_group->sycl_target);
+    auto new_particle_group = make_shared<ParticleGroup>(
+        part_group->domain, part_group->particle_spec, part_group->sycl_target);
     // TODO: better asserts (maybe use NESOASSERT?)
     assert(part_group->domain->mesh->get_ndim() == ndim);
 
@@ -128,107 +129,116 @@ struct MergeTransformationStrategy : TransformationStrategy {
     std::vector<INT> layers = {0, 1};
 
     for (int cx = 0; cx < cell_count; cx++) {
-      auto cell_data_scalars = cell_dat_reduction_scalars->get_cell(cx);
-      auto cell_data_pos = cell_dat_reduction_pos->get_cell(cx);
-      auto cell_data_mom = cell_dat_reduction_mom->get_cell(cx);
 
-      auto merge_pos = std::vector<REAL>();
-      auto mom_tot = std::vector<REAL>();
-      auto mom_a = std::vector<REAL>();
-      auto mom_b = std::vector<REAL>();
+      // Only perform merging for those cells where there are more than 2
+      // particles in the subgroup
 
-      REAL wt = cell_data_scalars->at(0, 0);
-      REAL et = cell_data_scalars->at(1, 0);
-      for (int dimx = 0; dimx < ndim; dimx++) {
-        merge_pos.push_back(cell_data_pos->at(dimx, 0) / wt);
-        mom_tot.push_back(cell_data_mom->at(dimx, 0));
-        mom_a.push_back(mom_tot[dimx] / wt);
-        mom_b.push_back(mom_tot[dimx] / wt);
-      }
+      if (target_subgroup->get_npart_cell(cx) > 2) {
+        auto cell_data_scalars = cell_dat_reduction_scalars->get_cell(cx);
+        auto cell_data_pos = cell_dat_reduction_pos->get_cell(cx);
+        auto cell_data_mom = cell_dat_reduction_mom->get_cell(cx);
 
-      REAL pt = utils::norm2(mom_tot);
+        auto merge_pos = std::vector<REAL>();
+        auto mom_tot = std::vector<REAL>();
+        auto mom_a = std::vector<REAL>();
+        auto mom_b = std::vector<REAL>();
 
-      // et/wt is the momentum**2 for either of the result particles, and pt/wt
-      // is the momentum in the direction of the total momentum vector so the
-      // below is the perpendicular momentum of the resulting particles
-      REAL p_perp = std::sqrt(et / wt - pt * pt / (wt * wt));
-
-      if constexpr (ndim == 2) {
-
-        // applying the the 2D 90deg rotation matrix [[0 -1][1 0]] to the total
-        // momentum direction and scaling with the perpendicular momentum
-        mom_a[0] -= p_perp * mom_tot[1] / pt;
-        mom_a[1] += p_perp * mom_tot[0] / pt;
-
-        mom_b[0] += p_perp * mom_tot[1] / pt;
-        mom_b[1] -= p_perp * mom_tot[0] / pt;
-      }
-      if constexpr (ndim == 3) {
-        auto cell_data_mom_min = cell_dat_reduction_mom_min->get_cell(cx);
-        auto cell_data_mom_max = cell_dat_reduction_mom_max->get_cell(cx);
-
-        // we generate the bounding box in momentum space of the subgroup and
-        // set its diagonal
-        std::vector<REAL> mom_cell_diag(3);
-
-        for (int i = 0; i < 3; i++) {
-          mom_cell_diag[i] =
-              cell_data_mom_max->at(i, 0) - cell_data_mom_min->at(i, 0);
-        }
-
-        std::vector<REAL> rotation_axis =
-            utils::cross_product(mom_tot, mom_cell_diag);
-
-        // the cross product of the total momentum and the momentum space
-        // bounding box diagonal of the subgroup
-
-        REAL rotation_axis_norm = utils::norm2(rotation_axis);
-
-        // Handle close to co-linear diagonal and total vector
-
-        if (rotation_axis_norm / (pt * utils::norm2(mom_cell_diag)) < 1e-10) {
-          mom_cell_diag[0] = -mom_cell_diag[0];
-          rotation_axis = utils::cross_product(mom_tot, mom_cell_diag);
-          rotation_axis_norm = utils::norm2(rotation_axis);
-        }
-
-        // the 3D 90deg rotation matrix used here is
-        // [[0 -u_3 u_2][u_3 0 -u_1][-u_2 u_1 0]] where u is the rotation axis
-        // this is the cross product matrix of the rotation axis - hence
-        std::vector<REAL> mom_perp =
-            utils::cross_product(rotation_axis, mom_tot);
-
-        std::transform(mom_perp.begin(), mom_perp.end(), mom_perp.begin(),
-                       std::bind(std::multiplies<REAL>(), std::placeholders::_1,
-                                 p_perp / (pt * rotation_axis_norm)));
-        for (int i = 0; i < 3; i++) {
-          mom_a[i] += mom_perp[i];
-          mom_b[i] -= mom_perp[i];
-        }
-      }
-      // Add above particles
-
-      std::vector<INT> cells = {cx, cx};
-      auto new_particles = target_subgroup->get_particles(cells, layers);
-
-      for (int i = 0; i < 2; i++) {
+        REAL wt = cell_data_scalars->at(0, 0);
+        REAL et = cell_data_scalars->at(1, 0);
         for (int dimx = 0; dimx < ndim; dimx++) {
-          new_particles->at(this->position, i, dimx) = merge_pos[dimx];
+          merge_pos.push_back(cell_data_pos->at(dimx, 0) / wt);
+          mom_tot.push_back(cell_data_mom->at(dimx, 0));
+          mom_a.push_back(mom_tot[dimx] / wt);
+          mom_b.push_back(mom_tot[dimx] / wt);
         }
-        new_particles->at(this->weight, i, 0) = wt / 2;
-      }
 
-      for (int dimx = 0; dimx < ndim; dimx++) {
-        new_particles->at(this->momentum, 0, dimx) = mom_a[dimx];
-        new_particles->at(this->momentum, 1, dimx) = mom_b[dimx];
-      }
+        REAL pt = utils::norm2(mom_tot);
 
-      new_particle_group->add_particles_local(new_particles);
+        // et/wt is the momentum**2 for either of the result particles, and
+        // pt/wt is the momentum in the direction of the total momentum vector
+        // so the below is the perpendicular momentum of the resulting particles
+        REAL p_perp = std::sqrt(et / wt - pt * pt / (wt * wt));
+
+        if constexpr (ndim == 2) {
+
+          // applying the the 2D 90deg rotation matrix [[0 -1][1 0]] to the
+          // total momentum direction and scaling with the perpendicular
+          // momentum
+          mom_a[0] -= p_perp * mom_tot[1] / pt;
+          mom_a[1] += p_perp * mom_tot[0] / pt;
+
+          mom_b[0] += p_perp * mom_tot[1] / pt;
+          mom_b[1] -= p_perp * mom_tot[0] / pt;
+        }
+        if constexpr (ndim == 3) {
+          auto cell_data_mom_min = cell_dat_reduction_mom_min->get_cell(cx);
+          auto cell_data_mom_max = cell_dat_reduction_mom_max->get_cell(cx);
+
+          // we generate the bounding box in momentum space of the subgroup and
+          // set its diagonal
+          std::vector<REAL> mom_cell_diag(3);
+
+          for (int i = 0; i < 3; i++) {
+            mom_cell_diag[i] =
+                cell_data_mom_max->at(i, 0) - cell_data_mom_min->at(i, 0);
+          }
+
+          std::vector<REAL> rotation_axis =
+              utils::cross_product(mom_tot, mom_cell_diag);
+
+          // the cross product of the total momentum and the momentum space
+          // bounding box diagonal of the subgroup
+
+          REAL rotation_axis_norm = utils::norm2(rotation_axis);
+
+          // Handle close to co-linear diagonal and total vector
+
+          if (rotation_axis_norm / (pt * utils::norm2(mom_cell_diag)) < 1e-10) {
+            mom_cell_diag[0] = -mom_cell_diag[0];
+            rotation_axis = utils::cross_product(mom_tot, mom_cell_diag);
+            rotation_axis_norm = utils::norm2(rotation_axis);
+          }
+
+          // the 3D 90deg rotation matrix used here is
+          // [[0 -u_3 u_2][u_3 0 -u_1][-u_2 u_1 0]] where u is the rotation axis
+          // this is the cross product matrix of the rotation axis - hence
+          std::vector<REAL> mom_perp =
+              utils::cross_product(rotation_axis, mom_tot);
+
+          std::transform(mom_perp.begin(), mom_perp.end(), mom_perp.begin(),
+                         std::bind(std::multiplies<REAL>(),
+                                   std::placeholders::_1,
+                                   p_perp / (pt * rotation_axis_norm)));
+          for (int i = 0; i < 3; i++) {
+            mom_a[i] += mom_perp[i];
+            mom_b[i] -= mom_perp[i];
+          }
+        }
+        // Add above particles
+
+        std::vector<INT> cells = {cx, cx};
+        auto new_particles = target_subgroup->get_particles(cells, layers);
+
+        for (int i = 0; i < 2; i++) {
+          for (int dimx = 0; dimx < ndim; dimx++) {
+            new_particles->at(this->position, i, dimx) = merge_pos[dimx];
+          }
+          new_particles->at(this->weight, i, 0) = wt / 2;
+        }
+
+        for (int dimx = 0; dimx < ndim; dimx++) {
+          new_particles->at(this->momentum, 0, dimx) = mom_a[dimx];
+          new_particles->at(this->momentum, 1, dimx) = mom_b[dimx];
+        }
+
+        new_particle_group->add_particles_local(new_particles);
+      }
     }
 
     // remove the marked particles
 
     part_group->remove_particles(target_subgroup);
+
     part_group->add_particles_local(new_particle_group);
   }
 

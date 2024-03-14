@@ -1,9 +1,4 @@
-#include "common_markers.hpp"
-#include "common_transformations.hpp"
-#include "containers/cell_dat_const.hpp"
-#include "merge_transformation.hpp"
 #include "particle_sub_group.hpp"
-#include "transformation_wrapper.hpp"
 #include "typedefs.hpp"
 #include <gtest/gtest.h>
 #include <memory>
@@ -94,8 +89,7 @@ public:
                   const std::array<int, num_products_per_parent> &out_states,
                   Access::LocalArray::Read<REAL> &pre_req_data,
                   double dt) const {
-    auto k_W = write_req_reals.at(0, index, 0);
-    write_req_reals.at(0, index, 0) += (k_W * modified_weight);
+    write_req_reals.at(0, index, 0) -=  modified_weight;
   }
 
 private:
@@ -211,16 +205,12 @@ public:
     // Set SOURCE_ENERGY
     write_req_reals.at(3, index, 0) = k_SD * vsquared * 0.5;
 
-    // Get then set COMPUTATIONAL_WEIGHT
-    auto k_W = write_req_reals.at(6, index, 0);
-    write_req_reals.at(6, index, 0) -= (k_W * modified_weight);
+    write_req_reals.at(6, index, 0) -=  modified_weight;
   }
 
 private:
   struct IoniseReactionData : public ReactionDataBase<IoniseReactionData> {
     IoniseReactionData() = default;
-
-    IoniseReactionData(REAL &dt_) : ReactionDataBase<IoniseReactionData>(dt_) {}
 
     const REAL &get_n_to_SI() const { return n_to_SI; }
 

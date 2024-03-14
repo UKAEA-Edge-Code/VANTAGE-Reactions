@@ -1,8 +1,5 @@
 #pragma once
-#include "particle_group.hpp"
-#include <memory>
 #include <neso_particles.hpp>
-#include <vector>
 
 using namespace NESO::Particles;
 
@@ -11,16 +8,13 @@ using namespace NESO::Particles;
  *
  * @tparam ReactionDataDerived The typename of the derived class of
  * ReactionDataBase
- * @param dt Optional parameter (default value = 0.0)
  */
 
 template <typename ReactionDataDerived>
 
 struct ReactionDataBase {
 
-  ReactionDataBase() : dt(0.0) {}
-
-  ReactionDataBase(REAL dt_) : dt(dt_) {}
+  ReactionDataBase()  = default;
 
   /**
    * @brief Function to calculate the rates of the reaction that the
@@ -37,6 +31,7 @@ struct ReactionDataBase {
    * @return REAL (type-aliased to double) The calculated reaction rate from
    * the overriding function on the derived type.
    */
+  //TODO: Extend the interface to take in integer syms?
   REAL calc_rate(Access::LoopIndex::Read &index,
                  Access::SymVector::Read<REAL> &vars) const {
     const auto &underlying = static_cast<const ReactionDataDerived &>(*this);
@@ -44,13 +39,4 @@ struct ReactionDataBase {
     return underlying.template calc_rate(index, vars);
   }
 
-  /**
-   * @brief Getter function for dt.
-   *
-   * @return REAL (type-aliased to double) The value of dt.
-   */
-  const REAL &get_dt() const { return dt; }
-
-private:
-  const REAL dt;
 };

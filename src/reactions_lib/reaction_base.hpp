@@ -8,7 +8,6 @@
 #include "particle_sub_group.hpp"
 #include "typedefs.hpp"
 #include <array>
-#include <exception>
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
@@ -25,8 +24,8 @@ namespace Reactions {
  *
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
- * the cumulative reaction rate modification imposed on all of the particles
- * in the ParticleSubGroup passed to run_rate_loop(...).
+ * the cumulative weighted reaction rate modification imposed on all of the
+ * particles in the ParticleSubGroup passed to run_rate_loop(...).
  * @param required_dats_real_read Symbol indices for real-valued ParticleDats
  * that are required to be read by either run_rate_loop(...) or
  * descendant_particle_loop(...)
@@ -147,8 +146,8 @@ private:
  * by the derived linear reaction.
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
- * the cumulative reaction rate modification imposed on all of the particles
- * in the ParticleSubGroup passed to run_rate_loop(...).
+ * the cumulative weighted reaction rate modification imposed on all of the
+ * particles in the ParticleSubGroup passed to run_rate_loop(...).
  * @param required_dats_real_read Symbol indices for real-valued ParticleDats
  * that are required to be read by either run_rate_loop(...) or
  * descendant_particle_loop(...)
@@ -218,11 +217,11 @@ struct LinearReactionBase : public AbstractReaction {
     auto loop = particle_loop(
         "calc_rate_loop", particle_sub_group,
         [=](auto particle_index, auto req_reals, auto req_ints, auto tot_rate,
-            auto buffer) {
+            auto buffer, auto weight) {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = reaction_data_buffer.calc_rate(particle_index, req_reals);
-          buffer[current_count] = rate;
-          tot_rate[0] += rate;
+          buffer[current_count] = rate * weight.at(0);
+          tot_rate[0] += rate * weight.at(0);
         },
         Access::read(ParticleLoopIndex{}),
         // The ->get_particle_group() is temporary until sym_vector accepts
@@ -232,7 +231,8 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
                                      this->get_read_req_dats_int())),
         Access::write(this->get_total_reaction_rate()),
-        Access::write(device_rate_buffer));
+        Access::write(device_rate_buffer),
+        Access::read(this->get_weight_sym()));
 
     loop->execute(cell_idx);
 
@@ -274,9 +274,13 @@ struct LinearReactionBase : public AbstractReaction {
                 << std::endl;
     }
 
+    // TODO: add a method for preparing pre_req_data and call it here
+
     // Product matrix spec for descendant particles that specifies which
     // properties of the descendant particles are to be modified in this
     // reaction upon creation of the descendant particles
+    // TODO: Generalise, add specific constructor that would take the needed
+    // symbols in.
     auto descendant_particles_spec = product_matrix_spec(
         ParticleSpec(ParticleProp(Sym<REAL>("V"), 2),
                      ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1),
@@ -294,9 +298,8 @@ struct LinearReactionBase : public AbstractReaction {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = rate_buffer.at(current_count);
 
-          REAL deltaweight = dt * rate * weight.at(0);
-          REAL total_deltaweight =
-              dt * total_reaction_rate.at(0) * weight.at(0);
+          REAL deltaweight = dt * rate;
+          REAL total_deltaweight = dt * total_reaction_rate.at(0);
           REAL modified_weight = std::min(
               deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
 
@@ -318,20 +321,6 @@ struct LinearReactionBase : public AbstractReaction {
                                 descendant_particle, read_req_ints,
                                 read_req_reals, write_req_ints, write_req_reals,
                                 out_states_arr, pre_req_data, dt);
-
-          // // move into scattering kernel
-          // for (int dimx = 0; dimx < 2; dimx++) {
-          //   descendant_particle.at_real(particle_index, childx, 0, dimx) =
-          //       read_req_reals.at(0, particle_index, dimx);
-          // }
-
-          // //
-          // descendant_particle.at_real(particle_index, childx, 1, 0) =
-          //     read_req_reals.at(1, particle_index, 0) * (1 + (modified_weight
-          //     / num_products_per_parent));
-
-          // descendant_particle.at_int(particle_index, childx, 0,
-          //                            0) = out_states_arr[childx];
 
           feedback_kernel(modified_weight, particle_index, descendant_particle,
                           read_req_ints, read_req_reals, write_req_ints,
@@ -468,12 +457,6 @@ struct LinearReactionBase : public AbstractReaction {
    * @brief SYCL CRTP base apply kernel which combines the calls to
    * scattering_kernel, transformation_kernel and weight_kernel
    */
-  // void apply_kernel() const {
-  //   const auto &underlying = static_cast<const LinearReactionDerived
-  //   &>(*this);
-
-  //   return underlying.template apply_kernel();
-  // }
 
   /**
    * @brief Flushes the stored rate_buffer and by setting all values to 0.0.
