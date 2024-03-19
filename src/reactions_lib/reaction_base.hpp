@@ -73,6 +73,8 @@ public:
 
   virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
 
+  virtual void pre_calc_req_data(int cell_idx) {}
+
   virtual void flush_buffer() {}
 
 protected:

@@ -9,6 +9,12 @@ using namespace NESO::Particles;
 
 namespace Reactions {
 /**
+ * @brief No operations transformation strategy
+ */
+struct NoOpTransformationStrategy : TransformationStrategy {
+  NoOpTransformationStrategy() = default;
+};
+/**
  * @brief Simple transformation strategy that will remove all particles in the
  * passed ParticleSubGroup
  *
