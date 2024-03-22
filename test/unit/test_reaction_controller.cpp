@@ -174,6 +174,10 @@ TEST(ReactionController, multi_reaction_multiple_products) {
     EXPECT_EQ(merged_species_1->get_npart_cell(icell), 2);
     EXPECT_EQ(merged_species_2->get_npart_cell(icell), 2);
 
+    // The 2/3 factor on reduction is due to test_reaction1 not producing 
+    // any descendant products but still reducing the weight of the parent
+    // particles. This causes the final weight to be 2/3 that of the original
+    // instead of equivalent.
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
                 reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0), 1e-12);
   }

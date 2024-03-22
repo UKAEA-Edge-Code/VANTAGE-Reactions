@@ -138,6 +138,16 @@ public:
         reactions[r]->descendant_product_loop(species_groups[in_state], i, dt,
                                               child_group);
       }
+
+      for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
+        auto transform_buffer =
+            std::make_shared<TransformationWrapper>(*child_transform);
+        transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+        transform_buffer->add_marking_strategy(
+            make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+                Sym<INT>("CELL_ID"), i));
+        transform_buffer->transform(child_group);
+      }
     }
 
     for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
@@ -147,12 +157,6 @@ public:
       transform_buffer->transform(particle_group);
     }
 
-    for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
-      auto transform_buffer =
-          std::make_shared<TransformationWrapper>(*child_transform);
-      transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-      transform_buffer->transform(child_group);
-    }
     if (child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
     }

@@ -1,3 +1,4 @@
+#include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
 #include "typedefs.hpp"
 #include <gtest/gtest.h>
@@ -5,6 +6,7 @@
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
+#include <vector>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -12,9 +14,9 @@ using namespace Reactions;
 template <INT num_products_per_parent>
 struct TestReaction
     : public LinearReactionBase<TestReaction<num_products_per_parent>,
-                                num_products_per_parent> {
+                                num_products_per_parent, 2, 1> {
 
-  friend struct LinearReactionBase<TestReaction, num_products_per_parent>;
+  friend struct LinearReactionBase<TestReaction, num_products_per_parent, 2, 1>;
 
   TestReaction() = default;
 
@@ -22,13 +24,21 @@ struct TestReaction
                REAL rate_, int in_states_,
                const std::array<int, num_products_per_parent> out_states_)
       : LinearReactionBase<TestReaction<num_products_per_parent>,
-                           num_products_per_parent>(
+                           num_products_per_parent, 2, 1>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{Sym<REAL>("V"),
                                    Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<INT>>{Sym<INT>("INTERNAL_STATE")},
-            std::vector<Sym<INT>>(), in_states_, out_states_),
+            std::vector<Sym<INT>>(), in_states_, out_states_,
+            std::array<ParticleProp<REAL>, 2> {
+              ParticleProp(Sym<REAL>("V"), 2),
+              ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1)
+            },
+            std::array<ParticleProp<INT>, 1> {
+              ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)
+            }
+        ),
         test_reaction_data(TestReactionData(rate_)) {}
 
 public:
@@ -119,15 +129,15 @@ protected:
   }
 };
 
-struct IoniseReaction : public LinearReactionBase<IoniseReaction, 0> {
+struct IoniseReaction : public LinearReactionBase<IoniseReaction, 0, 0, 0> {
 
-  friend struct LinearReactionBase<IoniseReaction, 0>;
+  friend struct LinearReactionBase<IoniseReaction, 0, 0, 0>;
 
   IoniseReaction() = default;
 
   IoniseReaction(SYCLTargetSharedPtr sycl_target_,
                  Sym<REAL> total_reaction_rate_, int in_states_)
-      : LinearReactionBase<IoniseReaction, 0>(
+      : LinearReactionBase<IoniseReaction, 0, 0, 0>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{
                 Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
@@ -140,7 +150,9 @@ struct IoniseReaction : public LinearReactionBase<IoniseReaction, 0> {
                 Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
                 Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
-            std::array<int, 0>{}),
+            std::array<int, 0>{},
+            std::array<ParticleProp<REAL>, 0> {},
+            std::array<ParticleProp<INT>, 0> {}),
         test_reaction_data(IoniseReactionData()) {}
 
 public:
@@ -230,21 +242,23 @@ protected:
   IoniseReactionData &get_reaction_data() const { return test_reaction_data; }
 };
 
-struct TestReactionVarRate : public LinearReactionBase<TestReactionVarRate, 0> {
+struct TestReactionVarRate : public LinearReactionBase<TestReactionVarRate, 0, 0, 0> {
 
-  friend struct LinearReactionBase<TestReactionVarRate, 0>;
+  friend struct LinearReactionBase<TestReactionVarRate, 0, 0, 0>;
 
   TestReactionVarRate() = default;
 
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
                       int in_states_)
-      : LinearReactionBase<TestReactionVarRate, 0>(
+      : LinearReactionBase<TestReactionVarRate, 0, 0, 0>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{read_var, Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
-            std::array<int, 0>{}),
+            std::array<int, 0>{},
+            std::array<ParticleProp<REAL>, 0> {},
+            std::array<ParticleProp<INT>, 0> {}),
         test_reaction_data(TestReactionVarData()) {}
 
 public:

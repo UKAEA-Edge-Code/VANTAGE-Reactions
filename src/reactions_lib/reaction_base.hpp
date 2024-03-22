@@ -141,11 +141,15 @@ private:
 
 /**
  * @brief SYCL CRTP base linear reaction type. Specifically meant for
- * reactions that only involve a single particle at the start of the reaction
+ * reactions that only involve a single particle at the start of the reaction.
  *
  * @tparam LinearReactionDerived SYCL CRTP template argument
  * @tparam num_products_per_parent The number of products produced per parent
  * by the derived linear reaction.
+ * @tparam real_descendant_prop_num The number of REAL particle properties to be
+ * modified on the descendant particles.
+ * @tparam int_descendant_prop_num The number of INT particle properties to be
+ * modified on the descendant particles.
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
  * the cumulative weighted reaction rate modification imposed on all of the
@@ -162,11 +166,19 @@ private:
  * @param required_dats_int_write Symbol indices for integer-valued
  * ParticleDats that are required to be written by either run_rate_loop(...) or
  * descendant_particle_loop(...)
- * @param in_states Vector of integers specifying the IDs of the species on
+ * @param in_state Integer specifying the ID of the species on
  * which the derived reaction is acting on.
+ * @param out_states Array of integers specifying the species IDs of the
+ * descendants produced by the derived reaction.
+ * @param real_desecendant_particles_props Array of ParticleProp<REAL> that
+ * specify the REAL particle props to be modified on the descendant products.
+ * @param int_desecendant_particles_props Array of ParticleProp<INT> that
+ * specify the INT particle props to be modified on the descendant products.
  */
-template <typename LinearReactionDerived, INT num_products_per_parent>
-
+template <typename LinearReactionDerived, INT num_products_per_parent,
+          INT real_descendant_prop_num, INT int_descendant_prop_num>
+// There is a need to separate descendant props into REAL and INT since a single
+// array of abstract ParticleProps can't be constructed.
 struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = default;
@@ -178,11 +190,17 @@ struct LinearReactionBase : public AbstractReaction {
                      const std::vector<Sym<INT>> required_dats_int_read,
                      std::vector<Sym<INT>> required_dats_int_write,
                      int in_state,
-                     std::array<int, num_products_per_parent> out_states)
+                     std::array<int, num_products_per_parent> out_states,
+                     std::array<ParticleProp<REAL>, real_descendant_prop_num>
+                         real_descendant_particles_props,
+                     std::array<ParticleProp<INT>, int_descendant_prop_num>
+                         int_descendant_particles_props)
       : AbstractReaction(sycl_target, total_rate_dat, required_dats_real_read,
                          required_dats_real_write, required_dats_int_read,
                          required_dats_int_write),
-        in_state(in_state), out_states(out_states) {}
+        in_state(in_state), out_states(out_states),
+        real_descendant_particles_props(real_descendant_particles_props),
+        int_descendant_particles_props(int_descendant_particles_props) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -276,20 +294,24 @@ struct LinearReactionBase : public AbstractReaction {
                 << std::endl;
     }
 
-    // TODO: add a method for preparing pre_req_data and call it here
+    this->pre_calc_req_data(cell_idx);
+
+    auto descendant_particles_spec = ParticleSpec();
+    for (auto ireal_prop : this->get_real_descendant_props()) {
+      descendant_particles_spec.push(ireal_prop);
+    }
+    for (auto iint_prop : this->get_int_descendant_props()) {
+      descendant_particles_spec.push(iint_prop);
+    }
 
     // Product matrix spec for descendant particles that specifies which
     // properties of the descendant particles are to be modified in this
     // reaction upon creation of the descendant particles
-    // TODO: Generalise, add specific constructor that would take the needed
-    // symbols in.
-    auto descendant_particles_spec = product_matrix_spec(
-        ParticleSpec(ParticleProp(Sym<REAL>("V"), 2),
-                     ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1),
-                     ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)));
+    auto descendant_matrix_spec =
+        product_matrix_spec(descendant_particles_spec);
 
     auto descendant_particles = std::make_shared<DescendantProducts>(
-        sycl_target_stored, descendant_particles_spec, num_products_per_parent);
+        sycl_target_stored, descendant_matrix_spec, num_products_per_parent);
 
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,
@@ -500,8 +522,34 @@ struct LinearReactionBase : public AbstractReaction {
     return std::vector<int>(out_states.begin(), out_states.end());
   }
 
+  /**
+   * @brief Getter for real_descendant_particles_props that define which
+   * REAL properties are modified for descendant particles.
+   * @return std::vector<ParticleProp<REAL>> Vector of REAL ParticleProps.
+   */
+  std::vector<ParticleProp<REAL>> get_real_descendant_props() {
+    return std::vector<ParticleProp<REAL>>(
+        real_descendant_particles_props.begin(),
+        real_descendant_particles_props.end());
+  }
+
+  /**
+   * @brief Getter for int_descendant_particles_props that define which
+   * INT properties are modified for descendant particles.
+   * @return std::vector<ParticleProp<INT>> Vector of INT ParticleProps.
+   */
+  std::vector<ParticleProp<INT>> get_int_descendant_props() {
+    return std::vector<ParticleProp<INT>>(
+        int_descendant_particles_props.begin(),
+        int_descendant_particles_props.end());
+  }
+
 private:
   int in_state;
   std::array<int, num_products_per_parent> out_states;
+  std::array<ParticleProp<REAL>, real_descendant_prop_num>
+      real_descendant_particles_props;
+  std::array<ParticleProp<INT>, int_descendant_prop_num>
+      int_descendant_particles_props;
 };
 } // namespace Reactions
