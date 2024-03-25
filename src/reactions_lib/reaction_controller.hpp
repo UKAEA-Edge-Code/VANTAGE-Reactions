@@ -143,11 +143,14 @@ public:
         auto transform_buffer =
             std::make_shared<TransformationWrapper>(*child_transform);
         transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-        transform_buffer->add_marking_strategy(
-            make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
-                Sym<INT>("CELL_ID"), i));
         transform_buffer->transform(child_group);
       }
+
+      if (child_ids.size() > 0) {
+        particle_group->add_particles_local(child_group);
+      }
+
+      child_group->clear();
     }
 
     for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
@@ -155,10 +158,6 @@ public:
           std::make_shared<TransformationWrapper>(*parent_transform);
       transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
       transform_buffer->transform(particle_group);
-    }
-
-    if (child_ids.size() > 0) {
-      particle_group->add_particles_local(child_group);
     }
   }
 

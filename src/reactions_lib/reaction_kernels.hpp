@@ -1,0 +1,117 @@
+#pragma once
+#include <neso_particles.hpp>
+
+using namespace NESO::Particles;
+
+/**
+ * @brief SYCL CRTP base reaction kernels object.
+ *
+ * @tparam ReactionKernelsDerived The typename of the derived class of
+ * ReactionKernelsBase
+ * @tparam num_products_per_parent The number of products produced per parent
+ * by a reaction.
+ */
+
+template <typename ReactionKernelsDerived, int num_products_per_parent>
+
+struct ReactionKernelsBase {
+  ReactionKernelsBase() = default;
+
+  /**
+   * @brief SYCL CRTP base scattering kernel for calculating and applying
+   * reaction-derived velocity modifications of the particles.
+   * @return std::vector<REAL>
+   */
+  void
+  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                    Access::DescendantProducts::Write &descendant_products,
+                    Access::SymVector::Read<INT> &read_req_ints,
+                    Access::SymVector::Read<REAL> &read_req_reals,
+                    Access::SymVector::Write<INT> &write_req_ints,
+                    Access::SymVector::Write<REAL> &write_req_reals,
+                    const std::array<int, num_products_per_parent> &out_states,
+                    Access::LocalArray::Read<REAL> &pre_req_data,
+                    double dt) const {
+    const auto &underlying = static_cast<const ReactionKernelsDerived &>(*this);
+
+    return underlying.template scattering_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
+  }
+  /**
+   * @brief SYCL CRTP base feedback kernel for calculating and applying
+   * background field modifications from the reaction.
+   *
+   * @param modified_weight The weight modification needed for calculating
+   * the changes to the background fields.
+   * @param index Read-only accessor to a loop index for a ParticleLoop
+   * inside which calc_rate is called. Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param write_req_ints Symbol indices for integer-valued
+   * ParticleDats that need to be modified
+   * @param write_req_reals Symbol indices for real-valued
+   * ParticleDats that need to be modified
+   * @param pre_req_data Real-valued local array containing pre-requisite
+   * data relating to a derived reaction.
+   * @param dt The current time step size.
+   */
+  void
+  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                  Access::DescendantProducts::Write &descendant_products,
+                  Access::SymVector::Read<INT> &read_req_ints,
+                  Access::SymVector::Read<REAL> &read_req_reals,
+                  Access::SymVector::Write<INT> &write_req_ints,
+                  Access::SymVector::Write<REAL> &write_req_reals,
+                  const std::array<int, num_products_per_parent> &out_states,
+                  Access::LocalArray::Read<REAL> &pre_req_data,
+                  double dt) const {
+    const auto &underlying = static_cast<const ReactionKernelsDerived &>(*this);
+
+    return underlying.template feedback_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
+  }
+  /**
+   * @brief SYCL CRTP base transformation kernel for calculating and applying
+   * reaction-derived ID modifications of the particles.
+   */
+  void transformation_kernel(
+      REAL &modified_weight, Access::LoopIndex::Read &index,
+      Access::DescendantProducts::Write &descendant_products,
+      Access::SymVector::Read<INT> &read_req_ints,
+      Access::SymVector::Read<REAL> &read_req_reals,
+      Access::SymVector::Write<INT> &write_req_ints,
+      Access::SymVector::Write<REAL> &write_req_reals,
+      const std::array<int, num_products_per_parent> &out_states,
+      Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+    const auto &underlying = static_cast<const ReactionKernelsDerived &>(*this);
+
+    return underlying.template transformation_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
+  }
+  /**
+   * @brief SYCL CRTP base weight kernel for calculating and applying
+   * reaction-derived weight modifications of the particles.
+   */
+  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                     Access::DescendantProducts::Write &descendant_products,
+                     Access::SymVector::Read<INT> &read_req_ints,
+                     Access::SymVector::Read<REAL> &read_req_reals,
+                     Access::SymVector::Write<INT> &write_req_ints,
+                     Access::SymVector::Write<REAL> &write_req_reals,
+                     const std::array<int, num_products_per_parent> &out_states,
+                     Access::LocalArray::Read<REAL> &pre_req_data,
+                     double dt) const {
+    const auto &underlying = static_cast<const ReactionKernelsDerived &>(*this);
+
+    return underlying.template weight_kernel(
+        modified_weight, index, descendant_products, read_req_ints,
+        read_req_reals, write_req_ints, write_req_reals, out_states,
+        pre_req_data, dt);
+  }
+};
