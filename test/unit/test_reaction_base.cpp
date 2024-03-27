@@ -233,8 +233,8 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     auto position = particle_group->get_cell(Sym<REAL>("P"), i);
     const int nrow = position->nrow;
 
-      auto particle_sub_group =
-          std::make_shared<ParticleSubGroup>(particle_group);
+    auto particle_sub_group =
+        std::make_shared<ParticleSubGroup>(particle_group);
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
       reactions[reaction]->run_rate_loop(particle_sub_group, i);
@@ -252,7 +252,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {
-        EXPECT_NEAR(weight->at(rowx, 0),0.6 , 1e-12);
+        EXPECT_NEAR(weight->at(rowx, 0), 0.6, 1e-12);
       }
     }
   }

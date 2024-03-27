@@ -62,9 +62,9 @@ public:
    * @brief Applies all reactions that have been added prior to calling this
    * function. The reactions are effectively applied at the same time and the
    * result should not depend on the ordering of the reactions. Any reaction
-   * products are added and they are transformed according to the transformation
-   * wrapper. The parent particles are not transformed. TODO: add a hook for
-   * parent transformation
+   * products are added and they are transformed according to the
+   * child_transform transformation wrapper. Parents are transformed according
+   * to the parent_transform transformation wrapper.
    *
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.

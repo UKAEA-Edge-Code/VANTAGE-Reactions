@@ -1,8 +1,38 @@
 #pragma once
 #include "containers/sym_vector.hpp"
+#include "loop/particle_loop_index.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
+
+
+/**
+ * @brief Abstract class for ReactionData.
+ */
+struct AbstractReactionData {
+  AbstractReactionData() = default;
+
+  /**
+   * @brief Virtual functions to be overidden by an implementation in a derived
+   * struct.
+   */
+
+  virtual REAL calc_rate(Access::LoopIndex::Read &index,
+                         Access::SymVector::Read<INT> &vars) {
+    return 0.0;
+  }
+
+  virtual REAL calc_rate(Access::LoopIndex::Read &index,
+                         Access::SymVector::Read<REAL> &vars) {
+    return 0.0;
+  }
+
+  virtual REAL calc_rate(Access::LoopIndex::Read &index,
+                         Access::SymVector::Read<INT> &int_vars,
+                         Access::SymVector::Read<REAL> &real_vars) {
+    return 0.0;
+  }
+};
 
 /**
  * @brief SYCL CRTP base reaction data object.
@@ -13,7 +43,7 @@ using namespace NESO::Particles;
 
 template <typename ReactionDataDerived>
 
-struct ReactionDataBase {
+struct ReactionDataBase : AbstractReactionData {
 
   ReactionDataBase() = default;
 
@@ -32,7 +62,6 @@ struct ReactionDataBase {
    * @return REAL (type-aliased to double) The calculated reaction rate from
    * the overriding function on the derived type.
    */
-  // TODO: Extend the interface to take in integer syms?
   REAL calc_rate(Access::LoopIndex::Read &index,
                  Access::SymVector::Read<INT> &vars) const {
     const auto &underlying = static_cast<const ReactionDataDerived &>(*this);

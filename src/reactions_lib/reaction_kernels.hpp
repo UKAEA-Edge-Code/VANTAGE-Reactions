@@ -1,7 +1,61 @@
 #pragma once
+#include "reaction_data.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
+
+/**
+ * @brief Abstract class for ReactionKernels.
+ */
+struct AbstractReactionKernels {
+  AbstractReactionKernels() = default;
+
+  /**
+   * @brief Virtual functions to be overidden by an implementation in a derived
+   * struct.
+   */
+
+  virtual void
+  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                    Access::DescendantProducts::Write &descendant_products,
+                    Access::SymVector::Read<INT> &read_req_ints,
+                    Access::SymVector::Read<REAL> &read_req_reals,
+                    Access::SymVector::Write<INT> &write_req_ints,
+                    Access::SymVector::Write<REAL> &write_req_reals,
+                    const std::array<int, 0> &out_states,
+                    Access::LocalArray::Read<REAL> &pre_req_data, double dt) {}
+
+  virtual void
+  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                  Access::DescendantProducts::Write &descendant_products,
+                  Access::SymVector::Read<INT> &read_req_ints,
+                  Access::SymVector::Read<REAL> &read_req_reals,
+                  Access::SymVector::Write<INT> &write_req_ints,
+                  Access::SymVector::Write<REAL> &write_req_reals,
+                  const std::array<int, 0> &out_states,
+                  Access::LocalArray::Read<REAL> &pre_req_data, double dt) {}
+
+  virtual void
+  weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                Access::DescendantProducts::Write &descendant_products,
+                Access::SymVector::Read<INT> &read_req_ints,
+                Access::SymVector::Read<REAL> &read_req_reals,
+                Access::SymVector::Write<INT> &write_req_ints,
+                Access::SymVector::Write<REAL> &write_req_reals,
+                const std::array<int, 0> &out_states,
+                Access::LocalArray::Read<REAL> &pre_req_data, double dt) {}
+
+  virtual void
+  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                        Access::DescendantProducts::Write &descendant_products,
+                        Access::SymVector::Read<INT> &read_req_ints,
+                        Access::SymVector::Read<REAL> &read_req_reals,
+                        Access::SymVector::Write<INT> &write_req_ints,
+                        Access::SymVector::Write<REAL> &write_req_reals,
+                        const std::array<int, 0> &out_states,
+                        Access::LocalArray::Read<REAL> &pre_req_data,
+                        double dt) {}
+};
 
 /**
  * @brief SYCL CRTP base reaction kernels object.
@@ -14,13 +68,33 @@ using namespace NESO::Particles;
 
 template <typename ReactionKernelsDerived, int num_products_per_parent>
 
-struct ReactionKernelsBase {
+struct ReactionKernelsBase : AbstractReactionKernels {
   ReactionKernelsBase() = default;
 
   /**
    * @brief SYCL CRTP base scattering kernel for calculating and applying
    * reaction-derived velocity modifications of the particles.
-   * @return std::vector<REAL>
+   *
+   * @param modified_weight The weight modification needed for calculating
+   * the changes to the background fields.
+   * @param index Read-only accessor to a loop index for a ParticleLoop
+   * inside which calc_rate is called. Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param descendant_products Write accessor to descendant products
+   * that may need to operated on
+   * @param read_req_ints Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param read_req_reals Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param write_req_ints Symbol indices for integer-valued
+   * ParticleDats that need to be modified
+   * @param write_req_reals Symbol indices for real-valued
+   * ParticleDats that need to be modified
+   * @param out_states Array defining the IDs of descendant particles
+   * @param pre_req_data Real-valued local array containing pre-requisite
+   * data relating to a derived reaction.
+   * @param dt The current time step size.
    */
   void
   scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
@@ -49,10 +123,17 @@ struct ReactionKernelsBase {
    * inside which calc_rate is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
+   * @param descendant_products Write accessor to descendant products
+   * that may need to operated on
+   * @param read_req_ints Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param read_req_reals Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
    * @param write_req_ints Symbol indices for integer-valued
    * ParticleDats that need to be modified
    * @param write_req_reals Symbol indices for real-valued
    * ParticleDats that need to be modified
+   * @param out_states Array defining the IDs of descendant particles
    * @param pre_req_data Real-valued local array containing pre-requisite
    * data relating to a derived reaction.
    * @param dt The current time step size.
@@ -77,6 +158,27 @@ struct ReactionKernelsBase {
   /**
    * @brief SYCL CRTP base transformation kernel for calculating and applying
    * reaction-derived ID modifications of the particles.
+   *
+   * @param modified_weight The weight modification needed for calculating
+   * the changes to the background fields.
+   * @param index Read-only accessor to a loop index for a ParticleLoop
+   * inside which calc_rate is called. Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param descendant_products Write accessor to descendant products
+   * that may need to operated on
+   * @param read_req_ints Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param read_req_reals Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param write_req_ints Symbol indices for integer-valued
+   * ParticleDats that need to be modified
+   * @param write_req_reals Symbol indices for real-valued
+   * ParticleDats that need to be modified
+   * @param out_states Array defining the IDs of descendant particles
+   * @param pre_req_data Real-valued local array containing pre-requisite
+   * data relating to a derived reaction.
+   * @param dt The current time step size.
    */
   void transformation_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
@@ -97,6 +199,27 @@ struct ReactionKernelsBase {
   /**
    * @brief SYCL CRTP base weight kernel for calculating and applying
    * reaction-derived weight modifications of the particles.
+   *
+   * @param modified_weight The weight modification needed for calculating
+   * the changes to the background fields.
+   * @param index Read-only accessor to a loop index for a ParticleLoop
+   * inside which calc_rate is called. Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param descendant_products Write accessor to descendant products
+   * that may need to operated on
+   * @param read_req_ints Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param read_req_reals Symbol indices for integer-valued ParticleDats that
+   * need to be read for operations inside the kernel
+   * @param write_req_ints Symbol indices for integer-valued
+   * ParticleDats that need to be modified
+   * @param write_req_reals Symbol indices for real-valued
+   * ParticleDats that need to be modified
+   * @param out_states Array defining the IDs of descendant particles
+   * @param pre_req_data Real-valued local array containing pre-requisite
+   * data relating to a derived reaction.
+   * @param dt The current time step size.
    */
   void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                      Access::DescendantProducts::Write &descendant_products,

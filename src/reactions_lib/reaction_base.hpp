@@ -6,6 +6,8 @@
 #include "particle_group.hpp"
 #include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
+#include "reaction_data.hpp"
+#include "reaction_kernels.hpp"
 #include "typedefs.hpp"
 #include <array>
 #include <memory>
@@ -99,7 +101,6 @@ protected:
 
   const std::vector<REAL> &get_rate_buffer() { return rate_buffer; }
 
-  // TODO: Consider removing (not needed in public interface)
   void set_rate_buffer(const std::vector<REAL> &rate_buffer_) {
     rate_buffer = rate_buffer_;
   }
@@ -146,6 +147,9 @@ private:
  * @tparam LinearReactionDerived SYCL CRTP template argument
  * @tparam num_products_per_parent The number of products produced per parent
  * by the derived linear reaction.
+ * @tparam ReactionData typename for reaction_data constructor argument
+ * @tparam ReactionKernels template class for reaction_kernels constructor
+ * argument
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
  * the cumulative weighted reaction rate modification imposed on all of the
@@ -170,10 +174,12 @@ private:
  * specify the REAL particle props to be modified on the descendant products.
  * @param int_desecendant_particles_props Array of ParticleProp<INT> that
  * specify the INT particle props to be modified on the descendant products.
+ * @param reaction_data ReactionData object to be used in run_rate_loop.
+ * @param reaction_kernels ReactionKernels object to be used in
+ * descendant_product_loop.
  */
-template <typename LinearReactionDerived, INT num_products_per_parent>
-// There is a need to separate descendant props into REAL and INT since a single
-// array of abstract ParticleProps can't be constructed.
+template <typename LinearReactionDerived, INT num_products_per_parent,
+          typename ReactionData, template <INT> class ReactionKernels>
 struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = default;
@@ -186,13 +192,28 @@ struct LinearReactionBase : public AbstractReaction {
       std::vector<Sym<INT>> required_dats_int_write, int in_state,
       std::array<int, num_products_per_parent> out_states,
       std::vector<ParticleProp<REAL>> real_descendant_particles_props,
-      std::vector<ParticleProp<INT>> int_descendant_particles_props)
+      std::vector<ParticleProp<INT>> int_descendant_particles_props,
+      ReactionData reaction_data,
+      ReactionKernels<num_products_per_parent> reaction_kernels)
       : AbstractReaction(sycl_target, total_rate_dat, required_dats_real_read,
                          required_dats_real_write, required_dats_int_read,
                          required_dats_int_write),
         in_state(in_state), out_states(out_states),
         real_descendant_particles_props(real_descendant_particles_props),
-        int_descendant_particles_props(int_descendant_particles_props) {}
+        int_descendant_particles_props(int_descendant_particles_props),
+        reaction_data(reaction_data), reaction_kernels(reaction_kernels) {
+    // These assertions are necessary since the typenames for ReactionData and
+    // ReactionKernels could be any type and for run_rate_loop and
+    // descendant_product_loop to operate correctly ReactionData and
+    // ReactionKernels have to be derived from AbstractReactionData
+    static_assert(std::is_base_of_v<AbstractReactionData, ReactionData>,
+                  "Template parameter ReactionData is not derived from "
+                  "AbstractReactionData...");
+    static_assert(std::is_base_of_v<AbstractReactionKernels,
+                                    ReactionKernels<num_products_per_parent>>,
+                  "Template parameter ReactionKernels is not derived from "
+                  "AbstractReactionData...");
+  }
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -207,8 +228,7 @@ struct LinearReactionBase : public AbstractReaction {
    */
   void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
                      INT cell_idx) {
-    const auto &underlying = static_cast<LinearReactionDerived &>(*this);
-    auto reaction_data_buffer = underlying.get_reaction_data();
+    auto reaction_data_buffer = this->reaction_data;
 
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
@@ -273,8 +293,7 @@ struct LinearReactionBase : public AbstractReaction {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
 
-    const auto &underlying = static_cast<LinearReactionDerived &>(*this);
-    auto reaction_kernel_buffer = underlying.get_reaction_kernels();
+    auto reaction_kernel_buffer = this->reaction_kernels;
 
     std::array<int, num_products_per_parent> out_states_arr = this->out_states;
     try {
@@ -441,5 +460,7 @@ private:
   std::array<int, num_products_per_parent> out_states;
   std::vector<ParticleProp<REAL>> real_descendant_particles_props;
   std::vector<ParticleProp<INT>> int_descendant_particles_props;
+  ReactionData reaction_data;
+  ReactionKernels<num_products_per_parent> reaction_kernels;
 };
 } // namespace Reactions

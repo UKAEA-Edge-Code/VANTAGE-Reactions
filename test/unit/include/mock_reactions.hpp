@@ -12,35 +12,7 @@
 using namespace NESO::Particles;
 using namespace Reactions;
 
-template <INT num_products_per_parent>
-struct TestReaction
-    : public LinearReactionBase<TestReaction<num_products_per_parent>,
-                                num_products_per_parent> {
-
-  friend struct LinearReactionBase<TestReaction, num_products_per_parent>;
-
-  TestReaction() = default;
-
-  TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
-               REAL rate_, int in_states_,
-               const std::array<int, num_products_per_parent> out_states_)
-      : LinearReactionBase<TestReaction<num_products_per_parent>,
-                           num_products_per_parent>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{Sym<REAL>("V"),
-                                   Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>{Sym<INT>("INTERNAL_STATE")},
-            std::vector<Sym<INT>>(), in_states_, out_states_,
-            std::vector<ParticleProp<REAL>>{
-                ParticleProp(Sym<REAL>("V"), 2),
-                ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1)},
-            std::vector<ParticleProp<INT>>{
-                ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)}),
-        test_reaction_data(TestReactionData(rate_)) {}
-
-private:
-  struct TestReactionData : public ReactionDataBase<TestReactionData> {
+struct TestReactionData : public ReactionDataBase<TestReactionData> {
     TestReactionData() = default;
 
     TestReactionData(REAL rate_) : rate(rate_){};
@@ -55,8 +27,9 @@ private:
     REAL rate;
   };
 
-  struct TestReactionKernels
-      : public ReactionKernelsBase<TestReactionKernels,
+template <INT num_products_per_parent>
+struct TestReactionKernels
+      : public ReactionKernelsBase<TestReactionKernels<num_products_per_parent>,
                                   num_products_per_parent> {
     TestReactionKernels() = default;
 
@@ -119,48 +92,42 @@ private:
                     double dt) const {
       write_req_reals.at(0, index, 0) -= modified_weight;
     }
+
+    private:
+    int test_int;
   };
 
-  mutable TestReactionData test_reaction_data;
-  mutable TestReactionKernels test_reaction_kernels;
 
-protected:
-  const TestReactionData &get_reaction_data() const {
-    return test_reaction_data;
-  }
+template <INT num_products_per_parent>
+struct TestReaction
+    : public LinearReactionBase<TestReaction<num_products_per_parent>,
+                                num_products_per_parent, TestReactionData, TestReactionKernels> {
 
-  const TestReactionKernels & get_reaction_kernels() const {
-    return test_reaction_kernels;
-  }
+  TestReaction() = default;
+
+  TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
+               REAL rate_, int in_states_,
+               const std::array<int, num_products_per_parent> out_states_)
+      : LinearReactionBase<TestReaction<num_products_per_parent>,
+                           num_products_per_parent, TestReactionData, TestReactionKernels>(
+            sycl_target_, total_reaction_rate_,
+            std::vector<Sym<REAL>>{Sym<REAL>("V"),
+                                   Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<INT>>{Sym<INT>("INTERNAL_STATE")},
+            std::vector<Sym<INT>>(), in_states_, out_states_,
+            std::vector<ParticleProp<REAL>>{
+                ParticleProp(Sym<REAL>("V"), 2),
+                ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1)},
+            std::vector<ParticleProp<INT>>{
+                ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)},
+            TestReactionData(rate_),
+            TestReactionKernels<num_products_per_parent>()
+            )
+        {}
 };
 
-struct IoniseReaction : public LinearReactionBase<IoniseReaction, 0> {
-
-  friend struct LinearReactionBase<IoniseReaction, 0>;
-
-  IoniseReaction() = default;
-
-  IoniseReaction(SYCLTargetSharedPtr sycl_target_,
-                 Sym<REAL> total_reaction_rate_, int in_states_)
-      : LinearReactionBase<IoniseReaction, 0>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
-            std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-            std::vector<ParticleProp<INT>>{}),
-        test_reaction_data(IoniseReactionData()) {}
-
-private:
-  struct IoniseReactionData : public ReactionDataBase<IoniseReactionData> {
+struct IoniseReactionData : public ReactionDataBase<IoniseReactionData> {
     IoniseReactionData() = default;
 
     REAL calc_rate(Access::LoopIndex::Read &index,
@@ -170,8 +137,9 @@ private:
     }
   };
 
-  struct IoniseReactionKernels
-      : public ReactionKernelsBase<IoniseReactionKernels, 0> {
+template <INT num_products_per_parent>
+struct IoniseReactionKernels
+      : public ReactionKernelsBase<IoniseReactionKernels<num_products_per_parent>, num_products_per_parent> {
     IoniseReactionKernels() = default;
 
     void
@@ -239,37 +207,35 @@ private:
     }
   };
 
-  IoniseReactionData test_reaction_data;
-  IoniseReactionKernels test_reaction_kernels;
+struct IoniseReaction : public LinearReactionBase<IoniseReaction, 0, IoniseReactionData, IoniseReactionKernels> {
 
-protected:
-  const IoniseReactionData &get_reaction_data() const { return test_reaction_data; }
+  IoniseReaction() = default;
 
-  const IoniseReactionKernels &get_reaction_kernels() const {
-    return test_reaction_kernels;
-  }
-};
-
-struct TestReactionVarRate : public LinearReactionBase<TestReactionVarRate, 0> {
-
-  friend struct LinearReactionBase<TestReactionVarRate, 0>;
-
-  TestReactionVarRate() = default;
-
-  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
-                      Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
-                      int in_states_)
-      : LinearReactionBase<TestReactionVarRate, 0>(
+  IoniseReaction(SYCLTargetSharedPtr sycl_target_,
+                 Sym<REAL> total_reaction_rate_, int in_states_)
+      : LinearReactionBase<IoniseReaction, 0, IoniseReactionData, IoniseReactionKernels>(
             sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{read_var, Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
+                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
+                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
+                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
+                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-            std::vector<ParticleProp<INT>>{}),
-        test_reaction_data(TestReactionVarData()) {}
+            std::vector<ParticleProp<INT>>{},
+            IoniseReactionData(),
+            IoniseReactionKernels<0>()
+            )
+        {}
 
-private:
-  struct TestReactionVarData : public ReactionDataBase<TestReactionVarData> {
+};
+
+struct TestReactionVarData : public ReactionDataBase<TestReactionVarData> {
     TestReactionVarData() = default;
 
     REAL calc_rate(Access::LoopIndex::Read &index,
@@ -279,8 +245,9 @@ private:
     }
   };
 
-  struct TestReactionVarKernels
-      : public ReactionKernelsBase<TestReactionVarKernels, 0> {
+template <INT num_products_per_parent>
+struct TestReactionVarKernels
+      : public ReactionKernelsBase<TestReactionVarKernels<num_products_per_parent>, num_products_per_parent> {
     TestReactionVarKernels() = default;
 
     void
@@ -328,14 +295,24 @@ private:
     }
   };
 
-  TestReactionVarData test_reaction_data;
-  TestReactionVarKernels test_reaction_kernels;
+struct TestReactionVarRate : public LinearReactionBase<TestReactionVarRate, 0, TestReactionVarData, TestReactionVarKernels> {
 
-protected:
-  const TestReactionVarData &get_reaction_data() const { return test_reaction_data; }
-  const TestReactionVarKernels &get_reaction_kernels() const {
-    return test_reaction_kernels;
-  }
+  TestReactionVarRate() = default;
+
+  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
+                      Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
+                      int in_states_)
+      : LinearReactionBase<TestReactionVarRate, 0, TestReactionVarData, TestReactionVarKernels>(
+            sycl_target_, total_reaction_rate_,
+            std::vector<Sym<REAL>>{read_var, Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
+            std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
+            std::vector<ParticleProp<INT>>{},
+            TestReactionVarData(),
+            TestReactionVarKernels<0>())
+      {}
+
 };
 
 inline auto create_test_particle_group(int N_total)
