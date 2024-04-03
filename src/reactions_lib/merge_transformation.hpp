@@ -2,7 +2,6 @@
 #define MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
-#include "common_transformations.hpp"
 #include "particle_sub_group.hpp"
 #include <algorithm>
 #include <cassert>
@@ -236,18 +235,19 @@ struct MergeTransformationStrategy : TransformationStrategy {
 
         new_particle_group->add_particles_local(new_particles);
 
-        auto cell_select_strategy = make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
-          Sym<INT>("CELL_ID"), cx
-        );
+        auto cell_select_strategy =
+            make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+                Sym<INT>("CELL_ID"), cx);
 
-        auto target_subgroup_cx = cell_select_strategy->make_marker_subgroup(target_subgroup);
+        auto target_subgroup_cx =
+            cell_select_strategy->make_marker_subgroup(target_subgroup);
 
-        auto new_particle_group_cx = cell_select_strategy->make_marker_subgroup(make_shared<ParticleSubGroup>(new_particle_group));
+        auto new_particle_group_cx = cell_select_strategy->make_marker_subgroup(
+            make_shared<ParticleSubGroup>(new_particle_group));
 
         part_group->remove_particles(target_subgroup_cx);
 
         part_group->add_particles_local(new_particle_group_cx);
-
       }
     }
 

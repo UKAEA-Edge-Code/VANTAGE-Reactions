@@ -3,7 +3,6 @@
 #include "merge_transformation.hpp"
 #include "particle_spec.hpp"
 #include "particle_sub_group.hpp"
-#include "transformation_wrapper.hpp"
 #include "typedefs.hpp"
 #include <CL/sycl.hpp>
 #include <gtest/gtest.h>

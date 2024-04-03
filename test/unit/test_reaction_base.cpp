@@ -53,7 +53,7 @@ TEST(LinearReactionBase, calc_rate) {
     }
   }
 
-  particle_group->domain->mesh->free(); // Explicit free? Yuck
+  particle_group->domain->mesh->free();
 }
 
 TEST(LinearReactionBase, calc_var_rate) {
@@ -87,7 +87,7 @@ TEST(LinearReactionBase, calc_var_rate) {
     }
   }
 
-  particle_group->domain->mesh->free(); // Explicit free? Yuck
+  particle_group->domain->mesh->free();
 }
 
 TEST(LinearReactionBase, split_group_single_reaction) {

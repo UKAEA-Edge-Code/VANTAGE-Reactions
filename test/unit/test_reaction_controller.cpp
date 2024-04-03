@@ -85,7 +85,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
-  particle_group->domain->mesh->free(); // Explicit free? Yuck
+  particle_group->domain->mesh->free();
 }
 
 TEST(ReactionController, multi_reaction_multiple_products) {

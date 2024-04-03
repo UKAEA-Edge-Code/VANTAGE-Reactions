@@ -213,6 +213,24 @@ struct LinearReactionBase : public AbstractReaction {
                                     ReactionKernels<num_products_per_parent>>,
                   "Template parameter ReactionKernels is not derived from "
                   "AbstractReactionData...");
+
+    auto descendant_particles_spec = ParticleSpec();
+    for (auto ireal_prop : this->get_real_descendant_props()) {
+      descendant_particles_spec.push(ireal_prop);
+    }
+    for (auto iint_prop : this->get_int_descendant_props()) {
+      descendant_particles_spec.push(iint_prop);
+    }
+
+    // Product matrix spec for descendant particles that specifies which
+    // properties of the descendant particles are to be modified in this
+    // reaction upon creation of the descendant particles
+    auto descendant_matrix_spec =
+        product_matrix_spec(descendant_particles_spec);
+
+    this->descendant_particles = std::make_shared<DescendantProducts>(
+        this->get_sycl_target(), descendant_matrix_spec,
+        num_products_per_parent);
   }
 
   /**
@@ -311,23 +329,6 @@ struct LinearReactionBase : public AbstractReaction {
 
     this->pre_calc_req_data(cell_idx);
 
-    auto descendant_particles_spec = ParticleSpec();
-    for (auto ireal_prop : this->get_real_descendant_props()) {
-      descendant_particles_spec.push(ireal_prop);
-    }
-    for (auto iint_prop : this->get_int_descendant_props()) {
-      descendant_particles_spec.push(iint_prop);
-    }
-
-    // Product matrix spec for descendant particles that specifies which
-    // properties of the descendant particles are to be modified in this
-    // reaction upon creation of the descendant particles
-    auto descendant_matrix_spec =
-        product_matrix_spec(descendant_particles_spec);
-
-    auto descendant_particles = std::make_shared<DescendantProducts>(
-        sycl_target_stored, descendant_matrix_spec, num_products_per_parent);
-
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,
         [=](auto descendant_particle, auto particle_index, auto read_req_reals,
@@ -367,7 +368,8 @@ struct LinearReactionBase : public AbstractReaction {
               read_req_ints, read_req_reals, write_req_ints, write_req_reals,
               out_states_arr, pre_req_data, dt);
         },
-        Access::write(descendant_particles), Access::read(ParticleLoopIndex{}),
+        Access::write(this->descendant_particles),
+        Access::read(ParticleLoopIndex{}),
         // The ->get_particle_group() is temporary until sym_vector accepts
         // ParticleSubGroup as an argument
         Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(),
@@ -383,11 +385,12 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(this->get_weight_sym()),
         Access::read(this->get_total_reaction_rate()));
 
-    descendant_particles->reset(particle_sub_group->get_npart_cell(cell_idx));
+    this->descendant_particles->reset(
+        particle_sub_group->get_npart_cell(cell_idx));
 
     loop->execute(cell_idx);
 
-    child_group->add_particles_local(descendant_particles,
+    child_group->add_particles_local(this->descendant_particles,
                                      particle_sub_group->get_particle_group());
 
     return;
@@ -462,5 +465,6 @@ private:
   std::vector<ParticleProp<INT>> int_descendant_particles_props;
   ReactionData reaction_data;
   ReactionKernels<num_products_per_parent> reaction_kernels;
+  std::shared_ptr<DescendantProducts> descendant_particles;
 };
 } // namespace Reactions

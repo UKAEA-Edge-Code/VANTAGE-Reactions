@@ -5,7 +5,6 @@
 
 using namespace NESO::Particles;
 
-
 /**
  * @brief Abstract class for ReactionData.
  */
