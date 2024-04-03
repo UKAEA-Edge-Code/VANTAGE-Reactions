@@ -1,5 +1,9 @@
 Find_package(Threads REQUIRED)
 
+set(CMAKE_CXX_STANDARD 17)
+
+add_definitions(-DGPU_SELECTOR=0)
+
 include(ExternalProject)
 
 ExternalProject_Add(
