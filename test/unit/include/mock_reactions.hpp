@@ -98,8 +98,7 @@ private:
 
 template <INT num_products_per_parent>
 struct TestReaction
-    : public LinearReactionBase<TestReaction<num_products_per_parent>,
-                                num_products_per_parent, TestReactionData,
+    : public LinearReactionBase<num_products_per_parent, TestReactionData,
                                 TestReactionKernels> {
 
   TestReaction() = default;
@@ -107,8 +106,7 @@ struct TestReaction
   TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
                REAL rate_, int in_states_,
                const std::array<int, num_products_per_parent> out_states_)
-      : LinearReactionBase<TestReaction<num_products_per_parent>,
-                           num_products_per_parent, TestReactionData,
+      : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{Sym<REAL>("V"),
@@ -207,14 +205,14 @@ struct IoniseReactionKernels
 };
 
 struct IoniseReaction
-    : public LinearReactionBase<IoniseReaction, 0, IoniseReactionData,
+    : public LinearReactionBase<0, IoniseReactionData,
                                 IoniseReactionKernels> {
 
   IoniseReaction() = default;
 
   IoniseReaction(SYCLTargetSharedPtr sycl_target_,
                  Sym<REAL> total_reaction_rate_, int in_states_)
-      : LinearReactionBase<IoniseReaction, 0, IoniseReactionData,
+      : LinearReactionBase<0, IoniseReactionData,
                            IoniseReactionKernels>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{
@@ -296,7 +294,7 @@ struct TestReactionVarKernels
 };
 
 struct TestReactionVarRate
-    : public LinearReactionBase<TestReactionVarRate, 0, TestReactionVarData,
+    : public LinearReactionBase<0, TestReactionVarData,
                                 TestReactionVarKernels> {
 
   TestReactionVarRate() = default;
@@ -304,7 +302,7 @@ struct TestReactionVarRate
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
                       int in_states_)
-      : LinearReactionBase<TestReactionVarRate, 0, TestReactionVarData,
+      : LinearReactionBase<0, TestReactionVarData,
                            TestReactionVarKernels>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{read_var, Sym<REAL>("COMPUTATIONAL_WEIGHT")},

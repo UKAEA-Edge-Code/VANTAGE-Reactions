@@ -8,52 +8,6 @@ using namespace NESO::Particles;
  */
 struct AbstractReactionKernels {
   AbstractReactionKernels() = default;
-
-  /**
-   * @brief Virtual functions to be overidden by an implementation in a derived
-   * struct.
-   */
-
-  virtual void
-  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                    Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Read<INT> &read_req_ints,
-                    Access::SymVector::Read<REAL> &read_req_reals,
-                    Access::SymVector::Write<INT> &write_req_ints,
-                    Access::SymVector::Write<REAL> &write_req_reals,
-                    const std::array<int, 0> &out_states,
-                    Access::LocalArray::Read<REAL> &pre_req_data, double dt) {}
-
-  virtual void
-  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                  Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Read<INT> &read_req_ints,
-                  Access::SymVector::Read<REAL> &read_req_reals,
-                  Access::SymVector::Write<INT> &write_req_ints,
-                  Access::SymVector::Write<REAL> &write_req_reals,
-                  const std::array<int, 0> &out_states,
-                  Access::LocalArray::Read<REAL> &pre_req_data, double dt) {}
-
-  virtual void
-  weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                Access::DescendantProducts::Write &descendant_products,
-                Access::SymVector::Read<INT> &read_req_ints,
-                Access::SymVector::Read<REAL> &read_req_reals,
-                Access::SymVector::Write<INT> &write_req_ints,
-                Access::SymVector::Write<REAL> &write_req_reals,
-                const std::array<int, 0> &out_states,
-                Access::LocalArray::Read<REAL> &pre_req_data, double dt) {}
-
-  virtual void
-  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                        Access::DescendantProducts::Write &descendant_products,
-                        Access::SymVector::Read<INT> &read_req_ints,
-                        Access::SymVector::Read<REAL> &read_req_reals,
-                        Access::SymVector::Write<INT> &write_req_ints,
-                        Access::SymVector::Write<REAL> &write_req_reals,
-                        const std::array<int, 0> &out_states,
-                        Access::LocalArray::Read<REAL> &pre_req_data,
-                        double dt) {}
 };
 
 /**

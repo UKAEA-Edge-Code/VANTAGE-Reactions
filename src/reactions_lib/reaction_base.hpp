@@ -178,7 +178,7 @@ private:
  * @param reaction_kernels ReactionKernels object to be used in
  * descendant_product_loop.
  */
-template <typename LinearReactionDerived, INT num_products_per_parent,
+template <INT num_products_per_parent,
           typename ReactionData, template <INT> class ReactionKernels>
 struct LinearReactionBase : public AbstractReaction {
 

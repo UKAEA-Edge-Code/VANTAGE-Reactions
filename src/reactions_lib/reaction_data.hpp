@@ -10,27 +10,6 @@ using namespace NESO::Particles;
  */
 struct AbstractReactionData {
   AbstractReactionData() = default;
-
-  /**
-   * @brief Virtual functions to be overidden by an implementation in a derived
-   * struct.
-   */
-
-  virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                         Access::SymVector::Read<INT> &vars) {
-    return 0.0;
-  }
-
-  virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                         Access::SymVector::Read<REAL> &vars) {
-    return 0.0;
-  }
-
-  virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                         Access::SymVector::Read<INT> &int_vars,
-                         Access::SymVector::Read<REAL> &real_vars) {
-    return 0.0;
-  }
 };
 
 /**
