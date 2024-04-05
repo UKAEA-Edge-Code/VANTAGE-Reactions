@@ -178,8 +178,8 @@ private:
  * @param reaction_kernels ReactionKernels object to be used in
  * descendant_product_loop.
  */
-template <INT num_products_per_parent,
-          typename ReactionData, template <INT> class ReactionKernels>
+template <INT num_products_per_parent, typename ReactionData,
+          template <INT> class ReactionKernels>
 struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = default;
@@ -212,7 +212,7 @@ struct LinearReactionBase : public AbstractReaction {
     static_assert(std::is_base_of_v<AbstractReactionKernels,
                                     ReactionKernels<num_products_per_parent>>,
                   "Template parameter ReactionKernels is not derived from "
-                  "AbstractReactionData...");
+                  "AbstractReactionKernels...");
 
     auto descendant_particles_spec = ParticleSpec();
     for (auto ireal_prop : this->get_real_descendant_props()) {

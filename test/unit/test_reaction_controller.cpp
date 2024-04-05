@@ -375,3 +375,47 @@ TEST(ReactionController, ionisation_reaction) {
 
   particle_group->domain->mesh->free();
 }
+
+TEST(ReactionController, ionisation_reaction_amjuel) {
+  const int N_total = 1600;
+
+  auto particle_group = create_test_particle_group(N_total);
+
+  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
+
+  auto ionise_reaction = IoniseReactionAMJUEL(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0);
+
+  ionise_reaction.flush_buffer(
+      static_cast<size_t>(particle_group->get_npart_local()));
+
+  reaction_controller.add_reaction(
+      std::make_shared<IoniseReactionAMJUEL>(ionise_reaction));
+
+  reaction_controller.apply_reactions(particle_group, 0.1);
+
+  auto test_removal_wrapper = TransformationWrapper(
+      std::vector<std::shared_ptr<MarkingStrategy>>{
+          make_marking_strategy<ComparisonMarkerSingle<EqualsComp<REAL>, REAL>>(
+              Sym<REAL>("COMPUTATIONAL_WEIGHT"), 0.0)},
+      make_transformation_strategy<SimpleRemovalTransformationStrategy>());
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto W = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), cellx);
+    int nrow = W->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_EQ(W->at(rowx, 0), 0.0);
+    };
+  };
+
+  test_removal_wrapper.transform(particle_group);
+
+  auto final_particle_num = particle_group->get_npart_local();
+
+  EXPECT_EQ(final_particle_num, 0);
+
+  particle_group->domain->mesh->free();
+}

@@ -1,5 +1,7 @@
+#include "containers/sym_vector.hpp"
 #include "particle_spec.hpp"
 #include "typedefs.hpp"
+#include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
 #include <reaction_base.hpp>
@@ -133,6 +135,44 @@ struct IoniseReactionData : public ReactionDataBase<IoniseReactionData> {
   }
 };
 
+// This ReactionData is specifically for reaction 2.1.5 from
+// https://www.eirene.de/Documentation/amjuel.pdf which is just a hydrogen
+// ionisation reaction
+struct IoniseReactionAMJUELData
+    : public ReactionDataBase<IoniseReactionAMJUELData> {
+  IoniseReactionAMJUELData() = default;
+
+  REAL calc_rate(Access::LoopIndex::Read &index,
+                 Access::SymVector::Read<REAL> &vars) const {
+    auto fluid_density = vars.at(8, index, 0);
+    auto fluid_temperature = vars.at(7, index, 0);
+
+    // AMJUEL 2.1.5 reaction coeffecients
+    // b0 -0.317385000000e+02 b1 0.114381800000e+02 b2 -0.383399800000e+01
+    // b3 0.704669200000e+00 b4 -0.743148620000e-01 b5 0.415374900000e-02
+    // b6 -0.948696700000e-04 b7 0.000000000000e-00 b8 0.000000000000e+00
+
+    std::array<REAL, 9> b_coeffs = {
+        -0.317385000000e+02, 0.114381800000e+02,  -0.383399800000e+01,
+        0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
+        -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
+
+    REAL log_cross_section_vel = 0.0;
+    for (int i = 0; i < 9; i++) {
+      log_cross_section_vel +=
+          b_coeffs[i] * std::pow(std::log(fluid_temperature), i);
+    }
+
+    REAL cross_section_vel = std::exp(log_cross_section_vel);
+
+    REAL inv_m3_to_inv_cm3 = 1e-6;
+
+    REAL rate = cross_section_vel * fluid_density * inv_m3_to_inv_cm3;
+
+    return rate;
+  }
+};
+
 template <INT num_products_per_parent>
 struct IoniseReactionKernels
     : public ReactionKernelsBase<IoniseReactionKernels<num_products_per_parent>,
@@ -205,15 +245,13 @@ struct IoniseReactionKernels
 };
 
 struct IoniseReaction
-    : public LinearReactionBase<0, IoniseReactionData,
-                                IoniseReactionKernels> {
+    : public LinearReactionBase<0, IoniseReactionData, IoniseReactionKernels> {
 
   IoniseReaction() = default;
 
   IoniseReaction(SYCLTargetSharedPtr sycl_target_,
                  Sym<REAL> total_reaction_rate_, int in_states_)
-      : LinearReactionBase<0, IoniseReactionData,
-                           IoniseReactionKernels>(
+      : LinearReactionBase<0, IoniseReactionData, IoniseReactionKernels>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{
                 Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
@@ -228,6 +266,33 @@ struct IoniseReaction
             std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
             std::vector<ParticleProp<INT>>{}, IoniseReactionData(),
+            IoniseReactionKernels<0>()) {}
+};
+
+struct IoniseReactionAMJUEL
+    : public LinearReactionBase<0, IoniseReactionAMJUELData,
+                                IoniseReactionKernels> {
+
+  IoniseReactionAMJUEL() = default;
+
+  IoniseReactionAMJUEL(SYCLTargetSharedPtr sycl_target_,
+                       Sym<REAL> total_reaction_rate_, int in_states_)
+      : LinearReactionBase<0, IoniseReactionAMJUELData, IoniseReactionKernels>(
+            sycl_target_, total_reaction_rate_,
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
+                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
+                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
+                Sym<REAL>("COMPUTATIONAL_WEIGHT"),
+                Sym<REAL>("FLUID_TEMPERATURE"), Sym<REAL>("FLUID_DENSITY")},
+            std::vector<Sym<REAL>>{
+                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
+                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
+                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
+                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
+            std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
+            std::vector<ParticleProp<INT>>{}, IoniseReactionAMJUELData(),
             IoniseReactionKernels<0>()) {}
 };
 
@@ -293,17 +358,15 @@ struct TestReactionVarKernels
   }
 };
 
-struct TestReactionVarRate
-    : public LinearReactionBase<0, TestReactionVarData,
-                                TestReactionVarKernels> {
+struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
+                                                       TestReactionVarKernels> {
 
   TestReactionVarRate() = default;
 
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
                       int in_states_)
-      : LinearReactionBase<0, TestReactionVarData,
-                           TestReactionVarKernels>(
+      : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{read_var, Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
@@ -352,7 +415,9 @@ inline auto create_test_particle_group(int N_total)
                              ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1),
                              ParticleProp(Sym<REAL>("SOURCE_ENERGY"), 1),
                              ParticleProp(Sym<REAL>("SOURCE_MOMENTUM"), ndim),
-                             ParticleProp(Sym<REAL>("SOURCE_DENSITY"), 1)};
+                             ParticleProp(Sym<REAL>("SOURCE_DENSITY"), 1),
+                             ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
+                             ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
       std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
 
@@ -393,6 +458,8 @@ inline auto create_test_particle_group(int N_total)
     initial_distribution[Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
     initial_distribution[Sym<REAL>("SOURCE_ENERGY")][px][0] = 0.0;
     initial_distribution[Sym<REAL>("SOURCE_DENSITY")][px][0] = 0.0;
+    initial_distribution[Sym<REAL>("FLUID_DENSITY")][px][0] = 3.0e18;
+    initial_distribution[Sym<REAL>("FLUID_TEMPERATURE")][px][0] = 2.0;
   }
   particle_group->add_particles_local(initial_distribution);
 
