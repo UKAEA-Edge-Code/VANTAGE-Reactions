@@ -1,9 +1,7 @@
 #ifndef COMMON_TRANSFORMATIONS_H
 #define COMMON_TRANSFORMATIONS_H
-#include <memory>
 #include <neso_particles.hpp>
 #include <transformation_wrapper.hpp>
-#include <vector>
 
 using namespace NESO::Particles;
 

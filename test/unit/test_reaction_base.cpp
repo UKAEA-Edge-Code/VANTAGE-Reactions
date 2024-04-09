@@ -144,7 +144,7 @@ TEST(LinearReactionBase, split_group_single_reaction) {
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
       auto sub_group_selector =
-          make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+          make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
               Sym<INT>("INTERNAL_STATE"), (reaction + 2));
       auto particle_sub_group = sub_group_selector->make_marker_subgroup(
           std::make_shared<ParticleSubGroup>(particle_group));
@@ -186,7 +186,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
   auto particle_group = create_test_particle_group(N_total);
 
   auto sub_group_selector =
-      make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 0);
 
   auto particle_sub_group = sub_group_selector->make_marker_subgroup(

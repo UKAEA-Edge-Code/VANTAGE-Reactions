@@ -236,7 +236,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
         new_particle_group->add_particles_local(new_particles);
 
         auto cell_select_strategy =
-            make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+            make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
                 Sym<INT>("CELL_ID"), cx);
 
         auto target_subgroup_cx =
