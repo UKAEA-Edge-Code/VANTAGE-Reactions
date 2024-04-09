@@ -395,6 +395,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
       0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
       -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
 
+  // m^-3 to cm^-3
   REAL density_normalisation = 1e-6;
 
   auto ionise_reaction = IoniseReactionAMJUEL<9>(
