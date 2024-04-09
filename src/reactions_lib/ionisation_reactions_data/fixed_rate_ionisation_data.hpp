@@ -14,7 +14,8 @@ using namespace NESO::Particles;
 using namespace Reactions;
 
 struct FixedRateIonisationData
-    : public ReactionDataBase<FixedRateIonisationData> {
+    : public ReactionDataBase
+     {
   FixedRateIonisationData() = default;
 
   FixedRateIonisationData(REAL rate) : rate(rate) {}

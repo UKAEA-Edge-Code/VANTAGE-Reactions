@@ -16,7 +16,8 @@ using namespace Reactions;
 
 template <int num_coeffs>
 struct IoniseReactionAMJUELData
-    : public ReactionDataBase<IoniseReactionAMJUELData<num_coeffs>> {
+    : public ReactionDataBase
+    {
   IoniseReactionAMJUELData() = default;
 
   IoniseReactionAMJUELData(REAL density_normalisation,

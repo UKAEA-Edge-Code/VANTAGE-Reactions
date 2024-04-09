@@ -15,8 +15,9 @@ using namespace Reactions;
 
 template <INT num_products_per_parent>
 struct IoniseReactionKernels
-    : public ReactionKernelsBase<IoniseReactionKernels<num_products_per_parent>,
-                                 num_products_per_parent> {
+    : public ReactionKernelsBase
+    <num_products_per_parent>
+                                 {
   IoniseReactionKernels() = default;
 
   void scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,

@@ -14,7 +14,8 @@
 using namespace NESO::Particles;
 using namespace Reactions;
 
-struct TestReactionData : public ReactionDataBase<TestReactionData> {
+struct TestReactionData : public ReactionDataBase
+ {
   TestReactionData() = default;
 
   TestReactionData(REAL rate_) : rate(rate_){};
@@ -31,8 +32,8 @@ private:
 
 template <INT num_products_per_parent>
 struct TestReactionKernels
-    : public ReactionKernelsBase<TestReactionKernels<num_products_per_parent>,
-                                 num_products_per_parent> {
+    : public ReactionKernelsBase
+    <num_products_per_parent>{
   TestReactionKernels() = default;
 
   void
@@ -126,7 +127,8 @@ struct TestReaction
             TestReactionKernels<num_products_per_parent>()) {}
 };
 
-struct TestReactionVarData : public ReactionDataBase<TestReactionVarData> {
+struct TestReactionVarData : public ReactionDataBase
+ {
   TestReactionVarData() = default;
 
   REAL calc_rate(Access::LoopIndex::Read &index,
@@ -138,9 +140,8 @@ struct TestReactionVarData : public ReactionDataBase<TestReactionVarData> {
 
 template <INT num_products_per_parent>
 struct TestReactionVarKernels
-    : public ReactionKernelsBase<
-          TestReactionVarKernels<num_products_per_parent>,
-          num_products_per_parent> {
+    : public ReactionKernelsBase
+    <num_products_per_parent> {
   TestReactionVarKernels() = default;
 
   void scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
