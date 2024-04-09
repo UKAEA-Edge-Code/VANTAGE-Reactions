@@ -15,9 +15,7 @@ using namespace NESO::Particles;
 using namespace Reactions;
 
 template <int num_coeffs>
-struct IoniseReactionAMJUELData
-    : public ReactionDataBase
-    {
+struct IoniseReactionAMJUELData : public ReactionDataBase {
   IoniseReactionAMJUELData() = default;
 
   IoniseReactionAMJUELData(REAL density_normalisation,

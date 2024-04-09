@@ -204,15 +204,16 @@ struct LinearReactionBase : public AbstractReaction {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and
-    // ReactionKernels have to be derived from ReactionKernelsBase and AbstractReactionKernels
-    // respectively
+    // ReactionKernels have to be derived from ReactionKernelsBase and
+    // AbstractReactionKernels respectively
     static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
-    static_assert(std::is_base_of_v<ReactionKernelsBase<num_products_per_parent>,
-                                    ReactionKernels<num_products_per_parent>>,
-                  "Template parameter ReactionKernels is not derived from "
-                  "ReactionKernelsBase...");
+    static_assert(
+        std::is_base_of_v<ReactionKernelsBase<num_products_per_parent>,
+                          ReactionKernels<num_products_per_parent>>,
+        "Template parameter ReactionKernels is not derived from "
+        "ReactionKernelsBase...");
 
     auto descendant_particles_spec = ParticleSpec();
     for (auto ireal_prop : this->get_real_descendant_props()) {

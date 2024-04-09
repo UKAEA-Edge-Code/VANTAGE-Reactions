@@ -150,15 +150,15 @@ struct ReactionKernelsBase {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  virtual void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Read<INT> &read_req_ints,
-                     Access::SymVector::Read<REAL> &read_req_reals,
-                     Access::SymVector::Write<INT> &write_req_ints,
-                     Access::SymVector::Write<REAL> &write_req_reals,
-                     const std::array<int, num_products_per_parent> &out_states,
-                     Access::LocalArray::Read<REAL> &pre_req_data,
-                     double dt) const {
+  virtual void
+  weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                Access::DescendantProducts::Write &descendant_products,
+                Access::SymVector::Read<INT> &read_req_ints,
+                Access::SymVector::Read<REAL> &read_req_reals,
+                Access::SymVector::Write<INT> &write_req_ints,
+                Access::SymVector::Write<REAL> &write_req_reals,
+                const std::array<int, num_products_per_parent> &out_states,
+                Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;
   }
 };

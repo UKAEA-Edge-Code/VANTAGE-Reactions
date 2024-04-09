@@ -29,7 +29,7 @@ struct ReactionDataBase {
    * the overriding function on the derived type.
    */
   virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> &vars) const {
+                         Access::SymVector::Read<INT> &vars) const {
     return 0.0;
   }
 
@@ -49,7 +49,7 @@ struct ReactionDataBase {
    * the overriding function on the derived type.
    */
   virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<REAL> &vars) const {
+                         Access::SymVector::Read<REAL> &vars) const {
     return 0.0;
   }
 
@@ -72,8 +72,8 @@ struct ReactionDataBase {
    * the overriding function on the derived type.
    */
   virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> &int_vars,
-                 Access::SymVector::Read<REAL> &real_vars) const {
+                         Access::SymVector::Read<INT> &int_vars,
+                         Access::SymVector::Read<REAL> &real_vars) const {
     return 0.0;
   }
 };
