@@ -180,8 +180,7 @@ struct TestReactionVarKernels
                        const std::array<int, 0> &out_states,
                        Access::LocalArray::Read<REAL> &pre_req_data,
                        double dt) const {
-    auto k_W = write_req_reals.at(0, index, 0);
-    write_req_reals.at(0, index, 0) += (k_W * modified_weight);
+    write_req_reals.at(0, index, 0) -= modified_weight;
   }
 };
 

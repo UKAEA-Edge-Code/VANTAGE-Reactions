@@ -68,16 +68,16 @@ struct IoniseReactionKernels
     auto nE = write_req_reals.at(2, index, 0);
 
     // Set SOURCE_DENSITY
-    write_req_reals.at(5, index, 0) =
-        -nE * modified_weight * k_n_scale * inv_k_dt;
+    write_req_reals.at(5, index, 0) +=
+        nE * modified_weight * k_n_scale * inv_k_dt;
 
     // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
     auto k_SD = write_req_reals.at(5, index, 0);
-    write_req_reals.at(4, index, 0) = k_SD * k_V_0;
-    write_req_reals.at(4, index, 1) = k_SD * k_V_1;
+    write_req_reals.at(4, index, 0) += k_SD * k_V_0;
+    write_req_reals.at(4, index, 1) += k_SD * k_V_1;
 
     // Set SOURCE_ENERGY
-    write_req_reals.at(3, index, 0) = k_SD * vsquared * 0.5;
+    write_req_reals.at(3, index, 0) += k_SD * vsquared * 0.5;
 
     write_req_reals.at(6, index, 0) -= modified_weight;
   }
