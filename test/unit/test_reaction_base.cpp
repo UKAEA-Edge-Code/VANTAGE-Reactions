@@ -10,6 +10,7 @@
 #include <CL/sycl.hpp>
 #include <cstddef>
 #include <gtest/gtest.h>
+#include <ionisation_reactions/fixed_rate_ionisation.hpp>
 #include <memory>
 
 using namespace NESO::Particles;
@@ -268,8 +269,8 @@ TEST(IoniseReaction, calc_rate) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto test_reaction = IoniseReaction(particle_group->sycl_target,
-                                      Sym<REAL>("TOT_REACTION_RATE"), 0);
+  auto test_reaction = FixedRateIonisation(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1.0, 0);
 
   test_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));

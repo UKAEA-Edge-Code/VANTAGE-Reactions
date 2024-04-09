@@ -8,6 +8,8 @@
 #include "typedefs.hpp"
 #include <array>
 #include <gtest/gtest.h>
+#include <ionisation_reactions/amjuel_ionisation.hpp>
+#include <ionisation_reactions/fixed_rate_ionisation.hpp>
 #include <memory>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
@@ -339,14 +341,14 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
 
-  auto ionise_reaction = IoniseReaction(particle_group->sycl_target,
-                                        Sym<REAL>("TOT_REACTION_RATE"), 0);
+  auto ionise_reaction = FixedRateIonisation(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1.0, 0);
 
   ionise_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
 
   reaction_controller.add_reaction(
-      std::make_shared<IoniseReaction>(ionise_reaction));
+      std::make_shared<FixedRateIonisation>(ionise_reaction));
 
   reaction_controller.apply_reactions(particle_group, 1.5);
 
@@ -383,14 +385,27 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
 
-  auto ionise_reaction = IoniseReactionAMJUEL(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0);
+  // AMJUEL 2.1.5 reaction coeffecients
+  // b0 -0.317385000000e+02 b1 0.114381800000e+02 b2 -0.383399800000e+01
+  // b3 0.704669200000e+00 b4 -0.743148620000e-01 b5 0.415374900000e-02
+  // b6 -0.948696700000e-04 b7 0.000000000000e-00 b8 0.000000000000e+00
+
+  std::array<REAL, 9> b_coeffs = {
+      -0.317385000000e+02, 0.114381800000e+02,  -0.383399800000e+01,
+      0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
+      -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
+
+  REAL density_normalisation = 1e-6;
+
+  auto ionise_reaction = IoniseReactionAMJUEL<9>(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+      density_normalisation, b_coeffs);
 
   ionise_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
 
   reaction_controller.add_reaction(
-      std::make_shared<IoniseReactionAMJUEL>(ionise_reaction));
+      std::make_shared<IoniseReactionAMJUEL<9>>(ionise_reaction));
 
   reaction_controller.apply_reactions(particle_group, 0.1);
 
@@ -402,12 +417,20 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
+  auto expected_weight = 0.0;
+
+  // Hard-coded expected rate based on b_coeffs and fluid_density=3e18 and
+  // fluid_temperature=2eV
+  auto expected_rate = 26.993377387251336;
+
   for (int cellx = 0; cellx < num_cells; cellx++) {
     auto W = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), cellx);
+    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), cellx);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(W->at(rowx, 0), 0.0);
+      EXPECT_EQ(rate->at(rowx, 0), expected_rate);
+      EXPECT_EQ(W->at(rowx, 0), expected_weight);
     };
   };
 
