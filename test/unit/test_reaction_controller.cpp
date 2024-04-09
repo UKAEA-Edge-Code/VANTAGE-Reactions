@@ -47,7 +47,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));
 
   auto merged_group_marking =
-      make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 1);
   auto merged_group = merged_group_marking->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
@@ -152,13 +152,13 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       ->execute();
 
   auto merged_species_1_marker =
-      make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 1);
   auto merged_species_1 = merged_species_1_marker->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
 
   auto merged_species_2_marker =
-      make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 2);
   auto merged_species_2 = merged_species_2_marker->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
@@ -248,13 +248,13 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       ->execute();
 
   auto merged_group_marking =
-      make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 1);
   auto merged_group = merged_group_marking->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
 
   auto merged_group_marking2 =
-      make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 3);
   auto merged_group2 = merged_group_marking2->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
@@ -354,8 +354,8 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<EqualsComp<REAL>, REAL>>(
-              Sym<REAL>("COMPUTATIONAL_WEIGHT"), 0.0)},
+          make_marking_strategy<ComparisonMarkerSingle<REAL,LessThanComp>>(
+              Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1.0e-12)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
@@ -411,7 +411,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<EqualsComp<REAL>, REAL>>(
+          make_marking_strategy<ComparisonMarkerSingle<REAL, EqualsComp>>(
               Sym<REAL>("COMPUTATIONAL_WEIGHT"), 0.0)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 

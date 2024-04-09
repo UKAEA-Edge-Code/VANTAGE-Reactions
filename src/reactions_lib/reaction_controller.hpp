@@ -95,7 +95,7 @@ public:
           if (in_it == sub_group_selectors.end()) {
             sub_group_selectors.emplace(std::make_pair(
                 in_state, make_marking_strategy<
-                              ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+                              ComparisonMarkerSingle<INT,EqualsComp>>(
                               id_sym, in_state)));
             species_groups.emplace(std::make_pair(
                 in_state,
@@ -116,7 +116,7 @@ public:
 
             sub_group_selectors.emplace(std::make_pair(
                 out_state, make_marking_strategy<
-                               ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+                               ComparisonMarkerSingle<INT,EqualsComp>>(
                                id_sym, out_state)));
           }
         }

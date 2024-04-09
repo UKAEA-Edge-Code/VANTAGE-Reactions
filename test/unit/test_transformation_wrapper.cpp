@@ -3,8 +3,6 @@
 #include "transformation_wrapper.hpp"
 #include <CL/sycl.hpp>
 #include <gtest/gtest.h>
-#include <iostream>
-#include <memory>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -94,7 +92,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_less_than) {
 
   auto test_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{make_marking_strategy<
-          ComparisonMarkerSingle<LessThanComp<REAL>, REAL>>(Sym<REAL>("WEIGHT"),
+          ComparisonMarkerSingle<REAL,LessThanComp>>(Sym<REAL>("WEIGHT"),
                                                             0.5)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
@@ -121,7 +119,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_equals) {
 
   auto test_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+          make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
               Sym<INT>("ID"), 1)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
@@ -148,11 +146,11 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
 
   auto test_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<EqualsComp<INT>, INT>>(
+          make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
               Sym<INT>("ID"), 1)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
   test_wrapper.add_marking_strategy(
-      make_marking_strategy<ComparisonMarkerSingle<LessThanComp<REAL>, REAL>>(
+      make_marking_strategy<ComparisonMarkerSingle<REAL,LessThanComp>>(
           Sym<REAL>("WEIGHT"), 0.5));
   test_wrapper.transform(particle_group);
 
