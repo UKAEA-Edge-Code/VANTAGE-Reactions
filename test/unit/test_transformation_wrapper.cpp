@@ -3,6 +3,7 @@
 #include "transformation_wrapper.hpp"
 #include <CL/sycl.hpp>
 #include <gtest/gtest.h>
+#include <memory>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -38,7 +39,8 @@ auto create_test_particle_group_marking(int N_total)
   ParticleSpec particle_spec{ParticleProp(Sym<REAL>("P"), ndim, true),
                              ParticleProp(Sym<INT>("CELL_ID"), 1, true),
                              ParticleProp(Sym<REAL>("WEIGHT"), 1),
-                             ParticleProp(Sym<INT>("ID"), 1)};
+                             ParticleProp(Sym<INT>("ID"), 1),
+                             ParticleProp(Sym<REAL>("V"), 2)};
 
   auto particle_group =
       std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
@@ -60,6 +62,8 @@ auto create_test_particle_group_marking(int N_total)
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
       initial_distribution[Sym<REAL>("P")][px][dimx] =
+          positions.at(dimx).at(px);
+      initial_distribution[Sym<REAL>("V")][px][dimx] =
           positions.at(dimx).at(px);
     }
     initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
@@ -91,9 +95,9 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_less_than) {
   auto particle_group = create_test_particle_group_marking(N_total);
 
   auto test_wrapper = TransformationWrapper(
-      std::vector<std::shared_ptr<MarkingStrategy>>{make_marking_strategy<
-          ComparisonMarkerSingle<REAL,LessThanComp>>(Sym<REAL>("WEIGHT"),
-                                                            0.5)},
+      std::vector<std::shared_ptr<MarkingStrategy>>{
+          make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
+              Sym<REAL>("WEIGHT"), 0.5)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
   test_wrapper.transform(particle_group);
@@ -119,7 +123,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_equals) {
 
   auto test_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
+          make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
               Sym<INT>("ID"), 1)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
@@ -146,11 +150,11 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
 
   auto test_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<INT,EqualsComp>>(
+          make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
               Sym<INT>("ID"), 1)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
   test_wrapper.add_marking_strategy(
-      make_marking_strategy<ComparisonMarkerSingle<REAL,LessThanComp>>(
+      make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
           Sym<REAL>("WEIGHT"), 0.5));
   test_wrapper.transform(particle_group);
 
@@ -164,6 +168,41 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_EQ(id->at(rowx, 0), 2);
       EXPECT_EQ(W->at(rowx, 0), 1.0);
+    };
+  };
+
+  particle_group->domain->mesh->free();
+}
+
+TEST(TransformationWrapper, CompositeTransformZeroer) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group_marking(N_total);
+
+  auto composite = std::make_shared<CompositeTransform>(
+      std::vector<std::shared_ptr<TransformationStrategy>>{
+          make_transformation_strategy<ParticleDatZeroer<REAL>>(
+              std::vector<std::string>{"V"})});
+  auto zeroerID = make_transformation_strategy<ParticleDatZeroer<INT>>(
+      std::vector<std::string>{"ID"});
+
+  composite->add_transformation(zeroerID);
+
+  auto test_wrapper = TransformationWrapper(
+      std::dynamic_pointer_cast<TransformationStrategy>(composite));
+  test_wrapper.transform(particle_group);
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto id = particle_group->get_cell(Sym<INT>("ID"), cellx);
+    auto V = particle_group->get_cell(Sym<REAL>("V"), cellx);
+    int nrow = id->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_EQ(id->at(rowx, 0), 0.0);
+      EXPECT_EQ(V->at(rowx, 0), 0.0);
+      EXPECT_EQ(V->at(rowx, 1), 0.0);
     };
   };
 
