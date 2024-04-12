@@ -32,7 +32,7 @@ struct IoniseReactionKernels
     // auto k_V_1 = write_req_reals.at(0, index, 1);
     auto k_V_0 = write_req_reals.at(velocity, index, 0);
     auto k_V_1 = write_req_reals.at(velocity, index, 1);
-    
+
     const REAL vsquared = (k_V_0 * k_V_0) + (k_V_1 * k_V_1);
 
     REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
@@ -59,30 +59,42 @@ struct IoniseReactionKernels
     using namespace ParticlePropertiesIndices;
 
     std::array<prop_inds, 6> props = {
-      prop_inds::velocity, prop_inds::electron_density, prop_inds::source_density,
-      prop_inds::source_momentum, prop_inds::source_energy, prop_inds::weight
-    };
+        prop_inds::velocity,       prop_inds::electron_density,
+        prop_inds::source_density, prop_inds::source_momentum,
+        prop_inds::source_energy,  prop_inds::weight};
 
     int unmatched_count = 0;
     for (int i = 0; i < indices.size(); i++) {
       if (std::find(props.begin(), props.end(), indices.at(i)) == props.end()) {
         unmatched_count += 1;
       }
-      switch(indices.at(i)) {
-        case prop_inds::velocity : velocity = i; break;
-        case prop_inds::electron_density : electron_density = i; break;
-        case prop_inds::source_density : source_density = i; break;
-        case prop_inds::source_momentum : source_momentum = i; break;
-        case prop_inds::source_energy : source_energy = i; break;
-        case prop_inds::weight : weight = i; break;
+      switch (indices.at(i)) {
+      case prop_inds::velocity:
+        velocity = i;
+        break;
+      case prop_inds::electron_density:
+        electron_density = i;
+        break;
+      case prop_inds::source_density:
+        source_density = i;
+        break;
+      case prop_inds::source_momentum:
+        source_momentum = i;
+        break;
+      case prop_inds::source_energy:
+        source_energy = i;
+        break;
+      case prop_inds::weight:
+        weight = i;
+        break;
       }
     }
-    NESOASSERT(
-      (unmatched_count != props.size()),
-      "Indices of required_dats_real sym_vector don't map to required particle properties indices..."
-    );
+    NESOASSERT((unmatched_count != props.size()),
+               "Sym_vector indices don't map to indices of particle properties "
+               "required by IoniseReactionKernels...");
   }
 
-  public:
-    int velocity, electron_density, source_density, source_momentum, source_energy, weight;
+public:
+  int velocity, electron_density, source_density, source_momentum,
+      source_energy, weight;
 };

@@ -162,8 +162,5 @@ struct ReactionKernelsBase {
     return;
   }
 
-  virtual void set_var_indices(std::vector<int> &indices) {
-    return;
-  }
-
+  virtual void set_var_indices(std::vector<int> &indices) { return; }
 };
