@@ -13,6 +13,7 @@
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
+#include <particle_properties_map.hpp>
 
 using namespace NESO::Particles;
 
@@ -232,6 +233,30 @@ struct LinearReactionBase : public AbstractReaction {
     this->descendant_particles = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec,
         num_products_per_parent);
+    
+    using namespace ParticlePropertiesIndices;
+
+    std::vector<int> indices;
+
+    for (auto &sx : required_dats_real_write) {
+      std::string sx_name = sx.name;
+      int unmatched_sym_name_count;
+      ParticlePropertiesIndices::Map prop_map;
+      for (auto const &[k, v] : prop_map.default_map) {
+        if (std::find(v.begin(), v.end(), sx_name) != v.end()) {
+          indices.push_back(k);
+        }
+        else {
+          unmatched_sym_name_count += 1;
+        }
+      }
+      NESOASSERT(
+        unmatched_sym_name_count != static_cast<int>(prop_map.default_map.size()),
+        "Provided Syms in required_dats_real_read not present in ParticleSpec defined in ParticleGroup..."
+      );
+    }
+
+    this->reaction_kernels.set_var_indices(indices);
   }
 
   /**

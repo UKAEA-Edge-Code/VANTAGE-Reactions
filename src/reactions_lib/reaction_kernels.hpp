@@ -161,4 +161,9 @@ struct ReactionKernelsBase {
                 Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;
   }
+
+  virtual void set_var_indices(std::vector<int> &indices) {
+    return;
+  }
+
 };
