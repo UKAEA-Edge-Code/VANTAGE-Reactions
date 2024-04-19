@@ -29,6 +29,9 @@ private:
   REAL rate;
 };
 
+#define TEST_REACTION_PROPS \
+  X(velocity), X(weight)
+
 template <INT num_products_per_parent>
 struct TestReactionKernels
     : public ReactionKernelsBase<num_products_per_parent> {
@@ -47,7 +50,7 @@ struct TestReactionKernels
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       for (int dimx = 0; dimx < 2; dimx++) {
         descendant_products.at_real(index, childx, 0, dimx) =
-            read_req_reals.at(0, index, dimx);
+            write_req_reals.at(velocity, index, dimx);
       }
     }
   }
@@ -91,12 +94,25 @@ struct TestReactionKernels
                   const std::array<int, num_products_per_parent> &out_states,
                   Access::LocalArray::Read<REAL> &pre_req_data,
                   double dt) const {
-    write_req_reals.at(0, index, 0) -= modified_weight;
+    write_req_reals.at(weight, index, 0) -= modified_weight;
   }
 
-private:
-  int test_int;
+public:
+  #define X(M) M
+    enum { TEST_REACTION_PROPS, NUM_PROPS };
+  #undef X
+  const int get_num_props() {
+    return NUM_PROPS;
+  }
+
+  #define X(M) #M
+    const char *required_prop_names[NUM_PROPS] = { TEST_REACTION_PROPS };
+  #undef X
+  const char** get_required_properties() {
+    return required_prop_names;
+  }
 };
+#undef TEST_REACTION_PROPS
 
 template <INT num_products_per_parent>
 struct TestReaction
@@ -113,7 +129,7 @@ struct TestReaction
             sycl_target_, total_reaction_rate_,
             std::vector<Sym<REAL>>{Sym<REAL>("V"),
                                    Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
+            std::vector<Sym<REAL>>{Sym<REAL>("V"), Sym<REAL>("COMPUTATIONAL_WEIGHT")},
             std::vector<Sym<INT>>{Sym<INT>("INTERNAL_STATE")},
             std::vector<Sym<INT>>(), in_states_, out_states_,
             std::vector<ParticleProp<REAL>>{
@@ -134,6 +150,9 @@ struct TestReactionVarData : public ReactionDataBase {
     return vars.at(0, index, 0);
   }
 };
+
+#define TEST_VAR_REACTION_PROPS \
+  X(weight)
 
 template <INT num_products_per_parent>
 struct TestReactionVarKernels
@@ -180,9 +199,25 @@ struct TestReactionVarKernels
                        const std::array<int, 0> &out_states,
                        Access::LocalArray::Read<REAL> &pre_req_data,
                        double dt) const {
-    write_req_reals.at(0, index, 0) -= modified_weight;
+    write_req_reals.at(weight, index, 0) -= modified_weight;
   }
+
+  public:
+    #define X(M) M
+      enum {TEST_VAR_REACTION_PROPS, NUM_PROPS};
+    #undef X
+    const int get_num_props() {
+      return NUM_PROPS;
+    }
+    #define X(M) #M
+      const char* required_prop_names[NUM_PROPS] = { TEST_VAR_REACTION_PROPS };
+    #undef X
+
+    const char** get_required_properties() {
+      return required_prop_names;
+    }
 };
+#undef TEST_VAR_REACTION_PROPS
 
 struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {

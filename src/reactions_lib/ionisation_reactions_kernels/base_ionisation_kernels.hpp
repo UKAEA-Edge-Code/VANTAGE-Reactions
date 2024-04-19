@@ -1,6 +1,5 @@
 #pragma once
 #include "containers/sym_vector.hpp"
-#include "particle_properties_map.hpp"
 #include "typedefs.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
@@ -10,6 +9,10 @@
 #include <reaction_data.hpp>
 #include <reaction_kernels.hpp>
 #include <vector>
+
+#define BASE_IONISATION_PROPS \
+  X(velocity), X(electron_density), X(source_density),\
+  X(source_momentum), X(source_energy), X(weight)
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -55,46 +58,18 @@ struct IoniseReactionKernels
     write_req_reals.at(weight, index, 0) -= modified_weight;
   }
 
-  void set_var_indices(std::vector<int> &indices) {
-    using namespace ParticlePropertiesIndices;
-
-    std::array<prop_inds, 6> props = {
-        prop_inds::velocity,       prop_inds::electron_density,
-        prop_inds::source_density, prop_inds::source_momentum,
-        prop_inds::source_energy,  prop_inds::weight};
-
-    int unmatched_count = 0;
-    for (int i = 0; i < indices.size(); i++) {
-      if (std::find(props.begin(), props.end(), indices.at(i)) == props.end()) {
-        unmatched_count += 1;
-      }
-      switch (indices.at(i)) {
-      case prop_inds::velocity:
-        velocity = i;
-        break;
-      case prop_inds::electron_density:
-        electron_density = i;
-        break;
-      case prop_inds::source_density:
-        source_density = i;
-        break;
-      case prop_inds::source_momentum:
-        source_momentum = i;
-        break;
-      case prop_inds::source_energy:
-        source_energy = i;
-        break;
-      case prop_inds::weight:
-        weight = i;
-        break;
-      }
-    }
-    NESOASSERT((unmatched_count != props.size()),
-               "Sym_vector indices don't map to indices of particle properties "
-               "required by IoniseReactionKernels...");
-  }
-
 public:
-  int velocity, electron_density, source_density, source_momentum,
-      source_energy, weight;
+  #define X(M) M
+    enum { BASE_IONISATION_PROPS, NUM_PROPS };
+  #undef X
+  const int get_num_props() {
+    return NUM_PROPS;
+  }
+  #define X(M) #M
+    const char* required_prop_names[NUM_PROPS] = { BASE_IONISATION_PROPS };
+  #undef X
+  const char** get_required_properties() {
+    return required_prop_names;
+  }
 };
+#undef BASE_IONISATION_PROPS

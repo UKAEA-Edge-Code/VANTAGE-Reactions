@@ -1,7 +1,6 @@
 #pragma once
 #include "particle_spec.hpp"
 #include "typedefs.hpp"
-#include <array>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <ionisation_reactions_data/amjuel_ionisation_data.hpp>

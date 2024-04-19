@@ -162,5 +162,10 @@ struct ReactionKernelsBase {
     return;
   }
 
-  virtual void set_var_indices(std::vector<int> &indices) { return; }
+  virtual const int get_num_props() { return 0; }
+
+  virtual const char **get_required_properties() {
+    static const char *required_prop_names[] = {};
+    return required_prop_names;
+  }
 };

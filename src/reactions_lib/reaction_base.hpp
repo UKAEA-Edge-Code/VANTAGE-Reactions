@@ -10,6 +10,7 @@
 #include "reaction_kernels.hpp"
 #include "typedefs.hpp"
 #include <array>
+#include <cstring>
 #include <memory>
 #include <neso_particles.hpp>
 #include <particle_properties_map.hpp>
@@ -233,29 +234,6 @@ struct LinearReactionBase : public AbstractReaction {
     this->descendant_particles = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec,
         num_products_per_parent);
-
-    using namespace ParticlePropertiesIndices;
-
-    std::vector<int> indices;
-
-    for (auto &sx : required_dats_real_write) {
-      std::string sx_name = sx.name;
-      int unmatched_sym_name_count;
-      ParticlePropertiesIndices::Map prop_map;
-      for (auto const &[k, v] : prop_map.default_map) {
-        if (std::find(v.begin(), v.end(), sx_name) != v.end()) {
-          indices.push_back(k);
-        } else {
-          unmatched_sym_name_count += 1;
-        }
-      }
-      NESOASSERT(unmatched_sym_name_count !=
-                     static_cast<int>(prop_map.default_map.size()),
-                 "Provided Syms in required_dats_real_read not present in "
-                 "ParticleSpec defined in ParticleGroup...");
-    }
-
-    this->reaction_kernels.set_var_indices(indices);
   }
 
   /**
@@ -352,6 +330,38 @@ struct LinearReactionBase : public AbstractReaction {
                 << std::endl;
     }
 
+    //TODO - This needs to somehow be moved into reaction_kernels.hpp
+    ParticleSpec particle_spec =
+    particle_sub_group->get_particle_group()->get_particle_spec();
+
+    auto required_properties = reaction_kernel_buffer.get_required_properties();
+
+    std::vector<Sym<INT>> int_syms = std::vector<Sym<INT>>{};
+    std::vector<Sym<REAL>> real_syms = std::vector<Sym<REAL>>{};
+
+    for (int iprop = 0; iprop < reaction_kernel_buffer.get_num_props(); iprop++) {
+      auto req_prop = required_properties[iprop];
+      std::vector<const char *> possible_names;
+      try {
+        possible_names = ParticlePropertiesIndices::default_map.at(req_prop);
+      } catch (std::out_of_range) {
+        std::cout << "No instances of " << req_prop
+                  << " found in keys of default_map..." << std::endl;
+      }
+      for (auto &possible_name : possible_names) {
+        for (auto &int_prop : particle_spec.properties_int) {
+          if (strcmp(int_prop.name.c_str(), possible_name) == 0) {
+            int_syms.push_back(Sym<INT>(int_prop.name));
+          }
+        }
+        for (auto &real_prop : particle_spec.properties_real) {
+          if (strcmp(real_prop.name.c_str(), possible_name) == 0) {
+            real_syms.push_back(Sym<REAL>(real_prop.name));
+          }
+        }
+      }
+    }
+
     this->pre_calc_req_data(cell_idx);
 
     auto loop = particle_loop(
@@ -402,9 +412,9 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
                                      this->get_read_req_dats_int())),
         Access::write(sym_vector<REAL>(particle_sub_group->get_particle_group(),
-                                       this->get_write_req_dats_real())),
+                                       real_syms)),
         Access::write(sym_vector<INT>(particle_sub_group->get_particle_group(),
-                                      this->get_write_req_dats_int())),
+                                      int_syms)),
         Access::read(device_rate_buffer),
         Access::read(this->get_pre_req_data()),
         Access::read(this->get_weight_sym()),
