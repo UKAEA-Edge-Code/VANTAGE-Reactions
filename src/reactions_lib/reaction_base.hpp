@@ -13,7 +13,6 @@
 #include <cstring>
 #include <memory>
 #include <neso_particles.hpp>
-#include <particle_properties_map.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -330,37 +329,17 @@ struct LinearReactionBase : public AbstractReaction {
                 << std::endl;
     }
 
-    //TODO - This needs to somehow be moved into reaction_kernels.hpp
-    ParticleSpec particle_spec =
-    particle_sub_group->get_particle_group()->get_particle_spec();
+    std::vector<Sym<INT>> int_syms = reaction_kernel_buffer.ReactionKernelsBase<num_products_per_parent>::template build_sym_vector<INT>(
+      particle_sub_group->get_particle_group()->get_particle_spec(),
+      reaction_kernel_buffer.get_required_properties(),
+      reaction_kernel_buffer.get_num_props()
+    );
 
-    auto required_properties = reaction_kernel_buffer.get_required_properties();
-
-    std::vector<Sym<INT>> int_syms = std::vector<Sym<INT>>{};
-    std::vector<Sym<REAL>> real_syms = std::vector<Sym<REAL>>{};
-
-    for (int iprop = 0; iprop < reaction_kernel_buffer.get_num_props(); iprop++) {
-      auto req_prop = required_properties[iprop];
-      std::vector<const char *> possible_names;
-      try {
-        possible_names = ParticlePropertiesIndices::default_map.at(req_prop);
-      } catch (std::out_of_range) {
-        std::cout << "No instances of " << req_prop
-                  << " found in keys of default_map..." << std::endl;
-      }
-      for (auto &possible_name : possible_names) {
-        for (auto &int_prop : particle_spec.properties_int) {
-          if (strcmp(int_prop.name.c_str(), possible_name) == 0) {
-            int_syms.push_back(Sym<INT>(int_prop.name));
-          }
-        }
-        for (auto &real_prop : particle_spec.properties_real) {
-          if (strcmp(real_prop.name.c_str(), possible_name) == 0) {
-            real_syms.push_back(Sym<REAL>(real_prop.name));
-          }
-        }
-      }
-    }
+    std::vector<Sym<REAL>> real_syms = reaction_kernel_buffer.ReactionKernelsBase<num_products_per_parent>::template build_sym_vector<REAL>(
+      particle_sub_group->get_particle_group()->get_particle_spec(),
+      reaction_kernel_buffer.get_required_properties(),
+      reaction_kernel_buffer.get_num_props()
+    );
 
     this->pre_calc_req_data(cell_idx);
 

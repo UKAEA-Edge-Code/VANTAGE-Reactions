@@ -4,9 +4,6 @@
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
 #include <reaction_kernels.hpp>
 #include <vector>
 
@@ -15,7 +12,6 @@
   X(source_momentum), X(source_energy), X(weight)
 
 using namespace NESO::Particles;
-using namespace Reactions;
 
 template <INT num_products_per_parent>
 struct IoniseReactionKernels
