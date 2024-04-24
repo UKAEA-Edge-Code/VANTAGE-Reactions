@@ -118,12 +118,11 @@ TEST(MergeTransformationStrategy, transform_2D) {
       Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("P")),
       Access::read(Sym<REAL>("V")), Access::add(reduction))
       ->execute();
-
   test_merger.transform(subgroup);
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < 16; ncell++) {
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count(); ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
 
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
@@ -196,7 +195,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < 16 * 4; ncell++) {
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count(); ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
     auto reduction_data_min = red_min->get_cell(ncell);
     auto reduction_data_max = red_max->get_cell(ncell);
