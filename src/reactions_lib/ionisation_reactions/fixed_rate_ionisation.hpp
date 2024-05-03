@@ -24,18 +24,7 @@ struct FixedRateIonisation
                       Sym<REAL> total_reaction_rate_, REAL rate_,
                       int in_states_)
       : LinearReactionBase<0, FixedRateIonisationData, IoniseReactionKernels>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
+            sycl_target_, total_reaction_rate_, in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
             std::vector<ParticleProp<INT>>{}, FixedRateIonisationData(rate_),
             IoniseReactionKernels<0>()) {}

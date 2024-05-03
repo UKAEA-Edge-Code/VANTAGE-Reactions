@@ -1,4 +1,5 @@
 #pragma once
+#include <cstring>
 #define standard_properties \
   X(position), X(velocity), X(cell_id), X(id), X(tot_reaction_rate), X(weight), X(internal_state), \
   X(electron_temperature), X(electron_density), X(source_energy), X(source_momentum), \
@@ -18,7 +19,13 @@ namespace ParticlePropertiesIndices {
   static constexpr char const *standard_properties_names[num_properties] = { standard_properties };
 #undef X
 
-static const std::map<const char *, std::vector<const char *>> default_map{
+struct cmp_str {
+  bool operator() (const char *a, const char *b) const {
+    return std::strcmp(a, b) < 0;
+  }
+};
+
+static const std::map<const char *, std::vector<const char *>, cmp_str> default_map{
     {standard_properties_names[position], {"P", "Position", "POSITION", "position"}},
     {standard_properties_names[velocity], {"V", "Velocity", "VELOCITY", "velocity"}},
     {standard_properties_names[cell_id], {"CELL_ID", "Cell_ID", "cell_id"}},

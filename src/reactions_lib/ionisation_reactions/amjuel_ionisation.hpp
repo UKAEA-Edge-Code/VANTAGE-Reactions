@@ -28,19 +28,7 @@ struct IoniseReactionAMJUEL
                        std::array<REAL, num_coeffs> coeffs)
       : LinearReactionBase<0, IoniseReactionAMJUELData<num_coeffs>,
                            IoniseReactionKernels>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT"),
-                Sym<REAL>("FLUID_TEMPERATURE"), Sym<REAL>("FLUID_DENSITY")},
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
+            sycl_target_, total_reaction_rate_, in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
             std::vector<ParticleProp<INT>>{},
             IoniseReactionAMJUELData<num_coeffs>(density_normalisation, coeffs),

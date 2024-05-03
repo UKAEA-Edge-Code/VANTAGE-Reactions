@@ -19,7 +19,10 @@ struct FixedRateIonisationData : public ReactionDataBase {
   FixedRateIonisationData(REAL rate) : rate(rate) {}
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<REAL> &vars) const {
+                 Access::SymVector::Read<INT> &req_part_ints,
+                 Access::SymVector::Read<REAL> &req_part_reals,
+                 Access::SymVector::Read<INT> &req_field_ints,
+                 Access::SymVector::Read<REAL> &req_field_reals) const {
 
     return this->rate;
   }
