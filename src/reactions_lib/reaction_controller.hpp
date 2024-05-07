@@ -1,8 +1,6 @@
 #pragma once
-#include "common_markers.hpp"
+#include <neso_particles.hpp>
 #include "common_transformations.hpp"
-#include "particle_group.hpp"
-#include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
 #include <map>

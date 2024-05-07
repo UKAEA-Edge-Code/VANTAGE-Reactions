@@ -1,6 +1,4 @@
 #pragma once
-#include "containers/sym_vector.hpp"
-#include "loop/particle_loop_index.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;

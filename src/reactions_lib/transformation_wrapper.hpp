@@ -1,7 +1,6 @@
 #ifndef TRANSFORM_WRAPPER_H
 #define TRANSFORM_WRAPPER_H
 
-#include "particle_sub_group.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
@@ -110,7 +109,7 @@ struct TransformationWrapper {
    */
   void transform(ParticleGroupSharedPtr target_group, INT cell_id) {
 
-    auto marker_subgroup = make_shared<ParticleSubGroup>(target_group);
+    auto marker_subgroup = std::make_shared<ParticleSubGroup>(target_group);
     if (cell_id >= 0) {
       auto cell_num = target_group->domain->mesh->get_cell_count();
       NESOASSERT(

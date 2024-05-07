@@ -1,7 +1,5 @@
 #ifndef COMMON_TRANSFORMATIONS_H
 #define COMMON_TRANSFORMATIONS_H
-#include "containers/local_array.hpp"
-#include "particle_group.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include <transformation_wrapper.hpp>
@@ -137,8 +135,11 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
   CellwiseAccumulator(ParticleGroupSharedPtr template_group,
                       std::vector<std::string> dat_names) {
 
-    // TODO: Add checks to make sure these names exist in the group
     for (auto name : dat_names) {
+      NESOASSERT(
+          template_group->contains_dat(Sym<T>(name)),
+          "Particle dat " + name +
+              " not in passed template particle group in CellwiseAccumulator");
       this->dats.push_back(Sym<T>(name));
     }
     std::vector<INT> num_comps_vec;
@@ -192,7 +193,9 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    */
   std::vector<CellData<T>> get_cell_data(std::string data_name) {
 
-    // TODO Add checking whether data_name is valid
+    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+               "Attempted to retrieve values for " + data_name +
+                   " which is not registered in the CellwiseAccumulator");
     auto result = std::vector<CellData<T>>();
 
     for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
@@ -209,7 +212,9 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * out
    */
   void zero_buffer(std::string data_name) {
-    // TODO Add checking whether data_name is valid
+    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+               "Attempted to zero out buffer for " + data_name +
+                   " which is not registered in the CellwiseAccumulator");
     this->values[Sym<T>(data_name)]->fill(0);
   }
 
@@ -243,8 +248,11 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
                               std::string weight_sym_name)
       : weight_sym_name(weight_sym_name) {
 
-    // TODO: Add checks to make sure these names exist in the group
     for (auto name : dat_names) {
+      NESOASSERT(template_group->contains_dat(Sym<T>(name)),
+                 "Particle dat " + name +
+                     " not in passed template particle group in "
+                     "WeightedCellwiseAccumulator");
       this->dats.push_back(Sym<T>(name));
     }
     std::vector<INT> num_comps_vec;
@@ -307,7 +315,9 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    */
   std::vector<CellData<REAL>> get_cell_data(std::string data_name) {
 
-    // TODO Add checking whether data_name is valid
+    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+               "Attempted to retrieve values for " + data_name +
+                   " which is not registered in the WeightedCellwiseAccumulator");
     auto result = std::vector<CellData<REAL>>();
 
     for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
@@ -343,7 +353,9 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
       this->weight_buffer->fill(0);
     } else {
 
-      // TODO Add checking whether data_name is valid
+      NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+               "Attempted to zero out buffer for " + data_name +
+                   " which is not registered in the WeightedCellwiseAccumulator");
       this->values[Sym<T>(data_name)]->fill(0);
     }
   }

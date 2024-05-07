@@ -21,7 +21,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 find_package(MPI REQUIRED)
-find_package(NESO-PARTICLES REQUIRED)
+find_package(NESO-Particles REQUIRED)
 find_package(hipSYCL REQUIRED)
 
 ############################################################
