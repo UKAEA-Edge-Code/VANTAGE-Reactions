@@ -1,5 +1,3 @@
-#include "particle_spec.hpp"
-#include "typedefs.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <reaction_base.hpp>
@@ -316,7 +314,7 @@ struct TestReactionVarRate
 };
 
 inline auto create_test_particle_group(int N_total)
-    -> shared_ptr<ParticleGroup> {
+    -> std::shared_ptr<ParticleGroup> {
 
   const int ndim = 2;
   std::vector<int> dims(ndim);

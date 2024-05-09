@@ -1,8 +1,6 @@
 #pragma once
-#include "common_markers.hpp"
+#include <neso_particles.hpp>
 #include "common_transformations.hpp"
-#include "particle_group.hpp"
-#include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
 #include <map>
@@ -94,9 +92,9 @@ public:
 
           if (in_it == sub_group_selectors.end()) {
             sub_group_selectors.emplace(std::make_pair(
-                in_state, make_marking_strategy<
-                              ComparisonMarkerSingle<INT,EqualsComp>>(
-                              id_sym, in_state)));
+                in_state,
+                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+                    id_sym, in_state)));
             species_groups.emplace(std::make_pair(
                 in_state,
                 sub_group_selectors[in_state]->make_marker_subgroup(
@@ -115,9 +113,9 @@ public:
           if (out_it == sub_group_selectors.end()) {
 
             sub_group_selectors.emplace(std::make_pair(
-                out_state, make_marking_strategy<
-                               ComparisonMarkerSingle<INT,EqualsComp>>(
-                               id_sym, out_state)));
+                out_state,
+                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+                    id_sym, out_state)));
           }
         }
       }
@@ -143,14 +141,8 @@ public:
         auto transform_buffer =
             std::make_shared<TransformationWrapper>(*child_transform);
         transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-        transform_buffer->transform(child_group);
+        transform_buffer->transform(child_group, i);
       }
-
-      if (child_ids.size() > 0) {
-        particle_group->add_particles_local(child_group);
-      }
-
-      child_group->clear();
     }
 
     for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
@@ -158,6 +150,9 @@ public:
           std::make_shared<TransformationWrapper>(*parent_transform);
       transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
       transform_buffer->transform(particle_group);
+    }
+    if (child_ids.size() > 0) {
+      particle_group->add_particles_local(child_group);
     }
   }
 
