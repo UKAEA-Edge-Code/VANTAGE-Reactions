@@ -42,7 +42,7 @@ TEST(LinearReactionBase, calc_rate) {
     test_reaction.run_rate_loop(particle_sub_group, i);
     test_reaction.run_rate_loop(particle_sub_group, i);
 
-    auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
         particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
 
@@ -65,7 +65,7 @@ TEST(LinearReactionBase, calc_var_rate) {
 
   auto test_reaction =
       TestReactionVarRate(particle_group->sycl_target,
-                          Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("P"), 0);
+                          Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("POSITION"), 0);
 
   test_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -77,7 +77,7 @@ TEST(LinearReactionBase, calc_var_rate) {
     test_reaction.run_rate_loop(particle_sub_group, i);
     test_reaction.run_rate_loop(particle_sub_group, i);
 
-    auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
         particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = position->nrow;
@@ -140,7 +140,7 @@ TEST(LinearReactionBase, split_group_single_reaction) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
   int num_reactions = static_cast<int>(reactions.size());
   for (int i = 0; i < cell_count; i++) {
-    auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
@@ -164,7 +164,7 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     auto internal_state =
         particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
     auto weight =
-        particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+        particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 2) {
@@ -231,7 +231,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
       particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-    auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto particle_sub_group =
@@ -249,7 +249,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     auto internal_state =
         particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
     auto weight =
-        particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+        particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {
@@ -286,11 +286,11 @@ TEST(IoniseReaction, calc_rate) {
     test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
                                           descendant_particles);
 
-    auto position = particle_group->get_cell(Sym<REAL>("P"), i);
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto weight =
-        particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), i);
+        particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_EQ(weight->at(rowx, 0), 0.9);

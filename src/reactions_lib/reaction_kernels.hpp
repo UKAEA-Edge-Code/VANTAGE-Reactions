@@ -1,5 +1,6 @@
 #pragma once
 #include <neso_particles.hpp>
+#include <string>
 #include <type_traits>
 
 using namespace NESO::Particles;
@@ -11,10 +12,39 @@ using namespace NESO::Particles;
  * by a reaction.
  */
 
-template <int num_products_per_parent>
+// template list num_products, req_properties (it's own class with getters), species (also it's own class)
 
 struct ReactionKernelsBase {
   ReactionKernelsBase() = default;
+
+  virtual const int get_num_particle_int_props() { return 0; }
+  virtual const int get_num_particle_real_props() { return 0; }
+
+  virtual const int get_num_field_int_props() { return 0; }
+  virtual const int get_num_field_real_props() { return 0; }
+
+  virtual std::vector<std::string> get_required_particle_int_props() {
+    std::vector<std::string> required_prop_names = {};
+    return required_prop_names;
+  }
+  virtual std::vector<std::string> get_required_particle_real_props() {
+    std::vector<std::string> required_prop_names = {};
+    return required_prop_names;
+  }
+
+  virtual std::vector<std::string> get_required_field_int_props() {
+    std::vector<std::string> required_prop_names = {};
+    return required_prop_names;
+  }
+  virtual std::vector<std::string> get_required_field_real_props() {
+    std::vector<std::string> required_prop_names = {};
+    return required_prop_names;
+  }
+};
+
+template <int num_products_per_parent>
+struct ReactionKernelsBaseOnDevice {
+  ReactionKernelsBaseOnDevice() = default;
 
   /**
    * @brief Base scattering kernel for calculating and applying
@@ -161,29 +191,5 @@ struct ReactionKernelsBase {
                 const std::array<int, num_products_per_parent> &out_states,
                 Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;
-  }
-
-  virtual const int get_num_particle_int_props() { return 0; }
-  virtual const int get_num_particle_real_props() { return 0; }
-
-  virtual const int get_num_field_int_props() { return 0; }
-  virtual const int get_num_field_real_props() { return 0; }
-
-  virtual const char **get_required_particle_int_props() {
-    static const char *required_prop_names[] = {};
-    return required_prop_names;
-  }
-  virtual const char **get_required_particle_real_props() {
-    static const char *required_prop_names[] = {};
-    return required_prop_names;
-  }
-
-  virtual const char **get_required_field_int_props() {
-    static const char *required_prop_names[] = {};
-    return required_prop_names;
-  }
-  virtual const char **get_required_field_real_props() {
-    static const char *required_prop_names[] = {};
-    return required_prop_names;
   }
 };

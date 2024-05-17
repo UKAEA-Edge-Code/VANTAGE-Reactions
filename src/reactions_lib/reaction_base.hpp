@@ -109,28 +109,72 @@ protected:
 
     std::vector<Sym<PROP_TYPE>> syms = {};
 
+    // for (int iprop = 0; iprop < num_props; iprop++) {
+    //   auto req_prop = required_properties[iprop];
+    //   std::vector<const char *> possible_names;
+    //   try {
+    //     possible_names = ParticlePropertiesIndices::default_map.at(req_prop);
+    //   } catch (std::out_of_range) {
+    //     std::cout << "No instances of " << req_prop
+    //               << " found in keys of default_map..." << std::endl;
+    //   }
+    //   for (auto &possible_name : possible_names) {
+    //     if constexpr (std::is_same_v<PROP_TYPE, INT>) {
+    //     for (auto &int_prop : particle_spec.properties_int) {
+    //       if (strcmp(int_prop.name.c_str(), possible_name) == 0) {
+    //         syms.push_back(Sym<INT>(int_prop.name));
+    //       }
+    //     }}
+    //     else if constexpr (std::is_same_v<PROP_TYPE, REAL>) {
+    //     for (auto &real_prop : particle_spec.properties_real) {
+    //       if (strcmp(real_prop.name.c_str(), possible_name) == 0) {
+    //         syms.push_back(Sym<REAL>(real_prop.name));
+    //       }
+    //     }}
+    //   }
+    // }
+
     for (int iprop = 0; iprop < num_props; iprop++) {
       auto req_prop = required_properties[iprop];
-      std::vector<const char *> possible_names;
-      try {
-        possible_names = ParticlePropertiesIndices::default_map.at(req_prop);
-      } catch (std::out_of_range) {
-        std::cout << "No instances of " << req_prop
-                  << " found in keys of default_map..." << std::endl;
-      }
-      for (auto &possible_name : possible_names) {
-        if constexpr (std::is_same_v<PROP_TYPE, INT>) {
+      if constexpr (std::is_same_v<PROP_TYPE, INT>) {
         for (auto &int_prop : particle_spec.properties_int) {
-          if (strcmp(int_prop.name.c_str(), possible_name) == 0) {
+          if (std::strcmp(int_prop.name.c_str(), req_prop) == 0) {
             syms.push_back(Sym<INT>(int_prop.name));
           }
-        }}
-        else if constexpr (std::is_same_v<PROP_TYPE, REAL>) {
+        }
+      }
+      if constexpr (std::is_same_v<PROP_TYPE, REAL>) {
         for (auto &real_prop : particle_spec.properties_real) {
-          if (strcmp(real_prop.name.c_str(), possible_name) == 0) {
+          if (std::strcmp(real_prop.name.c_str(), req_prop) == 0) {
             syms.push_back(Sym<REAL>(real_prop.name));
           }
-        }}
+        }
+      }
+    }
+
+    return syms;
+  }
+
+  template <typename PROP_TYPE>
+  std::vector<Sym<PROP_TYPE>> build_sym_vector(ParticleSpec particle_spec, std::vector<std::string> required_properties, const int num_props) {
+
+    std::vector<Sym<PROP_TYPE>> syms = {};
+
+    for (int iprop = 0; iprop < num_props; iprop++) {
+      auto req_prop = required_properties[iprop];
+      if constexpr (std::is_same_v<PROP_TYPE, INT>) {
+        for (auto &int_prop : particle_spec.properties_int) {
+          if (int_prop.name == req_prop) {
+            syms.push_back(Sym<INT>(int_prop.name));
+          }
+        }
+      }
+      if constexpr (std::is_same_v<PROP_TYPE, REAL>) {
+        for (auto &real_prop : particle_spec.properties_real) {
+          if (real_prop.name == req_prop) {
+            syms.push_back(Sym<REAL>(real_prop.name));
+          }
+        }
       }
     }
 
@@ -145,7 +189,7 @@ private:
   LocalArray<REAL> pre_req_data; //!< Real-valued local array for storing
                                  //!< any pre-requisite data relating to a
                                  //!< derived reaction.
-  Sym<REAL> weight_sym = Sym<REAL>("COMPUTATIONAL_WEIGHT");
+  Sym<REAL> weight_sym = Sym<REAL>("WEIGHT");
 };
 
 /**
@@ -212,7 +256,7 @@ struct LinearReactionBase : public AbstractReaction {
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
     static_assert(
-        std::is_base_of_v<ReactionKernelsBase<num_products_per_parent>,
+        std::is_base_of_v<ReactionKernelsBase,
                           ReactionKernels<num_products_per_parent>>,
         "Template parameter ReactionKernels is not derived from "
         "ReactionKernelsBase...");
@@ -343,6 +387,7 @@ struct LinearReactionBase : public AbstractReaction {
     auto device_rate_buffer = this->get_device_rate_buffer();
 
     auto reaction_kernel_buffer = this->reaction_kernels;
+    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
 
     std::array<int, num_products_per_parent> out_states_arr = this->out_states;
     try {
@@ -403,22 +448,22 @@ struct LinearReactionBase : public AbstractReaction {
             descendant_particle.set_parent(particle_index, childx);
           }
 
-          reaction_kernel_buffer.scattering_kernel(
+          reaction_kernel_on_device.scattering_kernel(
               modified_weight, particle_index, descendant_particle,
               req_part_ints, req_part_reals, req_field_ints, req_field_reals,
               out_states_arr, pre_req_data, dt);
 
-          reaction_kernel_buffer.weight_kernel(
+          reaction_kernel_on_device.weight_kernel(
               modified_weight, particle_index, descendant_particle,
               req_part_ints, req_part_reals, req_field_ints, req_field_reals,
               out_states_arr, pre_req_data, dt);
 
-          reaction_kernel_buffer.transformation_kernel(
+          reaction_kernel_on_device.transformation_kernel(
               modified_weight, particle_index, descendant_particle,
               req_part_ints, req_part_reals, req_field_ints, req_field_reals,
               out_states_arr, pre_req_data, dt);
 
-          reaction_kernel_buffer.feedback_kernel(
+          reaction_kernel_on_device.feedback_kernel(
               modified_weight, particle_index, descendant_particle,
               req_part_ints, req_part_reals, req_field_ints, req_field_reals,
               out_states_arr, pre_req_data, dt);

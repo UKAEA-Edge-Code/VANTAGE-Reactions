@@ -27,7 +27,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto child_transform =
       make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("P"), Sym<REAL>("COMPUTATIONAL_WEIGHT"), Sym<REAL>("V"));
+          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller =
@@ -57,7 +57,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply_reactions(particle_group, 0.01);
@@ -67,7 +67,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+      Access::read(Sym<REAL>("WEIGHT")),
       Access::add(reduction_after))
       ->execute();
 
@@ -99,7 +99,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   auto child_transform =
       make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("P"), Sym<REAL>("COMPUTATIONAL_WEIGHT"), Sym<REAL>("V"));
+          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
 
@@ -137,7 +137,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply_reactions(particle_group, 0.1);
@@ -147,7 +147,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+      Access::read(Sym<REAL>("WEIGHT")),
       Access::add(reduction_after))
       ->execute();
 
@@ -197,7 +197,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
 
   auto child_transform =
       make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("P"), Sym<REAL>("COMPUTATIONAL_WEIGHT"), Sym<REAL>("V"));
+          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller =
@@ -234,7 +234,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply_reactions(particle_group, 0.1);
@@ -243,7 +243,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+      Access::read(Sym<REAL>("WEIGHT")),
       Access::add(reduction_after))
       ->execute();
 
@@ -280,7 +280,7 @@ TEST(ReactionController, parent_transform) {
 
   auto parent_transform =
       make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("P"), Sym<REAL>("COMPUTATIONAL_WEIGHT"), Sym<REAL>("V"));
+          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto parent_transform_wrapper =
       std::make_shared<TransformationWrapper>(parent_transform);
@@ -310,7 +310,7 @@ TEST(ReactionController, parent_transform) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply_reactions(particle_group, 0.0);
@@ -320,7 +320,7 @@ TEST(ReactionController, parent_transform) {
 
   particle_loop(
       particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("COMPUTATIONAL_WEIGHT")),
+      Access::read(Sym<REAL>("WEIGHT")),
       Access::add(reduction_after))
       ->execute();
 
@@ -355,13 +355,13 @@ TEST(ReactionController, ionisation_reaction) {
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
           make_marking_strategy<ComparisonMarkerSingle<REAL,LessThanComp>>(
-              Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1.0e-12)},
+              Sym<REAL>("WEIGHT"), 1.0e-12)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto W = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), cellx);
+    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -413,7 +413,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
           make_marking_strategy<ComparisonMarkerSingle<REAL, EqualsComp>>(
-              Sym<REAL>("COMPUTATIONAL_WEIGHT"), 0.0)},
+              Sym<REAL>("WEIGHT"), 0.0)},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
@@ -425,7 +425,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto expected_rate = 26.993377387251336;
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto W = particle_group->get_cell(Sym<REAL>("COMPUTATIONAL_WEIGHT"), cellx);
+    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), cellx);
     int nrow = W->nrow;
 

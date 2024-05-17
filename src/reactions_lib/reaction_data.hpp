@@ -28,20 +28,20 @@ struct ReactionDataBase {
   virtual const int get_num_field_real_props() { return 0; }
 
   virtual const char **get_required_particle_int_props() {
-    static const char *required_prop_names[] = {};
+    const char **required_prop_names = {};
     return required_prop_names;
   }
   virtual const char **get_required_particle_real_props() {
-    static const char *required_prop_names[] = {};
+    const char **required_prop_names = {};
     return required_prop_names;
   }
 
   virtual const char **get_required_field_int_props() {
-    static const char *required_prop_names[] = {};
+    const char **required_prop_names = {};
     return required_prop_names;
   }
   virtual const char **get_required_field_real_props() {
-    static const char *required_prop_names[] = {};
+    const char **required_prop_names = {};
     return required_prop_names;
   }
 };

@@ -14,7 +14,7 @@
 using namespace NESO::Particles;
 using namespace Reactions;
 
-#define FIELD_REAL_PROPS X(fluid_density), X(fluid_temperature)
+#define FIELD_REAL_PROPS X(FLUID_DENSITY), X(FLUID_TEMPERATURE)
 
 template <int num_coeffs>
 struct IoniseReactionAMJUELData : public ReactionDataBase {
@@ -29,8 +29,8 @@ struct IoniseReactionAMJUELData : public ReactionDataBase {
                  Access::SymVector::Read<REAL> &req_part_reals,
                  Access::SymVector::Read<INT> &req_field_ints,
                  Access::SymVector::Read<REAL> &req_field_reals) const {
-    auto fluid_density_dat = req_field_reals.at(fluid_density, index, 0);
-    auto fluid_temperature_dat = req_field_reals.at(fluid_temperature, index, 0);
+    auto fluid_density_dat = req_field_reals.at(FLUID_DENSITY, index, 0);
+    auto fluid_temperature_dat = req_field_reals.at(FLUID_TEMPERATURE, index, 0);
 
     REAL log_cross_section_vel = 0.0;
     for (int i = 0; i < num_coeffs; i++) {
