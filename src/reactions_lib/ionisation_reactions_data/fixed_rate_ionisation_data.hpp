@@ -1,6 +1,5 @@
 #pragma once
-#include "containers/sym_vector.hpp"
-#include "typedefs.hpp"
+#include <neso_particles.hpp>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>

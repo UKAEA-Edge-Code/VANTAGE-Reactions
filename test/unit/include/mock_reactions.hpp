@@ -1,9 +1,7 @@
 #pragma once
-#include "containers/sym_vector.hpp"
+#include <neso_particles.hpp>
 #include "particle_properties_map.hpp"
-#include "particle_spec.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include "typedefs.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
@@ -297,7 +295,7 @@ struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
 };
 
 inline auto create_test_particle_group(int N_total)
-    -> shared_ptr<ParticleGroup> {
+    -> std::shared_ptr<ParticleGroup> {
 
   const int ndim = 2;
   std::vector<int> dims(ndim);

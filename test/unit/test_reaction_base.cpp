@@ -1,14 +1,8 @@
 #pragma once
 #include "common_markers.hpp"
-#include "compute_target.hpp"
 #include "mock_reactions.hpp"
-#include "particle_group.hpp"
-#include "particle_spec.hpp"
-#include "particle_sub_group.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
-#include "typedefs.hpp"
-#include <CL/sycl.hpp>
 #include <cstddef>
 #include <gtest/gtest.h>
 #include <ionisation_reactions/fixed_rate_ionisation.hpp>
@@ -128,7 +122,7 @@ TEST(LinearReactionBase, split_group_single_reaction) {
   std::vector<std::shared_ptr<AbstractReaction>> reactions = {
       std::make_shared<TestReaction<0>>(test_reaction1),
       std::make_shared<TestReaction<1>>(test_reaction2)};
-  std::vector<shared_ptr<ParticleSubGroup>> subgroups;
+  std::vector<std::shared_ptr<ParticleSubGroup>> subgroups;
 
   auto parent_particles = std::make_shared<ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),

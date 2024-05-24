@@ -96,8 +96,31 @@ struct TransformationWrapper {
    */
   void transform(ParticleGroupSharedPtr target_group) {
 
-    auto marker_subgroup = make_shared<ParticleSubGroup>(target_group);
+    this->transform(target_group, -1);
+  }
 
+  /**
+   * @brief Applies the marking and transfomation strategies to a given
+   * ParticleGroup, transforming those particle that satisfy some condition in a
+   * given cell.
+   *
+   * @param target_group ParticleGroup to transform
+   * @param cell_id Local cell id to restrict the transformation to
+   */
+  void transform(ParticleGroupSharedPtr target_group, INT cell_id) {
+
+    auto marker_subgroup = std::make_shared<ParticleSubGroup>(target_group);
+    if (cell_id >= 0) {
+      auto cell_num = target_group->domain->mesh->get_cell_count();
+      NESOASSERT(
+          cell_id < cell_num,
+          "Transformation wrapper transform called with cell id out of range");
+      // TODO: Update with efficient cell-wise subgroup construction once
+      // available in NP
+      auto marker_subgroup = std::make_shared<ParticleSubGroup>(
+          target_group, [=](auto cell_idx) { return cell_idx[0] == cell_id; },
+          Access::read(Sym<INT>("CELL_ID")));
+    }
     for (auto &strat : this->marking_strat) {
       marker_subgroup = strat->make_marker_subgroup(marker_subgroup);
     }
@@ -161,7 +184,6 @@ struct MarkingStrategyBase : MarkingStrategy {
                                       this->required_particle_dats_real)),
         Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
                                      this->required_particle_dats_int)));
-
     return marker_subgroup;
   }
 

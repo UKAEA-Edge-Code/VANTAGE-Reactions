@@ -1,14 +1,6 @@
 #pragma once
-#include "containers/descendant_products.hpp"
-#include "containers/local_array.hpp"
-#include "containers/sym_vector.hpp"
-#include "loop/access_descriptors.hpp"
-#include "particle_group.hpp"
-#include "particle_spec.hpp"
-#include "particle_sub_group.hpp"
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
-#include "typedefs.hpp"
 #include <array>
 #include <cstring>
 #include <memory>

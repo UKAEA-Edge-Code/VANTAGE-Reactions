@@ -1,12 +1,9 @@
 #pragma once
 #include "common_markers.hpp"
 #include "common_transformations.hpp"
-#include "containers/cell_dat_const.hpp"
 #include "merge_transformation.hpp"
 #include "mock_reactions.hpp"
-#include "particle_sub_group.hpp"
 #include "transformation_wrapper.hpp"
-#include "typedefs.hpp"
 #include <array>
 #include <gtest/gtest.h>
 #include <ionisation_reactions/amjuel_ionisation.hpp>
@@ -53,7 +50,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto merged_group = merged_group_marking->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
 
-  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 1, 1);
 
   particle_loop(
@@ -63,7 +60,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   reaction_controller.apply_reactions(particle_group, 0.01);
 
-  auto reduction_after = make_shared<CellDatConst<REAL>>(
+  auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(
@@ -133,7 +130,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction2));
 
-  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 1, 1);
 
   particle_loop(
@@ -143,7 +140,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   reaction_controller.apply_reactions(particle_group, 0.1);
 
-  auto reduction_after = make_shared<CellDatConst<REAL>>(
+  auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(
@@ -230,7 +227,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction2));
 
-  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 1, 1);
 
   particle_loop(
@@ -239,7 +236,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       ->execute();
 
   reaction_controller.apply_reactions(particle_group, 0.1);
-  auto reduction_after = make_shared<CellDatConst<REAL>>(
+  auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(
@@ -306,7 +303,7 @@ TEST(ReactionController, parent_transform) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));
 
-  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 1, 1);
 
   particle_loop(
@@ -316,7 +313,7 @@ TEST(ReactionController, parent_transform) {
 
   reaction_controller.apply_reactions(particle_group, 0.0);
 
-  auto reduction_after = make_shared<CellDatConst<REAL>>(
+  auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(

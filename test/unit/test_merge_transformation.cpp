@@ -1,10 +1,4 @@
-#include "containers/cell_dat_const.hpp"
-#include "loop/access_descriptors.hpp"
 #include "merge_transformation.hpp"
-#include "particle_spec.hpp"
-#include "particle_sub_group.hpp"
-#include "typedefs.hpp"
-#include <CL/sycl.hpp>
 #include <gtest/gtest.h>
 #include <memory>
 #include <numeric>
@@ -14,7 +8,7 @@ using namespace NESO::Particles;
 using namespace Reactions;
 
 auto create_test_particle_group_merging(int N_total, int ndim)
-    -> shared_ptr<ParticleGroup> {
+    -> std::shared_ptr<ParticleGroup> {
 
   std::vector<int> dims(ndim);
   for (int dim = 0; dim < ndim; dim++) {
@@ -101,9 +95,9 @@ TEST(MergeTransformationStrategy, transform_2D) {
   auto test_merger = MergeTransformationStrategy<2>(
       Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
-  auto subgroup = make_shared<ParticleSubGroup>(particle_group);
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 5, 1);
 
   particle_loop(
@@ -118,12 +112,11 @@ TEST(MergeTransformationStrategy, transform_2D) {
       Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
       Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction))
       ->execute();
-
   test_merger.transform(subgroup);
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < 16; ncell++) {
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count(); ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
 
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
@@ -164,14 +157,14 @@ TEST(MergeTransformationStrategy, transform_3D) {
   auto test_merger = MergeTransformationStrategy<3>(
       Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
-  auto subgroup = make_shared<ParticleSubGroup>(particle_group);
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto reduction = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                    cell_count, 7, 1);
 
-  auto red_min = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto red_min = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                  cell_count, 3, 1);
-  auto red_max = make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
+  auto red_max = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
                                                  cell_count, 3, 1);
 
   red_min->fill(1e16);
@@ -196,7 +189,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < 16 * 4; ncell++) {
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count(); ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
     auto reduction_data_min = red_min->get_cell(ncell);
     auto reduction_data_max = red_max->get_cell(ncell);

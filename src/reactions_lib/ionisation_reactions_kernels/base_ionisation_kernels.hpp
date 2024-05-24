@@ -1,5 +1,5 @@
 #pragma once
-#include "typedefs.hpp"
+#include <neso_particles.hpp>
 #include <array>
 #include <cmath>
 #include <gtest/gtest.h>

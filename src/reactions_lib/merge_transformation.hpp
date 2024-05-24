@@ -2,7 +2,6 @@
 #define MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
-#include "particle_sub_group.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -58,7 +57,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
   void transform(ParticleSubGroupSharedPtr target_subgroup) {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
-    auto new_particle_group = make_shared<ParticleGroup>(
+    auto new_particle_group = std::make_shared<ParticleGroup>(
         part_group->domain, part_group->particle_spec, part_group->sycl_target);
     // TODO: better asserts (maybe use NESOASSERT?)
     assert(part_group->domain->mesh->get_ndim() == ndim);
@@ -69,15 +68,15 @@ struct MergeTransformationStrategy : TransformationStrategy {
     We assume that all of the particles have the same mass, so no normalization
     is needed by the algorithm.
     */
-    auto cell_dat_reduction_scalars = make_shared<CellDatConst<REAL>>(
+    auto cell_dat_reduction_scalars = std::make_shared<CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, 2, 1);
-    auto cell_dat_reduction_pos = make_shared<CellDatConst<REAL>>(
+    auto cell_dat_reduction_pos = std::make_shared<CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, ndim, 1);
-    auto cell_dat_reduction_mom = make_shared<CellDatConst<REAL>>(
+    auto cell_dat_reduction_mom = std::make_shared<CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, ndim, 1);
-    auto cell_dat_reduction_mom_min = make_shared<CellDatConst<REAL>>(
+    auto cell_dat_reduction_mom_min = std::make_shared<CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, 3, 1);
-    auto cell_dat_reduction_mom_max = make_shared<CellDatConst<REAL>>(
+    auto cell_dat_reduction_mom_max = std::make_shared<CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, 3, 1);
 
     if constexpr (ndim == 2) {
@@ -243,7 +242,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
             cell_select_strategy->make_marker_subgroup(target_subgroup);
 
         auto new_particle_group_cx = cell_select_strategy->make_marker_subgroup(
-            make_shared<ParticleSubGroup>(new_particle_group));
+            std::make_shared<ParticleSubGroup>(new_particle_group));
 
         part_group->remove_particles(target_subgroup_cx);
 

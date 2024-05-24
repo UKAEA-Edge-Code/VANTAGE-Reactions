@@ -1,8 +1,7 @@
 #pragma once
-#include "containers/sym_vector.hpp"
+#include <neso_particles.hpp>
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include "typedefs.hpp"
 #include <array>
 #include <cmath>
 #include <gtest/gtest.h>
