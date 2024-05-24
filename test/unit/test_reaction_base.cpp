@@ -58,9 +58,9 @@ TEST(LinearReactionBase, calc_var_rate) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto test_reaction =
-      TestReactionVarRate(particle_group->sycl_target,
-                          Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("POSITION"), 0);
+  auto test_reaction = TestReactionVarRate(particle_group->sycl_target,
+                                           Sym<REAL>("TOT_REACTION_RATE"),
+                                           Sym<REAL>("POSITION"), 0);
 
   test_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -158,8 +158,7 @@ TEST(LinearReactionBase, split_group_single_reaction) {
 
     auto internal_state =
         particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
-    auto weight =
-        particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 2) {
@@ -243,8 +242,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
     auto internal_state =
         particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
-    auto weight =
-        particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {
@@ -284,8 +282,7 @@ TEST(IoniseReaction, calc_rate) {
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto weight =
-        particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_EQ(weight->at(rowx, 0), 0.9);

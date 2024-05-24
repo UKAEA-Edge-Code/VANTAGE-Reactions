@@ -5,8 +5,8 @@
 #include <cstring>
 #include <memory>
 #include <neso_particles.hpp>
-#include <vector>
 #include <particle_properties_map.hpp>
+#include <vector>
 
 using namespace NESO::Particles;
 
@@ -22,18 +22,6 @@ namespace Reactions {
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
  * the cumulative weighted reaction rate modification imposed on all of the
  * particles in the ParticleSubGroup passed to run_rate_loop(...).
- * @param required_dats_real_read Symbol indices for real-valued ParticleDats
- * that are required to be read by either run_rate_loop(...) or
- * descendant_particle_loop(...)
- * @param required_dats_real_write Symbol indices for real-valued ParticleDats
- * that are required to be written by either run_rate_loop(...) or
- * descendant_particle_loop(...)
- * @param required_dats_int_read Symbol indices for integer-valued
- * ParticleDats that are required to be read by either run_rate_loop(...) or
- * descendant_particle_loop(...)
- * @param required_dats_int_write Symbol indices for integer-valued
- * ParticleDats that are required to be written by either run_rate_loop(...) or
- * descendant_particle_loop(...)
  */
 struct AbstractReaction {
   AbstractReaction() = default;
@@ -96,34 +84,27 @@ protected:
 
   const Sym<REAL> &get_weight_sym() const { return weight_sym; }
 
-  // template <typename PROP_TYPE>
-  // std::vector<Sym<PROP_TYPE>> build_sym_vector(ParticleSpec particle_spec, const char** required_properties, const int num_props) {
-
-  //   std::vector<Sym<PROP_TYPE>> syms = {};
-
-  //   for (int iprop = 0; iprop < num_props; iprop++) {
-  //     auto req_prop = required_properties[iprop];
-  //     if constexpr (std::is_same_v<PROP_TYPE, INT>) {
-  //       for (auto &int_prop : particle_spec.properties_int) {
-  //         if (std::strcmp(int_prop.name.c_str(), req_prop) == 0) {
-  //           syms.push_back(Sym<INT>(int_prop.name));
-  //         }
-  //       }
-  //     }
-  //     if constexpr (std::is_same_v<PROP_TYPE, REAL>) {
-  //       for (auto &real_prop : particle_spec.properties_real) {
-  //         if (std::strcmp(real_prop.name.c_str(), req_prop) == 0) {
-  //           syms.push_back(Sym<REAL>(real_prop.name));
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   return syms;
-  // }
-
+  /**
+   * @brief Helper function to build a std::vector of Syms.
+   *
+   * @tparam PROP_TYPE The property type associated with the syms that need to
+   * be stored in the resulting vector (either INT or REAL).
+   *
+   * @param particle_spec ParticleSpec that contains properties that are matched
+   * with required_properties to fill the vector of Syms.
+   * @param required_properties A vector of strings that contains the required
+   * properties that need to exist in particle_spec to fill the vector of
+   * corresponding Syms.
+   * @param num_props The number of required properties.
+   *
+   * @return A std::vector of Syms of PROP_TYPE (ie.
+   * std::vector<Syms<PROP_TYPE>>)
+   */
   template <typename PROP_TYPE>
-  std::vector<Sym<PROP_TYPE>> build_sym_vector(ParticleSpec particle_spec, std::vector<std::string> required_properties, const int num_props) {
+  std::vector<Sym<PROP_TYPE>>
+  build_sym_vector(ParticleSpec particle_spec,
+                   std::vector<std::string> required_properties,
+                   const int num_props) {
 
     std::vector<Sym<PROP_TYPE>> syms = {};
 
@@ -168,22 +149,11 @@ private:
  * @tparam ReactionData typename for reaction_data constructor argument
  * @tparam ReactionKernels template class for reaction_kernels constructor
  * argument
+ *
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
  * the cumulative weighted reaction rate modification imposed on all of the
  * particles in the ParticleSubGroup passed to run_rate_loop(...).
- * @param required_dats_real_read Symbol indices for real-valued ParticleDats
- * that are required to be read by either run_rate_loop(...) or
- * descendant_particle_loop(...)
- * @param required_dats_real_write Symbol indices for real-valued ParticleDats
- * that are required to be written by either run_rate_loop(...) or
- * descendant_particle_loop(...)
- * @param required_dats_int_read Symbol indices for integer-valued
- * ParticleDats that are required to be read by either run_rate_loop(...) or
- * descendant_particle_loop(...)
- * @param required_dats_int_write Symbol indices for integer-valued
- * ParticleDats that are required to be written by either run_rate_loop(...) or
- * descendant_particle_loop(...)
  * @param in_state Integer specifying the ID of the species on
  * which the derived reaction is acting on.
  * @param out_states Array of integers specifying the species IDs of the
@@ -196,20 +166,20 @@ private:
  * @param reaction_kernels ReactionKernels object to be used in
  * descendant_product_loop.
  */
-template <int num_products_per_parent, typename ReactionData, typename ReactionKernels>
+template <int num_products_per_parent, typename ReactionData,
+          typename ReactionKernels>
 struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = default;
 
   LinearReactionBase(
-      SYCLTargetSharedPtr sycl_target, const Sym<REAL> total_rate_dat, int in_state,
-      std::array<int, num_products_per_parent> out_states,
+      SYCLTargetSharedPtr sycl_target, const Sym<REAL> total_rate_dat,
+      int in_state, std::array<int, num_products_per_parent> out_states,
       std::vector<ParticleProp<REAL>> real_descendant_particles_props,
       std::vector<ParticleProp<INT>> int_descendant_particles_props,
-      ReactionData reaction_data,
-      ReactionKernels reaction_kernels)
-      : AbstractReaction(sycl_target, total_rate_dat),
-        in_state(in_state), out_states(out_states),
+      ReactionData reaction_data, ReactionKernels reaction_kernels)
+      : AbstractReaction(sycl_target, total_rate_dat), in_state(in_state),
+        out_states(out_states),
         real_descendant_particles_props(real_descendant_particles_props),
         int_descendant_particles_props(int_descendant_particles_props),
         reaction_data(reaction_data), reaction_kernels(reaction_kernels) {
@@ -221,11 +191,9 @@ struct LinearReactionBase : public AbstractReaction {
     static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
-    static_assert(
-        std::is_base_of_v<ReactionKernelsBase,
-                          ReactionKernels>,
-        "Template parameter ReactionKernels is not derived from "
-        "ReactionKernelsBase...");
+    static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
+                  "Template parameter ReactionKernels is not derived from "
+                  "ReactionKernelsBase...");
 
     auto descendant_particles_spec = ParticleSpec();
     for (auto ireal_prop : this->get_real_descendant_props()) {
@@ -280,34 +248,38 @@ struct LinearReactionBase : public AbstractReaction {
 
     std::vector<Sym<INT>> simple_props_int_syms =
         this->template build_sym_vector<INT>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_data_buffer.get_required_simple_int_props(),
-                reaction_data_buffer.get_num_simple_int_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_data_buffer.get_required_simple_int_props(),
+            reaction_data_buffer.get_num_simple_int_props());
 
     std::vector<Sym<REAL>> simple_props_real_syms =
         this->template build_sym_vector<REAL>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_data_buffer.get_required_simple_real_props(),
-                reaction_data_buffer.get_num_simple_real_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_data_buffer.get_required_simple_real_props(),
+            reaction_data_buffer.get_num_simple_real_props());
 
     std::vector<Sym<INT>> species_props_int_syms =
         this->template build_sym_vector<INT>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_data_buffer.get_required_species_int_props(),
-                reaction_data_buffer.get_num_species_int_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_data_buffer.get_required_species_int_props(),
+            reaction_data_buffer.get_num_species_int_props());
 
     std::vector<Sym<REAL>> species_props_real_syms =
         this->template build_sym_vector<REAL>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_data_buffer.get_required_species_real_props(),
-                reaction_data_buffer.get_num_species_real_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_data_buffer.get_required_species_real_props(),
+            reaction_data_buffer.get_num_species_real_props());
 
     auto loop = particle_loop(
         "calc_rate_loop", particle_sub_group,
-        [=](auto particle_index, auto req_simple_props_ints, auto req_simple_props_reals, auto req_species_props_ints, auto req_species_props_reals, auto tot_rate,
-            auto buffer, auto weight) {
+        [=](auto particle_index, auto req_simple_props_ints,
+            auto req_simple_props_reals, auto req_species_props_ints,
+            auto req_species_props_reals, auto tot_rate, auto buffer,
+            auto weight) {
           INT current_count = particle_index.get_loop_linear_index();
-          REAL rate = reaction_data_on_device.calc_rate(particle_index, req_simple_props_ints, req_simple_props_reals, req_species_props_ints, req_species_props_reals);
+          REAL rate = reaction_data_on_device.calc_rate(
+              particle_index, req_simple_props_ints, req_simple_props_reals,
+              req_species_props_ints, req_species_props_reals);
           buffer[current_count] = rate * weight.at(0);
           tot_rate[0] += rate * weight.at(0);
         },
@@ -319,7 +291,7 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(),
                                       simple_props_real_syms)),
         Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
-                                      species_props_int_syms)),
+                                     species_props_int_syms)),
         Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(),
                                       species_props_real_syms)),
         Access::write(this->get_total_reaction_rate()),
@@ -372,34 +344,35 @@ struct LinearReactionBase : public AbstractReaction {
 
     std::vector<Sym<INT>> simple_props_int_syms =
         this->template build_sym_vector<INT>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_kernel_buffer.get_required_simple_int_props(),
-                reaction_kernel_buffer.get_num_simple_int_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_kernel_buffer.get_required_simple_int_props(),
+            reaction_kernel_buffer.get_num_simple_int_props());
 
     std::vector<Sym<REAL>> simple_props_real_syms =
         this->template build_sym_vector<REAL>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_kernel_buffer.get_required_simple_real_props(),
-                reaction_kernel_buffer.get_num_simple_real_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_kernel_buffer.get_required_simple_real_props(),
+            reaction_kernel_buffer.get_num_simple_real_props());
 
     std::vector<Sym<INT>> species_props_int_syms =
         this->template build_sym_vector<INT>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_kernel_buffer.get_required_species_int_props(),
-                reaction_kernel_buffer.get_num_species_int_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_kernel_buffer.get_required_species_int_props(),
+            reaction_kernel_buffer.get_num_species_int_props());
 
     std::vector<Sym<REAL>> species_props_real_syms =
         this->template build_sym_vector<REAL>(
-                particle_sub_group->get_particle_group()->get_particle_spec(),
-                reaction_kernel_buffer.get_required_species_real_props(),
-                reaction_kernel_buffer.get_num_species_real_props());
+            particle_sub_group->get_particle_group()->get_particle_spec(),
+            reaction_kernel_buffer.get_required_species_real_props(),
+            reaction_kernel_buffer.get_num_species_real_props());
 
     this->pre_calc_req_data(cell_idx);
 
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,
-        [=](auto descendant_particle, auto particle_index, auto req_simple_props_ints,
-            auto req_simple_props_reals, auto req_species_props_ints, auto req_species_props_reals,
+        [=](auto descendant_particle, auto particle_index,
+            auto req_simple_props_ints, auto req_simple_props_reals,
+            auto req_species_props_ints, auto req_species_props_reals,
             auto rate_buffer, auto pre_req_data, auto weight,
             auto total_reaction_rate) {
           INT current_count = particle_index.get_loop_linear_index();
@@ -417,23 +390,27 @@ struct LinearReactionBase : public AbstractReaction {
 
           reaction_kernel_on_device.scattering_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_simple_props_ints, req_simple_props_reals, req_species_props_ints, req_species_props_reals,
-              out_states_arr, pre_req_data, dt);
+              req_simple_props_ints, req_simple_props_reals,
+              req_species_props_ints, req_species_props_reals, out_states_arr,
+              pre_req_data, dt);
 
           reaction_kernel_on_device.weight_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_simple_props_ints, req_simple_props_reals, req_species_props_ints, req_species_props_reals,
-              out_states_arr, pre_req_data, dt);
+              req_simple_props_ints, req_simple_props_reals,
+              req_species_props_ints, req_species_props_reals, out_states_arr,
+              pre_req_data, dt);
 
           reaction_kernel_on_device.transformation_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_simple_props_ints, req_simple_props_reals, req_species_props_ints, req_species_props_reals,
-              out_states_arr, pre_req_data, dt);
+              req_simple_props_ints, req_simple_props_reals,
+              req_species_props_ints, req_species_props_reals, out_states_arr,
+              pre_req_data, dt);
 
           reaction_kernel_on_device.feedback_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_simple_props_ints, req_simple_props_reals, req_species_props_ints, req_species_props_reals,
-              out_states_arr, pre_req_data, dt);
+              req_simple_props_ints, req_simple_props_reals,
+              req_species_props_ints, req_species_props_reals, out_states_arr,
+              pre_req_data, dt);
         },
         Access::write(this->descendant_particles),
         Access::read(ParticleLoopIndex{}),
@@ -492,8 +469,7 @@ struct LinearReactionBase : public AbstractReaction {
    * be applied to.
    * @return std::vector<int> Integer vector of species IDs.
    */
-  std::vector<int> get_in_states() {
-    return std::vector<int>{this->in_state}; }
+  std::vector<int> get_in_states() { return std::vector<int>{this->in_state}; }
 
   /**
    * @brief Getter for out_states that define which species the reaction is to
