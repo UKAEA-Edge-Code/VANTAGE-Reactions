@@ -15,17 +15,8 @@ namespace ParticlePropertiesIndices {
   enum{standard_properties, num_properties};
 #undef X
 
-#define X(M) #M
-  static constexpr char const *standard_properties_names[num_properties] = { standard_properties };
-#undef X
-
-struct cmp_str {
-  bool operator() (const char *a, const char *b) const {
-    return std::strcmp(a, b) < 0;
-  }
-};
-
-static std::map<int, const char*> default_map{
+// Think about a way for the user to add their own maps and simplify definition and construction
+const std::map<int, std::string> default_map{
     {position, "POSITION"},
     {velocity, "VELOCITY"},
     {cell_id, "CELL_ID"},

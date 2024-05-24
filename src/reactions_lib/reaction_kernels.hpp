@@ -12,38 +12,38 @@ using namespace NESO::Particles;
  * by a reaction.
  */
 
-// template list num_products, req_properties (it's own class with getters), species (also it's own class)
+// template list num_products, req_properties (it's own class with getters),
+// species (also it's own class)
 
 struct ReactionKernelsBase {
   ReactionKernelsBase() = default;
 
-  virtual const int get_num_particle_int_props() { return 0; }
-  virtual const int get_num_particle_real_props() { return 0; }
+  virtual const int get_num_simple_int_props() { return 0; }
+  virtual const int get_num_simple_real_props() { return 0; }
 
-  virtual const int get_num_field_int_props() { return 0; }
-  virtual const int get_num_field_real_props() { return 0; }
+  virtual const int get_num_species_int_props() { return 0; }
+  virtual const int get_num_species_real_props() { return 0; }
 
-  virtual std::vector<std::string> get_required_particle_int_props() {
+  virtual std::vector<std::string> get_required_simple_int_props() {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
-  virtual std::vector<std::string> get_required_particle_real_props() {
+  virtual std::vector<std::string> get_required_simple_real_props() {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
 
-  virtual std::vector<std::string> get_required_field_int_props() {
+  virtual std::vector<std::string> get_required_species_int_props() {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
-  virtual std::vector<std::string> get_required_field_real_props() {
+  virtual std::vector<std::string> get_required_species_real_props() {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
 };
 
-template <int num_products_per_parent>
-struct ReactionKernelsBaseOnDevice {
+template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   ReactionKernelsBaseOnDevice() = default;
 
   /**
@@ -74,10 +74,10 @@ struct ReactionKernelsBaseOnDevice {
   virtual void
   scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                     Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Write<INT> &req_particle_ints,
-                    Access::SymVector::Write<REAL> &req_particle_reals,
-                    Access::SymVector::Write<INT> &req_field_ints,
-                    Access::SymVector::Write<REAL> &req_field_reals,
+                    Access::SymVector::Write<INT> &req_simple_prop_ints,
+                    Access::SymVector::Write<REAL> &req_simple_prop_reals,
+                    Access::SymVector::Write<INT> &req_species_prop_ints,
+                    Access::SymVector::Write<REAL> &req_species_prop_reals,
                     const std::array<int, num_products_per_parent> &out_states,
                     Access::LocalArray::Read<REAL> &pre_req_data,
                     double dt) const {
@@ -111,10 +111,10 @@ struct ReactionKernelsBaseOnDevice {
   virtual void
   feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                   Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Write<INT> &req_particle_ints,
-                  Access::SymVector::Write<REAL> &req_particle_reals,
-                  Access::SymVector::Write<INT> &req_field_ints,
-                  Access::SymVector::Write<REAL> &req_field_reals,
+                  Access::SymVector::Write<INT> &req_simple_prop_ints,
+                  Access::SymVector::Write<REAL> &req_simple_prop_reals,
+                  Access::SymVector::Write<INT> &req_species_prop_ints,
+                  Access::SymVector::Write<REAL> &req_species_prop_reals,
                   const std::array<int, num_products_per_parent> &out_states,
                   Access::LocalArray::Read<REAL> &pre_req_data,
                   double dt) const {
@@ -148,10 +148,10 @@ struct ReactionKernelsBaseOnDevice {
   virtual void transformation_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
       Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_particle_ints,
-      Access::SymVector::Write<REAL> &req_particle_reals,
-      Access::SymVector::Write<INT> &req_field_ints,
-      Access::SymVector::Write<REAL> &req_field_reals,
+      Access::SymVector::Write<INT> &req_simple_prop_ints,
+      Access::SymVector::Write<REAL> &req_simple_prop_reals,
+      Access::SymVector::Write<INT> &req_species_prop_ints,
+      Access::SymVector::Write<REAL> &req_species_prop_reals,
       const std::array<int, num_products_per_parent> &out_states,
       Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;
@@ -184,10 +184,10 @@ struct ReactionKernelsBaseOnDevice {
   virtual void
   weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                 Access::DescendantProducts::Write &descendant_products,
-                Access::SymVector::Write<INT> &req_particle_ints,
-                Access::SymVector::Write<REAL> &req_particle_reals,
-                Access::SymVector::Write<INT> &req_field_ints,
-                Access::SymVector::Write<REAL> &req_field_reals,
+                Access::SymVector::Write<INT> &req_simple_prop_ints,
+                Access::SymVector::Write<REAL> &req_simple_prop_reals,
+                Access::SymVector::Write<INT> &req_species_prop_ints,
+                Access::SymVector::Write<REAL> &req_species_prop_reals,
                 const std::array<int, num_products_per_parent> &out_states,
                 Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;

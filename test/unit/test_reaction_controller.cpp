@@ -1,3 +1,4 @@
+#pragma once
 #include "common_markers.hpp"
 #include "common_transformations.hpp"
 #include "containers/cell_dat_const.hpp"

@@ -1,3 +1,4 @@
+#pragma once
 #include "common_markers.hpp"
 #include "compute_target.hpp"
 #include "mock_reactions.hpp"
