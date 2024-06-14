@@ -29,16 +29,16 @@ using namespace Reactions;
  */
 struct FixedRateIonisation
     : public LinearReactionBase<0, FixedRateIonisationData,
-                                IoniseReactionKernels> {
+                                IoniseReactionKernels<2, 2>> {
 
   FixedRateIonisation() = default;
 
   FixedRateIonisation(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, REAL rate_,
-                      int in_states_)
-      : LinearReactionBase<0, FixedRateIonisationData, IoniseReactionKernels>(
+                      int in_states_, const ParticleSpec& particle_spec)
+      : LinearReactionBase<0, FixedRateIonisationData, IoniseReactionKernels<2, 2>>(
             sycl_target_, total_reaction_rate_, in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
             std::vector<ParticleProp<INT>>{}, FixedRateIonisationData(rate_),
-            IoniseReactionKernels(std::vector<Species>{Species("ELECTRON")})) {}
+            IoniseReactionKernels<2, 2>(Species("ELECTRON")), particle_spec) {}
 };

@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/containers/sym_vector.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
@@ -19,7 +20,7 @@ using namespace Reactions;
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedRateIonisationDataOnDevice : public ReactionDataBaseOnDevice {
-  FixedRateIonisationDataOnDevice(REAL rate_) : rate(rate_){};
+  FixedRateIonisationDataOnDevice(const REAL& rate_) : rate(rate_){};
 
   /**
    * @brief Function to calculate the reaction rate for a 1D AMJUEL-based
@@ -40,11 +41,14 @@ struct FixedRateIonisationDataOnDevice : public ReactionDataBaseOnDevice {
    * real-valued properties that need to be used for the reaction rate
    * calculation.
    */
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> &req_simple_prop_ints,
-                 Access::SymVector::Read<REAL> &req_simple_prop_reals,
-                 Access::SymVector::Read<INT> &req_species_prop_ints,
-                 Access::SymVector::Read<REAL> &req_species_prop_reals) const {
+  REAL calc_rate(const Access::LoopIndex::Read &index,
+                //  const Access::SymVector::Read<INT> &req_simple_prop_ints,
+                //  const Access::SymVector::Read<REAL> &req_simple_prop_reals,
+                //  const Access::SymVector::Read<INT> &req_species_prop_ints,
+                //  const Access::SymVector::Read<REAL> &req_species_prop_reals
+                const Access::SymVector::Read<INT> req_int_props,
+                const Access::SymVector::Read<REAL> req_real_props
+                ) const {
 
     return this->rate;
   }
@@ -62,14 +66,12 @@ private:
 struct FixedRateIonisationData : public ReactionDataBase {
   FixedRateIonisationData() = default;
 
-  FixedRateIonisationData(REAL rate_)
-      : rate(rate_), fixed_rate_ionisation_data_on_device(
+  FixedRateIonisationData(const REAL& rate_)
+      : fixed_rate_ionisation_data_on_device(
                          FixedRateIonisationDataOnDevice(rate_)) {}
 
 private:
   FixedRateIonisationDataOnDevice fixed_rate_ionisation_data_on_device;
-
-  REAL rate;
 
 public:
   /**

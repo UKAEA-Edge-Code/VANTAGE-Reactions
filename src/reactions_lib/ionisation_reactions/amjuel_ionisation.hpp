@@ -35,19 +35,21 @@ using namespace Reactions;
 template <int num_coeffs>
 struct IoniseReactionAMJUEL
     : public LinearReactionBase<0, IoniseReactionAMJUELData<num_coeffs>,
-                                IoniseReactionKernels> {
+                                IoniseReactionKernels<2, 2>> {
 
   IoniseReactionAMJUEL() = default;
 
   IoniseReactionAMJUEL(SYCLTargetSharedPtr sycl_target_,
                        Sym<REAL> total_reaction_rate_, int in_states_,
                        REAL density_normalisation,
-                       std::array<REAL, num_coeffs> coeffs)
+                       std::array<REAL, num_coeffs> coeffs,
+                       const ParticleSpec& particle_spec)
       : LinearReactionBase<0, IoniseReactionAMJUELData<num_coeffs>,
-                           IoniseReactionKernels>(
+                           IoniseReactionKernels<2, 2>>(
             sycl_target_, total_reaction_rate_, in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
             std::vector<ParticleProp<INT>>{},
             IoniseReactionAMJUELData<num_coeffs>(density_normalisation, coeffs),
-            IoniseReactionKernels(std::vector<Species>{Species("ELECTRON")})) {}
+            IoniseReactionKernels<2, 2>(Species("ELECTRON")),
+            particle_spec) {}
 };

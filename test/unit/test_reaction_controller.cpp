@@ -12,6 +12,7 @@
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
+#include <particle_spec_builder.hpp>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -34,9 +35,11 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   const INT num_products_per_parent = 1;
 
+  auto particle_spec = particle_group->get_particle_spec();
+
   auto test_reaction = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
-      std::array<int, num_products_per_parent>{1});
+      std::array<int, num_products_per_parent>{1}, particle_spec);
 
   test_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -58,7 +61,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.01);
+  reaction_controller.apply_reactions(particle_group, 0.01, particle_spec);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -75,7 +78,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
-  reaction_controller.apply_reactions(particle_group, 0.01);
+  reaction_controller.apply_reactions(particle_group, 0.01,
+                                      particle_spec);
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
@@ -105,9 +109,11 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   REAL test_rate = 5.0;
 
-  auto test_reaction1 = TestReaction<0>(particle_group->sycl_target,
-                                        Sym<REAL>("TOT_REACTION_RATE"),
-                                        test_rate, 0, std::array<int, 0>{});
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto test_reaction1 = TestReaction<0>(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      std::array<int, 0>{}, particle_spec);
 
   test_reaction1.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -118,7 +124,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
-      std::array<int, num_products_per_parent>{1, 2});
+      std::array<int, num_products_per_parent>{1, 2}, particle_spec);
 
   test_reaction2.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -137,7 +143,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply_reactions(particle_group, 0.1, particle_spec);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -203,15 +209,17 @@ TEST(ReactionController, multi_reaction_multi_apply) {
 
   const INT num_products_per_parent = 1;
 
+  auto particle_spec = particle_group->get_particle_spec();
+
   auto test_reaction1 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
-      std::array<int, num_products_per_parent>{1});
+      std::array<int, num_products_per_parent>{1}, particle_spec);
 
   test_rate = 10.0; // example rate
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 2,
-      std::array<int, num_products_per_parent>{3});
+      std::array<int, num_products_per_parent>{3}, particle_spec);
 
   test_reaction1.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -233,7 +241,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply_reactions(particle_group, 0.1, particle_spec);
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
@@ -290,9 +298,11 @@ TEST(ReactionController, parent_transform) {
       ReactionController(parent_transform_wrapper, child_transform_wrapper,
                          Sym<INT>("INTERNAL_STATE"));
 
+  auto particle_spec = particle_group->get_particle_spec();
+
   auto test_reaction = TestReaction<0>(particle_group->sycl_target,
                                        Sym<REAL>("TOT_REACTION_RATE"), 1, 0,
-                                       std::array<int, 0>{});
+                                       std::array<int, 0>{}, particle_spec);
 
   test_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -308,7 +318,8 @@ TEST(ReactionController, parent_transform) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.0);
+  reaction_controller.apply_reactions(particle_group, 0.0,
+                                      particle_group->get_particle_spec());
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -335,8 +346,11 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
 
-  auto ionise_reaction = FixedRateIonisation(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1.0, 0);
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto ionise_reaction = FixedRateIonisation(particle_group->sycl_target,
+                                             Sym<REAL>("TOT_REACTION_RATE"),
+                                             1.0, 0, particle_spec);
 
   ionise_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -344,7 +358,7 @@ TEST(ReactionController, ionisation_reaction) {
   reaction_controller.add_reaction(
       std::make_shared<FixedRateIonisation>(ionise_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 1.5);
+  reaction_controller.apply_reactions(particle_group, 1.5, particle_spec);
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -392,9 +406,28 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   // m^-3 to cm^-3
   REAL density_normalisation = 1e-6;
 
+  auto particle_spec_builder = ParticleSpecBuilder();
+
+  particle_spec_builder.add_particle_prop<REAL>("POSITION", 2, true);
+  particle_spec_builder.add_particle_prop<REAL>("VELOCITY", 2);
+  particle_spec_builder.add_particle_prop<INT>("CELL_ID", 1, true);
+  particle_spec_builder.add_particle_prop<INT>("ID");
+  particle_spec_builder.add_particle_prop<REAL>("TOT_REACTION_RATE");
+  particle_spec_builder.add_particle_prop<REAL>("WEIGHT");
+  particle_spec_builder.add_particle_prop<INT>("INTERNAL_STATE");
+  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_TEMPERATURE");
+  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_DENSITY");
+  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_SOURCE_ENERGY");
+  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_SOURCE_MOMENTUM", 2);
+  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_SOURCE_DENSITY");
+  particle_spec_builder.add_particle_prop<REAL>("FLUID_DENSITY");
+  particle_spec_builder.add_particle_prop<REAL>("FLUID_TEMPERATURE");
+
+  auto particle_spec = particle_spec_builder.get_particle_spec();
+
   auto ionise_reaction = IoniseReactionAMJUEL<9>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-      density_normalisation, b_coeffs);
+      density_normalisation, b_coeffs, particle_spec);
 
   ionise_reaction.flush_buffer(
       static_cast<size_t>(particle_group->get_npart_local()));
@@ -402,7 +435,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   reaction_controller.add_reaction(
       std::make_shared<IoniseReactionAMJUEL<9>>(ionise_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply_reactions(particle_group, 0.1, particle_spec);
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{

@@ -16,29 +16,23 @@ struct ReactionKernelsBase {
    * @brief Virtual getters functions that can be overidden by an implementation
    * in a derived struct.
    */
-  virtual const int get_num_simple_int_props() { return 0; }
-  virtual const int get_num_simple_real_props() { return 0; }
-
-  virtual const int get_num_species_int_props() { return 0; }
-  virtual const int get_num_species_real_props() { return 0; }
-
-  virtual std::vector<std::string> get_required_simple_int_props() {
+  virtual std::vector<std::string> get_required_int_props() {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
-  virtual std::vector<std::string> get_required_simple_real_props() {
+  virtual std::vector<std::string> get_required_real_props() {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
 
-  virtual std::vector<std::string> get_required_species_int_props() {
-    std::vector<std::string> required_prop_names = {};
-    return required_prop_names;
-  }
-  virtual std::vector<std::string> get_required_species_real_props() {
-    std::vector<std::string> required_prop_names = {};
-    return required_prop_names;
-  }
+  // virtual std::vector<std::string> get_required_species_int_props() {
+  //   std::vector<std::string> required_prop_names = {};
+  //   return required_prop_names;
+  // }
+  // virtual std::vector<std::string> get_required_species_real_props() {
+  //   std::vector<std::string> required_prop_names = {};
+  //   return required_prop_names;
+  // }
 };
 
 /**
@@ -80,10 +74,12 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void
   scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                     Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Write<INT> &req_simple_prop_ints,
-                    Access::SymVector::Write<REAL> &req_simple_prop_reals,
-                    Access::SymVector::Write<INT> &req_species_prop_ints,
-                    Access::SymVector::Write<REAL> &req_species_prop_reals,
+                    // Access::SymVector::Write<INT> &req_simple_prop_ints,
+                    // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+                    // Access::SymVector::Write<INT> &req_species_prop_ints,
+                    // Access::SymVector::Write<REAL> &req_species_prop_reals,
+                    Access::SymVector::Write<INT> &req_int_props,
+                    Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
                     Access::LocalArray::Read<REAL> &pre_req_data,
                     double dt) const {
@@ -119,10 +115,12 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void
   feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                   Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Write<INT> &req_simple_prop_ints,
-                  Access::SymVector::Write<REAL> &req_simple_prop_reals,
-                  Access::SymVector::Write<INT> &req_species_prop_ints,
-                  Access::SymVector::Write<REAL> &req_species_prop_reals,
+                  // Access::SymVector::Write<INT> &req_simple_prop_ints,
+                  // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+                  // Access::SymVector::Write<INT> &req_species_prop_ints,
+                  // Access::SymVector::Write<REAL> &req_species_prop_reals,
+                  Access::SymVector::Write<INT> &req_int_props,
+                  Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
                   Access::LocalArray::Read<REAL> &pre_req_data,
                   double dt) const {
@@ -158,10 +156,12 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void transformation_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
       Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_simple_prop_ints,
-      Access::SymVector::Write<REAL> &req_simple_prop_reals,
-      Access::SymVector::Write<INT> &req_species_prop_ints,
-      Access::SymVector::Write<REAL> &req_species_prop_reals,
+      // Access::SymVector::Write<INT> &req_simple_prop_ints,
+      // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+      // Access::SymVector::Write<INT> &req_species_prop_ints,
+      // Access::SymVector::Write<REAL> &req_species_prop_reals,
+      Access::SymVector::Write<INT> &req_int_props,
+      Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
       Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;
@@ -196,10 +196,12 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void
   weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                 Access::DescendantProducts::Write &descendant_products,
-                Access::SymVector::Write<INT> &req_simple_prop_ints,
-                Access::SymVector::Write<REAL> &req_simple_prop_reals,
-                Access::SymVector::Write<INT> &req_species_prop_ints,
-                Access::SymVector::Write<REAL> &req_species_prop_reals,
+                // Access::SymVector::Write<INT> &req_simple_prop_ints,
+                // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+                // Access::SymVector::Write<INT> &req_species_prop_ints,
+                // Access::SymVector::Write<REAL> &req_species_prop_reals,
+                Access::SymVector::Write<INT> &req_int_props,
+                Access::SymVector::Write<REAL> &req_real_props,
                 const std::array<int, num_products_per_parent> &out_states,
                 Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
     return;

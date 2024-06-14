@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cmath>
+#include <exception>
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles.hpp>
@@ -11,21 +12,25 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace ParticlePropertiesIndices;
 
 namespace BASE_IONISATION_KERNEL {
 constexpr int num_products_per_parent = 0;
 
-const std::vector<int> required_simple_real_props = {velocity, weight};
+const auto props = ParticlePropertiesIndices::default_properties;
+
+const std::vector<int> required_simple_real_props = {props.weight,
+                                                     props.velocity};
 
 const std::vector<int> required_species_real_props = {
-    density, source_density, source_momentum, source_energy};
+    props.density, props.source_density, props.source_energy,
+    props.source_momentum}; // namespace BASE_IONISATION_KERNEL
 } // namespace BASE_IONISATION_KERNEL
 
 /**
  * @brief A struct that contains data and kernel functions that are to be stored
  * on and used on a SYCL device.
  */
+template <int ndim_velocity = 1, int ndim_electron_source_momentum = 1>
 struct IoniseReactionKernelsOnDevice
     : public ReactionKernelsBaseOnDevice<
           BASE_IONISATION_KERNEL::num_products_per_parent> {
@@ -61,42 +66,51 @@ struct IoniseReactionKernelsOnDevice
   void feedback_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
       Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_simple_prop_ints,
-      Access::SymVector::Write<REAL> &req_simple_prop_reals,
-      Access::SymVector::Write<INT> &req_species_prop_ints,
-      Access::SymVector::Write<REAL> &req_species_prop_reals,
+      // Access::SymVector::Write<INT> &req_simple_prop_ints,
+      // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+      // Access::SymVector::Write<INT> &req_species_prop_ints,
+      // Access::SymVector::Write<REAL> &req_species_prop_reals,
+      Access::SymVector::Write<INT> &req_int_props,
+      Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, BASE_IONISATION_KERNEL::num_products_per_parent>
           &out_states,
       Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
-    auto k_V_0 = req_simple_prop_reals.at(velocity_ind, index, 0);
-    auto k_V_1 = req_simple_prop_reals.at(velocity_ind, index, 1);
 
-    const REAL vsquared = (k_V_0 * k_V_0) + (k_V_1 * k_V_1);
+    std::array<REAL, ndim_velocity> k_V;
+    REAL vsquared = 0.0;
+
+    for (int vdim = 0; vdim < ndim_velocity; vdim++) {
+      k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
+      vsquared += k_V[vdim] * k_V[vdim];
+    }
 
     REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
     REAL inv_k_dt = 1.0 / dt;
 
-    auto nE = req_species_prop_reals.at(electron_density_ind, index, 0);
+    auto nE = req_real_props.at(electron_density_ind, index, 0);
 
     // Set SOURCE_DENSITY
-    req_species_prop_reals.at(electron_source_density_ind, index, 0) +=
+    req_real_props.at(electron_source_density_ind, index, 0) +=
         nE * modified_weight * k_n_scale * inv_k_dt;
 
     // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
     auto k_SD =
-        req_species_prop_reals.at(electron_source_density_ind, index, 0);
-    req_species_prop_reals.at(electron_source_momentum_ind, index, 0) +=
-        k_SD * k_V_0;
-    req_species_prop_reals.at(electron_source_momentum_ind, index, 1) +=
-        k_SD * k_V_1;
+        req_real_props.at(electron_source_density_ind, index, 0);
+
+    // SOURCE_MOMENTUM calc
+    for (int esm_dim = 0; esm_dim < ndim_electron_source_momentum; esm_dim++) {
+      req_real_props.at(electron_source_momentum_ind, index, esm_dim) +=
+          k_SD * k_V[esm_dim];
+    }
 
     // Set SOURCE_ENERGY
-    req_species_prop_reals.at(electron_source_energy_ind, index, 0) +=
+    req_real_props.at(electron_source_energy_ind, index, 0) +=
         k_SD * vsquared * 0.5;
 
-    req_simple_prop_reals.at(weight_ind, index, 0) -= modified_weight;
+    req_real_props.at(weight_ind, index, 0) -= modified_weight;
   }
 
+public:
   int velocity_ind, electron_density_ind, electron_source_density_ind,
       electron_source_momentum_ind, electron_source_energy_ind, weight_ind;
 };
@@ -108,40 +122,64 @@ struct IoniseReactionKernelsOnDevice
  * @param species_ A vector of Species objects that define the species(plural)
  * that will be acted on by an ionisation reaction.
  */
+template <int ndim_velocity = 1, int ndim_electron_source_momentum = 1>
 struct IoniseReactionKernels : public ReactionKernelsBase {
 
-  IoniseReactionKernels(const std::vector<Species> species_)
+  IoniseReactionKernels(const Species species_)
       : ReactionKernelsBase(), species(species_),
-        required_real_props(RequiredProperties<REAL>(
-            BASE_IONISATION_KERNEL::required_simple_real_props, species_,
+        required_real_props(Properties<REAL>(
+            BASE_IONISATION_KERNEL::required_simple_real_props,
+            std::vector<Species>{this->species},
             BASE_IONISATION_KERNEL::required_species_real_props)) {
 
-    auto species_name = this->species[0].get_name();
+    static_assert(
+        (ndim_velocity >= ndim_electron_source_momentum),
+        "Number of dimension for VELOCITY must be greater than or "
+        "equal to number of dimensions for ELECTRON_SOURCE_MOMENTUM.");
+
+    auto species_name = this->species.get_name();
+
+    try {
+      if (species_name != "ELECTRON") {
+        throw;
+      }
+    } catch (...) {
+      std::cout << "Warning! Species name given is not ELECTRON..."
+                << std::endl;
+    }
+
+    auto props = BASE_IONISATION_KERNEL::props;
 
     this->ionise_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.required_simple_prop_index(velocity);
+        this->required_real_props.required_simple_prop_index(props.velocity);
+
     this->ionise_reaction_kernels_on_device.electron_density_ind =
         this->required_real_props.required_species_prop_index(species_name,
-                                                              density);
+                                                              props.density);
+
     this->ionise_reaction_kernels_on_device.electron_source_density_ind =
-        this->required_real_props.required_species_prop_index(species_name,
-                                                              source_density);
+        this->required_real_props.required_species_prop_index(
+            species_name, props.source_density);
+
     this->ionise_reaction_kernels_on_device.electron_source_momentum_ind =
-        this->required_real_props.required_species_prop_index(species_name,
-                                                              source_momentum);
+        this->required_real_props.required_species_prop_index(
+            species_name, props.source_momentum);
+
     this->ionise_reaction_kernels_on_device.electron_source_energy_ind =
-        this->required_real_props.required_species_prop_index(species_name,
-                                                              source_energy);
+        this->required_real_props.required_species_prop_index(
+            species_name, props.source_energy);
+
     this->ionise_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.required_simple_prop_index(weight);
+        this->required_real_props.required_simple_prop_index(props.weight);
   };
 
 private:
-  IoniseReactionKernelsOnDevice ionise_reaction_kernels_on_device;
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
+      ionise_reaction_kernels_on_device;
 
-  std::vector<Species> species;
+  Species species;
 
-  RequiredProperties<REAL> required_real_props;
+  Properties<REAL> required_real_props;
 
 public:
   /**
@@ -149,23 +187,23 @@ public:
    * properties and the names of both sets of properties and the SYCL
    * device-specific struct.
    */
-  const int get_num_simple_real_props() {
-    return this->required_real_props.get_required_simple_props().size();
+
+  std::vector<std::string> get_required_real_props() {
+    std::vector<std::string> simple_props =
+        this->required_real_props.required_simple_prop_names();
+    std::vector<std::string> species_props =
+        this->required_real_props.required_species_prop_names();
+    simple_props.insert(simple_props.end(), species_props.begin(),
+                        species_props.end());
+    return simple_props;
   }
 
-  std::vector<std::string> get_required_simple_real_props() {
-    return this->required_real_props.required_simple_prop_names();
-  }
+  // std::vector<std::string> get_required_species_real_props() {
+  //   return this->required_real_1d_props.required_species_prop_names();
+  // }
 
-  const int get_num_species_real_props() {
-    return this->required_real_props.get_required_species_props().size();
-  }
-
-  std::vector<std::string> get_required_species_real_props() {
-    return this->required_real_props.required_species_prop_names();
-  }
-
-  IoniseReactionKernelsOnDevice get_on_device_obj() {
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
+  get_on_device_obj() {
     return this->ionise_reaction_kernels_on_device;
   }
 };
