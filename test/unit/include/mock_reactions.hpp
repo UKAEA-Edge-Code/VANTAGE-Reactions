@@ -1,21 +1,34 @@
+#pragma once
+#include <neso_particles.hpp>
+#include "particle_properties_map.hpp"
+#include "reaction_kernel_pre_reqs.hpp"
+#include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/containers/sym_vector.hpp>
+#include <neso_particles/particle_spec.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
 #include <reaction_kernels.hpp>
+#include <string>
 #include <vector>
 
 using namespace NESO::Particles;
 using namespace Reactions;
+using namespace ParticlePropertiesIndices;
 
-struct TestReactionData : public ReactionDataBase<TestReactionData> {
-  TestReactionData() = default;
-
-  TestReactionData(REAL rate_) : rate(rate_){};
+struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice {
+  TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<REAL> &vars) const {
+                //  Access::SymVector::Read<INT> &req_simple_prop_ints,
+                //  Access::SymVector::Read<REAL> &req_simple_prop_reals,
+                //  Access::SymVector::Read<INT> &req_species_prop_ints,
+                //  Access::SymVector::Read<REAL> &req_species_prop_reals
+                Access::SymVector::Read<INT> &req_int_props,
+                Access::SymVector::Read<REAL> &req_real_props
+                ) const {
 
     return this->rate;
   }
@@ -24,293 +37,288 @@ private:
   REAL rate;
 };
 
+struct TestReactionData : public ReactionDataBase {
+  TestReactionData() = default;
+
+  TestReactionData(REAL rate_)
+      : rate(rate_),
+        test_reaction_data_on_device(TestReactionDataOnDevice(rate_)) {}
+
+private:
+  TestReactionDataOnDevice test_reaction_data_on_device;
+
+  REAL rate;
+
+public:
+  TestReactionDataOnDevice get_on_device_obj() {
+    return this->test_reaction_data_on_device;
+  }
+};
+
+namespace TEST_REACTION_KERNEL {
+const auto props = ParticlePropertiesIndices::default_properties;
+const std::vector<int> required_simple_real_props = {props.velocity, props.weight};
+}
+
 template <INT num_products_per_parent>
-struct TestReactionKernels
-    : public ReactionKernelsBase<TestReactionKernels<num_products_per_parent>,
-                                 num_products_per_parent> {
-  TestReactionKernels() = default;
+struct TestReactionKernels : public ReactionKernelsBase {
+  TestReactionKernels()
+      : required_real_props(Properties<REAL>(
+            TEST_REACTION_KERNEL::required_simple_real_props)) {
+    
+    auto props = TEST_REACTION_KERNEL::props;
 
-  void
-  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                    Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Read<INT> &read_req_ints,
-                    Access::SymVector::Read<REAL> &read_req_reals,
-                    Access::SymVector::Write<INT> &write_req_ints,
-                    Access::SymVector::Write<REAL> &write_req_reals,
-                    const std::array<int, num_products_per_parent> &out_states,
-                    Access::LocalArray::Read<REAL> &pre_req_data,
-                    double dt) const {
-    for (int childx = 0; childx < num_products_per_parent; childx++) {
-      for (int dimx = 0; dimx < 2; dimx++) {
-        descendant_products.at_real(index, childx, 0, dimx) =
-            read_req_reals.at(0, index, dimx);
-      }
-    }
+    this->test_reaction_kernels_on_device.velocity_ind =
+        this->required_real_props.required_simple_prop_index(props.velocity);
+    this->test_reaction_kernels_on_device.weight_ind =
+        this->required_real_props.required_simple_prop_index(props.weight);
   }
 
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Read<INT> &read_req_ints,
-                     Access::SymVector::Read<REAL> &read_req_reals,
-                     Access::SymVector::Write<INT> &write_req_ints,
-                     Access::SymVector::Write<REAL> &write_req_reals,
-                     const std::array<int, num_products_per_parent> &out_states,
-                     Access::LocalArray::Read<REAL> &pre_req_data,
-                     double dt) const {
-    for (int childx = 0; childx < num_products_per_parent; childx++) {
-      descendant_products.at_real(index, childx, 1, 0) =
-          (modified_weight / num_products_per_parent);
-    }
-  }
+public:
+  // const int get_num_simple_real_props() {
+  //   return this->required_real_props.get_required_simple_props().size();
+  // }
 
-  void transformation_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Read<INT> &read_req_ints,
-      Access::SymVector::Read<REAL> &read_req_reals,
-      Access::SymVector::Write<INT> &write_req_ints,
-      Access::SymVector::Write<REAL> &write_req_reals,
-      const std::array<int, num_products_per_parent> &out_states,
-      Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
-    for (int childx = 0; childx < num_products_per_parent; childx++) {
-      descendant_products.at_int(index, childx, 0, 0) = out_states[childx];
-    }
-  }
-
-  void
-  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                  Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Read<INT> &read_req_ints,
-                  Access::SymVector::Read<REAL> &read_req_reals,
-                  Access::SymVector::Write<INT> &write_req_ints,
-                  Access::SymVector::Write<REAL> &write_req_reals,
-                  const std::array<int, num_products_per_parent> &out_states,
-                  Access::LocalArray::Read<REAL> &pre_req_data,
-                  double dt) const {
-    write_req_reals.at(0, index, 0) -= modified_weight;
+  std::vector<std::string> get_required_real_props() {
+    return this->required_real_props.required_simple_prop_names();
   }
 
 private:
-  int test_int;
+  struct TestReactionKernelsOnDevice
+      : public ReactionKernelsBaseOnDevice<num_products_per_parent> {
+    TestReactionKernelsOnDevice() = default;
+
+    void scattering_kernel(
+        REAL &modified_weight, Access::LoopIndex::Read &index,
+        Access::DescendantProducts::Write &descendant_products,
+        // Access::SymVector::Write<INT> &req_simple_prop_ints,
+        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+        // Access::SymVector::Write<INT> &req_species_prop_ints,
+        // Access::SymVector::Write<REAL> &req_species_prop_reals,
+        Access::SymVector::Write<INT> &req_int_props,
+        Access::SymVector::Write<REAL> &req_real_props,
+        const std::array<int, num_products_per_parent> &out_states,
+        Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+      for (int childx = 0; childx < num_products_per_parent; childx++) {
+        for (int dimx = 0; dimx < 2; dimx++) {
+          descendant_products.at_real(index, childx, 0, dimx) =
+              req_real_props.at(velocity_ind, index, dimx);
+        }
+      }
+    }
+
+    void
+    weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                  Access::DescendantProducts::Write &descendant_products,
+        // Access::SymVector::Write<INT> &req_simple_prop_ints,
+        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+        // Access::SymVector::Write<INT> &req_species_prop_ints,
+        // Access::SymVector::Write<REAL> &req_species_prop_reals,
+        Access::SymVector::Write<INT> &req_int_props,
+        Access::SymVector::Write<REAL> &req_real_props,
+                  const std::array<int, num_products_per_parent> &out_states,
+                  Access::LocalArray::Read<REAL> &pre_req_data,
+                  double dt) const {
+      for (int childx = 0; childx < num_products_per_parent; childx++) {
+        descendant_products.at_real(index, childx, 1, 0) =
+            (modified_weight / num_products_per_parent);
+      }
+    }
+
+    void transformation_kernel(
+        REAL &modified_weight, Access::LoopIndex::Read &index,
+        Access::DescendantProducts::Write &descendant_products,
+        // Access::SymVector::Write<INT> &req_simple_prop_ints,
+        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+        // Access::SymVector::Write<INT> &req_species_prop_ints,
+        // Access::SymVector::Write<REAL> &req_species_prop_reals,
+        Access::SymVector::Write<INT> &req_int_props,
+        Access::SymVector::Write<REAL> &req_real_props,
+        const std::array<int, num_products_per_parent> &out_states,
+        Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+      for (int childx = 0; childx < num_products_per_parent; childx++) {
+        descendant_products.at_int(index, childx, 0, 0) = out_states[childx];
+      }
+    }
+
+    void
+    feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                    Access::DescendantProducts::Write &descendant_products,
+        // Access::SymVector::Write<INT> &req_simple_prop_ints,
+        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+        // Access::SymVector::Write<INT> &req_species_prop_ints,
+        // Access::SymVector::Write<REAL> &req_species_prop_reals,
+        Access::SymVector::Write<INT> &req_int_props,
+        Access::SymVector::Write<REAL> &req_real_props,
+                    const std::array<int, num_products_per_parent> &out_states,
+                    Access::LocalArray::Read<REAL> &pre_req_data,
+                    double dt) const {
+      req_real_props.at(weight_ind, index, 0) -= modified_weight;
+    }
+
+  public:
+    int velocity_ind, weight_ind;
+  };
+
+  TestReactionKernelsOnDevice test_reaction_kernels_on_device;
+
+  Properties<REAL> required_real_props;
+
+public:
+  TestReactionKernelsOnDevice get_on_device_obj() {
+    return this->test_reaction_kernels_on_device;
+  }
 };
 
 template <INT num_products_per_parent>
 struct TestReaction
-    : public LinearReactionBase<TestReaction<num_products_per_parent>,
-                                num_products_per_parent, TestReactionData,
-                                TestReactionKernels> {
+    : public LinearReactionBase<num_products_per_parent, TestReactionData,
+                                TestReactionKernels<num_products_per_parent>> {
 
   TestReaction() = default;
 
   TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
                REAL rate_, int in_states_,
-               const std::array<int, num_products_per_parent> out_states_)
-      : LinearReactionBase<TestReaction<num_products_per_parent>,
-                           num_products_per_parent, TestReactionData,
-                           TestReactionKernels>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{Sym<REAL>("V"),
-                                   Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>{Sym<INT>("INTERNAL_STATE")},
-            std::vector<Sym<INT>>(), in_states_, out_states_,
+               const std::array<int, num_products_per_parent> out_states_,
+               const ParticleSpec& particle_spec)
+      : LinearReactionBase<num_products_per_parent, TestReactionData,
+                           TestReactionKernels<num_products_per_parent>>(
+            sycl_target_, total_reaction_rate_, in_states_, out_states_,
             std::vector<ParticleProp<REAL>>{
-                ParticleProp(Sym<REAL>("V"), 2),
-                ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1)},
+                ParticleProp(Sym<REAL>("VELOCITY"), 2),
+                ParticleProp(Sym<REAL>("WEIGHT"), 1)},
             std::vector<ParticleProp<INT>>{
                 ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)},
             TestReactionData(rate_),
-            TestReactionKernels<num_products_per_parent>()) {}
+            TestReactionKernels<num_products_per_parent>(),
+            particle_spec) {}
 };
 
-struct IoniseReactionData : public ReactionDataBase<IoniseReactionData> {
-  IoniseReactionData() = default;
+namespace TEST_REACTION_VAR_DATA {
+const auto props = ParticlePropertiesIndices::default_properties;
+const std::vector<int> required_simple_real_props = {props.position};
+}
+
+struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice {
+  TestReactionVarDataOnDevice() = default;
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<REAL> &vars) const {
+                //  Access::SymVector::Read<INT> &req_simple_prop_ints,
+                //  Access::SymVector::Read<REAL> &req_simple_prop_reals,
+                //  Access::SymVector::Read<INT> &req_species_prop_ints,
+                //  Access::SymVector::Read<REAL> &req_species_prop_reals
+                Access::SymVector::Read<INT> req_int_props,
+                Access::SymVector::Read<REAL> req_real_props
+                 ) const {
 
-    return 1.0;
+    return req_real_props.at(position_ind, index, 0);
+  }
+
+public:
+  int position_ind;
+};
+
+struct TestReactionVarData : public ReactionDataBase {
+  TestReactionVarData()
+      : required_real_props(Properties<REAL>(
+            TEST_REACTION_VAR_DATA::required_simple_real_props,
+            std::vector<Species>{}, std::vector<int>{})) {
+    auto props = TEST_REACTION_VAR_DATA::props;
+
+    this->test_reaction_var_data_on_device.position_ind =
+        this->required_real_props.required_simple_prop_index(props.position);
+  };
+
+private:
+  TestReactionVarDataOnDevice test_reaction_var_data_on_device;
+
+  Properties<REAL> required_real_props;
+
+public:
+  std::vector<std::string> get_required_real_props() {
+    return this->required_real_props.required_simple_prop_names();
+  }
+
+  TestReactionVarDataOnDevice get_on_device_obj() {
+    return this->test_reaction_var_data_on_device;
   }
 };
 
-template <INT num_products_per_parent>
-struct IoniseReactionKernels
-    : public ReactionKernelsBase<IoniseReactionKernels<num_products_per_parent>,
-                                 num_products_per_parent> {
-  IoniseReactionKernels() = default;
+namespace TEST_REACTION_VAR_KERNEL {
+constexpr int num_products_per_parent = 0;
 
-  void scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                         Access::DescendantProducts::Write &descendant_products,
-                         Access::SymVector::Read<INT> &read_req_ints,
-                         Access::SymVector::Read<REAL> &read_req_reals,
-                         Access::SymVector::Write<INT> &write_req_ints,
-                         Access::SymVector::Write<REAL> &write_req_reals,
-                         const std::array<int, 0> &out_states,
-                         Access::LocalArray::Read<REAL> &pre_req_data,
-                         double dt) const {}
+const auto props = ParticlePropertiesIndices::default_properties;
 
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Read<INT> &read_req_ints,
-                     Access::SymVector::Read<REAL> &read_req_reals,
-                     Access::SymVector::Write<INT> &write_req_ints,
-                     Access::SymVector::Write<REAL> &write_req_reals,
-                     const std::array<int, 0> &out_states,
-                     Access::LocalArray::Read<REAL> &pre_req_data,
-                     double dt) const {}
+const std::vector<int> required_simple_real_props = {props.weight};
+} // namespace TEST_REACTION_VAR_KERNEL
 
-  void
-  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                        Access::DescendantProducts::Write &descendant_products,
-                        Access::SymVector::Read<INT> &read_req_ints,
-                        Access::SymVector::Read<REAL> &read_req_reals,
-                        Access::SymVector::Write<INT> &write_req_ints,
-                        Access::SymVector::Write<REAL> &write_req_reals,
-                        const std::array<int, 0> &out_states,
-                        Access::LocalArray::Read<REAL> &pre_req_data,
-                        double dt) const {}
+struct TestReactionVarKernels : public ReactionKernelsBase {
+  TestReactionVarKernels()
+      : required_real_props(Properties<REAL>(
+            TEST_REACTION_VAR_KERNEL::required_simple_real_props,
+            std::vector<Species>{}, std::vector<int>{})) {
 
-  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                       Access::DescendantProducts::Write &descendant_products,
-                       Access::SymVector::Read<INT> &read_req_ints,
-                       Access::SymVector::Read<REAL> &read_req_reals,
-                       Access::SymVector::Write<INT> &write_req_ints,
-                       Access::SymVector::Write<REAL> &write_req_reals,
-                       const std::array<int, 0> &out_states,
-                       Access::LocalArray::Read<REAL> &pre_req_data,
-                       double dt) const {
-    auto k_V_0 = write_req_reals.at(0, index, 0);
-    auto k_V_1 = write_req_reals.at(0, index, 1);
-    const REAL vsquared = (k_V_0 * k_V_0) + (k_V_1 * k_V_1);
+    auto props = TEST_REACTION_VAR_KERNEL::props;
 
-    REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
-    REAL inv_k_dt = 1.0 / dt;
+    this->test_reaction_var_kernels_on_device.weight_ind =
+        this->required_real_props.required_simple_prop_index(props.weight);
+  };
 
-    auto nE = write_req_reals.at(2, index, 0);
+public:
+  // const int get_num_simple_real_props() {
+  //   return this->required_real_props.get_required_simple_props().size();
+  // }
 
-    // Set SOURCE_DENSITY
-    write_req_reals.at(5, index, 0) =
-        -nE * modified_weight * k_n_scale * inv_k_dt;
+  std::vector<std::string> get_required_real_props() {
+    return this->required_real_props.required_simple_prop_names();
+  }
 
-    // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
-    auto k_SD = write_req_reals.at(5, index, 0);
-    write_req_reals.at(4, index, 0) = k_SD * k_V_0;
-    write_req_reals.at(4, index, 1) = k_SD * k_V_1;
+private:
+  struct TestReactionVarKernelsOnDevice
+      : public ReactionKernelsBaseOnDevice<
+            TEST_REACTION_VAR_KERNEL::num_products_per_parent> {
+    void feedback_kernel(
+        REAL &modified_weight, Access::LoopIndex::Read &index,
+        Access::DescendantProducts::Write &descendant_products,
+        // Access::SymVector::Write<INT> &req_simple_prop_ints,
+        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
+        // Access::SymVector::Write<INT> &req_species_prop_ints,
+        // Access::SymVector::Write<REAL> &req_species_prop_reals,
+        Access::SymVector::Write<INT> &req_int_props,
+        Access::SymVector::Write<REAL> &req_real_props,
+        const std::array<int, TEST_REACTION_VAR_KERNEL::num_products_per_parent>
+            &out_states,
+        Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+      req_real_props.at(weight_ind, index, 0) -= modified_weight;
+    }
 
-    // Set SOURCE_ENERGY
-    write_req_reals.at(3, index, 0) = k_SD * vsquared * 0.5;
+  public:
+    int weight_ind;
+  };
 
-    write_req_reals.at(6, index, 0) -= modified_weight;
+  TestReactionVarKernelsOnDevice test_reaction_var_kernels_on_device;
+
+  Properties<REAL> required_real_props;
+
+public:
+  TestReactionVarKernelsOnDevice get_on_device_obj() {
+    return this->test_reaction_var_kernels_on_device;
   }
 };
 
-struct IoniseReaction
-    : public LinearReactionBase<IoniseReaction, 0, IoniseReactionData,
-                                IoniseReactionKernels> {
-
-  IoniseReaction() = default;
-
-  IoniseReaction(SYCLTargetSharedPtr sycl_target_,
-                 Sym<REAL> total_reaction_rate_, int in_states_)
-      : LinearReactionBase<IoniseReaction, 0, IoniseReactionData,
-                           IoniseReactionKernels>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{
-                Sym<REAL>("V"), Sym<REAL>("ELECTRON_TEMPERATURE"),
-                Sym<REAL>("ELECTRON_DENSITY"), Sym<REAL>("SOURCE_ENERGY"),
-                Sym<REAL>("SOURCE_MOMENTUM"), Sym<REAL>("SOURCE_DENSITY"),
-                Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
-            std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-            std::vector<ParticleProp<INT>>{}, IoniseReactionData(),
-            IoniseReactionKernels<0>()) {}
-};
-
-struct TestReactionVarData : public ReactionDataBase<TestReactionVarData> {
-  TestReactionVarData() = default;
-
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<REAL> &vars) const {
-
-    return vars.at(0, index, 0);
-  }
-};
-
-template <INT num_products_per_parent>
-struct TestReactionVarKernels
-    : public ReactionKernelsBase<
-          TestReactionVarKernels<num_products_per_parent>,
-          num_products_per_parent> {
-  TestReactionVarKernels() = default;
-
-  void scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                         Access::DescendantProducts::Write &descendant_products,
-                         Access::SymVector::Read<INT> &read_req_ints,
-                         Access::SymVector::Read<REAL> &read_req_reals,
-                         Access::SymVector::Write<INT> &write_req_ints,
-                         Access::SymVector::Write<REAL> &write_req_reals,
-                         const std::array<int, 0> &out_states,
-                         Access::LocalArray::Read<REAL> &pre_req_data,
-                         double dt) const {}
-
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Read<INT> &read_req_ints,
-                     Access::SymVector::Read<REAL> &read_req_reals,
-                     Access::SymVector::Write<INT> &write_req_ints,
-                     Access::SymVector::Write<REAL> &write_req_reals,
-                     const std::array<int, 0> &out_states,
-                     Access::LocalArray::Read<REAL> &pre_req_data,
-                     double dt) const {}
-
-  void
-  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                        Access::DescendantProducts::Write &descendant_products,
-                        Access::SymVector::Read<INT> &read_req_ints,
-                        Access::SymVector::Read<REAL> &read_req_reals,
-                        Access::SymVector::Write<INT> &write_req_ints,
-                        Access::SymVector::Write<REAL> &write_req_reals,
-                        const std::array<int, 0> &out_states,
-                        Access::LocalArray::Read<REAL> &pre_req_data,
-                        double dt) const {}
-
-  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                       Access::DescendantProducts::Write &descendant_products,
-                       Access::SymVector::Read<INT> &read_req_ints,
-                       Access::SymVector::Read<REAL> &read_req_reals,
-                       Access::SymVector::Write<INT> &write_req_ints,
-                       Access::SymVector::Write<REAL> &write_req_reals,
-                       const std::array<int, 0> &out_states,
-                       Access::LocalArray::Read<REAL> &pre_req_data,
-                       double dt) const {
-    auto k_W = write_req_reals.at(0, index, 0);
-    write_req_reals.at(0, index, 0) += (k_W * modified_weight);
-  }
-};
-
-struct TestReactionVarRate
-    : public LinearReactionBase<TestReactionVarRate, 0, TestReactionVarData,
-                                TestReactionVarKernels> {
+struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
+                                                       TestReactionVarKernels> {
 
   TestReactionVarRate() = default;
 
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
-                      int in_states_)
-      : LinearReactionBase<TestReactionVarRate, 0, TestReactionVarData,
-                           TestReactionVarKernels>(
-            sycl_target_, total_reaction_rate_,
-            std::vector<Sym<REAL>>{read_var, Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<REAL>>{Sym<REAL>("COMPUTATIONAL_WEIGHT")},
-            std::vector<Sym<INT>>(), std::vector<Sym<INT>>(), in_states_,
+                      int in_states_, const ParticleSpec& particle_spec)
+      : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
+            sycl_target_, total_reaction_rate_, in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
             std::vector<ParticleProp<INT>>{}, TestReactionVarData(),
-            TestReactionVarKernels<0>()) {}
+            TestReactionVarKernels(), particle_spec) {}
 };
 
 inline auto create_test_particle_group(int N_total)
@@ -341,18 +349,21 @@ inline auto create_test_particle_group(int N_total)
 
   auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
 
-  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("P"), ndim, true),
-                             ParticleProp(Sym<REAL>("V"), ndim),
-                             ParticleProp(Sym<INT>("CELL_ID"), 1, true),
-                             ParticleProp(Sym<INT>("ID"), 1),
-                             ParticleProp(Sym<REAL>("TOT_REACTION_RATE"), 1),
-                             ParticleProp(Sym<REAL>("COMPUTATIONAL_WEIGHT"), 1),
-                             ParticleProp(Sym<INT>("INTERNAL_STATE"), 1),
-                             ParticleProp(Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
-                             ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1),
-                             ParticleProp(Sym<REAL>("SOURCE_ENERGY"), 1),
-                             ParticleProp(Sym<REAL>("SOURCE_MOMENTUM"), ndim),
-                             ParticleProp(Sym<REAL>("SOURCE_DENSITY"), 1)};
+  ParticleSpec particle_spec{
+      ParticleProp(Sym<REAL>("POSITION"), ndim, true),
+      ParticleProp(Sym<REAL>("VELOCITY"), ndim),
+      ParticleProp(Sym<INT>("CELL_ID"), 1, true),
+      ParticleProp(Sym<INT>("ID"), 1),
+      ParticleProp(Sym<REAL>("TOT_REACTION_RATE"), 1),
+      ParticleProp(Sym<REAL>("WEIGHT"), 1),
+      ParticleProp(Sym<INT>("INTERNAL_STATE"), 1),
+      ParticleProp(Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
+      ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), 1),
+      ParticleProp(Sym<REAL>("ELECTRON_SOURCE_MOMENTUM"), ndim),
+      ParticleProp(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
       std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
 
@@ -378,21 +389,24 @@ inline auto create_test_particle_group(int N_total)
   ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[Sym<REAL>("P")][px][dimx] =
+      initial_distribution[Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
-      initial_distribution[Sym<REAL>("V")][px][dimx] =
+      initial_distribution[Sym<REAL>("VELOCITY")][px][dimx] =
           velocities.at(dimx).at(px);
-      initial_distribution[Sym<REAL>("SOURCE_MOMENTUM")][px][dimx] = 0.0;
+      initial_distribution[Sym<REAL>("ELECTRON_SOURCE_MOMENTUM")][px][dimx] =
+          0.0;
     }
     initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
     initial_distribution[Sym<INT>("ID")][px][0] = px;
     initial_distribution[Sym<REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
-    initial_distribution[Sym<REAL>("COMPUTATIONAL_WEIGHT")][px][0] = 1.0;
+    initial_distribution[Sym<REAL>("WEIGHT")][px][0] = 1.0;
     initial_distribution[Sym<INT>("INTERNAL_STATE")][px][0] = 0;
     initial_distribution[Sym<REAL>("ELECTRON_TEMPERATURE")][px][0] = 2.0;
     initial_distribution[Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
-    initial_distribution[Sym<REAL>("SOURCE_ENERGY")][px][0] = 0.0;
-    initial_distribution[Sym<REAL>("SOURCE_DENSITY")][px][0] = 0.0;
+    initial_distribution[Sym<REAL>("ELECTRON_SOURCE_ENERGY")][px][0] = 0.0;
+    initial_distribution[Sym<REAL>("ELECTRON_SOURCE_DENSITY")][px][0] = 0.0;
+    initial_distribution[Sym<REAL>("FLUID_DENSITY")][px][0] = 3.0e18;
+    initial_distribution[Sym<REAL>("FLUID_TEMPERATURE")][px][0] = 2.0;
   }
   particle_group->add_particles_local(initial_distribution);
 

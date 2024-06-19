@@ -1,116 +1,84 @@
 #pragma once
 #include <neso_particles.hpp>
+#include <neso_particles/containers/sym_vector.hpp>
 
 using namespace NESO::Particles;
 
 /**
- * @brief Abstract class for ReactionData.
- */
-struct AbstractReactionData {
-  AbstractReactionData() = default;
-
-  /**
-   * @brief Virtual functions to be overidden by an implementation in a derived
-   * struct.
-   */
-
-  virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                         Access::SymVector::Read<INT> &vars) {
-    return 0.0;
-  }
-
-  virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                         Access::SymVector::Read<REAL> &vars) {
-    return 0.0;
-  }
-
-  virtual REAL calc_rate(Access::LoopIndex::Read &index,
-                         Access::SymVector::Read<INT> &int_vars,
-                         Access::SymVector::Read<REAL> &real_vars) {
-    return 0.0;
-  }
-};
-
-/**
- * @brief SYCL CRTP base reaction data object.
- *
- * @tparam ReactionDataDerived The typename of the derived class of
- * ReactionDataBase
+ * @brief Base reaction data object.
  */
 
-template <typename ReactionDataDerived>
-
-struct ReactionDataBase : AbstractReactionData {
+struct ReactionDataBase {
 
   ReactionDataBase() = default;
 
   /**
-   * @brief Function to calculate the rates of the reaction that the
-   * ReactionDataDerived-type object belongs to. To be overridden by the
-   * function in the ReactionDataDerived-type object following SYCL CRTP.
-
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_rate is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param vars Read-only accessor to a list of real-valued ParticleDats.
-   * Use real_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
-   * ParticleDat in the list
-   * @return REAL (type-aliased to double) The calculated reaction rate from
-   * the overriding function on the derived type.
+   * @brief Virtual getters functions that can be overidden by an implementation
+   * in a derived struct.
    */
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> &vars) const {
-    const auto &underlying = static_cast<const ReactionDataDerived &>(*this);
 
-    return underlying.template calc_rate(index, vars);
+  virtual std::vector<std::string> get_required_int_props() {
+    std::vector<std::string> required_prop_names = {};
+    return required_prop_names;
   }
 
-  /**
-   * @brief Function to calculate the rates of the reaction that the
-   * ReactionDataDerived-type object belongs to. To be overridden by the
-   * function in the ReactionDataDerived-type object following SYCL CRTP.
-
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_rate is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param vars Read-only accessor to a list of int-valued ParticleDats.
-   * Use int_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
-   * ParticleDat in the list
-   * @return REAL (type-aliased to double) The calculated reaction rate from
-   * the overriding function on the derived type.
-   */
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<REAL> &vars) const {
-    const auto &underlying = static_cast<const ReactionDataDerived &>(*this);
-
-    return underlying.template calc_rate(index, vars);
+  virtual std::vector<std::string> get_required_real_props() {
+    std::vector<std::string> required_prop_names = {};
+    return required_prop_names;
   }
 
-  /**
-   * @brief Function to calculate the rates of the reaction that the
-   * ReactionDataDerived-type object belongs to. To be overridden by the
-   * function in the ReactionDataDerived-type object following SYCL CRTP.
+  // virtual std::vector<std::string> get_required_simple_int_props() {
+  //   std::vector<std::string> required_prop_names = {};
+  //   return required_prop_names;
+  // }
+  // virtual std::vector<std::string> get_required_simple_real_props() {
+  //   std::vector<std::string> required_prop_names = {};
+  //   return required_prop_names;
+  // }
 
+  // virtual std::vector<std::string> get_required_species_int_props() {
+  //   std::vector<std::string> required_prop_names = {};
+  //   return required_prop_names;
+  // }
+  // virtual std::vector<std::string> get_required_species_real_props() {
+  //   std::vector<std::string> required_prop_names = {};
+  //   return required_prop_names;
+  // }
+};
+
+/**
+ * @brief Base reaction data object to be used on SYCL devices.
+ */
+struct ReactionDataBaseOnDevice {
+  ReactionDataBaseOnDevice() = default;
+
+  /**
+   * @brief Virtual function to calculate the reaction rate.
+   *
    * @param index Read-only accessor to a loop index for a ParticleLoop
    * inside which calc_rate is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
-   * @param int_vars Read-only accessor to a list of int-valued ParticleDats.
-   * Use int_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
-   * ParticleDat in the list
-   * @param real_vars Read-only accessor to a list of real-valued ParticleDats.
-   * Use real_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
-   * ParticleDat in the list
-   * @return REAL (type-aliased to double) The calculated reaction rate from
-   * the overriding function on the derived type.
+   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
+   * properties that need to be used for the reaction rate calculation.
+   * @param req_simple_prop_reals Vector of symbols for simple real-valued
+   * properties that need to be used for the reaction rate calculation.
+   * @param req_species_prop_ints Vector of symbols for species-dependent
+   * integer-valued properties that need to be used for the reaction rate
+   * calculation.
+   * @param req_species_prop_reals Vector of symbols for species-dependent
+   * real-valued properties that need to be used for the reaction rate
+   * calculation.
    */
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> &int_vars,
-                 Access::SymVector::Read<REAL> &real_vars) const {
-    const auto &underlying = static_cast<const ReactionDataDerived &>(*this);
-
-    return underlying.template calc_rate(index, int_vars, real_vars);
+  virtual REAL
+  calc_rate(const Access::LoopIndex::Read &index,
+            // const Access::SymVector::Read<INT> &req_simple_prop_ints,
+            // const Access::SymVector::Read<REAL> &req_simple_prop_reals,
+            // const Access::SymVector::Read<INT> &req_species_prop_ints,
+            // const Access::SymVector::Read<REAL> &req_species_prop_reals
+            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props
+            ) const {
+    return 0.0;
   }
 };

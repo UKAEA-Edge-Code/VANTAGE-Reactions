@@ -35,7 +35,7 @@ auto create_test_particle_group_marking(int N_total)
 
   auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
 
-  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("P"), ndim, true),
+  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("POSITION"), ndim, true),
                              ParticleProp(Sym<INT>("CELL_ID"), 1, true),
                              ParticleProp(Sym<REAL>("WEIGHT"), 1),
                              ParticleProp(Sym<INT>("ID"), 1),
@@ -63,7 +63,7 @@ auto create_test_particle_group_marking(int N_total)
   ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[Sym<REAL>("P")][px][dimx] =
+      initial_distribution[Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
       initial_distribution[Sym<REAL>("V")][px][dimx] =
           positions.at(dimx).at(px);

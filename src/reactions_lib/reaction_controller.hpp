@@ -1,10 +1,11 @@
 #pragma once
-#include <neso_particles.hpp>
+#include "common_markers.hpp"
 #include "common_transformations.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
 #include <map>
 #include <memory>
+#include <neso_particles.hpp>
 #include <set>
 #include <vector>
 
@@ -67,7 +68,7 @@ public:
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
    */
-  void apply_reactions(ParticleGroupSharedPtr particle_group, double dt) {
+  void apply_reactions(ParticleGroupSharedPtr particle_group, double dt, const ParticleSpec& particle_spec) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
     std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
 
@@ -127,7 +128,7 @@ public:
 
         INT in_state = reactions[r]->get_in_states()[0];
 
-        reactions[r]->run_rate_loop(species_groups[in_state], i);
+        reactions[r]->run_rate_loop(species_groups[in_state], i, particle_spec);
       }
 
       for (int r = 0; r < reactions.size(); r++) {
