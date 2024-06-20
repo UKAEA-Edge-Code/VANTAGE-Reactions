@@ -12,33 +12,98 @@ using namespace ParticlePropertiesIndices;
 
 namespace Reactions {
 
+/**
+ * @brief Helper struct to build custom particle specs based on user provided
+ * particle properties (or if necessary extend existing particle specs.)
+ *
+ * @param particle_spec_ ParticleSpec that is to be extended (optional pass via
+ * a non-default constructor for ParticleSpecBuilder).
+ */
+
 struct ParticleSpecBuilder {
   ParticleSpecBuilder() = default;
 
-  ParticleSpecBuilder(const ParticleSpec &particle_spec_)
-      : particle_spec(particle_spec_) {}
-
-  template <typename PROP_TYPE>
-  void add_particle_prop(std::string property_name, int ndim = 1,
-                         bool positions = false) {
-    particle_spec.push(
-        ParticleProp(Sym<PROP_TYPE>(property_name), ndim, positions));
+  ParticleSpecBuilder(ParticleSpec particle_spec_) {
+    this->add_particle_spec(particle_spec_);
   }
 
-  void add_particle_spec(const ParticleSpec &new_particle_spec) {
+  /**
+   * @brief Method to add particle properties to member particle_spec.
+   *
+   * @tparam PROP_TYPE Specifier for type of property (INT or REAL)
+   * @param properties_ Properties object containing names of the particle
+   * properties to be added.
+   * @param ndim Number of dimensions for the properties to be added (note this
+   * will apply to all properties from properties_)
+   * @param positions Boolean to indicate whether the properties to be added are
+   * particle position or cell id or not.
+   */
+  template <typename PROP_TYPE>
+  void add_particle_prop(Properties<PROP_TYPE> properties_, int ndim = 1,
+                         bool positions = false) {
+    std::vector<std::string> simple_prop_names =
+        properties_.required_simple_prop_names();
+    std::vector<std::string> species_prop_names =
+        properties_.required_species_prop_names();
+
+    for (auto prop_name : simple_prop_names) {
+      auto particle_prop =
+          ParticleProp(Sym<PROP_TYPE>(prop_name), ndim, positions);
+      auto particle_spec_contains = this->particle_spec.contains(particle_prop);
+      if (particle_spec_contains) {
+        continue;
+      } else {
+        this->particle_spec.push(particle_prop);
+      }
+    }
+
+    for (auto prop_name : species_prop_names) {
+      auto particle_prop =
+          ParticleProp(Sym<PROP_TYPE>(prop_name), ndim, positions);
+      auto particle_spec_contains = this->particle_spec.contains(particle_prop);
+      if (particle_spec_contains) {
+        continue;
+      } else {
+        this->particle_spec.push(particle_prop);
+      }
+    }
+  }
+
+  /**
+   * @brief Method to merge an existing ParticleSpec into the particle_spec
+   * member inside the struct.
+   *
+   * @param new_particle_spec ParticleSpec to merge into internal particle_spec member.
+   */
+  void add_particle_spec(ParticleSpec new_particle_spec) {
     auto existing_properties_real = this->particle_spec.properties_real;
     auto existing_properties_int = this->particle_spec.properties_int;
 
-    auto new_properties_real = new_particle_spec.properties_real;
-    auto new_properties_int = new_particle_spec.properties_int;
+    std::vector<ParticleProp<REAL>> new_real_props;
+    std::vector<ParticleProp<INT>> new_int_props;
+
+    for (auto prop : new_particle_spec.properties_real) {
+      if (this->particle_spec.contains(new_particle_spec)) {
+        continue;
+      } else {
+        new_real_props.push_back(prop);
+      }
+    }
+
+    for (auto prop : new_particle_spec.properties_int) {
+      if (this->particle_spec.contains(new_particle_spec)) {
+        continue;
+      } else {
+        new_int_props.push_back(prop);
+      }
+    }
 
     existing_properties_real.insert(existing_properties_real.end(),
-                                    new_properties_real.begin(),
-                                    new_properties_real.end());
+                                    new_real_props.begin(),
+                                    new_real_props.end());
 
     existing_properties_int.insert(existing_properties_int.end(),
-                                   new_properties_int.begin(),
-                                   new_properties_int.end());
+                                   new_int_props.begin(), new_int_props.end());
 
     this->particle_spec =
         ParticleSpec(existing_properties_real, existing_properties_int);
@@ -47,7 +112,8 @@ struct ParticleSpecBuilder {
   const ParticleSpec &get_particle_spec() { return particle_spec; }
 
 private:
-  ParticleSpec particle_spec;
+  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("POSITION"), 2, true),
+                             ParticleProp(Sym<INT>("CELL_ID"), 1, true)};
 };
 } // namespace Reactions
 

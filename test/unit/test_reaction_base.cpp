@@ -36,8 +36,8 @@ TEST(LinearReactionBase, calc_rate) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, particle_group->get_particle_spec());
-    test_reaction.run_rate_loop(particle_sub_group, i, particle_group->get_particle_spec());
+    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -73,8 +73,8 @@ TEST(LinearReactionBase, calc_var_rate) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, particle_group->get_particle_spec());
-    test_reaction.run_rate_loop(particle_sub_group, i, particle_group->get_particle_spec());
+    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -154,7 +154,7 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(subgroups[reaction], i, particle_group->get_particle_spec());
+      reactions[reaction]->run_rate_loop(subgroups[reaction], i);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
@@ -240,7 +240,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
         std::make_shared<ParticleSubGroup>(particle_group);
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(particle_sub_group, i, particle_group->get_particle_spec());
+      reactions[reaction]->run_rate_loop(particle_sub_group, i);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
@@ -285,7 +285,7 @@ TEST(IoniseReaction, calc_rate) {
       particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-    test_reaction.run_rate_loop(particle_sub_group, i, particle_group->get_particle_spec());
+    test_reaction.run_rate_loop(particle_sub_group, i);
     test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
                                           descendant_particles);
 

@@ -24,15 +24,6 @@ struct ReactionKernelsBase {
     std::vector<std::string> required_prop_names = {};
     return required_prop_names;
   }
-
-  // virtual std::vector<std::string> get_required_species_int_props() {
-  //   std::vector<std::string> required_prop_names = {};
-  //   return required_prop_names;
-  // }
-  // virtual std::vector<std::string> get_required_species_real_props() {
-  //   std::vector<std::string> required_prop_names = {};
-  //   return required_prop_names;
-  // }
 };
 
 /**
@@ -56,16 +47,10 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
    * that may need to operated on
-   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_simple_prop_reals Vector of symbols for simple real-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_species_prop_ints Vector of symbols for species-dependent
-   * integer-valued properties that need to be used for operations inside the
-   * kernel.
-   * @param req_species_prop_reals Vector of symbols for species-dependent
-   * real-valued properties that need to be used for operations inside the
-   * kernel.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for operations inside the kernel.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
    * @param pre_req_data Real-valued local array containing pre-requisite
    * data relating to a derived reaction.
@@ -74,10 +59,6 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void
   scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                     Access::DescendantProducts::Write &descendant_products,
-                    // Access::SymVector::Write<INT> &req_simple_prop_ints,
-                    // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-                    // Access::SymVector::Write<INT> &req_species_prop_ints,
-                    // Access::SymVector::Write<REAL> &req_species_prop_reals,
                     Access::SymVector::Write<INT> &req_int_props,
                     Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
@@ -97,16 +78,10 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
    * that may need to operated on
-   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_simple_prop_reals Vector of symbols for simple real-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_species_prop_ints Vector of symbols for species-dependent
-   * integer-valued properties that need to be used for operations inside the
-   * kernel.
-   * @param req_species_prop_reals Vector of symbols for species-dependent
-   * real-valued properties that need to be used for operations inside the
-   * kernel.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for operations inside the kernel.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
    * @param pre_req_data Real-valued local array containing pre-requisite
    * data relating to a derived reaction.
@@ -115,10 +90,6 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void
   feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                   Access::DescendantProducts::Write &descendant_products,
-                  // Access::SymVector::Write<INT> &req_simple_prop_ints,
-                  // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-                  // Access::SymVector::Write<INT> &req_species_prop_ints,
-                  // Access::SymVector::Write<REAL> &req_species_prop_reals,
                   Access::SymVector::Write<INT> &req_int_props,
                   Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
@@ -138,16 +109,10 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
    * that may need to operated on
-   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_simple_prop_reals Vector of symbols for simple real-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_species_prop_ints Vector of symbols for species-dependent
-   * integer-valued properties that need to be used for operations inside the
-   * kernel.
-   * @param req_species_prop_reals Vector of symbols for species-dependent
-   * real-valued properties that need to be used for operations inside the
-   * kernel.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for operations inside the kernel.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
    * @param pre_req_data Real-valued local array containing pre-requisite
    * data relating to a derived reaction.
@@ -156,10 +121,6 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void transformation_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
       Access::DescendantProducts::Write &descendant_products,
-      // Access::SymVector::Write<INT> &req_simple_prop_ints,
-      // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-      // Access::SymVector::Write<INT> &req_species_prop_ints,
-      // Access::SymVector::Write<REAL> &req_species_prop_reals,
       Access::SymVector::Write<INT> &req_int_props,
       Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
@@ -178,16 +139,10 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
    * that may need to operated on
-   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_simple_prop_reals Vector of symbols for simple real-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_species_prop_ints Vector of symbols for species-dependent
-   * integer-valued properties that need to be used for operations inside the
-   * kernel.
-   * @param req_species_prop_reals Vector of symbols for species-dependent
-   * real-valued properties that need to be used for operations inside the
-   * kernel.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for operations inside the kernel.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
    * @param pre_req_data Real-valued local array containing pre-requisite
    * data relating to a derived reaction.
@@ -196,10 +151,6 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   virtual void
   weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                 Access::DescendantProducts::Write &descendant_products,
-                // Access::SymVector::Write<INT> &req_simple_prop_ints,
-                // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-                // Access::SymVector::Write<INT> &req_species_prop_ints,
-                // Access::SymVector::Write<REAL> &req_species_prop_reals,
                 Access::SymVector::Write<INT> &req_int_props,
                 Access::SymVector::Write<REAL> &req_real_props,
                 const std::array<int, num_products_per_parent> &out_states,

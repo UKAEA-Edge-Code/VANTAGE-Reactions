@@ -22,10 +22,6 @@ struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice {
   TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                //  Access::SymVector::Read<INT> &req_simple_prop_ints,
-                //  Access::SymVector::Read<REAL> &req_simple_prop_reals,
-                //  Access::SymVector::Read<INT> &req_species_prop_ints,
-                //  Access::SymVector::Read<REAL> &req_species_prop_reals
                 Access::SymVector::Read<INT> &req_int_props,
                 Access::SymVector::Read<REAL> &req_real_props
                 ) const {
@@ -75,9 +71,6 @@ struct TestReactionKernels : public ReactionKernelsBase {
   }
 
 public:
-  // const int get_num_simple_real_props() {
-  //   return this->required_real_props.get_required_simple_props().size();
-  // }
 
   std::vector<std::string> get_required_real_props() {
     return this->required_real_props.required_simple_prop_names();
@@ -91,10 +84,6 @@ private:
     void scattering_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
-        // Access::SymVector::Write<INT> &req_simple_prop_ints,
-        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-        // Access::SymVector::Write<INT> &req_species_prop_ints,
-        // Access::SymVector::Write<REAL> &req_species_prop_reals,
         Access::SymVector::Write<INT> &req_int_props,
         Access::SymVector::Write<REAL> &req_real_props,
         const std::array<int, num_products_per_parent> &out_states,
@@ -110,10 +99,6 @@ private:
     void
     weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                   Access::DescendantProducts::Write &descendant_products,
-        // Access::SymVector::Write<INT> &req_simple_prop_ints,
-        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-        // Access::SymVector::Write<INT> &req_species_prop_ints,
-        // Access::SymVector::Write<REAL> &req_species_prop_reals,
         Access::SymVector::Write<INT> &req_int_props,
         Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
@@ -128,10 +113,6 @@ private:
     void transformation_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
-        // Access::SymVector::Write<INT> &req_simple_prop_ints,
-        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-        // Access::SymVector::Write<INT> &req_species_prop_ints,
-        // Access::SymVector::Write<REAL> &req_species_prop_reals,
         Access::SymVector::Write<INT> &req_int_props,
         Access::SymVector::Write<REAL> &req_real_props,
         const std::array<int, num_products_per_parent> &out_states,
@@ -144,10 +125,6 @@ private:
     void
     feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                     Access::DescendantProducts::Write &descendant_products,
-        // Access::SymVector::Write<INT> &req_simple_prop_ints,
-        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-        // Access::SymVector::Write<INT> &req_species_prop_ints,
-        // Access::SymVector::Write<REAL> &req_species_prop_reals,
         Access::SymVector::Write<INT> &req_int_props,
         Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
@@ -203,10 +180,6 @@ struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice {
   TestReactionVarDataOnDevice() = default;
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                //  Access::SymVector::Read<INT> &req_simple_prop_ints,
-                //  Access::SymVector::Read<REAL> &req_simple_prop_reals,
-                //  Access::SymVector::Read<INT> &req_species_prop_ints,
-                //  Access::SymVector::Read<REAL> &req_species_prop_reals
                 Access::SymVector::Read<INT> req_int_props,
                 Access::SymVector::Read<REAL> req_real_props
                  ) const {
@@ -265,9 +238,6 @@ struct TestReactionVarKernels : public ReactionKernelsBase {
   };
 
 public:
-  // const int get_num_simple_real_props() {
-  //   return this->required_real_props.get_required_simple_props().size();
-  // }
 
   std::vector<std::string> get_required_real_props() {
     return this->required_real_props.required_simple_prop_names();
@@ -280,10 +250,6 @@ private:
     void feedback_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
-        // Access::SymVector::Write<INT> &req_simple_prop_ints,
-        // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-        // Access::SymVector::Write<INT> &req_species_prop_ints,
-        // Access::SymVector::Write<REAL> &req_species_prop_reals,
         Access::SymVector::Write<INT> &req_int_props,
         Access::SymVector::Write<REAL> &req_real_props,
         const std::array<int, TEST_REACTION_VAR_KERNEL::num_products_per_parent>

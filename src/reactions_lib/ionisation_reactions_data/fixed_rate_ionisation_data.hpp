@@ -30,22 +30,12 @@ struct FixedRateIonisationDataOnDevice : public ReactionDataBaseOnDevice {
    * inside which calc_rate is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
-   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
-   * properties that need to be used for the reaction rate calculation.
-   * @param req_simple_prop_reals Vector of symbols for simple real-valued
-   * properties that need to be used for the reaction rate calculation.
-   * @param req_species_prop_ints Vector of symbols for species-dependent
-   * integer-valued properties that need to be used for the reaction rate
-   * calculation.
-   * @param req_species_prop_reals Vector of symbols for species-dependent
-   * real-valued properties that need to be used for the reaction rate
-   * calculation.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for the reaction rate calculation.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for the reaction rate calculation.
    */
   REAL calc_rate(const Access::LoopIndex::Read &index,
-                //  const Access::SymVector::Read<INT> &req_simple_prop_ints,
-                //  const Access::SymVector::Read<REAL> &req_simple_prop_reals,
-                //  const Access::SymVector::Read<INT> &req_species_prop_ints,
-                //  const Access::SymVector::Read<REAL> &req_species_prop_reals
                 const Access::SymVector::Read<INT> req_int_props,
                 const Access::SymVector::Read<REAL> req_real_props
                 ) const {

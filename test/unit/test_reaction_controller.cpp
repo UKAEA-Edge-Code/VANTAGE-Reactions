@@ -3,6 +3,8 @@
 #include "common_transformations.hpp"
 #include "merge_transformation.hpp"
 #include "mock_reactions.hpp"
+#include "particle_properties_map.hpp"
+#include "reaction_kernel_pre_reqs.hpp"
 #include "transformation_wrapper.hpp"
 #include <array>
 #include <gtest/gtest.h>
@@ -61,7 +63,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.01, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.01);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -78,8 +80,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
-  reaction_controller.apply_reactions(particle_group, 0.01,
-                                      particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.01);
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
@@ -143,7 +144,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.1);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -241,7 +242,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.1);
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
@@ -318,8 +319,7 @@ TEST(ReactionController, parent_transform) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.0,
-                                      particle_group->get_particle_spec());
+  reaction_controller.apply_reactions(particle_group, 0.0);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -346,7 +346,11 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
 
-  auto particle_spec = particle_group->get_particle_spec();
+  auto particle_spec_builder = ParticleSpecBuilder();
+
+  particle_spec_builder.add_particle_spec(particle_group->get_particle_spec());
+
+  auto particle_spec = particle_spec_builder.get_particle_spec();
 
   auto ionise_reaction = FixedRateIonisation(particle_group->sycl_target,
                                              Sym<REAL>("TOT_REACTION_RATE"),
@@ -358,7 +362,7 @@ TEST(ReactionController, ionisation_reaction) {
   reaction_controller.add_reaction(
       std::make_shared<FixedRateIonisation>(ionise_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 1.5, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 1.5);
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -408,20 +412,56 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto particle_spec_builder = ParticleSpecBuilder();
 
-  particle_spec_builder.add_particle_prop<REAL>("POSITION", 2, true);
-  particle_spec_builder.add_particle_prop<REAL>("VELOCITY", 2);
-  particle_spec_builder.add_particle_prop<INT>("CELL_ID", 1, true);
-  particle_spec_builder.add_particle_prop<INT>("ID");
-  particle_spec_builder.add_particle_prop<REAL>("TOT_REACTION_RATE");
-  particle_spec_builder.add_particle_prop<REAL>("WEIGHT");
-  particle_spec_builder.add_particle_prop<INT>("INTERNAL_STATE");
-  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_TEMPERATURE");
-  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_DENSITY");
-  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_SOURCE_ENERGY");
-  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_SOURCE_MOMENTUM", 2);
-  particle_spec_builder.add_particle_prop<REAL>("ELECTRON_SOURCE_DENSITY");
-  particle_spec_builder.add_particle_prop<REAL>("FLUID_DENSITY");
-  particle_spec_builder.add_particle_prop<REAL>("FLUID_TEMPERATURE");
+  auto int_1d_props = Properties<INT>(
+    std::vector<int>{
+      default_properties.id,
+      default_properties.internal_state
+    }
+  );
+
+  auto int_1d_positional_props = Properties<INT>(
+    std::vector<int>{
+      default_properties.cell_id
+    }
+  );
+
+  auto real_1d_props = Properties<REAL>(
+    std::vector<int>{
+      default_properties.tot_reaction_rate,
+      default_properties.weight,
+      default_properties.fluid_density,
+      default_properties.fluid_temperature
+    },
+    std::vector<Species>{Species("ELECTRON")},
+    std::vector<int>{
+      default_properties.temperature,
+      default_properties.density,
+      default_properties.source_energy,
+      default_properties.source_density
+    }
+  );
+
+  auto real_2d_props = Properties<REAL>(
+    std::vector<int>{
+      default_properties.velocity
+    },
+    std::vector<Species>{Species("ELECTRON")},
+    std::vector<int>{
+      default_properties.source_momentum
+    }
+  );
+
+  auto real_2d_positional_props = Properties<REAL>(
+    std::vector<int>{
+      default_properties.position
+    }
+  );
+
+  particle_spec_builder.add_particle_prop<INT>(int_1d_props);
+  particle_spec_builder.add_particle_prop<INT>(int_1d_positional_props, 1, true);
+  particle_spec_builder.add_particle_prop<REAL>(real_1d_props);
+  particle_spec_builder.add_particle_prop<REAL>(real_2d_props, 2);
+  particle_spec_builder.add_particle_prop<REAL>(real_2d_positional_props, 2, true);
 
   auto particle_spec = particle_spec_builder.get_particle_spec();
 
@@ -435,7 +475,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   reaction_controller.add_reaction(
       std::make_shared<IoniseReactionAMJUEL<9>>(ionise_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 0.1, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.1);
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{

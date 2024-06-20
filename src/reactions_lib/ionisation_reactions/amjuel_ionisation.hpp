@@ -31,6 +31,8 @@ using namespace Reactions;
  * AMJUEL reaction rate calculation.
  * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
  * reaction rate calculation.
+ * @param particle_spec ParticleSpec object containing particle properties to
+ * use to construct sym_vectors.
  */
 template <int num_coeffs>
 struct IoniseReactionAMJUEL

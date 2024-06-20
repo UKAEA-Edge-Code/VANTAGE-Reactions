@@ -68,7 +68,7 @@ public:
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
    */
-  void apply_reactions(ParticleGroupSharedPtr particle_group, double dt, const ParticleSpec& particle_spec) {
+  void apply_reactions(ParticleGroupSharedPtr particle_group, double dt) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
     std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
 
@@ -128,7 +128,7 @@ public:
 
         INT in_state = reactions[r]->get_in_states()[0];
 
-        reactions[r]->run_rate_loop(species_groups[in_state], i, particle_spec);
+        reactions[r]->run_rate_loop(species_groups[in_state], i);
       }
 
       for (int r = 0; r < reactions.size(); r++) {
