@@ -107,7 +107,7 @@ struct TransformationWrapper {
    * @param target_group ParticleGroup to transform
    * @param cell_id Local cell id to restrict the transformation to
    */
-  void transform(ParticleGroupSharedPtr target_group, INT cell_id) {
+  void transform(ParticleGroupSharedPtr target_group, int cell_id) {
 
     auto marker_subgroup = std::make_shared<ParticleSubGroup>(target_group);
     if (cell_id >= 0) {
@@ -115,11 +115,7 @@ struct TransformationWrapper {
       NESOASSERT(
           cell_id < cell_num,
           "Transformation wrapper transform called with cell id out of range");
-      // TODO: Update with efficient cell-wise subgroup construction once
-      // available in NP
-      auto marker_subgroup = std::make_shared<ParticleSubGroup>(
-          target_group, [=](auto cell_idx) { return cell_idx[0] == cell_id; },
-          Access::read(Sym<INT>("CELL_ID")));
+      auto marker_subgroup = particle_sub_group(target_group,cell_id);
     }
     for (auto &strat : this->marking_strat) {
       marker_subgroup = strat->make_marker_subgroup(marker_subgroup);
