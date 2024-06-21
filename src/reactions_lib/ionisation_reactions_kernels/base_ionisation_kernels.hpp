@@ -48,16 +48,10 @@ struct IoniseReactionKernelsOnDevice
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
    * that may need to operated on
-   * @param req_simple_prop_ints Vector of symbols for simple integer-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_simple_prop_reals Vector of symbols for simple real-valued
-   * properties that need to be used for operations inside the kernel.
-   * @param req_species_prop_ints Vector of symbols for species-dependent
-   * integer-valued properties that need to be used for operations inside the
-   * kernel.
-   * @param req_species_prop_reals Vector of symbols for species-dependent
-   * real-valued properties that need to be used for operations inside the
-   * kernel.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for operations inside the kernel.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
    * @param pre_req_data Real-valued local array containing pre-requisite
    * data relating to a derived reaction.
@@ -66,10 +60,6 @@ struct IoniseReactionKernelsOnDevice
   void feedback_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
       Access::DescendantProducts::Write &descendant_products,
-      // Access::SymVector::Write<INT> &req_simple_prop_ints,
-      // Access::SymVector::Write<REAL> &req_simple_prop_reals,
-      // Access::SymVector::Write<INT> &req_species_prop_ints,
-      // Access::SymVector::Write<REAL> &req_species_prop_reals,
       Access::SymVector::Write<INT> &req_int_props,
       Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, BASE_IONISATION_KERNEL::num_products_per_parent>
@@ -92,8 +82,7 @@ struct IoniseReactionKernelsOnDevice
          modified_weight * k_n_scale * inv_k_dt;
 
     // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
-    auto k_SD =
-        req_real_props.at(electron_source_density_ind, index, 0);
+    auto k_SD = req_real_props.at(electron_source_density_ind, index, 0);
 
     // SOURCE_MOMENTUM calc
     for (int esm_dim = 0; esm_dim < ndim_electron_source_momentum; esm_dim++) {
@@ -117,6 +106,10 @@ public:
  * @brief A struct defining data and kernel functions needed for an ionisation
  * reaction.
  *
+ * @tparam ndim_velocity Optional number of dimensions for the particle velocity
+ * property (default value of 1)
+ * @tparam ndim_electron_source_momentum Number of dimensions for electron
+ * source momentum property (default value of 1)
  * @param species_ A vector of Species objects that define the species(plural)
  * that will be acted on by an ionisation reaction.
  */
@@ -181,8 +174,7 @@ private:
 
 public:
   /**
-   * @brief Getters for number of simple real properties, species-dependent real
-   * properties and the names of both sets of properties and the SYCL
+   * @brief Getters for the names of all properties and the SYCL
    * device-specific struct.
    */
 
@@ -195,10 +187,6 @@ public:
                         species_props.end());
     return simple_props;
   }
-
-  // std::vector<std::string> get_required_species_real_props() {
-  //   return this->required_real_1d_props.required_species_prop_names();
-  // }
 
   IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
   get_on_device_obj() {

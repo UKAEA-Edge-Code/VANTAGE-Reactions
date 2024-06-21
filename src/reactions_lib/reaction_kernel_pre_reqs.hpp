@@ -149,12 +149,11 @@ template <typename PROP_TYPE> struct Properties {
    * @return required_species_prop_names
    */
   std::vector<std::string> required_species_prop_names(const std::map<int, std::string>& properties_map=default_map) {
+    std::vector<std::string> required_species_real_prop_names_vec;
     if (this->species.empty() || this->required_species_props.empty()) {
-      throw std::logic_error(
-          "No species and/or required_species_props have been defined.");
+      return required_species_real_prop_names_vec;
     }
 
-    std::vector<std::string> required_species_real_prop_names_vec;
     for (auto i_species : this->species) {
       std::string species_name = i_species.get_name();
       for (auto req_prop : this->required_species_props) {

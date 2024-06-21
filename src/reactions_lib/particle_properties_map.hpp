@@ -2,29 +2,16 @@
 #include "particle_properties_map.hpp"
 #include <algorithm>
 #include <cstring>
-#include <utility>
-
-/**
- * @def standard_properties List of variable names that are relevant to the
- * properties used in Reactions workflows.
- */
-// Replace with struct containing ints with facility to extend and a default
-// one in case
-// #define standard_properties \
-//   X(position), X(velocity), X(cell_id), X(id), X(tot_reaction_rate), \
-//       X(weight), X(internal_state), X(temperature), X(density), \
-//       X(source_energy), X(source_momentum), X(source_density), \
-//       X(fluid_density), X(fluid_temperature)
-
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 /**
- * @namespace ParticlePropertiesIndices A namespace containing an enumerator
- * with labels that correspond to the standard_properties macro and a map that
- * maps the values of the enumerator to strings that the properties inside a
- * ParticleSpec need to be formatted in.
+ * @namespace ParticlePropertiesIndices A namespace containing a struct
+ * containing an enumerator with labels that correspond to standard property
+ * names and a map that maps the values of the enumerator to strings that the
+ * properties inside a ParticleSpec need to be formatted in.
  */
 namespace ParticlePropertiesIndices {
 /*! An enum with labels consisting of the variable names in
@@ -64,10 +51,9 @@ public:
 
 const auto default_properties = standard_properties_enum();
 
-// Think about a way for the user to add their own maps and simplify definition
-// and construction
 /*! A map to reference strings associated with properties in ParticleSpec via
- * integer indices defined in an enumerator in ParticlePropertiesIndices. */
+ * integer indices defined in an enumerator from a struct in
+ * ParticlePropertiesIndices. */
 struct properties_map {
   properties_map() = default;
 
@@ -97,5 +83,3 @@ private:
 
 const auto default_map = properties_map().get_map();
 }; // namespace ParticlePropertiesIndices
-// #undef standard_properties
-// namespace ParticlePropertiesIndices

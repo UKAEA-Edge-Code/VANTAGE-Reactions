@@ -26,6 +26,8 @@ using namespace Reactions;
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  * @param in_states_ Integer specifying the ID of the species on
  * which the derived reaction is acting on.
+ * @param particle_spec ParticleSpec object containing particle properties to
+ * use to construct sym_vectors.
  */
 struct FixedRateIonisation
     : public LinearReactionBase<0, FixedRateIonisationData,
