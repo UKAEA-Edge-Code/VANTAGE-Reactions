@@ -80,7 +80,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
-  reaction_controller.apply_reactions(particle_group, 0.01, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.01);
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
@@ -432,7 +432,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
     num_parts.push_back(particle_group->get_npart_cell(cellx));
   };
 
-  reaction_controller.apply_reactions(particle_group, 0.5, particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.5);
 
   auto accumulated_1d =
       accumulator_transform->get_cell_data("ELECTRON_SOURCE_DENSITY");
