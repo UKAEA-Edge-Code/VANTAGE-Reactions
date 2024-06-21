@@ -87,11 +87,9 @@ struct IoniseReactionKernelsOnDevice
     REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
     REAL inv_k_dt = 1.0 / dt;
 
-    auto nE = req_real_props.at(electron_density_ind, index, 0);
-
     // Set SOURCE_DENSITY
     req_real_props.at(electron_source_density_ind, index, 0) +=
-        nE * modified_weight * k_n_scale * inv_k_dt;
+         modified_weight * k_n_scale * inv_k_dt;
 
     // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
     auto k_SD =
