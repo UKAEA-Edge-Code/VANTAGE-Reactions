@@ -17,9 +17,9 @@ namespace Reactions {
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given ParticleGroup.
  *
- * @param parent_transform TransformationWrapper informing how parent particles
+ * @param parent_transform TransformationWrapper(s) informing how parent particles
  * are to be handled
- * @param child_transform TransformationWrapper informing how descendant
+ * @param child_transform TransformationWrapper(s) informing how descendant
  * products are to be handled
  * @param id_sym Symbol index of the integer ParticleDat that will be used
  * to specify which particles reactions will be applied to
@@ -29,18 +29,21 @@ struct ReactionController {
   ReactionController() = default;
 
   ReactionController(Sym<INT> id_sym)
-      : parent_transform(std::make_shared<TransformationWrapper>(
-            make_transformation_strategy<NoOpTransformationStrategy>())),
-        id_sym(id_sym) {}
+      :  id_sym(id_sym) {}
 
   ReactionController(std::shared_ptr<TransformationWrapper> child_transform,
                      Sym<INT> id_sym)
-      : parent_transform(std::make_shared<TransformationWrapper>(
-            make_transformation_strategy<NoOpTransformationStrategy>())),
-        child_transform(child_transform), id_sym(id_sym) {}
+      : child_transform(std::vector{child_transform}),
+         id_sym(id_sym) {}
 
   ReactionController(std::shared_ptr<TransformationWrapper> parent_transform,
                      std::shared_ptr<TransformationWrapper> child_transform,
+                     Sym<INT> id_sym)
+      : parent_transform(std::vector{parent_transform}), child_transform(std::vector{child_transform}),
+        id_sym(id_sym) {}
+
+  ReactionController(std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
+                     std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
                      Sym<INT> id_sym)
       : parent_transform(parent_transform), child_transform(child_transform),
         id_sym(id_sym) {}
@@ -139,18 +142,22 @@ public:
       }
 
       for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
-        auto transform_buffer =
-            std::make_shared<TransformationWrapper>(*child_transform);
-        transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-        transform_buffer->transform(child_group, i);
+          for (auto tr : child_transform) {
+            auto transform_buffer =
+                std::make_shared<TransformationWrapper>(*tr);
+            transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+            transform_buffer->transform(child_group, i);
+          }
       }
     }
 
     for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
-      auto transform_buffer =
-          std::make_shared<TransformationWrapper>(*parent_transform);
-      transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-      transform_buffer->transform(particle_group);
+          for (auto tr : parent_transform) {
+              auto transform_buffer =
+                  std::make_shared<TransformationWrapper>(*tr);
+              transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+              transform_buffer->transform(particle_group);
+          }
     }
     if (child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
@@ -159,8 +166,8 @@ public:
 
 private:
   std::vector<std::shared_ptr<AbstractReaction>> reactions;
-  std::shared_ptr<TransformationWrapper> parent_transform;
-  std::shared_ptr<TransformationWrapper> child_transform;
+  std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;
+  std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
   Sym<INT> id_sym;
 };
