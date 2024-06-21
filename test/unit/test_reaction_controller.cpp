@@ -9,10 +9,10 @@
 #include <ionisation_reactions/amjuel_ionisation.hpp>
 #include <ionisation_reactions/fixed_rate_ionisation.hpp>
 #include <memory>
+#include <particle_spec_builder.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
-#include <particle_spec_builder.hpp>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -78,8 +78,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
-  reaction_controller.apply_reactions(particle_group, 0.01,
-                                      particle_spec);
+  reaction_controller.apply_reactions(particle_group, 0.01, particle_spec);
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
@@ -382,6 +381,61 @@ TEST(ReactionController, ionisation_reaction) {
   auto final_particle_num = particle_group->get_npart_local();
 
   EXPECT_EQ(final_particle_num, 0);
+
+  particle_group->domain->mesh->free();
+}
+
+TEST(ReactionController, ionisation_reaction_accumulator) {
+  const int N_total = 1600;
+
+  auto particle_group = create_test_particle_group(N_total);
+
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto ionise_reaction = FixedRateIonisation(particle_group->sycl_target,
+                                             Sym<REAL>("TOT_REACTION_RATE"),
+                                             1.0, 0, particle_spec);
+
+  auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
+      particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY"});
+
+  auto accumulator_transform_wrapper =
+      std::make_shared<TransformationWrapper>(std::dynamic_pointer_cast<TransformationStrategy>(accumulator_transform));
+
+  auto merge_transform =
+      make_transformation_strategy<MergeTransformationStrategy<2>>(
+          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+
+  auto merge_transform_wrapper =
+      std::make_shared<TransformationWrapper>(merge_transform);
+
+  ionise_reaction.flush_buffer(
+      static_cast<size_t>(particle_group->get_npart_local()));
+
+  auto reaction_controller = ReactionController(
+      std::vector{accumulator_transform_wrapper, merge_transform_wrapper},
+      std::vector<std::shared_ptr<TransformationWrapper>>{},
+      Sym<INT>("INTERNAL_STATE"));
+  reaction_controller.add_reaction(
+      std::make_shared<FixedRateIonisation>(ionise_reaction));
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+
+  std::vector<int> num_parts;
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+
+    num_parts.push_back(particle_group->get_npart_cell(cellx));
+  };
+
+  reaction_controller.apply_reactions(particle_group, 0.5, particle_spec);
+
+  auto accumulated_1d =
+      accumulator_transform->get_cell_data("ELECTRON_SOURCE_DENSITY");
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+
+    EXPECT_EQ(particle_group->get_npart_cell(cellx), 2);
+    EXPECT_NEAR(accumulated_1d[cellx]->at(0, 0), num_parts[cellx], 1e-10);
+  };
 
   particle_group->domain->mesh->free();
 }
