@@ -26,8 +26,8 @@ namespace ParticlePropertiesIndices {
         custom_prop_1 = standard_properties_enum::fluid_temparture+1,
         custom_prop_2,
         custom_prop_3
-      }
-  }
+      };
+  };
   Further chaining would work on the same principle.*/
 struct standard_properties_enum {
 public:
@@ -57,11 +57,12 @@ const auto default_properties = standard_properties_enum();
 struct properties_map {
   properties_map() = default;
 
-  std::map<int, std::string> get_map() { return this->private_map; }
+  public:
+    std::map<int, std::string> get_map() { return this->private_map; }
 
-  void extend_map(int property_key, std::string property_name) {
-    this->private_map.emplace(std::make_pair(property_key, property_name));
-  }
+    void extend_map(int property_key, std::string property_name) {
+      this->private_map.emplace(std::make_pair(property_key, property_name));
+    }
 
 private:
   std::map<int, std::string> private_map{

@@ -29,9 +29,6 @@ TEST(LinearReactionBase, calc_rate) {
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
       std::array<int, 0>{}, particle_spec);
 
-  test_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   for (int i = 0; i < cell_count; i++) {
@@ -62,12 +59,9 @@ TEST(LinearReactionBase, calc_var_rate) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction = TestReactionVarRate(particle_group->sycl_target,
-                                           Sym<REAL>("TOT_REACTION_RATE"),
-                                           Sym<REAL>("POSITION"), 0, particle_spec);
-
-  test_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
+  auto test_reaction = TestReactionVarRate(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("POSITION"), 0, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -119,11 +113,6 @@ TEST(LinearReactionBase, split_group_single_reaction) {
   auto test_reaction2 = TestReaction<1>(particle_group->sycl_target,
                                         Sym<REAL>("TOT_REACTION_RATE"), 2, 3,
                                         std::array<int, 1>{4}, particle_spec);
-
-  test_reaction1.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-  test_reaction2.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions = {
       std::make_shared<TestReaction<0>>(test_reaction1),
@@ -209,13 +198,6 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 2, 0,
       std::array<int, 1>{1}, particle_spec);
 
-  test_reaction1.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-  test_reaction2.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-  test_reaction3.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   std::vector<std::shared_ptr<AbstractReaction>> reactions{};
   reactions.push_back(std::make_shared<TestReaction<0>>(test_reaction1));
   reactions.push_back(std::make_shared<TestReaction<0>>(test_reaction2));
@@ -272,11 +254,9 @@ TEST(IoniseReaction, calc_rate) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction = FixedRateIonisation(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 1.0, 0, particle_spec);
-
-  test_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
+  auto test_reaction = FixedRateIonisation(particle_group->sycl_target,
+                                           Sym<REAL>("TOT_REACTION_RATE"), 1.0,
+                                           0, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -302,21 +282,3 @@ TEST(IoniseReaction, calc_rate) {
   particle_group->domain->mesh->free();
   descendant_particles->domain->mesh->free();
 }
-
-/*
-ReactionController :
-loop over cells {
-    loop over Reactions {
-        generate reaction_sub_groups
-    }
-    loop over Reactions {
-        run_rate_loop(...)
-    }
-    loop over Reactions {
-        apply_kernel (currently descendant_products)
-    }
-    handle cell-wise products (need add_particles_local(DescendantProducts,
-ParentGroup))
-}
-
-*/

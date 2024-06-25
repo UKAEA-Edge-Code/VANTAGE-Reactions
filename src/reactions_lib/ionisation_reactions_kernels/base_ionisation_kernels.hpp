@@ -79,7 +79,7 @@ struct IoniseReactionKernelsOnDevice
 
     // Set SOURCE_DENSITY
     req_real_props.at(electron_source_density_ind, index, 0) +=
-         modified_weight * k_n_scale * inv_k_dt;
+        modified_weight * k_n_scale * inv_k_dt;
 
     // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
     auto k_SD = req_real_props.at(electron_source_density_ind, index, 0);
@@ -142,26 +142,26 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
     auto props = BASE_IONISATION_KERNEL::props;
 
     this->ionise_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.required_simple_prop_index(props.velocity);
+        this->required_real_props.simple_prop_index(props.velocity);
 
     this->ionise_reaction_kernels_on_device.electron_density_ind =
-        this->required_real_props.required_species_prop_index(species_name,
-                                                              props.density);
+        this->required_real_props.species_prop_index(species_name,
+                                                     props.density);
 
     this->ionise_reaction_kernels_on_device.electron_source_density_ind =
-        this->required_real_props.required_species_prop_index(
-            species_name, props.source_density);
+        this->required_real_props.species_prop_index(species_name,
+                                                     props.source_density);
 
     this->ionise_reaction_kernels_on_device.electron_source_momentum_ind =
-        this->required_real_props.required_species_prop_index(
-            species_name, props.source_momentum);
+        this->required_real_props.species_prop_index(species_name,
+                                                     props.source_momentum);
 
     this->ionise_reaction_kernels_on_device.electron_source_energy_ind =
-        this->required_real_props.required_species_prop_index(
-            species_name, props.source_energy);
+        this->required_real_props.species_prop_index(species_name,
+                                                     props.source_energy);
 
     this->ionise_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.required_simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight);
   };
 
 private:
@@ -179,10 +179,18 @@ public:
    */
 
   std::vector<std::string> get_required_real_props() {
-    std::vector<std::string> simple_props =
-        this->required_real_props.required_simple_prop_names();
-    std::vector<std::string> species_props =
-        this->required_real_props.required_species_prop_names();
+    std::vector<std::string> simple_props;
+    try {
+      simple_props = this->required_real_props.simple_prop_names();
+    } catch (std::logic_error) {
+      simple_props = {};
+    }
+    std::vector<std::string> species_props;
+    try {
+      species_props = this->required_real_props.species_prop_names();
+    } catch (std::logic_error) {
+      species_props = {};
+    }
     simple_props.insert(simple_props.end(), species_props.begin(),
                         species_props.end());
     return simple_props;

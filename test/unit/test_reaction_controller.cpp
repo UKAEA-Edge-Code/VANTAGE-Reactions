@@ -43,9 +43,6 @@ TEST(ReactionController, single_reaction_multi_apply) {
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
-  test_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));
 
@@ -116,9 +113,6 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
       std::array<int, 0>{}, particle_spec);
 
-  test_reaction1.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   const INT num_products_per_parent = 2;
 
   test_rate = 10.0;
@@ -126,9 +120,6 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto test_reaction2 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
       std::array<int, num_products_per_parent>{1, 2}, particle_spec);
-
-  test_reaction2.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction1));
@@ -222,12 +213,6 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 2,
       std::array<int, num_products_per_parent>{3}, particle_spec);
 
-  test_reaction1.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
-  test_reaction2.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction1));
 
@@ -305,9 +290,6 @@ TEST(ReactionController, parent_transform) {
                                        Sym<REAL>("TOT_REACTION_RATE"), 1, 0,
                                        std::array<int, 0>{}, particle_spec);
 
-  test_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));
 
@@ -356,9 +338,6 @@ TEST(ReactionController, ionisation_reaction) {
                                              Sym<REAL>("TOT_REACTION_RATE"),
                                              1.0, 0, particle_spec);
 
-  ionise_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
-
   reaction_controller.add_reaction(
       std::make_shared<FixedRateIonisation>(ionise_reaction));
 
@@ -404,8 +383,8 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY"});
 
-  auto accumulator_transform_wrapper =
-      std::make_shared<TransformationWrapper>(std::dynamic_pointer_cast<TransformationStrategy>(accumulator_transform));
+  auto accumulator_transform_wrapper = std::make_shared<TransformationWrapper>(
+      std::dynamic_pointer_cast<TransformationStrategy>(accumulator_transform));
 
   auto merge_transform =
       make_transformation_strategy<MergeTransformationStrategy<2>>(
@@ -413,9 +392,6 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
 
   auto merge_transform_wrapper =
       std::make_shared<TransformationWrapper>(merge_transform);
-
-  ionise_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
 
   auto reaction_controller = ReactionController(
       std::vector{accumulator_transform_wrapper, merge_transform_wrapper},
@@ -467,65 +443,44 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto particle_spec_builder = ParticleSpecBuilder();
 
-  auto int_1d_props = Properties<INT>(
-    std::vector<int>{
-      default_properties.id,
-      default_properties.internal_state
-    }
-  );
+  auto int_1d_props = Properties<INT>(std::vector<int>{
+      default_properties.id, default_properties.internal_state});
 
-  auto int_1d_positional_props = Properties<INT>(
-    std::vector<int>{
-      default_properties.cell_id
-    }
-  );
+  auto int_1d_positional_props =
+      Properties<INT>(std::vector<int>{default_properties.cell_id});
 
-  auto real_1d_props = Properties<REAL>(
-    std::vector<int>{
-      default_properties.tot_reaction_rate,
-      default_properties.weight,
-      default_properties.fluid_density,
-      default_properties.fluid_temperature
-    },
-    std::vector<Species>{Species("ELECTRON")},
-    std::vector<int>{
-      default_properties.temperature,
-      default_properties.density,
-      default_properties.source_energy,
-      default_properties.source_density
-    }
-  );
+  auto real_1d_props =
+      Properties<REAL>(std::vector<int>{default_properties.tot_reaction_rate,
+                                        default_properties.weight,
+                                        default_properties.fluid_density,
+                                        default_properties.fluid_temperature},
+                       std::vector<Species>{Species("ELECTRON")},
+                       std::vector<int>{default_properties.temperature,
+                                        default_properties.density,
+                                        default_properties.source_energy,
+                                        default_properties.source_density});
 
-  auto real_2d_props = Properties<REAL>(
-    std::vector<int>{
-      default_properties.velocity
-    },
-    std::vector<Species>{Species("ELECTRON")},
-    std::vector<int>{
-      default_properties.source_momentum
-    }
-  );
+  auto real_2d_props =
+      Properties<REAL>(std::vector<int>{default_properties.velocity},
+                       std::vector<Species>{Species("ELECTRON")},
+                       std::vector<int>{default_properties.source_momentum});
 
-  auto real_2d_positional_props = Properties<REAL>(
-    std::vector<int>{
-      default_properties.position
-    }
-  );
+  auto real_2d_positional_props =
+      Properties<REAL>(std::vector<int>{default_properties.position});
 
   particle_spec_builder.add_particle_prop<INT>(int_1d_props);
-  particle_spec_builder.add_particle_prop<INT>(int_1d_positional_props, 1, true);
+  particle_spec_builder.add_particle_prop<INT>(int_1d_positional_props, 1,
+                                               true);
   particle_spec_builder.add_particle_prop<REAL>(real_1d_props);
   particle_spec_builder.add_particle_prop<REAL>(real_2d_props, 2);
-  particle_spec_builder.add_particle_prop<REAL>(real_2d_positional_props, 2, true);
+  particle_spec_builder.add_particle_prop<REAL>(real_2d_positional_props, 2,
+                                                true);
 
   auto particle_spec = particle_spec_builder.get_particle_spec();
 
   auto ionise_reaction = IoniseReactionAMJUEL<9>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
       density_normalisation, b_coeffs, particle_spec);
-
-  ionise_reaction.flush_buffer(
-      static_cast<size_t>(particle_group->get_npart_local()));
 
   reaction_controller.add_reaction(
       std::make_shared<IoniseReactionAMJUEL<9>>(ionise_reaction));

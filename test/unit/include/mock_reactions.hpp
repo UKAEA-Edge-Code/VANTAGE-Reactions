@@ -1,10 +1,10 @@
 #pragma once
-#include <neso_particles.hpp>
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
 #include <neso_particles/particle_spec.hpp>
 #include <reaction_base.hpp>
@@ -22,9 +22,8 @@ struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice {
   TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                Access::SymVector::Read<INT> &req_int_props,
-                Access::SymVector::Read<REAL> &req_real_props
-                ) const {
+                 Access::SymVector::Read<INT> &req_int_props,
+                 Access::SymVector::Read<REAL> &req_real_props) const {
 
     return this->rate;
   }
@@ -53,27 +52,27 @@ public:
 
 namespace TEST_REACTION_KERNEL {
 const auto props = ParticlePropertiesIndices::default_properties;
-const std::vector<int> required_simple_real_props = {props.velocity, props.weight};
-}
+const std::vector<int> required_simple_real_props = {props.velocity,
+                                                     props.weight};
+} // namespace TEST_REACTION_KERNEL
 
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
   TestReactionKernels()
       : required_real_props(Properties<REAL>(
             TEST_REACTION_KERNEL::required_simple_real_props)) {
-    
+
     auto props = TEST_REACTION_KERNEL::props;
 
     this->test_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.required_simple_prop_index(props.velocity);
+        this->required_real_props.simple_prop_index(props.velocity);
     this->test_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.required_simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight);
   }
 
 public:
-
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.required_simple_prop_names();
+    return this->required_real_props.simple_prop_names();
   }
 
 private:
@@ -99,8 +98,8 @@ private:
     void
     weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                   Access::DescendantProducts::Write &descendant_products,
-        Access::SymVector::Write<INT> &req_int_props,
-        Access::SymVector::Write<REAL> &req_real_props,
+                  Access::SymVector::Write<INT> &req_int_props,
+                  Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
                   Access::LocalArray::Read<REAL> &pre_req_data,
                   double dt) const {
@@ -125,8 +124,8 @@ private:
     void
     feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                     Access::DescendantProducts::Write &descendant_products,
-        Access::SymVector::Write<INT> &req_int_props,
-        Access::SymVector::Write<REAL> &req_real_props,
+                    Access::SymVector::Write<INT> &req_int_props,
+                    Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
                     Access::LocalArray::Read<REAL> &pre_req_data,
                     double dt) const {
@@ -157,7 +156,7 @@ struct TestReaction
   TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
                REAL rate_, int in_states_,
                const std::array<int, num_products_per_parent> out_states_,
-               const ParticleSpec& particle_spec)
+               const ParticleSpec &particle_spec)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
             sycl_target_, total_reaction_rate_, in_states_, out_states_,
@@ -167,22 +166,20 @@ struct TestReaction
             std::vector<ParticleProp<INT>>{
                 ParticleProp(Sym<INT>("INTERNAL_STATE"), 1)},
             TestReactionData(rate_),
-            TestReactionKernels<num_products_per_parent>(),
-            particle_spec) {}
+            TestReactionKernels<num_products_per_parent>(), particle_spec) {}
 };
 
 namespace TEST_REACTION_VAR_DATA {
 const auto props = ParticlePropertiesIndices::default_properties;
 const std::vector<int> required_simple_real_props = {props.position};
-}
+} // namespace TEST_REACTION_VAR_DATA
 
 struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice {
   TestReactionVarDataOnDevice() = default;
 
   REAL calc_rate(Access::LoopIndex::Read &index,
-                Access::SymVector::Read<INT> req_int_props,
-                Access::SymVector::Read<REAL> req_real_props
-                 ) const {
+                 Access::SymVector::Read<INT> req_int_props,
+                 Access::SymVector::Read<REAL> req_real_props) const {
 
     return req_real_props.at(position_ind, index, 0);
   }
@@ -193,13 +190,13 @@ public:
 
 struct TestReactionVarData : public ReactionDataBase {
   TestReactionVarData()
-      : required_real_props(Properties<REAL>(
-            TEST_REACTION_VAR_DATA::required_simple_real_props,
-            std::vector<Species>{}, std::vector<int>{})) {
+      : required_real_props(
+            Properties<REAL>(TEST_REACTION_VAR_DATA::required_simple_real_props,
+                             std::vector<Species>{}, std::vector<int>{})) {
     auto props = TEST_REACTION_VAR_DATA::props;
 
     this->test_reaction_var_data_on_device.position_ind =
-        this->required_real_props.required_simple_prop_index(props.position);
+        this->required_real_props.simple_prop_index(props.position);
   };
 
 private:
@@ -209,7 +206,7 @@ private:
 
 public:
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.required_simple_prop_names();
+    return this->required_real_props.simple_prop_names();
   }
 
   TestReactionVarDataOnDevice get_on_device_obj() {
@@ -234,13 +231,12 @@ struct TestReactionVarKernels : public ReactionKernelsBase {
     auto props = TEST_REACTION_VAR_KERNEL::props;
 
     this->test_reaction_var_kernels_on_device.weight_ind =
-        this->required_real_props.required_simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight);
   };
 
 public:
-
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.required_simple_prop_names();
+    return this->required_real_props.simple_prop_names();
   }
 
 private:
@@ -279,7 +275,7 @@ struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
 
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
-                      int in_states_, const ParticleSpec& particle_spec)
+                      int in_states_, const ParticleSpec &particle_spec)
       : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
             sycl_target_, total_reaction_rate_, in_states_,
             std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},

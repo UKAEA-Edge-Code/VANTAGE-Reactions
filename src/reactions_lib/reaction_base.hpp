@@ -6,8 +6,13 @@
 #include <memory>
 #include <neso_particles.hpp>
 #include <neso_particles/loop/access_descriptors.hpp>
+#include <neso_particles/particle_group.hpp>
+#include <neso_particles/particle_sub_group.hpp>
+#include <neso_particles/typedefs.hpp>
 #include <particle_properties_map.hpp>
 #include <vector>
+
+#define MAX_BUFFER_SIZE 16384
 
 using namespace NESO::Particles;
 
@@ -73,6 +78,10 @@ protected:
 
   const LocalArray<REAL> &get_device_rate_buffer() {
     return device_rate_buffer;
+  }
+
+  const size_t &get_device_rate_buffer_size() {
+    return this->device_rate_buffer.size;
   }
 
   void set_device_rate_buffer(LocalArray<REAL> &device_rate_buffer_) {
@@ -242,11 +251,13 @@ struct LinearReactionBase : public AbstractReaction {
    * @param cell_idx The id of the cell over which to run the principle
    * ParticleLoop to calculate reaction rates.
    */
-  void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
+  void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
+                     INT cell_idx) {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
     auto sycl_target_stored = this->get_sycl_target();
+    this->cellwise_flush_buffer(particle_sub_group, cell_idx);
     auto device_rate_buffer = this->get_device_rate_buffer();
 
     try {
@@ -409,6 +420,22 @@ struct LinearReactionBase : public AbstractReaction {
         LocalArray<REAL>(AbstractReaction::get_sycl_target(), buffer_size, 0);
     AbstractReaction::set_device_rate_buffer(empty_device_rate_buffer);
     this->flush_buffer();
+  }
+
+  void cellwise_flush_buffer(ParticleSubGroupSharedPtr particle_sub_group,
+                             int cell_idx) {
+    auto device_rate_buffer_size = this->get_device_rate_buffer_size();
+    auto n_part_cell = particle_sub_group->get_npart_cell(cell_idx);
+    if (device_rate_buffer_size < n_part_cell) {
+      NESOASSERT(n_part_cell <= MAX_BUFFER_SIZE,
+                 "Number of particles in cell exceeds the maximum reaction "
+                 "buffer size");
+      if ((n_part_cell * 2) < MAX_BUFFER_SIZE) {
+        this->flush_buffer(n_part_cell * 2);
+      } else {
+        this->flush_buffer(MAX_BUFFER_SIZE);
+      }
+    }
   }
 
   /**

@@ -111,11 +111,9 @@ struct IoniseReactionAMJUELData : public ReactionDataBase {
     auto props = AMJUEL_IONISATION_DATA::props;
 
     this->ionise_reaction_amjuel_data_on_device.fluid_density_ind =
-        this->required_real_props.required_simple_prop_index(
-            props.fluid_density);
+        this->required_real_props.simple_prop_index(props.fluid_density);
     this->ionise_reaction_amjuel_data_on_device.fluid_temperature_ind =
-        this->required_real_props.required_simple_prop_index(
-            props.fluid_temperature);
+        this->required_real_props.simple_prop_index(props.fluid_temperature);
   }
 
 private:
@@ -129,7 +127,7 @@ public:
    * @brief Getters required property names and the SYCL device-specific struct.
    */
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.required_simple_prop_names();
+    return this->required_real_props.simple_prop_names();
   }
 
   IoniseReactionAMJUELDataOnDevice<num_coeffs> get_on_device_obj() {

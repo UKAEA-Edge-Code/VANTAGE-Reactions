@@ -41,10 +41,19 @@ struct ParticleSpecBuilder {
   template <typename PROP_TYPE>
   void add_particle_prop(Properties<PROP_TYPE> properties_, int ndim = 1,
                          bool positions = false) {
-    std::vector<std::string> simple_prop_names =
-        properties_.required_simple_prop_names();
-    std::vector<std::string> species_prop_names =
-        properties_.required_species_prop_names();
+    std::vector<std::string> simple_prop_names;
+    try {
+      simple_prop_names = properties_.simple_prop_names();
+    } catch (std::logic_error) {
+      simple_prop_names = {};
+    }
+
+    std::vector<std::string> species_prop_names;
+    try {
+      species_prop_names = properties_.species_prop_names();
+    } catch (std::logic_error) {
+      species_prop_names = {};
+    }
 
     for (auto prop_name : simple_prop_names) {
       auto particle_prop =
@@ -73,7 +82,8 @@ struct ParticleSpecBuilder {
    * @brief Method to merge an existing ParticleSpec into the particle_spec
    * member inside the struct.
    *
-   * @param new_particle_spec ParticleSpec to merge into internal particle_spec member.
+   * @param new_particle_spec ParticleSpec to merge into internal particle_spec
+   * member.
    */
   void add_particle_spec(ParticleSpec new_particle_spec) {
     auto existing_properties_real = this->particle_spec.properties_real;
