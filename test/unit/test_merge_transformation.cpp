@@ -34,10 +34,10 @@ auto create_test_particle_group_merging(int N_total, int ndim)
 
   auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
 
-  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("P"), ndim, true),
+  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("POSITION"), ndim, true),
                              ParticleProp(Sym<INT>("CELL_ID"), 1, true),
                              ParticleProp(Sym<REAL>("WEIGHT"), 1),
-                             ParticleProp(Sym<REAL>("V"), ndim)};
+                             ParticleProp(Sym<REAL>("VELOCITY"), ndim)};
 
   auto particle_group =
       std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
@@ -59,9 +59,9 @@ auto create_test_particle_group_merging(int N_total, int ndim)
   ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[Sym<REAL>("P")][px][dimx] =
+      initial_distribution[Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
-      initial_distribution[Sym<REAL>("V")][px][dimx] =
+      initial_distribution[Sym<REAL>("VELOCITY")][px][dimx] =
           velocities.at(dimx).at(px);
     }
     initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
@@ -93,7 +93,7 @@ TEST(MergeTransformationStrategy, transform_2D) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto test_merger = MergeTransformationStrategy<2>(
-      Sym<REAL>("P"), Sym<REAL>("WEIGHT"), Sym<REAL>("V"));
+      Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -109,8 +109,8 @@ TEST(MergeTransformationStrategy, transform_2D) {
         GA.fetch_add(3, 0, W[0] * V[1]);
         GA.fetch_add(4, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("P")),
-      Access::read(Sym<REAL>("V")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
+      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction))
       ->execute();
   test_merger.transform(subgroup);
 
@@ -129,16 +129,16 @@ TEST(MergeTransformationStrategy, transform_2D) {
     REAL energy_merged = 0;
     for (int i = 0; i < 2; i++) {
       EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("P"), i, 0),
+      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
                   reduction_data->at(0, 0) / wt, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("P"), i, 1),
+      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
                   reduction_data->at(1, 0) / wt, 1e-12);
-      energy_merged += particles->at(Sym<REAL>("V"), i, 0) *
-                           particles->at(Sym<REAL>("V"), i, 0) +
-                       particles->at(Sym<REAL>("V"), i, 1) *
-                           particles->at(Sym<REAL>("V"), i, 1);
-      EXPECT_NEAR(particles->at(Sym<REAL>("V"), 0, i) +
-                      particles->at(Sym<REAL>("V"), 1, i),
+      energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, 0) *
+                           particles->at(Sym<REAL>("VELOCITY"), i, 0) +
+                       particles->at(Sym<REAL>("VELOCITY"), i, 1) *
+                           particles->at(Sym<REAL>("VELOCITY"), i, 1);
+      EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), 0, i) +
+                      particles->at(Sym<REAL>("VELOCITY"), 1, i),
                   reduction_data->at(2 + i, 0) * 2 / wt, 1e-12);
     }
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
@@ -155,7 +155,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto test_merger = MergeTransformationStrategy<3>(
-      Sym<REAL>("P"), Sym<REAL>("WEIGHT"), Sym<REAL>("V"));
+      Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -180,8 +180,8 @@ TEST(MergeTransformationStrategy, transform_3D) {
           GA_max.fetch_max(i, 0, V[i]);
         }
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("P")),
-      Access::read(Sym<REAL>("V")), Access::add(reduction),
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
+      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction),
       Access::min(red_min), Access::max(red_max))
       ->execute();
 
@@ -206,7 +206,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
     for (int dim = 0; dim < 3; dim++) {
       diag[dim] =
           reduction_data_max->at(dim, 0) - reduction_data_min->at(dim, 0);
-      mom_a[dim] = particles->at(Sym<REAL>("V"), 0, dim);
+      mom_a[dim] = particles->at(Sym<REAL>("VELOCITY"), 0, dim);
     }
 
     std::vector<REAL> tot_mom_merged = {0, 0, 0};
@@ -214,11 +214,11 @@ TEST(MergeTransformationStrategy, transform_3D) {
 
       EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
       for (int dim = 0; dim < 3; dim++) {
-        EXPECT_NEAR(particles->at(Sym<REAL>("P"), i, dim),
+        EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
                     reduction_data->at(dim, 0) / wt, 1e-12);
-        energy_merged += particles->at(Sym<REAL>("V"), i, dim) *
-                         particles->at(Sym<REAL>("V"), i, dim);
-        tot_mom_merged[dim] += particles->at(Sym<REAL>("V"), i, dim);
+        energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, dim) *
+                         particles->at(Sym<REAL>("VELOCITY"), i, dim);
+        tot_mom_merged[dim] += particles->at(Sym<REAL>("VELOCITY"), i, dim);
       }
     }
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);

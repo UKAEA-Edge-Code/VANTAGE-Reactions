@@ -10,3 +10,4 @@ spack-build-*/
 spack.lock
 views/
 .cache/
+compile_commands.json
