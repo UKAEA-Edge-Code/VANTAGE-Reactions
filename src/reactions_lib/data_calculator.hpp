@@ -76,8 +76,6 @@ template <typename... DATATYPE> struct DataCalculator {
                       buffer.at(current_count, dat_idx) = rate;
                     },
                     Access::read(ParticleLoopIndex{}),
-                    // The ->get_particle_group() is temporary until sym_vector
-                    // accepts ParticleSubGroup as an argument
                     Access::read(sym_vector<INT>(
                         particle_sub_group,
                         this->data_loop_int_syms[dat_idx])),
