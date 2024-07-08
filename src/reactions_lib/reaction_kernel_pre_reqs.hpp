@@ -1,6 +1,5 @@
 #pragma once
 #include "particle_properties_map.hpp"
-#include <array>
 #include <neso_particles.hpp>
 #include <stdexcept>
 #include <vector>

@@ -62,7 +62,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                     Access::SymVector::Write<INT> &req_int_props,
                     Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
-                    Access::LocalArray::Read<REAL> &pre_req_data,
+                    Access::NDLocalArray::Read<REAL,2> &pre_req_data,
                     double dt) const {
     return;
   }
@@ -93,7 +93,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                   Access::SymVector::Write<INT> &req_int_props,
                   Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
-                  Access::LocalArray::Read<REAL> &pre_req_data,
+                  Access::NDLocalArray::Read<REAL,2> &pre_req_data,
                   double dt) const {
     return;
   }
@@ -124,7 +124,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
       Access::SymVector::Write<INT> &req_int_props,
       Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
-      Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+      Access::NDLocalArray::Read<REAL,2> &pre_req_data, double dt) const {
     return;
   }
   /**
@@ -154,7 +154,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                 Access::SymVector::Write<INT> &req_int_props,
                 Access::SymVector::Write<REAL> &req_real_props,
                 const std::array<int, num_products_per_parent> &out_states,
-                Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+                Access::NDLocalArray::Read<REAL,2> &pre_req_data, double dt) const {
     return;
   }
 };

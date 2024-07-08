@@ -1,6 +1,8 @@
 #pragma once
+#include "data_calculator.hpp"
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
+#include "utils.hpp"
 #include <array>
 #include <cstring>
 #include <memory>
@@ -36,7 +38,7 @@ struct AbstractReaction {
                    const Sym<REAL> total_rate_dat)
       : sycl_target_stored(sycl_target), total_reaction_rate(total_rate_dat),
         device_rate_buffer(LocalArray<REAL>(sycl_target, 0, 0.0)),
-        pre_req_data(LocalArray<REAL>(sycl_target, 0, 0.0)) {}
+        pre_req_data(NDLocalArray<REAL, 2>(sycl_target, 0, 0, 0.0)) {}
 
 public:
   /**
@@ -55,9 +57,12 @@ public:
 
   virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
 
+  // TODO: This probably needs changing now
   virtual void pre_calc_req_data(int cell_idx) {}
 
   virtual void flush_buffer() {}
+
+  virtual void flush_pre_req_data() {}
 
 protected:
   /**
@@ -90,60 +95,28 @@ protected:
 
   const SYCLTargetSharedPtr &get_sycl_target() { return sycl_target_stored; }
 
-  const LocalArray<REAL> &get_pre_req_data() const { return pre_req_data; }
+  // TODO: non-const getter... this causes me discomfort...
+  NDLocalArray<REAL, 2> &get_pre_req_data() { return pre_req_data; }
+
+  void set_pre_req_data(NDLocalArray<REAL, 2> &pre_req_data_) {
+    this->pre_req_data = pre_req_data_;
+  }
 
   const Sym<REAL> &get_weight_sym() const { return weight_sym; }
 
-  /**
-   * @brief Helper function to build a std::vector of Syms.
-   *
-   * @tparam PROP_TYPE The property type associated with the syms that need to
-   * be stored in the resulting vector (either INT or REAL).
-   *
-   * @param particle_spec ParticleSpec that contains properties that are matched
-   * with required_properties to fill the vector of Syms.
-   * @param required_properties A vector of strings that contains the required
-   * properties that need to exist in particle_spec to fill the vector of
-   * corresponding Syms.
-   *
-   * @return A std::vector of Syms of PROP_TYPE (ie.
-   * std::vector<Syms<PROP_TYPE>>)
-   */
-  template <typename PROP_TYPE>
-  std::vector<Sym<PROP_TYPE>>
-  build_sym_vector(ParticleSpec particle_spec,
-                   std::vector<std::string> required_properties) {
-
-    std::vector<Sym<PROP_TYPE>> syms = {};
-
-    for (auto req_prop : required_properties) {
-      if constexpr (std::is_same_v<PROP_TYPE, INT>) {
-        for (auto &int_prop : particle_spec.properties_int) {
-          if (int_prop.name == req_prop) {
-            syms.push_back(Sym<INT>(int_prop.name));
-          }
-        }
-      }
-      if constexpr (std::is_same_v<PROP_TYPE, REAL>) {
-        for (auto &real_prop : particle_spec.properties_real) {
-          if (real_prop.name == req_prop) {
-            syms.push_back(Sym<REAL>(real_prop.name));
-          }
-        }
-      }
-    }
-
-    return syms;
-  }
-
 private:
+  // TODO:Do we really need this separate rate_buffer vector now?
   std::vector<REAL> rate_buffer;
   Sym<REAL> total_reaction_rate;
+  // TODO: Use LocalArraySharedPtr and NDLocalArraySharedPtr instead of raw
+  // datatypes
   LocalArray<REAL> device_rate_buffer;
   SYCLTargetSharedPtr sycl_target_stored;
-  LocalArray<REAL> pre_req_data; //!< Real-valued local array for storing
-                                 //!< any pre-requisite data relating to a
-                                 //!< derived reaction.
+  NDLocalArray<REAL, 2> pre_req_data; //!< Real-valued local matrix for storing
+                                      //!< any pre-requisite data relating to a
+                                      //!< derived reaction.
+  // TODO: This is hardcoded! No constructor exists that lets the user change
+  // this!
   Sym<REAL> weight_sym = Sym<REAL>("WEIGHT");
 };
 
@@ -156,6 +129,8 @@ private:
  * @tparam ReactionData typename for reaction_data constructor argument
  * @tparam ReactionKernels template class for reaction_kernels constructor
  * argument
+ * @tparam DataCalc typename for the DataCalculator object used to calculate
+ * prerequisite data
  *
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
@@ -176,11 +151,13 @@ private:
  * use to construct sym_vectors.
  */
 template <int num_products_per_parent, typename ReactionData,
-          typename ReactionKernels>
+          typename ReactionKernels, typename DataCalc = DataCalculator<>>
 struct LinearReactionBase : public AbstractReaction {
 
-  LinearReactionBase() = default;
+  LinearReactionBase() = delete;
 
+  // TODO:Not sure we can split these constructors cleanly with the DataCalc
+  // templating added, currently duplicating a lot of code
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, const Sym<REAL> total_rate_dat,
       int in_state, std::array<int, num_products_per_parent> out_states,
@@ -193,7 +170,8 @@ struct LinearReactionBase : public AbstractReaction {
         real_descendant_particles_props(real_descendant_particles_props),
         int_descendant_particles_props(int_descendant_particles_props),
         reaction_data(reaction_data), reaction_kernels(reaction_kernels),
-        particle_spec(particle_spec_) {
+        particle_spec(particle_spec_),
+        data_calculator(DataCalculator<>(particle_spec_)) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and
@@ -205,20 +183,20 @@ struct LinearReactionBase : public AbstractReaction {
     static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "ReactionKernelsBase...");
-
+    // TODO: Add assert for the DataCalc tparam
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
-    run_rate_loop_int_syms = this->template build_sym_vector<INT>(
+    run_rate_loop_int_syms = utils::build_sym_vector<INT>(
         this->particle_spec, reaction_data_buffer.get_required_int_props());
 
-    run_rate_loop_real_syms = this->template build_sym_vector<REAL>(
+    run_rate_loop_real_syms = utils::build_sym_vector<REAL>(
         this->particle_spec, reaction_data_buffer.get_required_real_props());
 
-    descendant_product_loop_int_syms = this->template build_sym_vector<INT>(
+    descendant_product_loop_int_syms = utils::build_sym_vector<INT>(
         this->particle_spec, reaction_kernel_buffer.get_required_int_props());
 
-    descendant_product_loop_real_syms = this->template build_sym_vector<REAL>(
+    descendant_product_loop_real_syms = utils::build_sym_vector<REAL>(
         this->particle_spec, reaction_kernel_buffer.get_required_real_props());
 
     auto descendant_particles_spec = ParticleSpec();
@@ -238,6 +216,107 @@ struct LinearReactionBase : public AbstractReaction {
     this->descendant_particles = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec,
         num_products_per_parent);
+
+    auto empty_pre_req_data =
+        NDLocalArray<REAL, 2>(AbstractReaction::get_sycl_target(), 0, 0, 0);
+
+    this->set_pre_req_data(empty_pre_req_data);
+  }
+
+  /**
+   * @brief Constructor with explicit DataCalculator
+   *
+   * @tparam num_products_per_parent The number of products produced per parent
+   * by the derived linear reaction.
+   * @tparam ReactionData typename for reaction_data constructor argument
+   * @tparam ReactionKernels template class for reaction_kernels constructor
+   * argument
+   * @tparam DataCalc typename for the DataCalculator object used to calculate
+   * prerequisite data
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param total_rate_dat Symbol index for a ParticleDat that's used to track
+   * the cumulative weighted reaction rate modification imposed on all of the
+   * particles in the ParticleSubGroup passed to run_rate_loop(...).
+   * @param in_state Integer specifying the ID of the species on
+   * which the derived reaction is acting on.
+   * @param out_states Array of integers specifying the species IDs of the
+   * descendants produced by the derived reaction.
+   * @param real_desecendant_particles_props Array of ParticleProp<REAL> that
+   * specify the REAL particle props to be modified on the descendant products.
+   * @param int_desecendant_particles_props Array of ParticleProp<INT> that
+   * specify the INT particle props to be modified on the descendant products.
+   * @param reaction_data ReactionData object to be used in run_rate_loop.
+   * @param reaction_kernels ReactionKernels object to be used in
+   * descendant_product_loop.
+   * @param data_claculator DataCalculator object for filling in the
+   * pre_req_data buffer
+   * @param particle_spec_ ParticleSpec object containing particle properties to
+   * use to construct sym_vectors.
+   */
+  LinearReactionBase(
+      SYCLTargetSharedPtr sycl_target, const Sym<REAL> total_rate_dat,
+      int in_state, std::array<int, num_products_per_parent> out_states,
+      std::vector<ParticleProp<REAL>> real_descendant_particles_props,
+      std::vector<ParticleProp<INT>> int_descendant_particles_props,
+      ReactionData reaction_data, ReactionKernels reaction_kernels,
+      DataCalc data_calculator, const ParticleSpec &particle_spec_)
+      : AbstractReaction(sycl_target, total_rate_dat), in_state(in_state),
+        out_states(out_states),
+        real_descendant_particles_props(real_descendant_particles_props),
+        int_descendant_particles_props(int_descendant_particles_props),
+        reaction_data(reaction_data), reaction_kernels(reaction_kernels),
+        particle_spec(particle_spec_), data_calculator(data_calculator) {
+    // These assertions are necessary since the typenames for ReactionData and
+    // ReactionKernels could be any type and for run_rate_loop and
+    // descendant_product_loop to operate correctly, ReactionData and
+    // ReactionKernels have to be derived from ReactionKernelsBase and
+    // AbstractReactionKernels respectively
+    static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
+                  "Template parameter ReactionData is not derived from "
+                  "ReactionDataBase...");
+    static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
+                  "Template parameter ReactionKernels is not derived from "
+                  "ReactionKernelsBase...");
+    // TODO: Add assert for the DataCalc tparam
+    auto reaction_data_buffer = this->reaction_data;
+    auto reaction_kernel_buffer = this->reaction_kernels;
+
+    run_rate_loop_int_syms = utils::build_sym_vector<INT>(
+        this->particle_spec, reaction_data_buffer.get_required_int_props());
+
+    run_rate_loop_real_syms = utils::build_sym_vector<REAL>(
+        this->particle_spec, reaction_data_buffer.get_required_real_props());
+
+    descendant_product_loop_int_syms = utils::build_sym_vector<INT>(
+        this->particle_spec, reaction_kernel_buffer.get_required_int_props());
+
+    descendant_product_loop_real_syms = utils::build_sym_vector<REAL>(
+        this->particle_spec, reaction_kernel_buffer.get_required_real_props());
+
+    auto descendant_particles_spec = ParticleSpec();
+    for (auto ireal_prop : this->get_real_descendant_props()) {
+      descendant_particles_spec.push(ireal_prop);
+    }
+    for (auto iint_prop : this->get_int_descendant_props()) {
+      descendant_particles_spec.push(iint_prop);
+    }
+
+    // Product matrix spec for descendant particles that specifies which
+    // properties of the descendant particles are to be modified in this
+    // reaction upon creation of the descendant particles
+    auto descendant_matrix_spec =
+        product_matrix_spec(descendant_particles_spec);
+
+    this->descendant_particles = std::make_shared<DescendantProducts>(
+        this->get_sycl_target(), descendant_matrix_spec,
+        num_products_per_parent);
+
+    auto empty_pre_req_data =
+        NDLocalArray<REAL, 2>(AbstractReaction::get_sycl_target(), 0,
+                              this->data_calculator.get_data_size(), 0);
+
+    this->set_pre_req_data(empty_pre_req_data);
   }
 
   /**
@@ -258,6 +337,7 @@ struct LinearReactionBase : public AbstractReaction {
 
     auto sycl_target_stored = this->get_sycl_target();
     this->cellwise_flush_buffer(particle_sub_group, cell_idx);
+    this->cellwise_flush_pre_req_data(particle_sub_group, cell_idx);
     auto device_rate_buffer = this->get_device_rate_buffer();
 
     try {
@@ -284,11 +364,9 @@ struct LinearReactionBase : public AbstractReaction {
           tot_rate[0] += rate * weight.at(0);
         },
         Access::read(ParticleLoopIndex{}),
-        // The ->get_particle_group() is temporary until sym_vector accepts
-        // ParticleSubGroup as an argument
-        Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
-                                     this->run_rate_loop_int_syms)),
-        Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(),
+        Access::read(
+            sym_vector<INT>(particle_sub_group, this->run_rate_loop_int_syms)),
+        Access::read(sym_vector<REAL>(particle_sub_group,
                                       this->run_rate_loop_real_syms)),
         Access::write(this->get_total_reaction_rate()),
         Access::write(device_rate_buffer),
@@ -297,6 +375,9 @@ struct LinearReactionBase : public AbstractReaction {
     loop->execute(cell_idx);
 
     this->set_rate_buffer(device_rate_buffer.get());
+
+    this->data_calculator.fill_buffer(this->get_pre_req_data(),
+                                      particle_sub_group, cell_idx);
 
     return;
   }
@@ -376,11 +457,9 @@ struct LinearReactionBase : public AbstractReaction {
         },
         Access::write(this->descendant_particles),
         Access::read(ParticleLoopIndex{}),
-        // The ->get_particle_group() is temporary until sym_vector accepts
-        // ParticleSubGroup as an argument
-        Access::write(sym_vector<INT>(particle_sub_group->get_particle_group(),
+        Access::write(sym_vector<INT>(particle_sub_group,
                                       this->descendant_product_loop_int_syms)),
-        Access::write(sym_vector(particle_sub_group->get_particle_group(),
+        Access::write(sym_vector(particle_sub_group,
                                  this->descendant_product_loop_real_syms)),
         Access::read(device_rate_buffer),
         Access::read(this->get_pre_req_data()),
@@ -399,7 +478,7 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
-   * @brief Flushes the stored rate_buffer and by setting all values to 0.0.
+   * @brief Flushes the stored rate_buffer by setting all values to 0.0.
    */
   void flush_buffer() override {
     std::vector<REAL> zeroed_rate_buffer = AbstractReaction::get_rate_buffer();
@@ -422,6 +501,15 @@ struct LinearReactionBase : public AbstractReaction {
     this->flush_buffer();
   }
 
+  /**
+   * @brief Flushes the rate buffer cellwise, allocating extra memory if
+   * necessary. TODO: enable reallocation that returns some of the allocated
+   * memory when too few particles are present.
+   *
+   * @param particle_sub_group Particle subgroup used to infer the number of
+   * particles in the cell
+   * @param cell_idx Index of the cell for which the buffer flush is performed
+   */
   void cellwise_flush_buffer(ParticleSubGroupSharedPtr particle_sub_group,
                              int cell_idx) {
     auto device_rate_buffer_size = this->get_device_rate_buffer_size();
@@ -438,6 +526,50 @@ struct LinearReactionBase : public AbstractReaction {
     }
   }
 
+  /**
+   * @brief Flushes the stored pre_req_data by setting all values to 0.0.
+   */
+  void flush_pre_req_data() override { this->get_pre_req_data().fill(0.0); }
+
+  /**
+   * @brief Creates an empty pre_req_data buffer of a specified size, keeping
+   * the current number of columns
+   *
+   * @param buffer_size Number of the empty buffer rows that need to be created
+   * and stored.
+   */
+  void flush_pre_req_data(size_t buffer_size) {
+    auto shape = this->get_pre_req_data().index.shape;
+    auto empty_pre_req_data = NDLocalArray<REAL, 2>(
+        AbstractReaction::get_sycl_target(), buffer_size, shape[1], 0);
+    AbstractReaction::set_pre_req_data(empty_pre_req_data);
+  }
+
+  /**
+   * @brief Flushes the pre_req_data buffer cellwise, allocating extra memory if
+   * necessary. TODO: enable reallocation that returns some of the allocated
+   * memory when too few particles are present.
+   *
+   * @param particle_sub_group Particle subgroup used to infer the number of
+   * particles in the cell
+   * @param cell_idx Index of the cell for which the buffer flush is performed
+   */
+  void cellwise_flush_pre_req_data(ParticleSubGroupSharedPtr particle_sub_group,
+                                   int cell_idx) {
+    auto shape = this->get_pre_req_data().index.shape;
+    auto pre_req_buffer_size = shape[0];
+    auto n_part_cell = particle_sub_group->get_npart_cell(cell_idx);
+    if (pre_req_buffer_size < n_part_cell) {
+      NESOASSERT(n_part_cell <= MAX_BUFFER_SIZE,
+                 "Number of particles in cell exceeds the maximum reaction "
+                 "buffer size");
+      if ((n_part_cell * 2) < MAX_BUFFER_SIZE) {
+        this->flush_pre_req_data(n_part_cell * 2);
+      } else {
+        this->flush_pre_req_data(MAX_BUFFER_SIZE);
+      }
+    }
+  }
   /**
    * @brief Getter for in_states that define which species the reaction is to
    * be applied to.
@@ -488,5 +620,6 @@ private:
   std::vector<Sym<REAL>> descendant_product_loop_real_syms;
 
   ParticleSpec particle_spec;
+  DataCalc data_calculator;
 };
 } // namespace Reactions

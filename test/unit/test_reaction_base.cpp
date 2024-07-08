@@ -1,9 +1,9 @@
 #pragma once
 #include "common_markers.hpp"
+#include "data_calculator.hpp"
 #include "mock_reactions.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
-#include <cstddef>
 #include <gtest/gtest.h>
 #include <ionisation_reactions/fixed_rate_ionisation.hpp>
 #include <memory>
@@ -276,6 +276,54 @@ TEST(IoniseReaction, calc_rate) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_EQ(weight->at(rowx, 0), 0.9);
+    }
+  }
+
+  particle_group->domain->mesh->free();
+  descendant_particles->domain->mesh->free();
+}
+
+TEST(DataCalculator, custom_sources) {
+  const int N_total = 100;
+
+  auto particle_group = create_test_particle_group(N_total);
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto test_reaction =
+      LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
+                         DataCalculator<TestReactionData, TestReactionData>>(
+
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
+          std::vector<ParticleProp<INT>>{}, TestReactionData(2.0),
+          TestReactionDataCalcKernels<0>(),
+          DataCalculator<TestReactionData, TestReactionData>(
+              particle_spec, TestReactionData(3.0), TestReactionData(4.0)),
+          particle_spec);
+
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto descendant_particles = std::make_shared<ParticleGroup>(
+      particle_group->domain, particle_group->get_particle_spec(),
+      particle_group->sycl_target);
+
+  for (int i = 0; i < cell_count; i++) {
+    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+                                          descendant_particles);
+
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    const int nrow = position->nrow;
+
+    auto source_density =
+        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_EQ(source_density->at(rowx, 0), 3.0);
+      EXPECT_EQ(source_energy->at(rowx, 0), 4.0);
     }
   }
 

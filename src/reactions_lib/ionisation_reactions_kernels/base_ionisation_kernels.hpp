@@ -1,14 +1,10 @@
 #pragma once
 #include <array>
-#include <cmath>
-#include <exception>
 #include <gtest/gtest.h>
-#include <memory>
 #include <neso_particles.hpp>
 #include <particle_properties_map.hpp>
 #include <reaction_kernel_pre_reqs.hpp>
 #include <reaction_kernels.hpp>
-#include <string_view>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -64,7 +60,7 @@ struct IoniseReactionKernelsOnDevice
       Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, BASE_IONISATION_KERNEL::num_products_per_parent>
           &out_states,
-      Access::LocalArray::Read<REAL> &pre_req_data, double dt) const {
+      Access::NDLocalArray::Read<REAL,2> &pre_req_data, double dt) const {
 
     std::array<REAL, ndim_velocity> k_V;
     REAL vsquared = 0.0;
@@ -74,12 +70,11 @@ struct IoniseReactionKernelsOnDevice
       vsquared += k_V[vdim] * k_V[vdim];
     }
 
-    REAL k_n_scale = 1.0; // / test_reaction_data.get_n_to_SI();
     REAL inv_k_dt = 1.0 / dt;
 
     // Set SOURCE_DENSITY
     req_real_props.at(electron_source_density_ind, index, 0) +=
-        modified_weight * k_n_scale * inv_k_dt;
+        modified_weight * inv_k_dt;
 
     // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
     auto k_SD = req_real_props.at(electron_source_density_ind, index, 0);
