@@ -34,7 +34,6 @@ private:
 };
 
 struct TestReactionData : public ReactionDataBase {
-  TestReactionData() = default;
 
   TestReactionData(REAL rate_)
       : rate(rate_),
@@ -272,8 +271,6 @@ public:
 struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {
 
-  TestReactionVarRate() = default;
-
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
                       Sym<REAL> total_reaction_rate_, Sym<REAL> read_var,
                       int in_states_, const ParticleSpec &particle_spec)
@@ -289,13 +286,13 @@ const auto props = ParticlePropertiesIndices::default_properties;
 const std::vector<int> required_simple_real_props = {props.velocity,
                                                      props.weight};
 const std::vector<int> required_species_real_props = {props.source_density,
-                                                     props.source_energy};
+                                                      props.source_energy};
 } // namespace TEST_REACTION_KERNEL_DATA_CALC
 
 template <INT num_products_per_parent>
 struct TestReactionDataCalcKernels : public ReactionKernelsBase {
   TestReactionDataCalcKernels()
-        : required_real_props(Properties<REAL>(
+      : required_real_props(Properties<REAL>(
             TEST_REACTION_KERNEL_DATA_CALC::required_simple_real_props,
             std::vector<Species>{Species("ELECTRON")},
             TEST_REACTION_KERNEL_DATA_CALC::required_species_real_props)) {
@@ -307,9 +304,11 @@ struct TestReactionDataCalcKernels : public ReactionKernelsBase {
     this->test_reaction_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
     this->test_reaction_kernels_on_device.source_ind =
-        this->required_real_props.species_prop_index("ELECTRON",props.source_density);
+        this->required_real_props.species_prop_index("ELECTRON",
+                                                     props.source_density);
     this->test_reaction_kernels_on_device.energy_source_ind =
-        this->required_real_props.species_prop_index("ELECTRON",props.source_energy);
+        this->required_real_props.species_prop_index("ELECTRON",
+                                                     props.source_energy);
   }
 
 public:
@@ -447,6 +446,9 @@ inline auto create_test_particle_group(int N_total)
       ParticleProp(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), 1),
       ParticleProp(Sym<REAL>("ELECTRON_SOURCE_MOMENTUM"), ndim),
       ParticleProp(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("ION_SOURCE_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("ION_SOURCE_MOMENTUM"), ndim),
+      ParticleProp(Sym<REAL>("ION_SOURCE_ENERGY"), 1),
       ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
       ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =

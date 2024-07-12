@@ -1,16 +1,6 @@
 #pragma once
-#include "common_markers.hpp"
-#include "common_transformations.hpp"
-#include "merge_transformation.hpp"
-#include "mock_reactions.hpp"
 #include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
-#include "transformation_wrapper.hpp"
-#include <array>
 #include <gtest/gtest.h>
-#include <ionisation_reactions/amjuel_ionisation.hpp>
-#include <ionisation_reactions/fixed_rate_ionisation.hpp>
-#include <memory>
 #include <particle_spec_builder.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>

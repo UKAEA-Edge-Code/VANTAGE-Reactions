@@ -434,6 +434,7 @@ struct LinearReactionBase : public AbstractReaction {
           REAL modified_weight = std::min(
               deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
 
+          REAL modified_dt = dt * modified_weight/deltaweight;
           for (int childx = 0; childx < num_products_per_parent; childx++) {
 
             descendant_particle.set_parent(particle_index, childx);
@@ -441,19 +442,19 @@ struct LinearReactionBase : public AbstractReaction {
 
           reaction_kernel_on_device.scattering_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
 
           reaction_kernel_on_device.weight_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
 
           reaction_kernel_on_device.transformation_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
 
           reaction_kernel_on_device.feedback_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
         },
         Access::write(this->descendant_particles),
         Access::read(ParticleLoopIndex{}),

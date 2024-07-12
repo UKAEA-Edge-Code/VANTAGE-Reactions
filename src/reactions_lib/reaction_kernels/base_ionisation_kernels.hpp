@@ -7,6 +7,8 @@
 #include <reaction_kernels.hpp>
 #include <vector>
 
+// TODO: redo docs
+
 using namespace NESO::Particles;
 
 namespace BASE_IONISATION_KERNEL {
@@ -18,7 +20,7 @@ const std::vector<int> required_simple_real_props = {props.weight,
                                                      props.velocity};
 
 const std::vector<int> required_species_real_props = {
-    props.density, props.source_density, props.source_energy,
+    props.source_density, props.source_energy,
     props.source_momentum}; // namespace BASE_IONISATION_KERNEL
 } // namespace BASE_IONISATION_KERNEL
 
@@ -26,7 +28,8 @@ const std::vector<int> required_species_real_props = {
  * @brief A struct that contains data and kernel functions that are to be stored
  * on and used on a SYCL device.
  */
-template <int ndim_velocity = 1, int ndim_electron_source_momentum = 1>
+template <int ndim_velocity = 2,
+          int ndim_electron_source_momentum = ndim_velocity>
 struct IoniseReactionKernelsOnDevice
     : public ReactionKernelsBaseOnDevice<
           BASE_IONISATION_KERNEL::num_products_per_parent> {
@@ -60,7 +63,7 @@ struct IoniseReactionKernelsOnDevice
       Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, BASE_IONISATION_KERNEL::num_products_per_parent>
           &out_states,
-      Access::NDLocalArray::Read<REAL,2> &pre_req_data, double dt) const {
+      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
 
     std::array<REAL, ndim_velocity> k_V;
     REAL vsquared = 0.0;
@@ -70,31 +73,48 @@ struct IoniseReactionKernelsOnDevice
       vsquared += k_V[vdim] * k_V[vdim];
     }
 
-    REAL inv_k_dt = 1.0 / dt;
-
     // Set SOURCE_DENSITY
-    req_real_props.at(electron_source_density_ind, index, 0) +=
-        modified_weight * inv_k_dt;
+    req_real_props.at(this->electron_source_density_ind, index, 0) +=
+        modified_weight;
 
-    // Get SOURCE_DENSITY for SOURCE_MOMENTUM calc
-    auto k_SD = req_real_props.at(electron_source_density_ind, index, 0);
+    req_real_props.at(this->target_source_density_ind, index, 0) +=
+        modified_weight;
 
     // SOURCE_MOMENTUM calc
-    for (int esm_dim = 0; esm_dim < ndim_electron_source_momentum; esm_dim++) {
-      req_real_props.at(electron_source_momentum_ind, index, esm_dim) +=
-          k_SD * k_V[esm_dim];
+    for (int sm_dim = 0; sm_dim < ndim_electron_source_momentum; sm_dim++) {
+      req_real_props.at(this->target_source_momentum_ind, index, sm_dim) +=
+          this->target_mass * modified_weight * k_V[sm_dim];
+    }
+
+    // Treat momentum sources when a projectile momentum req_data is available
+    if (this->has_momentum_req_data) {
+
+      for (int sm_dim = 0; sm_dim < ndim_electron_source_momentum; sm_dim++) {
+        req_real_props.at(this->target_source_momentum_ind, index, sm_dim) +=
+            pre_req_data.at(index.get_loop_linear_index(), 1) * dt;
+        req_real_props.at(this->projectile_source_momentum_ind, index,
+                          sm_dim) +=
+            pre_req_data.at(index.get_loop_linear_index(), 1) * dt;
+      }
     }
 
     // Set SOURCE_ENERGY
-    req_real_props.at(electron_source_energy_ind, index, 0) +=
-        k_SD * vsquared * 0.5;
+    req_real_props.at(this->target_source_energy_ind, index, 0) +=
+        modified_weight * this->target_mass * vsquared * 0.5;
 
-    req_real_props.at(weight_ind, index, 0) -= modified_weight;
+    req_real_props.at(this->projectile_source_energy_ind, index, 0) -=
+        pre_req_data.at(index.get_loop_linear_index(), 0) * dt;
+
+    req_real_props.at(this->weight_ind, index, 0) -= modified_weight;
   }
 
 public:
-  int velocity_ind, electron_density_ind, electron_source_density_ind,
-      electron_source_momentum_ind, electron_source_energy_ind, weight_ind;
+  INT velocity_ind, electron_source_density_ind, projectile_source_energy_ind,
+      projectile_source_momentum_ind, target_source_density_ind,
+      target_source_momentum_ind, target_source_energy_ind, weight_ind;
+  REAL target_mass;
+
+  bool has_momentum_req_data = false;
 };
 
 /**
@@ -108,14 +128,19 @@ public:
  * @param species_ A vector of Species objects that define the species(plural)
  * that will be acted on by an ionisation reaction.
  */
-template <int ndim_velocity = 1, int ndim_electron_source_momentum = 1>
+template <int ndim_velocity = 2,
+          int ndim_electron_source_momentum = ndim_velocity>
 struct IoniseReactionKernels : public ReactionKernelsBase {
 
-  IoniseReactionKernels(const Species species_)
-      : ReactionKernelsBase(), species(species_),
+  IoniseReactionKernels(const Species &target_species,
+                        const Species &electron_species,
+                        const Species &projectile_species)
+      : ReactionKernelsBase(), target_species(target_species),
+        electron_species(electron_species),
+        projectile_species(projectile_species),
         required_real_props(Properties<REAL>(
             BASE_IONISATION_KERNEL::required_simple_real_props,
-            std::vector<Species>{this->species},
+            std::vector<Species>{this->target_species,this->electron_species,this->projectile_species},
             BASE_IONISATION_KERNEL::required_species_real_props)) {
 
     static_assert(
@@ -123,47 +148,52 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
         "Number of dimension for VELOCITY must be greater than or "
         "equal to number of dimensions for ELECTRON_SOURCE_MOMENTUM.");
 
-    auto species_name = this->species.get_name();
-
-    try {
-      if (species_name != "ELECTRON") {
-        throw;
-      }
-    } catch (...) {
-      std::cout << "Warning! Species name given is not ELECTRON..."
-                << std::endl;
-    }
-
     auto props = BASE_IONISATION_KERNEL::props;
 
+    // TODO: Re-evaluate whether species should be member variables, as they are
+    // all used here only.
     this->ionise_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity);
 
-    this->ionise_reaction_kernels_on_device.electron_density_ind =
-        this->required_real_props.species_prop_index(species_name,
-                                                     props.density);
-
     this->ionise_reaction_kernels_on_device.electron_source_density_ind =
-        this->required_real_props.species_prop_index(species_name,
-                                                     props.source_density);
+        this->required_real_props.species_prop_index(
+            this->electron_species.get_name(), props.source_density);
 
-    this->ionise_reaction_kernels_on_device.electron_source_momentum_ind =
-        this->required_real_props.species_prop_index(species_name,
-                                                     props.source_momentum);
+    this->ionise_reaction_kernels_on_device.target_source_density_ind =
+        this->required_real_props.species_prop_index(
+            this->target_species.get_name(), props.source_density);
 
-    this->ionise_reaction_kernels_on_device.electron_source_energy_ind =
-        this->required_real_props.species_prop_index(species_name,
-                                                     props.source_energy);
+    this->ionise_reaction_kernels_on_device.target_source_momentum_ind =
+        this->required_real_props.species_prop_index(
+            this->target_species.get_name(), props.source_momentum);
+
+    this->ionise_reaction_kernels_on_device.target_source_energy_ind =
+        this->required_real_props.species_prop_index(
+            this->target_species.get_name(), props.source_energy);
+
+    this->ionise_reaction_kernels_on_device.projectile_source_momentum_ind =
+        this->required_real_props.species_prop_index(
+            this->projectile_species.get_name(), props.source_momentum);
+
+    this->ionise_reaction_kernels_on_device.projectile_source_energy_ind =
+        this->required_real_props.species_prop_index(
+            this->projectile_species.get_name(), props.source_energy);
 
     this->ionise_reaction_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
+
+    this->ionise_reaction_kernels_on_device.target_mass =
+        this->target_species.get_mass();
+
   };
 
 private:
   IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
       ionise_reaction_kernels_on_device;
 
-  Species species;
+  Species electron_species;
+  Species target_species;
+  Species projectile_species;
 
   Properties<REAL> required_real_props;
 

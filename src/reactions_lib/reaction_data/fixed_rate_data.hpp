@@ -1,14 +1,11 @@
 #pragma once
-#include <cmath>
 #include <gtest/gtest.h>
-#include <memory>
 #include <neso_particles.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
 #include <reaction_kernels.hpp>
-#include <vector>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -19,8 +16,8 @@ using namespace Reactions;
  *
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
-struct FixedRateIonisationDataOnDevice : public ReactionDataBaseOnDevice {
-  FixedRateIonisationDataOnDevice(const REAL& rate_) : rate(rate_){};
+struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice {
+  FixedRateDataOnDevice(const REAL& rate_) : rate(rate_){};
 
   /**
    * @brief Function to calculate the reaction rate for a 1D AMJUEL-based
@@ -53,21 +50,20 @@ private:
  *
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
-struct FixedRateIonisationData : public ReactionDataBase {
-  FixedRateIonisationData() = default;
+struct FixedRateData : public ReactionDataBase {
 
-  FixedRateIonisationData(const REAL& rate_)
-      : fixed_rate_ionisation_data_on_device(
-                         FixedRateIonisationDataOnDevice(rate_)) {}
+  FixedRateData(const REAL& rate_)
+      : fixed_rate_data_on_device(
+                         FixedRateDataOnDevice(rate_)) {}
 
 private:
-  FixedRateIonisationDataOnDevice fixed_rate_ionisation_data_on_device;
+  FixedRateDataOnDevice fixed_rate_data_on_device;
 
 public:
   /**
    * @brief Getter for the SYCL device-specific struct.
    */
-  FixedRateIonisationDataOnDevice get_on_device_obj() {
-    return this->fixed_rate_ionisation_data_on_device;
+  FixedRateDataOnDevice get_on_device_obj() {
+      return this->fixed_rate_data_on_device;
   }
 };

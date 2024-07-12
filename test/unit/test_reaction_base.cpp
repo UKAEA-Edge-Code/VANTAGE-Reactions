@@ -5,7 +5,8 @@
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
 #include <gtest/gtest.h>
-#include <ionisation_reactions/fixed_rate_ionisation.hpp>
+#include <derived_reactions/electron_impact_ionisation.hpp>
+#include <reaction_data/fixed_rate_data.hpp>
 #include <memory>
 
 using namespace NESO::Particles;
@@ -254,9 +255,12 @@ TEST(IoniseReaction, calc_rate) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction = FixedRateIonisation(particle_group->sycl_target,
-                                           Sym<REAL>("TOT_REACTION_RATE"), 1.0,
-                                           0, particle_spec);
+  auto test_data = FixedRateData(1.0);
+  auto electron_species = Species("ELECTRON");
+  auto target_species = Species("ION",1.0);
+  auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(particle_group->sycl_target,
+                                           Sym<REAL>("TOT_REACTION_RATE"), test_data, test_data, 
+                                           target_species,electron_species, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
