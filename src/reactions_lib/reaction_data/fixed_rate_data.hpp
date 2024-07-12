@@ -9,6 +9,7 @@
 
 using namespace NESO::Particles;
 using namespace Reactions;
+//TODO: redo docs
 
 /**
  * @brief A struct that contains data and calc_rate functions that are to be
