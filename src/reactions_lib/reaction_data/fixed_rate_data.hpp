@@ -9,20 +9,17 @@
 
 using namespace NESO::Particles;
 using namespace Reactions;
-//TODO: redo docs
 
 /**
- * @brief A struct that contains data and calc_rate functions that are to be
- * stored on and used on a SYCL device.
+ * @brief SYCL device-compatible ReactionData class returning a fixed rate
  *
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice {
-  FixedRateDataOnDevice(const REAL& rate_) : rate(rate_){};
+  FixedRateDataOnDevice(const REAL &rate_) : rate(rate_){};
 
   /**
-   * @brief Function to calculate the reaction rate for a 1D AMJUEL-based
-   * ionisation reaction.
+   * @brief Function to calculate the reaction rate for a fixed rate reaction
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
    * inside which calc_rate is called. Access using either
@@ -34,9 +31,8 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    */
   REAL calc_rate(const Access::LoopIndex::Read &index,
-                const Access::SymVector::Read<INT> req_int_props,
-                const Access::SymVector::Read<REAL> req_real_props
-                ) const {
+                 const Access::SymVector::Read<INT> req_int_props,
+                 const Access::SymVector::Read<REAL> req_real_props) const {
 
     return this->rate;
   }
@@ -46,16 +42,14 @@ private:
 };
 
 /**
- * @brief A struct defining the data needed for a fixed rate ionisation
- * reaction.
+ * @brief A struct defining the data needed for a fixed rate reaction.
  *
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedRateData : public ReactionDataBase {
 
-  FixedRateData(const REAL& rate_)
-      : fixed_rate_data_on_device(
-                         FixedRateDataOnDevice(rate_)) {}
+  FixedRateData(const REAL &rate_)
+      : fixed_rate_data_on_device(FixedRateDataOnDevice(rate_)) {}
 
 private:
   FixedRateDataOnDevice fixed_rate_data_on_device;
@@ -65,6 +59,6 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
   FixedRateDataOnDevice get_on_device_obj() {
-      return this->fixed_rate_data_on_device;
+    return this->fixed_rate_data_on_device;
   }
 };
