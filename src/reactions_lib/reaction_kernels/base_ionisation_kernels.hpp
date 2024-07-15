@@ -7,8 +7,6 @@
 #include <reaction_kernels.hpp>
 #include <vector>
 
-// TODO: redo docs
-
 using namespace NESO::Particles;
 
 namespace BASE_IONISATION_KERNEL {
@@ -25,8 +23,8 @@ const std::vector<int> required_species_real_props = {
 } // namespace BASE_IONISATION_KERNEL
 
 /**
- * @brief A struct that contains data and kernel functions that are to be stored
- * on and used on a SYCL device.
+ * struct IoniseReactionKernelsOnDevice - SYCL device-compatible kernel for
+ * ionisation reactions. Defaults to a 2V model.
  */
 template <int ndim_velocity = 2,
           int ndim_electron_source_momentum = ndim_velocity>
@@ -52,8 +50,7 @@ struct IoniseReactionKernelsOnDevice
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
+   * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
    * @param dt The current time step size.
    */
   void feedback_kernel(
@@ -132,6 +129,15 @@ template <int ndim_velocity = 2,
           int ndim_electron_source_momentum = ndim_velocity>
 struct IoniseReactionKernels : public ReactionKernelsBase {
 
+  /**
+   * @brief Ionisation reaction kernel host type constructor
+   *
+   * @param target_species Species object representing the ionisation target
+   * (and the corresponding ion field!)
+   * @param electron_species Species object representing the electrons
+   * @param projectile_species Species object representing the projectile
+   * species
+   */
   IoniseReactionKernels(const Species &target_species,
                         const Species &electron_species,
                         const Species &projectile_species)
@@ -140,7 +146,8 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
         projectile_species(projectile_species),
         required_real_props(Properties<REAL>(
             BASE_IONISATION_KERNEL::required_simple_real_props,
-            std::vector<Species>{this->target_species,this->electron_species,this->projectile_species},
+            std::vector<Species>{this->target_species, this->electron_species,
+                                 this->projectile_species},
             BASE_IONISATION_KERNEL::required_species_real_props)) {
 
     static_assert(
@@ -184,7 +191,31 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
 
     this->ionise_reaction_kernels_on_device.target_mass =
         this->target_species.get_mass();
+  };
 
+  /**
+   * @brief Ionisation reaction kernel host type constructor
+   *
+   * @param target_species Species object representing the ionisation target
+   * (and the corresponding ion field!)
+   * @param electron_species Species object representing the electrons
+   * @param projectile_species Species object representing the projectile
+   * species
+   * @param has_momentum_req_data Set to true if the kernel should expect a
+   * momentum rate calculation to have been performed. This means that the
+   * corresponding DataCalculator object has at least 2 ReactionData objects,
+   * one for the energy rate calculation and one for the momentum rate
+   * claculation.
+   */
+  IoniseReactionKernels(const Species &target_species,
+                        const Species &electron_species,
+                        const Species &projectile_species,
+                        bool has_momentum_req_data)
+      : IoniseReactionKernels(target_species, electron_species,
+                              projectile_species) {
+
+    this->ionise_reaction_kernels_on_device.has_momentum_req_data =
+        has_momentum_req_data;
   };
 
 private:
