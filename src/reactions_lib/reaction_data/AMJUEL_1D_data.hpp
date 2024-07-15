@@ -14,7 +14,6 @@
 using namespace NESO::Particles;
 using namespace Reactions;
 using namespace ParticlePropertiesIndices;
-//TODO: double-check docs
 
 // AMJUEL 1D Fit
 
