@@ -73,6 +73,8 @@ private:
  * names.
  */
 template <typename PROP_TYPE> struct Properties {
+  Properties() = default;
+
   Properties(std::vector<int> simple_props_, // simple_props (including
                                              // fluid_density for example)
              std::vector<Species> species_,
@@ -212,6 +214,36 @@ template <typename PROP_TYPE> struct Properties {
     }
 
     return prop_index + species_index * this->species.size();
+  }
+
+  /**
+   * @brief Getter for combined prop_names vector
+   */
+  const std::vector<std::string> get_prop_names(
+    const std::map<int, std::string> &properties_map = default_map
+  ) {
+    std::vector<std::string> simple_prop_names;
+    std::vector<std::string> species_props_names;
+
+    try {
+      simple_prop_names = this->simple_prop_names(properties_map);
+    }
+    catch (std::logic_error) {}
+
+    try {
+      species_props_names = this->species_prop_names(properties_map);
+    }
+    catch (std::logic_error) {}
+
+    std::vector<std::string> comb_prop_names;
+    comb_prop_names.insert(comb_prop_names.end(), simple_prop_names.begin(), simple_prop_names.end());
+    comb_prop_names.insert(comb_prop_names.end(), species_props_names.begin(), species_props_names.end());
+    
+    if (comb_prop_names.empty()) {
+      throw std::logic_error("No properties have been defined.");
+    }
+
+    return comb_prop_names;
   }
 
   /**

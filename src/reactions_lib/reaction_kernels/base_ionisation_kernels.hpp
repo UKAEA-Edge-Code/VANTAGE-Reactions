@@ -141,13 +141,10 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   IoniseReactionKernels(const Species &target_species,
                         const Species &electron_species,
                         const Species &projectile_species)
-      : ReactionKernelsBase(), target_species(target_species),
-        electron_species(electron_species),
-        projectile_species(projectile_species),
-        required_real_props(Properties<REAL>(
+      : ReactionKernelsBase(Properties<REAL>(
             BASE_IONISATION_KERNEL::required_simple_real_props,
-            std::vector<Species>{this->target_species, this->electron_species,
-                                 this->projectile_species},
+            std::vector<Species>{target_species, electron_species,
+                                 projectile_species},
             BASE_IONISATION_KERNEL::required_species_real_props)) {
 
     static_assert(
@@ -157,40 +154,38 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
 
     auto props = BASE_IONISATION_KERNEL::props;
 
-    // TODO: Re-evaluate whether species should be member variables, as they are
-    // all used here only.
     this->ionise_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity);
 
     this->ionise_reaction_kernels_on_device.electron_source_density_ind =
         this->required_real_props.species_prop_index(
-            this->electron_species.get_name(), props.source_density);
+            electron_species.get_name(), props.source_density);
 
     this->ionise_reaction_kernels_on_device.target_source_density_ind =
-        this->required_real_props.species_prop_index(
-            this->target_species.get_name(), props.source_density);
+        this->required_real_props.species_prop_index(target_species.get_name(),
+                                                     props.source_density);
 
     this->ionise_reaction_kernels_on_device.target_source_momentum_ind =
-        this->required_real_props.species_prop_index(
-            this->target_species.get_name(), props.source_momentum);
+        this->required_real_props.species_prop_index(target_species.get_name(),
+                                                     props.source_momentum);
 
     this->ionise_reaction_kernels_on_device.target_source_energy_ind =
-        this->required_real_props.species_prop_index(
-            this->target_species.get_name(), props.source_energy);
+        this->required_real_props.species_prop_index(target_species.get_name(),
+                                                     props.source_energy);
 
     this->ionise_reaction_kernels_on_device.projectile_source_momentum_ind =
         this->required_real_props.species_prop_index(
-            this->projectile_species.get_name(), props.source_momentum);
+            projectile_species.get_name(), props.source_momentum);
 
     this->ionise_reaction_kernels_on_device.projectile_source_energy_ind =
         this->required_real_props.species_prop_index(
-            this->projectile_species.get_name(), props.source_energy);
+            projectile_species.get_name(), props.source_energy);
 
     this->ionise_reaction_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
 
     this->ionise_reaction_kernels_on_device.target_mass =
-        this->target_species.get_mass();
+        target_species.get_mass();
   };
 
   /**
@@ -222,35 +217,10 @@ private:
   IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
       ionise_reaction_kernels_on_device;
 
-  Species electron_species;
-  Species target_species;
-  Species projectile_species;
-
-  Properties<REAL> required_real_props;
-
 public:
   /**
-   * @brief Getters for the names of all properties and the SYCL
-   * device-specific struct.
+   * @brief Getter for the SYCL device-specific struct.
    */
-
-  std::vector<std::string> get_required_real_props() {
-    std::vector<std::string> simple_props;
-    try {
-      simple_props = this->required_real_props.simple_prop_names();
-    } catch (std::logic_error) {
-      simple_props = {};
-    }
-    std::vector<std::string> species_props;
-    try {
-      species_props = this->required_real_props.species_prop_names();
-    } catch (std::logic_error) {
-      species_props = {};
-    }
-    simple_props.insert(simple_props.end(), species_props.begin(),
-                        species_props.end());
-    return simple_props;
-  }
 
   IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
   get_on_device_obj() {

@@ -59,7 +59,7 @@ const std::vector<int> required_simple_real_props = {props.velocity,
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
   TestReactionKernels()
-      : required_real_props(Properties<REAL>(
+      : ReactionKernelsBase(Properties<REAL>(
             TEST_REACTION_KERNEL::required_simple_real_props)) {
 
     auto props = TEST_REACTION_KERNEL::props;
@@ -68,11 +68,6 @@ struct TestReactionKernels : public ReactionKernelsBase {
         this->required_real_props.simple_prop_index(props.velocity);
     this->test_reaction_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
-  }
-
-public:
-  std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.simple_prop_names();
   }
 
 private:
@@ -138,8 +133,6 @@ private:
 
   TestReactionKernelsOnDevice test_reaction_kernels_on_device;
 
-  Properties<REAL> required_real_props;
-
 public:
   TestReactionKernelsOnDevice get_on_device_obj() {
     return this->test_reaction_kernels_on_device;
@@ -189,10 +182,9 @@ public:
 };
 
 struct TestReactionVarData : public ReactionDataBase {
-  TestReactionVarData()
-      : required_real_props(
-            Properties<REAL>(TEST_REACTION_VAR_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})) {
+  TestReactionVarData() : ReactionDataBase(Properties<REAL>(TEST_REACTION_VAR_DATA::required_simple_real_props,
+                             std::vector<Species>{}, std::vector<int>{}))
+       {
     auto props = TEST_REACTION_VAR_DATA::props;
 
     this->test_reaction_var_data_on_device.position_ind =
@@ -202,13 +194,7 @@ struct TestReactionVarData : public ReactionDataBase {
 private:
   TestReactionVarDataOnDevice test_reaction_var_data_on_device;
 
-  Properties<REAL> required_real_props;
-
 public:
-  std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.simple_prop_names();
-  }
-
   TestReactionVarDataOnDevice get_on_device_obj() {
     return this->test_reaction_var_data_on_device;
   }
@@ -224,7 +210,7 @@ const std::vector<int> required_simple_real_props = {props.weight};
 
 struct TestReactionVarKernels : public ReactionKernelsBase {
   TestReactionVarKernels()
-      : required_real_props(Properties<REAL>(
+      : ReactionKernelsBase(Properties<REAL>(
             TEST_REACTION_VAR_KERNEL::required_simple_real_props,
             std::vector<Species>{}, std::vector<int>{})) {
 
@@ -233,11 +219,6 @@ struct TestReactionVarKernels : public ReactionKernelsBase {
     this->test_reaction_var_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
   };
-
-public:
-  std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.simple_prop_names();
-  }
 
 private:
   struct TestReactionVarKernelsOnDevice
@@ -259,8 +240,6 @@ private:
   };
 
   TestReactionVarKernelsOnDevice test_reaction_var_kernels_on_device;
-
-  Properties<REAL> required_real_props;
 
 public:
   TestReactionVarKernelsOnDevice get_on_device_obj() {

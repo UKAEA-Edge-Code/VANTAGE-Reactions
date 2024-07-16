@@ -1,6 +1,8 @@
 #pragma once
+#include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
+#include <stdexcept>
 
 using namespace NESO::Particles;
 
@@ -12,20 +14,45 @@ struct ReactionDataBase {
 
   ReactionDataBase() = default;
 
+  ReactionDataBase(Properties<INT> required_int_props)
+      : required_int_props(required_int_props) {}
+
+  ReactionDataBase(Properties<REAL> required_real_props)
+      : required_real_props(required_real_props) {}
+
+  ReactionDataBase(Properties<INT> required_int_props,
+                   Properties<REAL> required_real_props)
+      : required_int_props(required_int_props),
+        required_real_props(required_real_props) {}
+
   /**
    * @brief Virtual getters functions that can be overidden by an implementation
    * in a derived struct.
    */
 
   virtual std::vector<std::string> get_required_int_props() {
-    std::vector<std::string> required_prop_names = {};
-    return required_prop_names;
+    std::vector<std::string> prop_names;
+    try {
+      prop_names =
+        this->required_int_props.get_prop_names();
+    }
+    catch (std::logic_error) {}
+    return prop_names;
   }
 
   virtual std::vector<std::string> get_required_real_props() {
-    std::vector<std::string> required_prop_names = {};
-    return required_prop_names;
+    std::vector<std::string> prop_names;
+    try {
+        prop_names =
+        this->required_real_props.get_prop_names();
+    }
+    catch (std::logic_error) {}
+    return prop_names;
   }
+
+protected:
+  Properties<INT> required_int_props;
+  Properties<REAL> required_real_props;
 };
 
 /**

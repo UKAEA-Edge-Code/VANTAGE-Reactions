@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/compute_target.hpp>
 #include <neso_particles/loop/access_descriptors.hpp>
 #include <neso_particles/particle_group.hpp>
 #include <neso_particles/particle_sub_group.hpp>
@@ -35,10 +36,12 @@ struct AbstractReaction {
   AbstractReaction() = default;
 
   AbstractReaction(SYCLTargetSharedPtr sycl_target,
-                   const Sym<REAL> total_rate_dat)
+                   const Sym<REAL> total_rate_dat,
+                   Sym<REAL> weight_sym = Sym<REAL>("WEIGHT"))
       : sycl_target_stored(sycl_target), total_reaction_rate(total_rate_dat),
-        device_rate_buffer(LocalArray<REAL>(sycl_target, 0, 0.0)),
-        pre_req_data(NDLocalArray<REAL, 2>(sycl_target, 0, 0, 0.0)) {}
+        device_rate_buffer(std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
+        pre_req_data(std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0, 0.0)),
+        weight_sym(weight_sym) {}
 
 public:
   /**
@@ -81,24 +84,23 @@ protected:
     total_reaction_rate = total_reaction_rate_;
   }
 
-  const LocalArray<REAL> &get_device_rate_buffer() {
+  const LocalArraySharedPtr<REAL> &get_device_rate_buffer() {
     return device_rate_buffer;
   }
 
   const size_t &get_device_rate_buffer_size() {
-    return this->device_rate_buffer.size;
+    return this->device_rate_buffer->size;
   }
 
-  void set_device_rate_buffer(LocalArray<REAL> &device_rate_buffer_) {
+  void set_device_rate_buffer(LocalArraySharedPtr<REAL> &device_rate_buffer_) {
     this->device_rate_buffer = device_rate_buffer_;
   }
 
   const SYCLTargetSharedPtr &get_sycl_target() { return sycl_target_stored; }
 
-  // TODO: non-const getter... this causes me discomfort...
-  NDLocalArray<REAL, 2> &get_pre_req_data() { return pre_req_data; }
+  const NDLocalArraySharedPtr<REAL, 2> &get_pre_req_data() { return pre_req_data; }
 
-  void set_pre_req_data(NDLocalArray<REAL, 2> &pre_req_data_) {
+  void set_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data_) {
     this->pre_req_data = pre_req_data_;
   }
 
@@ -108,16 +110,12 @@ private:
   // TODO:Do we really need this separate rate_buffer vector now?
   std::vector<REAL> rate_buffer;
   Sym<REAL> total_reaction_rate;
-  // TODO: Use LocalArraySharedPtr and NDLocalArraySharedPtr instead of raw
-  // datatypes
-  LocalArray<REAL> device_rate_buffer;
+  LocalArraySharedPtr<REAL> device_rate_buffer;
   SYCLTargetSharedPtr sycl_target_stored;
-  NDLocalArray<REAL, 2> pre_req_data; //!< Real-valued local matrix for storing
+  NDLocalArraySharedPtr<REAL, 2> pre_req_data; //!< Real-valued local matrix for storing
                                       //!< any pre-requisite data relating to a
                                       //!< derived reaction.
-  // TODO: This is hardcoded! No constructor exists that lets the user change
-  // this!
-  Sym<REAL> weight_sym = Sym<REAL>("WEIGHT");
+  Sym<REAL> weight_sym;
 };
 
 /**
@@ -164,9 +162,10 @@ struct LinearReactionBase : public AbstractReaction {
       std::vector<ParticleProp<REAL>> real_descendant_particles_props,
       std::vector<ParticleProp<INT>> int_descendant_particles_props,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const ParticleSpec &particle_spec_)
-      : AbstractReaction(sycl_target, total_rate_dat), in_state(in_state),
-        out_states(out_states),
+      const ParticleSpec &particle_spec_,
+      Sym<REAL> weight_sym = Sym<REAL>("WEIGHT"))
+      : AbstractReaction(sycl_target, total_rate_dat, weight_sym),
+        in_state(in_state), out_states(out_states),
         real_descendant_particles_props(real_descendant_particles_props),
         int_descendant_particles_props(int_descendant_particles_props),
         reaction_data(reaction_data), reaction_kernels(reaction_kernels),
@@ -183,7 +182,9 @@ struct LinearReactionBase : public AbstractReaction {
     static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "ReactionKernelsBase...");
-    // TODO: Add assert for the DataCalc tparam
+    static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
+                  "Template parameter DataCalc is not derived from "
+                  "AbstractDataCalculator...");
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
@@ -218,7 +219,7 @@ struct LinearReactionBase : public AbstractReaction {
         num_products_per_parent);
 
     auto empty_pre_req_data =
-        NDLocalArray<REAL, 2>(AbstractReaction::get_sycl_target(), 0, 0, 0);
+        std::make_shared<NDLocalArray<REAL, 2>>(AbstractReaction::get_sycl_target(), 0, 0, 0);
 
     this->set_pre_req_data(empty_pre_req_data);
   }
@@ -278,7 +279,9 @@ struct LinearReactionBase : public AbstractReaction {
     static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "ReactionKernelsBase...");
-    // TODO: Add assert for the DataCalc tparam
+    static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
+                  "Template parameter DataCalc is not derived from "
+                  "AbstractDataCalculator...");
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
@@ -313,7 +316,7 @@ struct LinearReactionBase : public AbstractReaction {
         num_products_per_parent);
 
     auto empty_pre_req_data =
-        NDLocalArray<REAL, 2>(AbstractReaction::get_sycl_target(), 0,
+        std::make_shared<NDLocalArray<REAL, 2>>(AbstractReaction::get_sycl_target(), 0,
                               this->data_calculator.get_data_size(), 0);
 
     this->set_pre_req_data(empty_pre_req_data);
@@ -374,7 +377,7 @@ struct LinearReactionBase : public AbstractReaction {
 
     loop->execute(cell_idx);
 
-    this->set_rate_buffer(device_rate_buffer.get());
+    this->set_rate_buffer(device_rate_buffer->get());
 
     this->data_calculator.fill_buffer(this->get_pre_req_data(),
                                       particle_sub_group, cell_idx);
@@ -434,7 +437,7 @@ struct LinearReactionBase : public AbstractReaction {
           REAL modified_weight = std::min(
               deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
 
-          REAL modified_dt = dt * modified_weight/deltaweight;
+          REAL modified_dt = dt * modified_weight / deltaweight;
           for (int childx = 0; childx < num_products_per_parent; childx++) {
 
             descendant_particle.set_parent(particle_index, childx);
@@ -442,19 +445,23 @@ struct LinearReactionBase : public AbstractReaction {
 
           reaction_kernel_on_device.scattering_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data,
+              modified_dt);
 
           reaction_kernel_on_device.weight_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data,
+              modified_dt);
 
           reaction_kernel_on_device.transformation_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data,
+              modified_dt);
 
           reaction_kernel_on_device.feedback_kernel(
               modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data, modified_dt);
+              req_int_props, req_real_props, out_states_arr, pre_req_data,
+              modified_dt);
         },
         Access::write(this->descendant_particles),
         Access::read(ParticleLoopIndex{}),
@@ -497,7 +504,7 @@ struct LinearReactionBase : public AbstractReaction {
     std::vector<REAL> empty_rate_buffer(buffer_size);
     AbstractReaction::set_rate_buffer(empty_rate_buffer);
     auto empty_device_rate_buffer =
-        LocalArray<REAL>(AbstractReaction::get_sycl_target(), buffer_size, 0);
+        std::make_shared<LocalArray<REAL>>(AbstractReaction::get_sycl_target(), buffer_size, 0);
     AbstractReaction::set_device_rate_buffer(empty_device_rate_buffer);
     this->flush_buffer();
   }
@@ -530,7 +537,7 @@ struct LinearReactionBase : public AbstractReaction {
   /**
    * @brief Flushes the stored pre_req_data by setting all values to 0.0.
    */
-  void flush_pre_req_data() override { this->get_pre_req_data().fill(0.0); }
+  void flush_pre_req_data() override { this->get_pre_req_data()->fill(0.0); }
 
   /**
    * @brief Creates an empty pre_req_data buffer of a specified size, keeping
@@ -540,8 +547,8 @@ struct LinearReactionBase : public AbstractReaction {
    * and stored.
    */
   void flush_pre_req_data(size_t buffer_size) {
-    auto shape = this->get_pre_req_data().index.shape;
-    auto empty_pre_req_data = NDLocalArray<REAL, 2>(
+    auto shape = this->get_pre_req_data()->index.shape;
+    auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         AbstractReaction::get_sycl_target(), buffer_size, shape[1], 0);
     AbstractReaction::set_pre_req_data(empty_pre_req_data);
   }
@@ -557,7 +564,7 @@ struct LinearReactionBase : public AbstractReaction {
    */
   void cellwise_flush_pre_req_data(ParticleSubGroupSharedPtr particle_sub_group,
                                    int cell_idx) {
-    auto shape = this->get_pre_req_data().index.shape;
+    auto shape = this->get_pre_req_data()->index.shape;
     auto pre_req_buffer_size = shape[0];
     auto n_part_cell = particle_sub_group->get_npart_cell(cell_idx);
     if (pre_req_buffer_size < n_part_cell) {

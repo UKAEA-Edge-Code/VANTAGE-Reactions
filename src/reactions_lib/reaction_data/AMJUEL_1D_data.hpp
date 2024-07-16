@@ -117,12 +117,11 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase {
                const REAL &temperature_normalisation_,
                const REAL &time_normalisation_,
                const std::array<REAL, num_coeffs> &coeffs_)
-      : ionise_reaction_amjuel_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
+      : ReactionDataBase(Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
+                             std::vector<Species>{}, std::vector<int>{})), ionise_reaction_amjuel_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
             evolved_quantity_normalisation_, density_normalisation_,
-            temperature_normalisation_, time_normalisation_, coeffs_)),
-        required_real_props(
-            Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})) {
+            temperature_normalisation_, time_normalisation_, coeffs_))
+             {
 
     auto props = AMJUEL_1D_DATA::props;
 
@@ -137,16 +136,11 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase {
 private:
   AMJUEL1DDataOnDevice<num_coeffs> ionise_reaction_amjuel_data_on_device;
 
-  Properties<REAL> required_real_props;
-
 public:
   /**
-   * @brief Getters for required property names and the SYCL device-specific
+   * @brief Getter for the SYCL device-specific
    * struct.
    */
-  std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.simple_prop_names();
-  }
 
   AMJUEL1DDataOnDevice<num_coeffs> get_on_device_obj() {
     return this->ionise_reaction_amjuel_data_on_device;

@@ -59,8 +59,10 @@ struct MergeTransformationStrategy : TransformationStrategy {
     int cell_count = part_group->domain->mesh->get_cell_count();
     auto new_particle_group = std::make_shared<ParticleGroup>(
         part_group->domain, part_group->particle_spec, part_group->sycl_target);
-    // TODO: better asserts (maybe use NESOASSERT?)
-    assert(part_group->domain->mesh->get_ndim() == ndim);
+    bool ndim_check = part_group->domain->mesh->get_ndim() == ndim;
+    NESOASSERT(ndim_check,
+                  "The number of dimensions of the target_subgroup's mesh does "
+                  "not match the value of the template parameter: ndim");
 
     /*Buffers for the reduction quantities. Scalars are stored in the order
     weight,total energy

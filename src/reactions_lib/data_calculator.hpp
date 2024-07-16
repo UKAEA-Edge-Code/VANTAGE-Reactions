@@ -6,23 +6,36 @@
 #include <neso_particles/typedefs.hpp>
 #include <particle_properties_map.hpp>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
 using namespace NESO::Particles;
 
 namespace Reactions {
 
+struct AbstractDataCalculator {};
+
 /**
  * struct DataCalculator - Static container class for ReactionData objects
  *
  * @tparam DATATYPE ReactionData types
  */
-template <typename... DATATYPE> struct DataCalculator {
+template <typename... DATATYPE> struct DataCalculator : public AbstractDataCalculator{
 
   DataCalculator() = delete;
   DataCalculator<DATATYPE...>(ParticleSpec particle_spec, DATATYPE... data)
       : particle_spec(particle_spec), data(std::make_tuple(data...)) {
-    // TODO: add asserts to check all DATAYPEs are ReactionData
+
+    size_t type_check_counter = 0u;
+    (
+      [&] {
+        static_assert(std::is_base_of_v<ReactionDataBase, decltype(data)>,
+        "DATATYPE provided is not derived from ReactionDataBase.");
+        type_check_counter++;
+      }()
+    , ...);
+
+    
 
     std::apply(
         [&](auto &&...args) {
@@ -52,9 +65,9 @@ template <typename... DATATYPE> struct DataCalculator {
    * @param cell_idx Cell index for which to invoke the corresponding particle
    * loops
    */
-  void fill_buffer(NDLocalArray<REAL, 2> &buffer,
+  void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
                    ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
-    NESOASSERT(buffer.index.shape[1] == this->get_data_size(),
+    NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
                "data calculation objects.");
     std::apply(
