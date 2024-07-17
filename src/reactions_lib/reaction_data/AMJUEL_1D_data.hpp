@@ -53,7 +53,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
 
   /**
    * @brief Function to calculate the reaction rate for a 1D AMJUEL-based
-   * ionisation reaction.
+   * reaction.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
    * inside which calc_rate is called. Access using either
@@ -110,31 +110,31 @@ public:
  * reaction rate calculation.
  */
 template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase {
-  AMJUEL1DData() = default;
 
   AMJUEL1DData(const REAL &evolved_quantity_normalisation_,
                const REAL &density_normalisation_,
                const REAL &temperature_normalisation_,
                const REAL &time_normalisation_,
                const std::array<REAL, num_coeffs> &coeffs_)
-      : ReactionDataBase(Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})), ionise_reaction_amjuel_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
+      : ReactionDataBase(
+            Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
+                             std::vector<Species>{}, std::vector<int>{})),
+        amjuel_1d_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
             evolved_quantity_normalisation_, density_normalisation_,
-            temperature_normalisation_, time_normalisation_, coeffs_))
-             {
+            temperature_normalisation_, time_normalisation_, coeffs_)) {
 
     auto props = AMJUEL_1D_DATA::props;
 
-    this->ionise_reaction_amjuel_data_on_device.fluid_density_ind =
+    this->amjuel_1d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density);
-    this->ionise_reaction_amjuel_data_on_device.fluid_temperature_ind =
+    this->amjuel_1d_data_on_device.fluid_temperature_ind =
         this->required_real_props.simple_prop_index(props.fluid_temperature);
-    this->ionise_reaction_amjuel_data_on_device.weight_ind =
+    this->amjuel_1d_data_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
   }
 
 private:
-  AMJUEL1DDataOnDevice<num_coeffs> ionise_reaction_amjuel_data_on_device;
+  AMJUEL1DDataOnDevice<num_coeffs> amjuel_1d_data_on_device;
 
 public:
   /**
@@ -143,6 +143,6 @@ public:
    */
 
   AMJUEL1DDataOnDevice<num_coeffs> get_on_device_obj() {
-    return this->ionise_reaction_amjuel_data_on_device;
+    return this->amjuel_1d_data_on_device;
   }
 };

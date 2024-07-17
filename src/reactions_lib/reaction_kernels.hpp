@@ -25,6 +25,7 @@ struct ReactionKernelsBase {
       : required_int_props(required_int_props),
         required_real_props(required_real_props) {}
 
+  //TODO: Do these need to be virtual?
   /**
    * @brief Virtual getters functions that can be overidden by an implementation
    * in a derived struct.
