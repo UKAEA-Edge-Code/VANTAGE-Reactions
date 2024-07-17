@@ -9,6 +9,9 @@
 #include <set>
 #include <vector>
 
+// TODO: add constructors or setters for handling the auto_clean_tot_rate_buffer
+// member
+
 using namespace NESO::Particles;
 
 namespace Reactions {
@@ -17,36 +20,58 @@ namespace Reactions {
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given ParticleGroup.
  *
- * @param parent_transform TransformationWrapper(s) informing how parent particles
- * are to be handled
+ * @param parent_transform TransformationWrapper(s) informing how parent
+ * particles are to be handled
  * @param child_transform TransformationWrapper(s) informing how descendant
  * products are to be handled
  * @param id_sym Symbol index of the integer ParticleDat that will be used
  * to specify which particles reactions will be applied to
+ * @param tot_rate_buffer Symbol of the total reaction rate ParticleDat that
+ * will be automatically flushed
  */
 struct ReactionController {
 
-  ReactionController() = default;
-
-  ReactionController(Sym<INT> id_sym)
-      :  id_sym(id_sym) {}
+  ReactionController(Sym<INT> id_sym, Sym<REAL> tot_rate_buffer)
+      : id_sym(id_sym), tot_rate_buffer(tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
   ReactionController(std::shared_ptr<TransformationWrapper> child_transform,
-                     Sym<INT> id_sym)
-      : child_transform(std::vector{child_transform}),
-         id_sym(id_sym) {}
+                     Sym<INT> id_sym, Sym<REAL> tot_rate_buffer)
+      : child_transform(std::vector{child_transform}), id_sym(id_sym),
+        tot_rate_buffer(tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
   ReactionController(std::shared_ptr<TransformationWrapper> parent_transform,
                      std::shared_ptr<TransformationWrapper> child_transform,
-                     Sym<INT> id_sym)
-      : parent_transform(std::vector{parent_transform}), child_transform(std::vector{child_transform}),
-        id_sym(id_sym) {}
+                     Sym<INT> id_sym, Sym<REAL> tot_rate_buffer)
+      : parent_transform(std::vector{parent_transform}),
+        child_transform(std::vector{child_transform}), id_sym(id_sym),
+        tot_rate_buffer(tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
-  ReactionController(std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
-                     std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
-                     Sym<INT> id_sym)
+  ReactionController(
+      std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
+      std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
+      Sym<INT> id_sym, Sym<REAL> tot_rate_buffer)
       : parent_transform(parent_transform), child_transform(child_transform),
-        id_sym(id_sym) {}
+        id_sym(id_sym), tot_rate_buffer(tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
 public:
   /**
@@ -81,10 +106,17 @@ public:
 
     std::set<int> child_ids;
 
+    // Ensure that the total rate buffer is flushed before the reactions are
+    // applied
+    if (this->auto_clean_tot_rate_buffer) {
+      this->rate_buffer_zeroer->transform(particle_group);
+    }
+
     auto child_group = std::make_shared<ParticleGroup>(
         particle_group->domain, particle_group->get_particle_spec(),
         particle_group->sycl_target);
 
+    // TODO: move into constructors?
     for (int r = 0; r < reactions.size(); r++) {
       if (!reactions[r]->get_in_states().empty()) {
         auto in_states = reactions[r]->get_in_states();
@@ -142,22 +174,20 @@ public:
       }
 
       for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
-          for (auto tr : child_transform) {
-            auto transform_buffer =
-                std::make_shared<TransformationWrapper>(*tr);
-            transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-            transform_buffer->transform(child_group, i);
-          }
+        for (auto tr : child_transform) {
+          auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+          transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+          transform_buffer->transform(child_group, i);
+        }
       }
     }
 
     for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
-          for (auto tr : parent_transform) {
-              auto transform_buffer =
-                  std::make_shared<TransformationWrapper>(*tr);
-              transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-              transform_buffer->transform(particle_group);
-          }
+      for (auto tr : parent_transform) {
+        auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+        transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+        transform_buffer->transform(particle_group);
+      }
     }
     if (child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
@@ -170,5 +200,8 @@ private:
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
   Sym<INT> id_sym;
+  Sym<REAL> tot_rate_buffer;
+  std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
+  bool auto_clean_tot_rate_buffer = true;
 };
 } // namespace Reactions
