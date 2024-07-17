@@ -1,13 +1,17 @@
 #pragma once
 #include "common_markers.hpp"
+#include "common_transformations.hpp"
 #include "data_calculator.hpp"
 #include "mock_reactions.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
-#include <gtest/gtest.h>
+#include <common_transformations.hpp>
 #include <derived_reactions/electron_impact_ionisation.hpp>
-#include <reaction_data/fixed_rate_data.hpp>
+#include <gtest/gtest.h>
 #include <memory>
+#include <reaction_data/fixed_coefficient_data.hpp>
+#include <reaction_data/fixed_rate_data.hpp>
+#include <transformation_wrapper.hpp>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -79,6 +83,44 @@ TEST(LinearReactionBase, calc_var_rate) {
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_EQ(tot_reaction_rate->at(rowx, 0), 2 * position->at(rowx, 0))
           << "calc_rate dP not set TOT_REACTION_RATE correctly...";
+    }
+  }
+
+  particle_group->domain->mesh->free();
+}
+
+TEST(ReactionData, FixedCoefficientData) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group(N_total);
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto test_reaction =
+      LinearReactionBase<0, FixedCoefficientData, TestReactionKernels<0>>(
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
+          std::vector<ParticleProp<INT>>{}, FixedCoefficientData(2.0),
+          TestReactionKernels<0>(), particle_spec);
+
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+  auto descendant_particles = std::make_shared<ParticleGroup>(
+      particle_group->domain, particle_group->get_particle_spec(),
+      particle_group->sycl_target);
+  for (int i = 0; i < cell_count; i++) {
+
+    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+                                          descendant_particles);
+    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+                                          descendant_particles);
+    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    const int nrow = weight->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_EQ(weight->at(rowx, 0), 0.64);
     }
   }
 
@@ -257,10 +299,10 @@ TEST(IoniseReaction, calc_rate) {
 
   auto test_data = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
-  auto target_species = Species("ION",1.0);
-  auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(particle_group->sycl_target,
-                                           Sym<REAL>("TOT_REACTION_RATE"), test_data, test_data, 
-                                           target_species,electron_species, particle_spec);
+  auto target_species = Species("ION", 1.0);
+  auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
+      test_data, target_species, electron_species, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
