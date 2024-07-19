@@ -10,6 +10,8 @@
 #include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/containers/local_array.hpp>
+#include <neso_particles/loop/particle_loop_index.hpp>
 #include <particle_spec_builder.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
@@ -90,20 +92,27 @@ TEST(ReactionController, single_reaction_multi_apply) {
   // check that the TOT_REACTION_RATE buffer has been flushed between
   // applications
   auto parent_marking =
-      make_marking_strategy<ComparisonMarkerSingle<REAL, EqualsComp>>(
+      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
           Sym<INT>("INTERNAL_STATE"), 0);
-  auto parent_subgroup = parent_marking->make_marker_subgroup(
-      std::make_shared<ParticleSubGroup>(particle_group));
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+  auto parent_subgroup = parent_marking->make_marker_subgroup(subgroup);
 
-  for (int icell = 0; icell < cell_count; icell++) {
+  auto test_la = std::make_shared<LocalArray<REAL>>(
+      particle_group->sycl_target, parent_subgroup->get_npart_local(), 0);
+  auto loop = particle_loop(
+      "check_rate", parent_subgroup,
+      [=](auto tot_reaction_rate, auto la, auto index) {
+        auto idx = index.get_loop_linear_index();
+        la.at(idx) = tot_reaction_rate[0];
+      },
+      Access::read(Sym<REAL>("TOT_REACTION_RATE")), Access::write(test_la),
+      Access::read(ParticleLoopIndex()));
+  loop->execute();
+  auto test_vec = test_la->get();
+  for (auto rate : test_vec) {
 
-    auto loop = particle_loop(
-        "check_rate", parent_subgroup,
-        [=](auto tot_reaction_rate) {
-          EXPECT_NEAR(tot_reaction_rate[0], 5.0, 1e-12);
-        },
-        Access::read(Sym<REAL>("TOT_REACTION_RATE")));
-  };
+    EXPECT_NEAR(rate, 5.0, 1e-12);
+  }
 
   particle_group->domain->mesh->free();
 }
