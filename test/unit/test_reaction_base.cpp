@@ -175,7 +175,8 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  //Manipulating the normalisation quantities to trigger the coronal limit calculation 
+  // Manipulating the normalisation quantities to trigger the coronal limit
+  // calculation
   auto amjuel_data = AMJUEL2DData<2, 2>(
       3e6, 1e-6, 1.0, 1.0,
       std::array<std::array<REAL, 2>, 2>{std::array<REAL, 2>{1.0, 0.02},
@@ -194,7 +195,8 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
       particle_group->sycl_target);
 
   // Rate calculated based on ne=3e18, T=2eV, with the evolved quantity
-  // normalised to 3e6, and density normalisation set to trigger the coronal limit
+  // normalised to 3e6, and density normalisation set to trigger the coronal
+  // limit
   auto expected_rate = 2.737188973785161;
   for (int i = 0; i < cell_count; i++) {
 
@@ -427,10 +429,9 @@ TEST(DataCalculator, custom_sources) {
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
           std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
           std::vector<ParticleProp<INT>>{}, TestReactionData(2.0),
-          TestReactionDataCalcKernels<0>(),
+          TestReactionDataCalcKernels<0>(), particle_spec,
           DataCalculator<TestReactionData, TestReactionData>(
-              particle_spec, TestReactionData(3.0), TestReactionData(4.0)),
-          particle_spec);
+              particle_spec, TestReactionData(3.0), TestReactionData(4.0)));
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 

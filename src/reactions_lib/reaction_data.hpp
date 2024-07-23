@@ -30,23 +30,21 @@ struct ReactionDataBase {
    * in a derived struct.
    */
 
-  virtual std::vector<std::string> get_required_int_props() {
+  std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names =
-        this->required_int_props.get_prop_names();
+      prop_names = this->required_int_props.get_prop_names();
+    } catch (std::logic_error) {
     }
-    catch (std::logic_error) {}
     return prop_names;
   }
 
-  virtual std::vector<std::string> get_required_real_props() {
+  std::vector<std::string> get_required_real_props() {
     std::vector<std::string> prop_names;
     try {
-        prop_names =
-        this->required_real_props.get_prop_names();
+      prop_names = this->required_real_props.get_prop_names();
+    } catch (std::logic_error) {
     }
-    catch (std::logic_error) {}
     return prop_names;
   }
 

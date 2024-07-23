@@ -13,6 +13,11 @@ using namespace NESO::Particles;
 
 namespace Reactions {
 
+/**
+ * struct AbstractDataCalculator - Dummy struct to derive DataCalculator from
+ * for the purposes of type-checking of DataCalculator (when it's passed as a
+ * typename template parameter - see LinearReactionBase)
+ */
 struct AbstractDataCalculator {};
 
 /**
@@ -20,7 +25,8 @@ struct AbstractDataCalculator {};
  *
  * @tparam DATATYPE ReactionData types
  */
-template <typename... DATATYPE> struct DataCalculator : public AbstractDataCalculator{
+template <typename... DATATYPE>
+struct DataCalculator : public AbstractDataCalculator {
 
   DataCalculator() = delete;
   DataCalculator<DATATYPE...>(ParticleSpec particle_spec, DATATYPE... data)
@@ -28,14 +34,13 @@ template <typename... DATATYPE> struct DataCalculator : public AbstractDataCalcu
 
     size_t type_check_counter = 0u;
     (
-      [&] {
-        static_assert(std::is_base_of_v<ReactionDataBase, decltype(data)>,
-        "DATATYPE provided is not derived from ReactionDataBase.");
-        type_check_counter++;
-      }()
-    , ...);
-
-    
+        [&] {
+          static_assert(
+              std::is_base_of_v<ReactionDataBase, decltype(data)>,
+              "DATATYPE provided is not derived from ReactionDataBase.");
+          type_check_counter++;
+        }(),
+        ...);
 
     std::apply(
         [&](auto &&...args) {
@@ -90,11 +95,10 @@ template <typename... DATATYPE> struct DataCalculator : public AbstractDataCalcu
                     },
                     Access::read(ParticleLoopIndex{}),
                     Access::read(sym_vector<INT>(
-                        particle_sub_group,
-                        this->data_loop_int_syms[dat_idx])),
-                    Access::read(sym_vector<REAL>(
-                        particle_sub_group,
-                        this->data_loop_real_syms[dat_idx])),
+                        particle_sub_group, this->data_loop_int_syms[dat_idx])),
+                    Access::read(
+                        sym_vector<REAL>(particle_sub_group,
+                                         this->data_loop_real_syms[dat_idx])),
                     Access::write(buffer));
 
                 loop->execute(cell_idx);

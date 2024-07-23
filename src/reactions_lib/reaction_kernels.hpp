@@ -24,27 +24,25 @@ struct ReactionKernelsBase {
                       Properties<REAL> required_real_props)
       : required_int_props(required_int_props),
         required_real_props(required_real_props) {}
-
-  //TODO: Do these need to be virtual?
   /**
    * @brief Virtual getters functions that can be overidden by an implementation
    * in a derived struct.
    */
-  virtual std::vector<std::string> get_required_int_props() {
+  std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
       prop_names = this->required_int_props.get_prop_names();
+    } catch (std::logic_error) {
     }
-    catch (std::logic_error) {}
     return prop_names;
   }
 
-  virtual std::vector<std::string> get_required_real_props() {
+  std::vector<std::string> get_required_real_props() {
     std::vector<std::string> prop_names;
     try {
       prop_names = this->required_real_props.get_prop_names();
+    } catch (std::logic_error) {
     }
-    catch (std::logic_error) {}
     return prop_names;
   }
 
@@ -89,7 +87,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                     Access::SymVector::Write<INT> &req_int_props,
                     Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
-                    Access::NDLocalArray::Read<REAL,2> &pre_req_data,
+                    Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                     double dt) const {
     return;
   }
@@ -120,7 +118,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                   Access::SymVector::Write<INT> &req_int_props,
                   Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
-                  Access::NDLocalArray::Read<REAL,2> &pre_req_data,
+                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
     return;
   }
@@ -151,7 +149,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
       Access::SymVector::Write<INT> &req_int_props,
       Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL,2> &pre_req_data, double dt) const {
+      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
   /**
@@ -181,7 +179,8 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                 Access::SymVector::Write<INT> &req_int_props,
                 Access::SymVector::Write<REAL> &req_real_props,
                 const std::array<int, num_products_per_parent> &out_states,
-                Access::NDLocalArray::Read<REAL,2> &pre_req_data, double dt) const {
+                Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                double dt) const {
     return;
   }
 };

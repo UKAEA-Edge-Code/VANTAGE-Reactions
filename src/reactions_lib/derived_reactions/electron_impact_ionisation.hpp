@@ -55,6 +55,6 @@ struct ElectronImpactIonisation
             std::vector<ParticleProp<INT>>{}, rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species),
-            DataCalculator<EnergyRateData>(particle_spec, energy_rate_data),
-            particle_spec) {}
+            particle_spec,
+            DataCalculator<EnergyRateData>(particle_spec, energy_rate_data)) {}
 };
