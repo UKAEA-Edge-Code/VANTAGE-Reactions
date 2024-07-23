@@ -11,6 +11,7 @@
 #include <reaction_data/AMJUEL_2D_data.hpp>
 #include <reaction_data/fixed_coefficient_data.hpp>
 #include <reaction_data/fixed_rate_data.hpp>
+#include <stdexcept>
 #include <transformation_wrapper.hpp>
 
 using namespace NESO::Particles;
@@ -385,6 +386,7 @@ TEST(IoniseReaction, calc_rate) {
   auto test_data = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0);
+  target_species.set_id(0);
   auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
       particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
       test_data, target_species, electron_species, particle_spec);
@@ -459,4 +461,32 @@ TEST(DataCalculator, custom_sources) {
 
   particle_group->domain->mesh->free();
   descendant_particles->domain->mesh->free();
+}
+
+TEST(Species, getters) {
+  auto test_species = Species();
+
+  EXPECT_THROW(test_species.get_name(), std::logic_error);
+
+  EXPECT_THROW(test_species.get_id(), std::logic_error);
+  
+  EXPECT_THROW(test_species.get_mass(), std::logic_error);
+
+  EXPECT_THROW(test_species.get_charge(), std::logic_error);
+
+  std::string test_species_name = "H";
+  test_species.set_name(test_species_name);
+  EXPECT_STREQ(test_species.get_name().c_str(), test_species_name.c_str());
+
+  REAL test_species_id = 10.0;
+  test_species.set_id(test_species_id);
+  EXPECT_EQ(test_species.get_id(), test_species_id);
+
+  REAL test_species_mass = 5.5;
+  test_species.set_mass(test_species_mass);
+  EXPECT_EQ(test_species.get_mass(), test_species_mass);
+
+  REAL test_species_charge = 2.3;
+  test_species.set_charge(test_species_charge);
+  EXPECT_EQ(test_species.get_charge(), test_species_charge);
 }
