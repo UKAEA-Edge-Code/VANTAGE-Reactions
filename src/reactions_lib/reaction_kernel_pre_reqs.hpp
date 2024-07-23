@@ -1,9 +1,9 @@
 #pragma once
 #include "particle_properties_map.hpp"
-#include <array>
 #include <neso_particles.hpp>
 #include <stdexcept>
 #include <vector>
+#include <optional>
 
 using namespace NESO::Particles;
 using namespace ParticlePropertiesIndices;
@@ -18,9 +18,11 @@ using namespace ParticlePropertiesIndices;
  * @param id INT value that corresponds to the ID of the species.
  */
 struct Species {
+  Species() = default;
+
   Species(std::string name_) : name(name_){};
 
-  Species(std::string name_, REAL mass_) : name(), mass(mass_){};
+  Species(std::string name_, REAL mass_) : name(name_), mass(mass_){};
 
   Species(std::string name_, REAL mass_, REAL charge_)
       : name(name_), mass(mass_), charge(charge_){};
@@ -32,27 +34,55 @@ public:
   /**
    * @brief Getters and setters for name, mass, charge and id of the species.
    */
-  const std::string get_name() const { return this->name; }
+  const std::string get_name() const { 
+    if (this->name) {
+      return (*this->name);
+    }
+    else {
+      throw std::logic_error("The member variable: Species.name, has not been assigned.");
+    }
+  }
 
-  const REAL get_mass() const { return this->mass; }
+  const INT get_id() const {
+    if (this->id) {
+      return (*this->id);
+    }
+    else {
+      throw std::logic_error("The member variable: Species.id has not been assigned.");
+    }
+  }
 
-  const REAL get_charge() const { return this->charge; }
+  const REAL get_mass() const { 
+    if (this->mass) {
+      return (*this->mass);
+    }
+    else {
+      throw std::logic_error("The member variable: Species.mass has not been assigned.");
+    }
+  }
 
-  const INT get_id() const { return this->id; }
+  const REAL get_charge() const {
+    if (this->charge) {
+      return (*this->charge);
+    }
+    else {
+      throw std::logic_error("The member variable: Species.charge has not been assigned.");
+    }
+  }
 
-  void set_name(std::string &name_in) { this->name = name_in; }
+  void set_name(const std::string &name_in) { this->name = name_in; }
 
-  void set_mass(REAL &mass_in) { this->mass = mass_in; }
+  void set_id(const INT &id_in) { this->id = id_in; }
 
-  void set_charge(REAL &charge_in) { this->charge = charge_in; }
+  void set_mass(const REAL &mass_in) { this->mass = mass_in; }
 
-  void set_id(REAL &id_in) { this->id = id_in; }
+  void set_charge(const REAL &charge_in) { this->charge = charge_in; }
 
 private:
-  std::string name;
-  REAL mass;
-  REAL charge;
-  INT id;
+  std::optional<std::string> name;
+  std::optional<INT> id;
+  std::optional<REAL> mass;
+  std::optional<REAL> charge;
 };
 
 /**
@@ -74,6 +104,8 @@ private:
  * names.
  */
 template <typename PROP_TYPE> struct Properties {
+  Properties() = default;
+
   Properties(std::vector<int> simple_props_, // simple_props (including
                                              // fluid_density for example)
              std::vector<Species> species_,
@@ -213,6 +245,36 @@ template <typename PROP_TYPE> struct Properties {
     }
 
     return prop_index + species_index * this->species.size();
+  }
+
+  /**
+   * @brief Getter for combined prop_names vector
+   */
+  const std::vector<std::string> get_prop_names(
+    const std::map<int, std::string> &properties_map = default_map
+  ) {
+    std::vector<std::string> simple_prop_names;
+    std::vector<std::string> species_props_names;
+
+    try {
+      simple_prop_names = this->simple_prop_names(properties_map);
+    }
+    catch (std::logic_error) {}
+
+    try {
+      species_props_names = this->species_prop_names(properties_map);
+    }
+    catch (std::logic_error) {}
+
+    std::vector<std::string> comb_prop_names;
+    comb_prop_names.insert(comb_prop_names.end(), simple_prop_names.begin(), simple_prop_names.end());
+    comb_prop_names.insert(comb_prop_names.end(), species_props_names.begin(), species_props_names.end());
+    
+    if (comb_prop_names.empty()) {
+      throw std::logic_error("No properties have been defined.");
+    }
+
+    return comb_prop_names;
   }
 
   /**

@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/typedefs.hpp>
 #include <set>
 #include <vector>
 
@@ -17,36 +18,109 @@ namespace Reactions {
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given ParticleGroup.
  *
- * @param parent_transform TransformationWrapper(s) informing how parent particles
- * are to be handled
+ * @param parent_transform TransformationWrapper(s) informing how parent
+ * particles are to be handled
  * @param child_transform TransformationWrapper(s) informing how descendant
  * products are to be handled
  * @param id_sym Symbol index of the integer ParticleDat that will be used
  * to specify which particles reactions will be applied to
+ * @param tot_rate_buffer Symbol of the total reaction rate ParticleDat that
+ * will be automatically flushed
  */
 struct ReactionController {
 
-  ReactionController() = default;
-
-  ReactionController(Sym<INT> id_sym)
-      :  id_sym(id_sym) {}
+  ReactionController(Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
+                     bool auto_clean_tot_rate_buffer = true)
+      : id_sym(id_sym), tot_rate_buffer(tot_rate_buffer),
+        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
   ReactionController(std::shared_ptr<TransformationWrapper> child_transform,
-                     Sym<INT> id_sym)
-      : child_transform(std::vector{child_transform}),
-         id_sym(id_sym) {}
+                     Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
+                     bool auto_clean_tot_rate_buffer = true)
+      : child_transform(std::vector{child_transform}), id_sym(id_sym),
+        tot_rate_buffer(tot_rate_buffer),
+        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
   ReactionController(std::shared_ptr<TransformationWrapper> parent_transform,
                      std::shared_ptr<TransformationWrapper> child_transform,
-                     Sym<INT> id_sym)
-      : parent_transform(std::vector{parent_transform}), child_transform(std::vector{child_transform}),
-        id_sym(id_sym) {}
+                     Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
+                     bool auto_clean_tot_rate_buffer = true)
+      : parent_transform(std::vector{parent_transform}),
+        child_transform(std::vector{child_transform}), id_sym(id_sym),
+        tot_rate_buffer(tot_rate_buffer),
+        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
 
-  ReactionController(std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
-                     std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
-                     Sym<INT> id_sym)
+  ReactionController(
+      std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
+      std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
+      Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
+      bool auto_clean_tot_rate_buffer = true)
       : parent_transform(parent_transform), child_transform(child_transform),
-        id_sym(id_sym) {}
+        id_sym(id_sym), tot_rate_buffer(tot_rate_buffer),
+        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
+    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
+        std::vector<std::string>{tot_rate_buffer.name});
+    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+  }
+
+  /**
+   * @brief Function to populate the sub_group_selectors map and
+   * parent_ids, child_ids sets.
+   */
+  void controller_pre_process() {
+    for (int r = 0; r < this->reactions.size(); r++) {
+      if (!this->reactions[r]->get_in_states().empty()) {
+        auto in_states = this->reactions[r]->get_in_states();
+
+        for (int in_state : in_states) {
+          this->parent_ids.insert(in_state);
+
+          auto in_it = this->sub_group_selectors.find(in_state);
+
+          if (in_it == this->sub_group_selectors.end()) {
+            this->sub_group_selectors.emplace(std::make_pair(
+                in_state,
+                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+                    id_sym, in_state)));
+          }
+        }
+      }
+
+      if (!this->reactions[r]->get_out_states().empty()) {
+        auto out_states = this->reactions[r]->get_out_states();
+
+        for (int out_state : out_states) {
+          this->child_ids.insert(out_state);
+
+          auto out_it = sub_group_selectors.find(out_state);
+
+          if (out_it == this->sub_group_selectors.end()) {
+
+            this->sub_group_selectors.emplace(std::make_pair(
+                out_state,
+                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+                    id_sym, out_state)));
+          }
+        }
+      }
+    }
+  }
 
 public:
   /**
@@ -57,7 +131,16 @@ public:
    * @param reaction The reaction to be added
    */
   void add_reaction(std::shared_ptr<AbstractReaction> reaction) {
-    reactions.push_back(reaction);
+    this->reactions.push_back(reaction);
+    this->controller_pre_process();
+  }
+
+  void set_auto_clean_tot_rate_buffer(const bool &auto_clean_setting) {
+    this->auto_clean_tot_rate_buffer = auto_clean_setting;
+  }
+
+  const bool &get_auto_clean_tot_rate_buffer() {
+    return this->auto_clean_tot_rate_buffer;
   }
 
   /**
@@ -73,57 +156,35 @@ public:
    */
   void apply_reactions(ParticleGroupSharedPtr particle_group, double dt) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
-    std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
 
-    std::map<int, ParticleSubGroupSharedPtr> species_groups;
+    // Ensure that the total rate buffer is flushed before the reactions are
+    // applied
+    if (this->auto_clean_tot_rate_buffer) {
+      this->rate_buffer_zeroer->transform(particle_group);
+    }
 
-    std::set<int> parent_ids;
+    NESOASSERT(this->reactions.size() > 0,
+               "ReactionController.apply_reactions(...) cannot be called "
+               "without adding at "
+               "least one reaction to the ReactionController object (via "
+               "ReactionController.add_reaction(...)).");
 
-    std::set<int> child_ids;
+    for (int r = 0; r < this->reactions.size(); r++) {
+      if (!this->reactions[r]->get_in_states().empty()) {
+        auto in_states = this->reactions[r]->get_in_states();
+
+        for (int in_state : in_states) {
+          this->species_groups.emplace(std::make_pair(
+              in_state,
+              this->sub_group_selectors[in_state]->make_marker_subgroup(
+                  std::make_shared<ParticleSubGroup>(particle_group))));
+        }
+      }
+    }
 
     auto child_group = std::make_shared<ParticleGroup>(
         particle_group->domain, particle_group->get_particle_spec(),
         particle_group->sycl_target);
-
-    for (int r = 0; r < reactions.size(); r++) {
-      if (!reactions[r]->get_in_states().empty()) {
-        auto in_states = reactions[r]->get_in_states();
-
-        for (int in_state : in_states) {
-          parent_ids.insert(in_state);
-
-          auto in_it = sub_group_selectors.find(in_state);
-
-          if (in_it == sub_group_selectors.end()) {
-            sub_group_selectors.emplace(std::make_pair(
-                in_state,
-                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                    id_sym, in_state)));
-            species_groups.emplace(std::make_pair(
-                in_state,
-                sub_group_selectors[in_state]->make_marker_subgroup(
-                    std::make_shared<ParticleSubGroup>(particle_group))));
-          }
-        }
-      }
-
-      if (!reactions[r]->get_out_states().empty()) {
-        auto out_states = reactions[r]->get_out_states();
-
-        for (int out_state : out_states) {
-          child_ids.insert(out_state);
-          auto out_it = sub_group_selectors.find(out_state);
-
-          if (out_it == sub_group_selectors.end()) {
-
-            sub_group_selectors.emplace(std::make_pair(
-                out_state,
-                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                    id_sym, out_state)));
-          }
-        }
-      }
-    }
 
     for (int i = 0; i < cell_count; i++) {
 
@@ -142,22 +203,20 @@ public:
       }
 
       for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
-          for (auto tr : child_transform) {
-            auto transform_buffer =
-                std::make_shared<TransformationWrapper>(*tr);
-            transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-            transform_buffer->transform(child_group, i);
-          }
+        for (auto tr : child_transform) {
+          auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+          transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+          transform_buffer->transform(child_group, i);
+        }
       }
     }
 
     for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
-          for (auto tr : parent_transform) {
-              auto transform_buffer =
-                  std::make_shared<TransformationWrapper>(*tr);
-              transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
-              transform_buffer->transform(particle_group);
-          }
+      for (auto tr : parent_transform) {
+        auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+        transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+        transform_buffer->transform(particle_group);
+      }
     }
     if (child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
@@ -165,10 +224,19 @@ public:
   }
 
 private:
+  std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
+  std::map<int, ParticleSubGroupSharedPtr> species_groups;
+
+  std::set<int> parent_ids;
+  std::set<int> child_ids;
+
   std::vector<std::shared_ptr<AbstractReaction>> reactions;
   std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
   Sym<INT> id_sym;
+  Sym<REAL> tot_rate_buffer;
+  std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
+  bool auto_clean_tot_rate_buffer;
 };
 } // namespace Reactions

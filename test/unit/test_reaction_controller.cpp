@@ -7,14 +7,17 @@
 #include "reaction_kernel_pre_reqs.hpp"
 #include "transformation_wrapper.hpp"
 #include <array>
+#include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
-#include <ionisation_reactions/amjuel_ionisation.hpp>
-#include <ionisation_reactions/fixed_rate_ionisation.hpp>
 #include <memory>
+#include <neso_particles/containers/local_array.hpp>
+#include <neso_particles/loop/particle_loop_index.hpp>
 #include <particle_spec_builder.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
+#include <reaction_data/AMJUEL_1D_data.hpp>
+#include <reaction_data/fixed_rate_data.hpp>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -31,8 +34,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
           Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
-  auto reaction_controller =
-      ReactionController(test_wrapper, Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(
+      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
   REAL test_rate = 5.0;
 
   const INT num_products_per_parent = 1;
@@ -86,6 +89,31 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
+  // check that the TOT_REACTION_RATE buffer has been flushed between
+  // applications
+  auto parent_marking =
+      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+          Sym<INT>("INTERNAL_STATE"), 0);
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+  auto parent_subgroup = parent_marking->make_marker_subgroup(subgroup);
+
+  auto test_la = std::make_shared<LocalArray<REAL>>(
+      particle_group->sycl_target, parent_subgroup->get_npart_local(), 0);
+  auto loop = particle_loop(
+      "check_rate", parent_subgroup,
+      [=](auto tot_reaction_rate, auto la, auto index) {
+        auto idx = index.get_loop_linear_index();
+        la.at(idx) = tot_reaction_rate[0];
+      },
+      Access::read(Sym<REAL>("TOT_REACTION_RATE")), Access::write(test_la),
+      Access::read(ParticleLoopIndex()));
+  loop->execute();
+  auto test_vec = test_la->get();
+  for (auto rate : test_vec) {
+
+    EXPECT_NEAR(rate, 5.0, 1e-12);
+  }
+
   particle_group->domain->mesh->free();
 }
 
@@ -102,8 +130,8 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
 
-  auto reaction_controller =
-      ReactionController(test_wrapper, Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(
+      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
 
   REAL test_rate = 5.0;
 
@@ -194,8 +222,8 @@ TEST(ReactionController, multi_reaction_multi_apply) {
           Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
-  auto reaction_controller =
-      ReactionController(test_wrapper, Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(
+      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
 
   REAL test_rate = 5.0; // example rate
 
@@ -280,9 +308,9 @@ TEST(ReactionController, parent_transform) {
   auto child_transform_wrapper =
       std::make_shared<TransformationWrapper>(child_transform);
 
-  auto reaction_controller =
-      ReactionController(parent_transform_wrapper, child_transform_wrapper,
-                         Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(
+      parent_transform_wrapper, child_transform_wrapper,
+      Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
 
   auto particle_spec = particle_group->get_particle_spec();
 
@@ -326,7 +354,8 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
+                                                Sym<REAL>("TOT_REACTION_RATE"));
 
   auto particle_spec_builder = ParticleSpecBuilder();
 
@@ -334,12 +363,16 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto particle_spec = particle_spec_builder.get_particle_spec();
 
-  auto ionise_reaction = FixedRateIonisation(particle_group->sycl_target,
-                                             Sym<REAL>("TOT_REACTION_RATE"),
-                                             1.0, 0, particle_spec);
+  auto test_data = FixedRateData(1.0);
+  auto electron_species = Species("ELECTRON");
+  auto target_species = Species("ION", 1.0, 1.0, 0);
+  auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
+      test_data, target_species, electron_species, particle_spec);
 
   reaction_controller.add_reaction(
-      std::make_shared<FixedRateIonisation>(ionise_reaction));
+      std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
+          ionise_reaction));
 
   reaction_controller.apply_reactions(particle_group, 1.5);
 
@@ -351,8 +384,8 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
-  for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
+  for (int icell = 0; icell < num_cells; icell++) {
+    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), icell);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -376,9 +409,12 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto ionise_reaction = FixedRateIonisation(particle_group->sycl_target,
-                                             Sym<REAL>("TOT_REACTION_RATE"),
-                                             1.0, 0, particle_spec);
+  auto test_data = FixedRateData(1.0);
+  auto electron_species = Species("ELECTRON");
+  auto target_species = Species("ION", 1.0, 1.0, 0);
+  auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
+      test_data, target_species, electron_species, particle_spec);
 
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY"});
@@ -396,26 +432,27 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   auto reaction_controller = ReactionController(
       std::vector{accumulator_transform_wrapper, merge_transform_wrapper},
       std::vector<std::shared_ptr<TransformationWrapper>>{},
-      Sym<INT>("INTERNAL_STATE"));
+      Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
   reaction_controller.add_reaction(
-      std::make_shared<FixedRateIonisation>(ionise_reaction));
+      std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
+          ionise_reaction));
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
   std::vector<int> num_parts;
-  for (int cellx = 0; cellx < num_cells; cellx++) {
+  for (int icell = 0; icell < num_cells; icell++) {
 
-    num_parts.push_back(particle_group->get_npart_cell(cellx));
+    num_parts.push_back(particle_group->get_npart_cell(icell));
   };
 
   reaction_controller.apply_reactions(particle_group, 0.5);
 
   auto accumulated_1d =
       accumulator_transform->get_cell_data("ELECTRON_SOURCE_DENSITY");
-  for (int cellx = 0; cellx < num_cells; cellx++) {
+  for (int icell = 0; icell < num_cells; icell++) {
 
-    EXPECT_EQ(particle_group->get_npart_cell(cellx), 2);
-    EXPECT_NEAR(accumulated_1d[cellx]->at(0, 0), num_parts[cellx], 1e-10);
+    EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
+    EXPECT_NEAR(accumulated_1d[icell]->at(0, 0), num_parts[icell] * 0.5, 1e-10);
   };
 
   particle_group->domain->mesh->free();
@@ -426,9 +463,10 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"));
+  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
+                                                Sym<REAL>("TOT_REACTION_RATE"));
 
-  // AMJUEL 2.1.5 reaction coeffecients
+  // AMJUEL H.2 2.1.5FJ reaction coeffecients
   // b0 -0.317385000000e+02 b1 0.114381800000e+02 b2 -0.383399800000e+01
   // b3 0.704669200000e+00 b4 -0.743148620000e-01 b5 0.415374900000e-02
   // b6 -0.948696700000e-04 b7 0.000000000000e-00 b8 0.000000000000e+00
@@ -438,9 +476,6 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
       0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
       -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
 
-  // m^-3 to cm^-3
-  REAL density_normalisation = 1e-6;
-
   auto particle_spec_builder = ParticleSpecBuilder();
 
   auto int_1d_props = Properties<INT>(std::vector<int>{
@@ -449,21 +484,20 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto int_1d_positional_props =
       Properties<INT>(std::vector<int>{default_properties.cell_id});
 
-  auto real_1d_props =
-      Properties<REAL>(std::vector<int>{default_properties.tot_reaction_rate,
-                                        default_properties.weight,
-                                        default_properties.fluid_density,
-                                        default_properties.fluid_temperature},
-                       std::vector<Species>{Species("ELECTRON")},
-                       std::vector<int>{default_properties.temperature,
-                                        default_properties.density,
-                                        default_properties.source_energy,
-                                        default_properties.source_density});
+  auto real_1d_props = Properties<REAL>(
+      std::vector<int>{default_properties.tot_reaction_rate,
+                       default_properties.weight,
+                       default_properties.fluid_density,
+                       default_properties.fluid_temperature},
+      std::vector<Species>{Species("ELECTRON"), Species("ION")},
+      std::vector<int>{
+          default_properties.temperature, default_properties.density,
+          default_properties.source_energy, default_properties.source_density});
 
-  auto real_2d_props =
-      Properties<REAL>(std::vector<int>{default_properties.velocity},
-                       std::vector<Species>{Species("ELECTRON")},
-                       std::vector<int>{default_properties.source_momentum});
+  auto real_2d_props = Properties<REAL>(
+      std::vector<int>{default_properties.velocity},
+      std::vector<Species>{Species("ELECTRON"), Species("ION")},
+      std::vector<int>{default_properties.source_momentum});
 
   auto real_2d_positional_props =
       Properties<REAL>(std::vector<int>{default_properties.position});
@@ -478,12 +512,20 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto particle_spec = particle_spec_builder.get_particle_spec();
 
-  auto ionise_reaction = IoniseReactionAMJUEL<9>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-      density_normalisation, b_coeffs, particle_spec);
+  auto fixed_rate = FixedRateData(1.0);
+  auto electron_species = Species("ELECTRON");
+  auto target_species = Species("ION", 1.0, 1.0, 0);
+  auto test_data = AMJUEL1DData<9>(1.0, 1.0, 1.0, 1.0, b_coeffs);
+  auto ionise_reaction =
+      ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>(
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          test_data, fixed_rate, target_species, electron_species,
+          particle_spec);
 
   reaction_controller.add_reaction(
-      std::make_shared<IoniseReactionAMJUEL<9>>(ionise_reaction));
+      std::make_shared<
+          ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>>(
+          ionise_reaction));
 
   reaction_controller.apply_reactions(particle_group, 0.1);
 
@@ -501,9 +543,9 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   // fluid_temperature=2eV
   auto expected_rate = 26.993377387251336;
 
-  for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), cellx);
+  for (int icell = 0; icell < num_cells; icell++) {
+    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), icell);
+    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), icell);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
