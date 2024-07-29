@@ -38,7 +38,8 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice {
    */
   REAL calc_rate(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props) const {
+                 const Access::SymVector::Read<REAL> &req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
     return weight * this->rate;

@@ -1,9 +1,10 @@
 #pragma once
 #include "reaction_kernel_pre_reqs.hpp"
+#include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/containers/sym_vector.hpp>
 #include <stdexcept>
 
+// TODO: Update docs
 using namespace NESO::Particles;
 
 /**
@@ -12,23 +13,30 @@ using namespace NESO::Particles;
 
 struct ReactionDataBase {
 
-  ReactionDataBase() = default;
-
+  ReactionDataBase() {
+    auto rng_lambda = [&]() -> REAL { return 0; };
+    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
+  }
   ReactionDataBase(Properties<INT> required_int_props)
-      : required_int_props(required_int_props) {}
+      : required_int_props(required_int_props) {
+    auto rng_lambda = [&]() -> REAL { return 0; };
+    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
+  }
 
   ReactionDataBase(Properties<REAL> required_real_props)
-      : required_real_props(required_real_props) {}
+      : required_real_props(required_real_props) {
+    auto rng_lambda = [&]() -> REAL { return 0; };
+    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
+  }
 
   ReactionDataBase(Properties<INT> required_int_props,
                    Properties<REAL> required_real_props)
       : required_int_props(required_int_props),
-        required_real_props(required_real_props) {}
+        required_real_props(required_real_props) {
+    auto rng_lambda = [&]() -> REAL { return 0; };
+    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
+  }
 
-  /**
-   * @brief Virtual getters functions that can be overidden by an implementation
-   * in a derived struct.
-   */
 
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
@@ -47,10 +55,16 @@ struct ReactionDataBase {
     }
     return prop_names;
   }
+  void set_rng_kernel(std::shared_ptr<KernelRNG<REAL>> rng_kernel) {
+    this->rng_kernel = rng_kernel;
+  }
+
+  std::shared_ptr<KernelRNG<REAL>> get_rng_kernel() { return this->rng_kernel; }
 
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
+  std::shared_ptr<KernelRNG<REAL>> rng_kernel;
 };
 
 /**
@@ -74,7 +88,8 @@ struct ReactionDataBaseOnDevice {
   virtual REAL
   calc_rate(const Access::LoopIndex::Read &index,
             const Access::SymVector::Read<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props) const {
+            const Access::SymVector::Read<REAL> &req_real_props,
+            const Access::KernelRNG::Read<REAL> &rng_kernel) const {
     return 0.0;
   }
 };

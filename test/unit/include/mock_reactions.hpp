@@ -24,7 +24,8 @@ struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice {
 
   REAL calc_rate(Access::LoopIndex::Read &index,
                  Access::SymVector::Read<INT> &req_int_props,
-                 Access::SymVector::Read<REAL> &req_real_props) const {
+                 Access::SymVector::Read<REAL> &req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
 
     return this->rate;
   }
@@ -172,7 +173,8 @@ struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice {
 
   REAL calc_rate(Access::LoopIndex::Read &index,
                  Access::SymVector::Read<INT> req_int_props,
-                 Access::SymVector::Read<REAL> req_real_props) const {
+                 Access::SymVector::Read<REAL> req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
 
     return req_real_props.at(position_ind, index, 0);
   }

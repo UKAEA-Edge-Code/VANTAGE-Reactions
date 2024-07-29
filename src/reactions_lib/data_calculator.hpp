@@ -83,14 +83,15 @@ struct DataCalculator : public AbstractDataCalculator {
                 auto reaction_data_on_device = args.get_on_device_obj();
                 // Maybe make into a vector of loop shared_ptrs and use submit
                 // instead of execute
+                auto rng_kernel = args.get_rng_kernel();
                 auto loop = particle_loop(
                     "data_calc_loop", particle_sub_group,
                     [=](auto particle_index, auto req_int_props,
-                        auto req_real_props, auto buffer) {
+                        auto req_real_props, auto buffer, auto kernel) {
                       INT current_count =
                           particle_index.get_loop_linear_index();
                       REAL rate = reaction_data_on_device.calc_rate(
-                          particle_index, req_int_props, req_real_props);
+                          particle_index, req_int_props, req_real_props, kernel);
                       buffer.at(current_count, dat_idx) = rate;
                     },
                     Access::read(ParticleLoopIndex{}),
@@ -99,7 +100,8 @@ struct DataCalculator : public AbstractDataCalculator {
                     Access::read(
                         sym_vector<REAL>(particle_sub_group,
                                          this->data_loop_real_syms[dat_idx])),
-                    Access::write(buffer));
+                    Access::write(buffer),
+                    Access::read(rng_kernel));
 
                 loop->execute(cell_idx);
                 dat_idx++;

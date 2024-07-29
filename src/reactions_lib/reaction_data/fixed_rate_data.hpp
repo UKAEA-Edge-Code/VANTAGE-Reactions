@@ -7,6 +7,7 @@
 #include <reaction_data.hpp>
 #include <reaction_kernels.hpp>
 
+//TODO: docs
 using namespace NESO::Particles;
 using namespace Reactions;
 
@@ -31,8 +32,9 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    */
   REAL calc_rate(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> req_int_props,
-                 const Access::SymVector::Read<REAL> req_real_props) const {
+                 const Access::SymVector::Read<INT> &req_int_props,
+                 const Access::SymVector::Read<REAL> &req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
 
     return this->rate;
   }
