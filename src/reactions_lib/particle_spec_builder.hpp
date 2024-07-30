@@ -93,7 +93,7 @@ struct ParticleSpecBuilder {
     std::vector<ParticleProp<INT>> new_int_props;
 
     for (auto prop : new_particle_spec.properties_real) {
-      if (this->particle_spec.contains(new_particle_spec)) {
+      if (this->particle_spec.contains(prop)) {
         continue;
       } else {
         new_real_props.push_back(prop);
@@ -101,7 +101,7 @@ struct ParticleSpecBuilder {
     }
 
     for (auto prop : new_particle_spec.properties_int) {
-      if (this->particle_spec.contains(new_particle_spec)) {
+      if (this->particle_spec.contains(prop)) {
         continue;
       } else {
         new_int_props.push_back(prop);

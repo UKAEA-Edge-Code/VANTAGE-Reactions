@@ -3,7 +3,6 @@
 #include "reaction_kernel_pre_reqs.hpp"
 #include <cmath>
 #include <data_calculator.hpp>
-#include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
