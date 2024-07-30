@@ -244,7 +244,7 @@ template <typename PROP_TYPE> struct Properties {
       throw std::logic_error(index_error_msg);
     }
 
-    return prop_index + species_index * this->species.size();
+    return prop_index + species_index * this->species_props.size();
   }
 
   /**
