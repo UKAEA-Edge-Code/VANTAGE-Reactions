@@ -83,7 +83,6 @@ struct DataCalculator : public AbstractDataCalculator {
                 auto reaction_data_on_device = args.get_on_device_obj();
                 // Maybe make into a vector of loop shared_ptrs and use submit
                 // instead of execute
-                auto rng_kernel = args.get_rng_kernel();
                 auto loop = particle_loop(
                     "data_calc_loop", particle_sub_group,
                     [=](auto particle_index, auto req_int_props,
@@ -101,7 +100,7 @@ struct DataCalculator : public AbstractDataCalculator {
                         sym_vector<REAL>(particle_sub_group,
                                          this->data_loop_real_syms[dat_idx])),
                     Access::write(buffer),
-                    Access::read(rng_kernel));
+                    Access::read(args.get_rng_kernel()));
 
                 loop->execute(cell_idx);
                 dat_idx++;

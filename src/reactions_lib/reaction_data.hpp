@@ -84,6 +84,7 @@ struct ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
+   * @param rng_kernel The random number generator kernel potentially used in the calculation
    */
   virtual REAL
   calc_rate(const Access::LoopIndex::Read &index,

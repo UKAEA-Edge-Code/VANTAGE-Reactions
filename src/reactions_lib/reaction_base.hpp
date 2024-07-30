@@ -16,6 +16,10 @@
 #include <particle_properties_map.hpp>
 #include <vector>
 
+// TODO: Consider simplifying the descendent particle prop arguments in
+// LinearReactionBase construction - pass in the string names maybe and get the
+// props based on those from the passed particle spec?
+
 #define MAX_BUFFER_SIZE 16384
 
 using namespace NESO::Particles;
@@ -136,9 +140,9 @@ private:
  * which the derived reaction is acting on.
  * @param out_states Array of integers specifying the species IDs of the
  * descendants produced by the derived reaction.
- * @param real_desecendant_particles_props Array of ParticleProp<REAL> that
+ * @param real_descendant_particles_props Array of ParticleProp<REAL> that
  * specify the REAL particle props to be modified on the descendant products.
- * @param int_desecendant_particles_props Array of ParticleProp<INT> that
+ * @param int_descendant_particles_props Array of ParticleProp<INT> that
  * specify the INT particle props to be modified on the descendant products.
  * @param reaction_data ReactionData object to be used in run_rate_loop.
  * @param reaction_kernels ReactionKernels object to be used in

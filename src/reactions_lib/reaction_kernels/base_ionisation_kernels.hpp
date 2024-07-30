@@ -119,11 +119,9 @@ public:
  * reaction.
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
- * property (default value of 1)
+ * property (default value of 2)
  * @tparam ndim_source_momentum Number of dimensions for electron
- * source momentum property (default value of 1)
- * @param species_ A vector of Species objects that define the species(plural)
- * that will be acted on by an ionisation reaction.
+ * source momentum property (default value of 2)
  */
 template <int ndim_velocity = 2,
           int ndim_source_momentum = ndim_velocity>

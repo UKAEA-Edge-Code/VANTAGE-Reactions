@@ -65,6 +65,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
+   * @param kernel The random number generator kernel potentially used in the calculation
    */
   REAL calc_rate(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
