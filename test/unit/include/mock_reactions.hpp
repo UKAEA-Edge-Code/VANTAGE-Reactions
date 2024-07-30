@@ -430,6 +430,9 @@ inline auto create_test_particle_group(int N_total)
       ParticleProp(Sym<REAL>("ION_SOURCE_DENSITY"), 1),
       ParticleProp(Sym<REAL>("ION_SOURCE_MOMENTUM"), ndim),
       ParticleProp(Sym<REAL>("ION_SOURCE_ENERGY"), 1),
+      ParticleProp(Sym<REAL>("ION2_SOURCE_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("ION2_SOURCE_MOMENTUM"), ndim),
+      ParticleProp(Sym<REAL>("ION2_SOURCE_ENERGY"), 1),
       ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
       ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
