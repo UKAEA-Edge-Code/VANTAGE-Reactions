@@ -1,5 +1,4 @@
 #pragma once
-#include <gtest/gtest.h>
 #include <neso_particles.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
 #include <reaction_base.hpp>

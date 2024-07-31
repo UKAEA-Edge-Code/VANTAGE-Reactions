@@ -91,14 +91,10 @@ struct ReactionController {
         for (int in_state : in_states) {
           this->parent_ids.insert(in_state);
 
-          auto in_it = this->sub_group_selectors.find(in_state);
-
-          if (in_it == this->sub_group_selectors.end()) {
-            this->sub_group_selectors.emplace(std::make_pair(
-                in_state,
-                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                    id_sym, in_state)));
-          }
+          this->sub_group_selectors.emplace(std::make_pair(
+              in_state,
+              make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+                  this->id_sym, in_state)));
         }
       }
 
@@ -108,15 +104,10 @@ struct ReactionController {
         for (int out_state : out_states) {
           this->child_ids.insert(out_state);
 
-          auto out_it = sub_group_selectors.find(out_state);
-
-          if (out_it == this->sub_group_selectors.end()) {
-
-            this->sub_group_selectors.emplace(std::make_pair(
-                out_state,
-                make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                    id_sym, out_state)));
-          }
+          this->sub_group_selectors.emplace(std::make_pair(
+              out_state,
+              make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+                  this->id_sym, out_state)));
         }
       }
     }
@@ -188,37 +179,37 @@ public:
 
     for (int i = 0; i < cell_count; i++) {
 
-      for (int r = 0; r < reactions.size(); r++) {
+      for (int r = 0; r < this->reactions.size(); r++) {
 
-        INT in_state = reactions[r]->get_in_states()[0];
+        INT in_state = this->reactions[r]->get_in_states()[0];
 
-        reactions[r]->run_rate_loop(species_groups[in_state], i);
+        this->reactions[r]->run_rate_loop(this->species_groups[in_state], i);
       }
 
       for (int r = 0; r < reactions.size(); r++) {
-        INT in_state = reactions[r]->get_in_states()[0];
+        INT in_state = this->reactions[r]->get_in_states()[0];
 
-        reactions[r]->descendant_product_loop(species_groups[in_state], i, dt,
-                                              child_group);
+        this->reactions[r]->descendant_product_loop(
+            this->species_groups[in_state], i, dt, child_group);
       }
 
-      for (auto it = child_ids.begin(); it != child_ids.end(); it++) {
-        for (auto tr : child_transform) {
+      for (auto it = this->child_ids.begin(); it != this->child_ids.end(); it++) {
+        for (auto tr : this->child_transform) {
           auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-          transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+          transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
           transform_buffer->transform(child_group, i);
         }
       }
     }
 
-    for (auto it = parent_ids.begin(); it != parent_ids.end(); it++) {
-      for (auto tr : parent_transform) {
+    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end(); it++) {
+      for (auto tr : this->parent_transform) {
         auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-        transform_buffer->add_marking_strategy(sub_group_selectors[*it]);
+        transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
         transform_buffer->transform(particle_group);
       }
     }
-    if (child_ids.size() > 0) {
+    if (this->child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
     }
   }

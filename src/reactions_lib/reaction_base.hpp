@@ -326,8 +326,6 @@ struct LinearReactionBase : public AbstractReaction {
 
     loop->execute(cell_idx);
 
-    this->set_device_rate_buffer(device_rate_buffer);
-
     if (this->data_calculator) {
       this->data_calculator->fill_buffer(this->get_pre_req_data(),
                                          particle_sub_group, cell_idx);
@@ -473,7 +471,7 @@ struct LinearReactionBase : public AbstractReaction {
         this->flush_buffer(MAX_BUFFER_SIZE);
       }
     } else if (n_part_cell < (device_rate_buffer_size / 4)) {
-      this->flush_buffer((n_part_cell / 2));
+      this->flush_buffer((n_part_cell * 2));
     }
   }
 
@@ -519,7 +517,7 @@ struct LinearReactionBase : public AbstractReaction {
         this->flush_pre_req_data(MAX_BUFFER_SIZE);
       }
     } else if (n_part_cell < (pre_req_buffer_size / 4)) {
-      this->flush_pre_req_data((n_part_cell / 2));
+      this->flush_pre_req_data((n_part_cell * 2));
     }
   }
   /**

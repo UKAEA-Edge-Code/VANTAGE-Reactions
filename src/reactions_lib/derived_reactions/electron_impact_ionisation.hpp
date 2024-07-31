@@ -1,6 +1,5 @@
 #pragma once
 #include <data_calculator.hpp>
-#include <gtest/gtest.h>
 #include <neso_particles.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
