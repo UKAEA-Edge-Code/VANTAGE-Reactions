@@ -3,6 +3,7 @@
 #include "data_calculator.hpp"
 #include "mock_reactions.hpp"
 #include "reaction_base.hpp"
+#include "reaction_kernels/base_ionisation_kernels.hpp"
 #include "transformation_wrapper.hpp"
 #include <common_transformations.hpp>
 #include <derived_reactions/electron_impact_ionisation.hpp>
@@ -15,6 +16,7 @@
 #include <reaction_kernels/base_cx_kernels.hpp>
 #include <stdexcept>
 #include <transformation_wrapper.hpp>
+#include <vector>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -550,6 +552,53 @@ TEST(DataCalculator, custom_sources) {
 
   particle_group->domain->mesh->free();
   descendant_particles->domain->mesh->free();
+}
+
+TEST(LinearReactionBase, device_rate_buffer_reallocation) {
+  auto particle_group = create_test_particle_group(1600);
+
+  struct TestDeviceRateBufferReaction
+      : public LinearReactionBase<0, FixedRateData,
+                                  IoniseReactionKernels<2>> {
+
+    TestDeviceRateBufferReaction(ParticleGroupSharedPtr particle_group)
+        : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>>(
+              particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+              std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
+              std::vector<ParticleProp<INT>>{}, FixedRateData(1),
+              IoniseReactionKernels<2>(Species("ION", 1.0, 1.0, 0), Species("ELECTRON"),
+                                       Species("ELECTRON")),
+              particle_group->get_particle_spec()) {}
+
+    const LocalArraySharedPtr<REAL> &get_device_rate_buffer_derived() {
+      return this->get_device_rate_buffer();
+    }
+  };
+
+  auto test_reaction = TestDeviceRateBufferReaction(particle_group);
+
+  //Starting particle number in cell #0: 100
+  test_reaction.cellwise_flush_buffer(
+      std::make_shared<ParticleSubGroup>(particle_group), 0);
+  EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 200);
+
+  //Subtract 70 particles
+  std::vector<INT> cells;
+  std::vector<INT> layers;
+  cells.reserve(70);
+  layers.reserve(70);
+
+  for (int i = 0; i < 70; i++) {
+    cells.push_back(0);
+    layers.push_back(i);
+  }
+
+  particle_group->remove_particles(cells.size(), cells, layers);
+
+  //Check resize of device_rate_buffer to n_part_cell*2 = 60
+  test_reaction.cellwise_flush_buffer(
+    std::make_shared<ParticleSubGroup>(particle_group), 0);
+  EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 60);
 }
 
 TEST(Species, getters) {

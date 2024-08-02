@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <gtest/gtest.h>
 #include <neso_particles.hpp>
 #include <particle_properties_map.hpp>
 #include <reaction_kernel_pre_reqs.hpp>

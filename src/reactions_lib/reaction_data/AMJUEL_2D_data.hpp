@@ -3,7 +3,6 @@
 #include "reaction_kernel_pre_reqs.hpp"
 #include <array>
 #include <cmath>
-#include <gtest/gtest.h>
 #include <neso_particles.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
