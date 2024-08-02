@@ -66,7 +66,7 @@ TEST(Properties, simple_prop_names) {
   EXPECT_EQ(int_prop_names.size(), simple_int_props.size());
 
   for (int i = 0; i < int_prop_names.size(); i++) {
-    EXPECT_EQ(int_prop_names[i], simple_int_props[i]);
+    EXPECT_STREQ(int_prop_names[i].c_str(), simple_int_props[i].c_str());
   }
 
   auto custom_simple_props_obj = Properties<REAL>(std::vector<int>{
@@ -82,7 +82,7 @@ TEST(Properties, simple_prop_names) {
   EXPECT_EQ(custom_prop_names.size(), simple_custom_props.size());
 
   for (int i = 0; i < custom_prop_names.size(); i++) {
-    EXPECT_EQ(custom_prop_names[i], simple_custom_props[i]);
+    EXPECT_STREQ(custom_prop_names[i].c_str(), simple_custom_props[i].c_str());
   }
 
   auto real_props_obj = PropertiesTest::real_props;
@@ -104,7 +104,7 @@ TEST(Properties, simple_prop_names) {
   EXPECT_EQ(real_prop_names.size(), simple_real_props.size());
 
   for (int i = 0; i < real_prop_names.size(); i++) {
-    EXPECT_EQ(real_prop_names[i], simple_real_props[i]);
+    EXPECT_STREQ(real_prop_names[i].c_str(), simple_real_props[i].c_str());
   }
 }
 
@@ -171,7 +171,8 @@ TEST(Properties, species_prop_names) {
   EXPECT_EQ(real_prop_names.size(), species_real_props.size());
 
   for (int i = 0; i < real_prop_names.size(); i++) {
-    EXPECT_EQ(real_prop_names[i], "ELECTRON_" + species_real_props[i]);
+    std::string electron_species_name = "ELECTRON_" + species_real_props[i];
+    EXPECT_STREQ(real_prop_names[i].c_str(), electron_species_name.c_str());
   }
 
   auto custom_species_props_obj = Properties<REAL>(
@@ -189,7 +190,7 @@ TEST(Properties, species_prop_names) {
   EXPECT_EQ(species_custom_props.size(), custom_prop_names.size());
 
   for (int i = 0; i < custom_prop_names.size(); i++) {
-    EXPECT_EQ(custom_prop_names[i], species_custom_props[i]);
+    EXPECT_STREQ(custom_prop_names[i].c_str(), species_custom_props[i].c_str());
   }
 }
 
@@ -249,7 +250,7 @@ TEST(Properties, properties_getters) {
 
   EXPECT_EQ(expected_species.size(), returned_species.size());
   for (int i = 0; i < returned_species.size(); i++) {
-    EXPECT_EQ(expected_species[i].get_name(), returned_species[i].get_name());
+    EXPECT_STREQ(expected_species[i].get_name().c_str(), returned_species[i].get_name().c_str());
   }
 
   EXPECT_EQ(expected_species_props.size(), returned_species_props.size());

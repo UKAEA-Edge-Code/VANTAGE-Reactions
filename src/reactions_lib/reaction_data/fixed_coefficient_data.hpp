@@ -34,10 +34,12 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
+   * @param kernel The random number generator kernel potentially used in the calculation
    */
   REAL calc_rate(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props) const {
+                 const Access::SymVector::Read<REAL> &req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
     return weight * this->rate;

@@ -16,6 +16,10 @@
 #include <particle_properties_map.hpp>
 #include <vector>
 
+// TODO: Consider simplifying the descendent particle prop arguments in
+// LinearReactionBase construction - pass in the string names maybe and get the
+// props based on those from the passed particle spec?
+
 #define MAX_BUFFER_SIZE 16384
 
 using namespace NESO::Particles;
@@ -136,9 +140,9 @@ private:
  * which the derived reaction is acting on.
  * @param out_states Array of integers specifying the species IDs of the
  * descendants produced by the derived reaction.
- * @param real_desecendant_particles_props Array of ParticleProp<REAL> that
+ * @param real_descendant_particles_props Array of ParticleProp<REAL> that
  * specify the REAL particle props to be modified on the descendant products.
- * @param int_desecendant_particles_props Array of ParticleProp<INT> that
+ * @param int_descendant_particles_props Array of ParticleProp<INT> that
  * specify the INT particle props to be modified on the descendant products.
  * @param reaction_data ReactionData object to be used in run_rate_loop.
  * @param reaction_kernels ReactionKernels object to be used in
@@ -309,10 +313,10 @@ struct LinearReactionBase : public AbstractReaction {
     auto loop = particle_loop(
         "calc_rate_loop", particle_sub_group,
         [=](auto particle_index, auto req_int_props, auto req_real_props,
-            auto tot_rate, auto buffer) {
+            auto tot_rate, auto buffer, auto kernel) {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = reaction_data_on_device.calc_rate(
-              particle_index, req_int_props, req_real_props);
+              particle_index, req_int_props, req_real_props, kernel);
           buffer[current_count] = rate;
           tot_rate[0] += rate;
         },
@@ -322,7 +326,8 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(sym_vector<REAL>(particle_sub_group,
                                       this->run_rate_loop_real_syms)),
         Access::write(this->get_total_reaction_rate()),
-        Access::write(device_rate_buffer));
+        Access::write(device_rate_buffer),
+        Access::read(this->reaction_data.get_rng_kernel()));
 
     loop->execute(cell_idx);
 

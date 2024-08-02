@@ -26,7 +26,7 @@ const std::vector<int> required_species_real_props = {
  * ionisation reactions. Defaults to a 2V model.
  */
 template <int ndim_velocity = 2,
-          int ndim_electron_source_momentum = ndim_velocity>
+          int ndim_source_momentum = ndim_velocity>
 struct IoniseReactionKernelsOnDevice
     : public ReactionKernelsBaseOnDevice<
           BASE_IONISATION_KERNEL::num_products_per_parent> {
@@ -77,7 +77,7 @@ struct IoniseReactionKernelsOnDevice
         modified_weight;
 
     // SOURCE_MOMENTUM calc
-    for (int sm_dim = 0; sm_dim < ndim_electron_source_momentum; sm_dim++) {
+    for (int sm_dim = 0; sm_dim < ndim_source_momentum; sm_dim++) {
       req_real_props.at(this->target_source_momentum_ind, index, sm_dim) +=
           this->target_mass * modified_weight * k_V[sm_dim];
     }
@@ -85,7 +85,7 @@ struct IoniseReactionKernelsOnDevice
     // Treat momentum sources when a projectile momentum req_data is available
     if (this->has_momentum_req_data) {
 
-      for (int sm_dim = 0; sm_dim < ndim_electron_source_momentum; sm_dim++) {
+      for (int sm_dim = 0; sm_dim < ndim_source_momentum; sm_dim++) {
         req_real_props.at(this->target_source_momentum_ind, index, sm_dim) +=
             pre_req_data.at(index.get_loop_linear_index(), 1) * dt;
         req_real_props.at(this->projectile_source_momentum_ind, index,
@@ -118,14 +118,12 @@ public:
  * reaction.
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
- * property (default value of 1)
- * @tparam ndim_electron_source_momentum Number of dimensions for electron
- * source momentum property (default value of 1)
- * @param species_ A vector of Species objects that define the species(plural)
- * that will be acted on by an ionisation reaction.
+ * property (default value of 2)
+ * @tparam ndim_source_momentum Number of dimensions for electron
+ * source momentum property (default value of 2)
  */
 template <int ndim_velocity = 2,
-          int ndim_electron_source_momentum = ndim_velocity>
+          int ndim_source_momentum = ndim_velocity>
 struct IoniseReactionKernels : public ReactionKernelsBase {
 
   /**
@@ -147,7 +145,7 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
             BASE_IONISATION_KERNEL::required_species_real_props)) {
 
     static_assert(
-        (ndim_velocity >= ndim_electron_source_momentum),
+        (ndim_velocity >= ndim_source_momentum),
         "Number of dimension for VELOCITY must be greater than or "
         "equal to number of dimensions for ELECTRON_SOURCE_MOMENTUM.");
 
@@ -213,7 +211,7 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   };
 
 private:
-  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum>
       ionise_reaction_kernels_on_device;
 
 public:
@@ -221,7 +219,7 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
 
-  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_electron_source_momentum>
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum>
   get_on_device_obj() {
     return this->ionise_reaction_kernels_on_device;
   }

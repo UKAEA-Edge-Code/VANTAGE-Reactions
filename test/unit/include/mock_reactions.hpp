@@ -23,7 +23,8 @@ struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice {
 
   REAL calc_rate(Access::LoopIndex::Read &index,
                  Access::SymVector::Read<INT> &req_int_props,
-                 Access::SymVector::Read<REAL> &req_real_props) const {
+                 Access::SymVector::Read<REAL> &req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
 
     return this->rate;
   }
@@ -171,7 +172,8 @@ struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice {
 
   REAL calc_rate(Access::LoopIndex::Read &index,
                  Access::SymVector::Read<INT> req_int_props,
-                 Access::SymVector::Read<REAL> req_real_props) const {
+                 Access::SymVector::Read<REAL> req_real_props,
+                 const Access::KernelRNG::Read<REAL> &kernel) const {
 
     return req_real_props.at(position_ind, index, 0);
   }
@@ -427,6 +429,9 @@ inline auto create_test_particle_group(int N_total)
       ParticleProp(Sym<REAL>("ION_SOURCE_DENSITY"), 1),
       ParticleProp(Sym<REAL>("ION_SOURCE_MOMENTUM"), ndim),
       ParticleProp(Sym<REAL>("ION_SOURCE_ENERGY"), 1),
+      ParticleProp(Sym<REAL>("ION2_SOURCE_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("ION2_SOURCE_MOMENTUM"), ndim),
+      ParticleProp(Sym<REAL>("ION2_SOURCE_ENERGY"), 1),
       ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
       ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
