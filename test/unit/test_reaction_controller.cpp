@@ -76,6 +76,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 2);
 
+    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
@@ -85,6 +86,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
 
+    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
@@ -111,7 +113,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto test_vec = test_la->get();
   for (auto rate : test_vec) {
 
-    EXPECT_NEAR(rate, 5.0, 1e-12);
+    EXPECT_DOUBLE_EQ(rate, 5.0);//, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -193,8 +195,8 @@ TEST(ReactionController, multi_reaction_multiple_products) {
     // any descendant products but still reducing the weight of the parent
     // particles. This causes the final weight to be 2/3 that of the original
     // instead of equivalent.
-    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
-                reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0), 1e-12);
+    EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
+                reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0));//, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -280,8 +282,8 @@ TEST(ReactionController, multi_reaction_multi_apply) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 2);
     EXPECT_EQ(merged_group2->get_npart_cell(icell), 2);
 
-    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
-                reduction->get_cell(icell)->at(0, 0), 1e-12);
+    EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
+                reduction->get_cell(icell)->at(0, 0));//, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -342,8 +344,8 @@ TEST(ReactionController, parent_transform) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
 
-    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
-                reduction->get_cell(icell)->at(0, 0), 1e-12);
+    EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
+                reduction->get_cell(icell)->at(0, 0));//, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -389,7 +391,7 @@ TEST(ReactionController, ionisation_reaction) {
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(W->at(rowx, 0), 0.0);
+      EXPECT_DOUBLE_EQ(W->at(rowx, 0), 0.0);
     };
   };
 
@@ -452,7 +454,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   for (int icell = 0; icell < num_cells; icell++) {
 
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
-    EXPECT_NEAR(accumulated_1d[icell]->at(0, 0), num_parts[icell] * 0.5, 1e-10);
+    EXPECT_DOUBLE_EQ(accumulated_1d[icell]->at(0, 0), num_parts[icell] * 0.5);//, 1e-10);
   };
 
   particle_group->domain->mesh->free();
@@ -549,8 +551,8 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(rate->at(rowx, 0), expected_rate);
-      EXPECT_EQ(W->at(rowx, 0), expected_weight);
+      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate);
+      EXPECT_DOUBLE_EQ(W->at(rowx, 0), expected_weight);
     };
   };
 

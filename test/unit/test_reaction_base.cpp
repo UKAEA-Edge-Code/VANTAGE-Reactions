@@ -8,6 +8,7 @@
 #include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/typedefs.hpp>
 #include <reaction_data/AMJUEL_2D_data.hpp>
 #include <reaction_data/fixed_coefficient_data.hpp>
 #include <reaction_data/fixed_rate_data.hpp>
@@ -50,7 +51,7 @@ TEST(LinearReactionBase, calc_rate) {
     const int nrow = position->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(tot_reaction_rate->at(rowx, 0), 2 * test_rate)
+      EXPECT_DOUBLE_EQ(tot_reaction_rate->at(rowx, 0), 2 * test_rate)
           << "calc_rate did not set TOT_REACTION_RATE correctly...";
     }
   }
@@ -83,7 +84,7 @@ TEST(LinearReactionBase, calc_var_rate) {
     const int nrow = position->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(tot_reaction_rate->at(rowx, 0), 2 * position->at(rowx, 0))
+      EXPECT_DOUBLE_EQ(tot_reaction_rate->at(rowx, 0), 2 * position->at(rowx, 0))
           << "calc_rate dP not set TOT_REACTION_RATE correctly...";
     }
   }
@@ -122,7 +123,7 @@ TEST(ReactionData, FixedCoefficientData) {
     const int nrow = weight->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(weight->at(rowx, 0), 0.64);
+      EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.64);
     }
   }
 
@@ -163,7 +164,7 @@ TEST(ReactionData, AMJUEL2DData) {
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_NEAR(rate->at(rowx, 0), expected_rate, 1e-15);
+      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate);// 1e-15);
     }
   }
 
@@ -207,7 +208,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_NEAR(rate->at(rowx, 0), expected_rate, 1e-15);
+      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate);//, 1e-15);
     }
   }
 
@@ -287,9 +288,9 @@ TEST(LinearReactionBase, split_group_single_reaction) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 2) {
-        EXPECT_EQ(weight->at(rowx, 0), 0.9);
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.9);
       } else if (internal_state->at(rowx, 0) == 3) {
-        EXPECT_EQ(weight->at(rowx, 0), 0.8);
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.8);
       }
     }
   }
@@ -366,7 +367,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {
-        EXPECT_NEAR(weight->at(rowx, 0), 0.6, 1e-12);
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.6);//, 1e-12);
       }
     }
   }
@@ -409,7 +410,7 @@ TEST(IoniseReaction, calc_rate) {
     auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(weight->at(rowx, 0), 0.9);
+      EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.9);
     }
   }
 
@@ -480,21 +481,21 @@ TEST(ChargeExchange, simple_beam_exchange) {
     EXPECT_EQ(nrow, parent_nrow);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(weight->at(rowx, 0), 0.1);
-      EXPECT_EQ(vel_child->at(rowx, 0), -1.0);
-      EXPECT_EQ(vel_child->at(rowx, 1), 1.0);
+      EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.1);
+      EXPECT_DOUBLE_EQ(vel_child->at(rowx, 0), -1.0);
+      EXPECT_DOUBLE_EQ(vel_child->at(rowx, 1), 1.0);
       EXPECT_EQ(id_child->at(rowx, 0), 1);
-      EXPECT_EQ(target_source->at(rowx, 0), -0.1);
-      EXPECT_EQ(projectile_source->at(rowx, 0), 0.1);
-      EXPECT_EQ(target_source_momentum->at(rowx, 0), 0.1 * 2);
-      EXPECT_EQ(target_source_momentum->at(rowx, 1), -0.1 * 2);
-      EXPECT_EQ(projectile_source_momentum->at(rowx, 0),
+      EXPECT_DOUBLE_EQ(target_source->at(rowx, 0), -0.1);
+      EXPECT_DOUBLE_EQ(projectile_source->at(rowx, 0), 0.1);
+      EXPECT_DOUBLE_EQ(target_source_momentum->at(rowx, 0), 0.1 * 2);
+      EXPECT_DOUBLE_EQ(target_source_momentum->at(rowx, 1), -0.1 * 2);
+      EXPECT_DOUBLE_EQ(projectile_source_momentum->at(rowx, 0),
                 0.1 * 1.2 * vel_parent->at(rowx, 0));
-      EXPECT_EQ(projectile_source_momentum->at(rowx, 1),
+      EXPECT_DOUBLE_EQ(projectile_source_momentum->at(rowx, 1),
                 0.1 * 1.2 * vel_parent->at(rowx, 1));
-      EXPECT_EQ(target_source_energy->at(rowx, 0),
+      EXPECT_DOUBLE_EQ(target_source_energy->at(rowx, 0),
                 -0.1 * 2); // -w*m*v_i^2 / 2
-      EXPECT_EQ(projectile_source_energy->at(rowx, 0),
+      EXPECT_DOUBLE_EQ(projectile_source_energy->at(rowx, 0),
                 0.1 * 0.6 *
                     (std::pow(vel_parent->at(rowx, 0), 2) +
                      std::pow(vel_parent->at(rowx, 1), 2))); // w*m*v^2 / 2
@@ -542,8 +543,8 @@ TEST(DataCalculator, custom_sources) {
     auto source_energy =
         particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(source_density->at(rowx, 0), 3.0);
-      EXPECT_EQ(source_energy->at(rowx, 0), 4.0);
+      EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), 3.0);
+      EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 4.0);
     }
   }
 
@@ -566,15 +567,15 @@ TEST(Species, getters) {
   test_species.set_name(test_species_name);
   EXPECT_STREQ(test_species.get_name().c_str(), test_species_name.c_str());
 
-  REAL test_species_id = 10.0;
+  INT test_species_id = 10;
   test_species.set_id(test_species_id);
   EXPECT_EQ(test_species.get_id(), test_species_id);
 
   REAL test_species_mass = 5.5;
   test_species.set_mass(test_species_mass);
-  EXPECT_EQ(test_species.get_mass(), test_species_mass);
+  EXPECT_DOUBLE_EQ(test_species.get_mass(), test_species_mass);
 
   REAL test_species_charge = 2.3;
   test_species.set_charge(test_species_charge);
-  EXPECT_EQ(test_species.get_charge(), test_species_charge);
+  EXPECT_DOUBLE_EQ(test_species.get_charge(), test_species_charge);
 }

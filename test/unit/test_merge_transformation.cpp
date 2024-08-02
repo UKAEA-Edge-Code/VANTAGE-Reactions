@@ -128,19 +128,22 @@ TEST(MergeTransformationStrategy, transform_2D) {
     REAL energy_tot = reduction_data->at(4, 0);
     REAL energy_merged = 0;
     for (int i = 0; i < 2; i++) {
-      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
-                  reduction_data->at(0, 0) / wt, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
-                  reduction_data->at(1, 0) / wt, 1e-12);
+      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2); //, 1e-12);
+      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("POSITION"), i, 0),
+                  reduction_data->at(0, 0) / wt);
+      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("POSITION"), i, 1),
+                  reduction_data->at(1, 0) / wt);
       energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, 0) *
                            particles->at(Sym<REAL>("VELOCITY"), i, 0) +
                        particles->at(Sym<REAL>("VELOCITY"), i, 1) *
                            particles->at(Sym<REAL>("VELOCITY"), i, 1);
+      
+      // Result can be out by as much as ULP=9 so EXPECT_DOUBLE_EQ is not appropriate.
       EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), 0, i) +
                       particles->at(Sym<REAL>("VELOCITY"), 1, i),
                   reduction_data->at(2 + i, 0) * 2 / wt, 1e-12);
     }
+    // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not appropriate.
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
   }
 
@@ -212,8 +215,9 @@ TEST(MergeTransformationStrategy, transform_3D) {
     std::vector<REAL> tot_mom_merged = {0, 0, 0};
     for (int i = 0; i < 2; i++) {
 
-      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
+      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2);//, 1e-12);
       for (int dim = 0; dim < 3; dim++) {
+        // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not appropriate.
         EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
                     reduction_data->at(dim, 0) / wt, 1e-12);
         energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, dim) *
@@ -221,14 +225,17 @@ TEST(MergeTransformationStrategy, transform_3D) {
         tot_mom_merged[dim] += particles->at(Sym<REAL>("VELOCITY"), i, dim);
       }
     }
+    // Result can be out by as much as ULP=5 so EXPECT_DOUBLE_EQ is not appropriate.
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
     for (int dim = 0; dim < 3; dim++) {
+      // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
       EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(3 + dim, 0) * 2 / wt,
                   1e-12);
     }
 
     auto rotation_axis = utils::cross_product(tot_mom_merged, diag);
 
+    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
     EXPECT_NEAR(std::inner_product(mom_a.begin(), mom_a.end(),
                                    rotation_axis.begin(), 0.0),
                 0, 1e-12);
