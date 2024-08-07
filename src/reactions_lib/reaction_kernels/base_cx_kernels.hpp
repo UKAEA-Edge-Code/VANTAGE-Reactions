@@ -2,6 +2,7 @@
 #include <array>
 #include <gtest/gtest.h>
 #include <neso_particles.hpp>
+#include <neso_particles/containers/product_matrix.hpp>
 #include <particle_properties_map.hpp>
 #include <reaction_kernel_pre_reqs.hpp>
 #include <reaction_kernels.hpp>
@@ -24,13 +25,18 @@ const std::vector<int> required_simple_real_props = {props.weight,
 const std::vector<int> required_species_real_props = {
     props.source_density, props.source_energy,
     props.source_momentum}; // namespace BASE_CX_KERNEL
+
+const std::vector<int> required_descendant_simple_int_props = {
+    props.internal_state};
+const std::vector<int> required_descendant_simple_real_props = {props.velocity,
+                                                                props.weight};
 } // namespace BASE_CX_KERNEL
 
 /**
  * struct CXReactionKernelsOnDevice - SYCL device-compatible kernel for
  * charge exchange reactions. Defaults to a 2V model.
  */
-template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity>
+template <int ndim_velocity, int ndim_source_momentum>
 struct CXReactionKernelsOnDevice
     : public ReactionKernelsBaseOnDevice<
           BASE_CX_KERNEL::num_products_per_parent> {
@@ -66,7 +72,7 @@ struct CXReactionKernelsOnDevice
           &out_states,
       Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
-      descendant_products.at_real(index, 0, 0, dimx) =
+      descendant_products.at_real(index, 0, descendant_velocity_ind, dimx) =
           pre_req_data.at(index.get_loop_linear_index(), dimx);
     }
   }
@@ -100,7 +106,8 @@ struct CXReactionKernelsOnDevice
                     &out_states,
                 Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                 double dt) const {
-    descendant_products.at_real(index, 0, 1, 0) = modified_weight;
+    descendant_products.at_real(index, 0, descendant_weight_ind, 0) =
+        modified_weight;
   }
 
   /**
@@ -131,7 +138,8 @@ struct CXReactionKernelsOnDevice
       const std::array<int, BASE_CX_KERNEL::num_products_per_parent>
           &out_states,
       Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-    descendant_products.at_int(index, 0, 0, 0) = out_states[0];
+    descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
+        out_states[0];
   }
 
   /**
@@ -204,6 +212,8 @@ public:
   INT velocity_ind, projectile_source_density_ind, projectile_source_energy_ind,
       projectile_source_momentum_ind, target_source_density_ind,
       target_source_momentum_ind, target_source_energy_ind, weight_ind;
+  INT descendant_internal_state_ind, descendant_velocity_ind,
+      descendant_weight_ind;
   REAL target_mass, projectile_mass;
 };
 
@@ -229,14 +239,22 @@ struct CXReactionKernels : public ReactionKernelsBase {
    */
   CXReactionKernels(const Species &target_species,
                     const Species &projectile_species)
-      : ReactionKernelsBase(Properties<REAL>(
-            BASE_CX_KERNEL::required_simple_real_props,
-            std::vector<Species>{target_species, projectile_species},
-            BASE_CX_KERNEL::required_species_real_props)) {
+      : ReactionKernelsBase(
+            Properties<REAL>(
+                BASE_CX_KERNEL::required_simple_real_props,
+                std::vector<Species>{target_species, projectile_species},
+                BASE_CX_KERNEL::required_species_real_props),
+            ndim_velocity) {
 
     static_assert((ndim_velocity >= ndim_source_momentum),
                   "Number of dimension for VELOCITY must be greater than or "
                   "equal to number of dimensions for SOURCE_MOMENTUM.");
+
+    this->set_required_descendant_int_props(
+        Properties<INT>(BASE_CX_KERNEL::required_descendant_simple_int_props));
+
+    this->set_required_descendant_real_props(Properties<REAL>(
+        BASE_CX_KERNEL::required_descendant_simple_real_props));
 
     auto props = BASE_CX_KERNEL::props;
 
@@ -273,6 +291,33 @@ struct CXReactionKernels : public ReactionKernelsBase {
     this->cx_reaction_kernels_on_device.target_mass = target_species.get_mass();
     this->cx_reaction_kernels_on_device.projectile_mass =
         projectile_species.get_mass();
+
+    this->cx_reaction_kernels_on_device.descendant_internal_state_ind =
+        this->required_descendant_int_props.simple_prop_index(
+            props.internal_state);
+    this->cx_reaction_kernels_on_device.descendant_velocity_ind =
+        this->required_descendant_real_props.simple_prop_index(props.velocity);
+    this->cx_reaction_kernels_on_device.descendant_weight_ind =
+        this->required_descendant_real_props.simple_prop_index(props.weight);
+
+    const auto descendant_internal_state_prop =
+        ParticleProp<INT>(Sym<INT>(ParticlePropertiesIndices::default_map.at(
+                              props.internal_state)),
+                          1);
+    const auto descendant_velocity_prop = ParticleProp<REAL>(
+        Sym<REAL>(ParticlePropertiesIndices::default_map.at(props.velocity)),
+        ndim_velocity);
+    const auto descendant_weight_prop = ParticleProp<REAL>(
+        Sym<REAL>(ParticlePropertiesIndices::default_map.at(props.weight)), 1);
+
+    auto descendant_particles_spec = ParticleSpec();
+    descendant_particles_spec.push(descendant_internal_state_prop);
+    descendant_particles_spec.push(descendant_velocity_prop);
+    descendant_particles_spec.push(descendant_weight_prop);
+
+    auto matrix_spec = product_matrix_spec(descendant_particles_spec);
+
+    this->set_descendant_matrix_spec(matrix_spec);
   };
 
 private:

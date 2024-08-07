@@ -25,8 +25,8 @@ const std::vector<int> required_species_real_props = {
  * struct IoniseReactionKernelsOnDevice - SYCL device-compatible kernel for
  * ionisation reactions. Defaults to a 2V model.
  */
-template <int ndim_velocity = 2,
-          int ndim_source_momentum = ndim_velocity>
+template <int ndim_velocity, int ndim_source_momentum,
+          bool has_momentum_req_data>
 struct IoniseReactionKernelsOnDevice
     : public ReactionKernelsBaseOnDevice<
           BASE_IONISATION_KERNEL::num_products_per_parent> {
@@ -60,7 +60,6 @@ struct IoniseReactionKernelsOnDevice
       const std::array<int, BASE_IONISATION_KERNEL::num_products_per_parent>
           &out_states,
       Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-
     std::array<REAL, ndim_velocity> k_V;
     REAL vsquared = 0.0;
 
@@ -83,7 +82,7 @@ struct IoniseReactionKernelsOnDevice
     }
 
     // Treat momentum sources when a projectile momentum req_data is available
-    if (this->has_momentum_req_data) {
+    if (has_momentum_req_data) {
 
       for (int sm_dim = 0; sm_dim < ndim_source_momentum; sm_dim++) {
         req_real_props.at(this->target_source_momentum_ind, index, sm_dim) +=
@@ -109,8 +108,6 @@ public:
       projectile_source_momentum_ind, target_source_density_ind,
       target_source_momentum_ind, target_source_energy_ind, weight_ind;
   REAL target_mass;
-
-  bool has_momentum_req_data = false;
 };
 
 /**
@@ -121,9 +118,11 @@ public:
  * property (default value of 2)
  * @tparam ndim_source_momentum Number of dimensions for electron
  * source momentum property (default value of 2)
+ * @tparam has_momentum_req_data Optional boolean specifying whether a
+ * projectile momentum req_data is available
  */
-template <int ndim_velocity = 2,
-          int ndim_source_momentum = ndim_velocity>
+template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity,
+          bool has_momentum_req_data = false>
 struct IoniseReactionKernels : public ReactionKernelsBase {
 
   /**
@@ -138,12 +137,13 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   IoniseReactionKernels(const Species &target_species,
                         const Species &electron_species,
                         const Species &projectile_species)
-      : ReactionKernelsBase(Properties<REAL>(
-            BASE_IONISATION_KERNEL::required_simple_real_props,
-            std::vector<Species>{target_species, electron_species,
-                                 projectile_species},
-            BASE_IONISATION_KERNEL::required_species_real_props)) {
-
+      : ReactionKernelsBase(
+            Properties<REAL>(
+                BASE_IONISATION_KERNEL::required_simple_real_props,
+                std::vector<Species>{target_species, electron_species,
+                                     projectile_species},
+                BASE_IONISATION_KERNEL::required_species_real_props),
+            has_momentum_req_data ? 2 : 1) {
     static_assert(
         (ndim_velocity >= ndim_source_momentum),
         "Number of dimension for VELOCITY must be greater than or "
@@ -185,33 +185,9 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
         target_species.get_mass();
   };
 
-  /**
-   * @brief Ionisation reaction kernel host type constructor
-   *
-   * @param target_species Species object representing the ionisation target
-   * (and the corresponding ion field!)
-   * @param electron_species Species object representing the electrons
-   * @param projectile_species Species object representing the projectile
-   * species
-   * @param has_momentum_req_data Set to true if the kernel should expect a
-   * momentum rate calculation to have been performed. This means that the
-   * corresponding DataCalculator object has at least 2 ReactionData objects,
-   * one for the energy rate calculation and one for the momentum rate
-   * claculation.
-   */
-  IoniseReactionKernels(const Species &target_species,
-                        const Species &electron_species,
-                        const Species &projectile_species,
-                        bool has_momentum_req_data)
-      : IoniseReactionKernels(target_species, electron_species,
-                              projectile_species) {
-
-    this->ionise_reaction_kernels_on_device.has_momentum_req_data =
-        has_momentum_req_data;
-  };
-
 private:
-  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum>
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
+                                has_momentum_req_data>
       ionise_reaction_kernels_on_device;
 
 public:
@@ -219,8 +195,5 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
 
-  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum>
-  get_on_device_obj() {
-    return this->ionise_reaction_kernels_on_device;
-  }
+  auto get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
 };
