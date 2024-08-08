@@ -19,7 +19,9 @@ using namespace Reactions;
  * @tparam RateData ReactionData template parameter used for the rate
  * calculation
  * @tparam EnergyRateData ReactionData template parameter used for the energy
- * rate calculation
+ * rate calculation,
+ * @tparam ndim Optional template parameter defining the ndim_velocity template
+ * parameter to use with IoniseReactionKernels
  */
 template <typename RateData, typename EnergyRateData, int ndim = 2>
 struct ElectronImpactIonisation
@@ -50,8 +52,7 @@ struct ElectronImpactIonisation
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
             sycl_target_, total_reaction_rate, target_species.get_id(),
-            std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-            std::vector<ParticleProp<INT>>{}, rate_data,
+            std::array<int, 0>{}, rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species),
             particle_spec,

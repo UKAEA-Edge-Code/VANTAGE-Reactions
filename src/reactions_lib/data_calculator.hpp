@@ -28,8 +28,13 @@ struct AbstractDataCalculator {};
 template <typename... DATATYPE>
 struct DataCalculator : public AbstractDataCalculator {
 
-  DataCalculator() = delete;
-  DataCalculator<DATATYPE...>(ParticleSpec particle_spec, DATATYPE... data)
+  DataCalculator() {
+    static_assert(sizeof...(DATATYPE) == 0,
+               "particle_spec is required to be passed for this constructor if "
+               "non-zero number of ReactionData objects are being passed as well.");
+  };
+
+  DataCalculator(ParticleSpec particle_spec, DATATYPE... data)
       : particle_spec(particle_spec), data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
@@ -113,7 +118,7 @@ struct DataCalculator : public AbstractDataCalculator {
   /**
    * @brief Getter for the size of the stored ReactionData tuple
    */
-  int get_data_size() { return std::tuple_size_v<std::tuple<DATATYPE...>>; }
+  constexpr size_t get_data_size() const { return sizeof...(DATATYPE); }
 
 private:
   std::tuple<DATATYPE...> data;

@@ -5,10 +5,13 @@
 #include "reaction_base.hpp"
 #include "reaction_kernels/base_ionisation_kernels.hpp"
 #include "transformation_wrapper.hpp"
+#include "gtest/gtest.h"
 #include <common_transformations.hpp>
+#include <csignal>
 #include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/particle_group.hpp>
 #include <neso_particles/typedefs.hpp>
 #include <reaction_data/AMJUEL_2D_data.hpp>
 #include <reaction_data/fixed_coefficient_data.hpp>
@@ -69,9 +72,9 @@ TEST(LinearReactionBase, calc_var_rate) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction = TestReactionVarRate(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("POSITION"), 0, particle_spec);
+  auto test_reaction =
+      TestReactionVarRate(particle_group->sycl_target,
+                          Sym<REAL>("TOT_REACTION_RATE"), 0, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -86,7 +89,8 @@ TEST(LinearReactionBase, calc_var_rate) {
     const int nrow = position->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(tot_reaction_rate->at(rowx, 0), 2 * position->at(rowx, 0))
+      EXPECT_DOUBLE_EQ(tot_reaction_rate->at(rowx, 0),
+                       2 * position->at(rowx, 0))
           << "calc_rate dP not set TOT_REACTION_RATE correctly...";
     }
   }
@@ -105,8 +109,7 @@ TEST(ReactionData, FixedCoefficientData) {
   auto test_reaction =
       LinearReactionBase<0, FixedCoefficientData, TestReactionKernels<0>>(
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-          std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-          std::vector<ParticleProp<INT>>{}, FixedCoefficientData(2.0),
+          std::array<int, 0>{}, FixedCoefficientData(2.0),
           TestReactionKernels<0>(), particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -147,8 +150,7 @@ TEST(ReactionData, AMJUEL2DData) {
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-          std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-          std::vector<ParticleProp<INT>>{}, amjuel_data,
+          std::array<int, 0>{}, amjuel_data,
           TestReactionKernels<0>(), particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -166,7 +168,7 @@ TEST(ReactionData, AMJUEL2DData) {
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate);// 1e-15);
+      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate); // 1e-15);
     }
   }
 
@@ -190,8 +192,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-          std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-          std::vector<ParticleProp<INT>>{}, amjuel_data,
+          std::array<int, 0>{}, amjuel_data,
           TestReactionKernels<0>(), particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -210,7 +211,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate);//, 1e-15);
+      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate); //, 1e-15);
     }
   }
 
@@ -369,7 +370,7 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {
-        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.6);//, 1e-12);
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.6); //, 1e-12);
       }
     }
   }
@@ -435,11 +436,6 @@ TEST(ChargeExchange, simple_beam_exchange) {
                          DataCalculator<FixedRateData, FixedRateData>>(
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
           std::array<int, 1>{1},
-          std::vector<ParticleProp<REAL>>{
-              ParticleProp<REAL>(Sym<REAL>("VELOCITY"), 2),
-              ParticleProp<REAL>(Sym<REAL>("WEIGHT"), 1)},
-          std::vector<ParticleProp<INT>>{
-              ParticleProp<INT>(Sym<INT>{"INTERNAL_STATE"}, 1)},
           FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
           particle_spec,
@@ -492,15 +488,16 @@ TEST(ChargeExchange, simple_beam_exchange) {
       EXPECT_DOUBLE_EQ(target_source_momentum->at(rowx, 0), 0.1 * 2);
       EXPECT_DOUBLE_EQ(target_source_momentum->at(rowx, 1), -0.1 * 2);
       EXPECT_DOUBLE_EQ(projectile_source_momentum->at(rowx, 0),
-                0.1 * 1.2 * vel_parent->at(rowx, 0));
+                       0.1 * 1.2 * vel_parent->at(rowx, 0));
       EXPECT_DOUBLE_EQ(projectile_source_momentum->at(rowx, 1),
-                0.1 * 1.2 * vel_parent->at(rowx, 1));
+                       0.1 * 1.2 * vel_parent->at(rowx, 1));
       EXPECT_DOUBLE_EQ(target_source_energy->at(rowx, 0),
-                -0.1 * 2); // -w*m*v_i^2 / 2
-      EXPECT_DOUBLE_EQ(projectile_source_energy->at(rowx, 0),
-                0.1 * 0.6 *
-                    (std::pow(vel_parent->at(rowx, 0), 2) +
-                     std::pow(vel_parent->at(rowx, 1), 2))); // w*m*v^2 / 2
+                       -0.1 * 2); // -w*m*v_i^2 / 2
+      EXPECT_DOUBLE_EQ(
+          projectile_source_energy->at(rowx, 0),
+          0.1 * 0.6 *
+              (std::pow(vel_parent->at(rowx, 0), 2) +
+               std::pow(vel_parent->at(rowx, 1), 2))); // w*m*v^2 / 2
     }
   }
 
@@ -520,8 +517,7 @@ TEST(DataCalculator, custom_sources) {
                          DataCalculator<TestReactionData, TestReactionData>>(
 
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-          std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-          std::vector<ParticleProp<INT>>{}, TestReactionData(2.0),
+          std::array<int, 0>{}, TestReactionData(2.0),
           TestReactionDataCalcKernels<0>(), particle_spec,
           DataCalculator<TestReactionData, TestReactionData>(
               particle_spec, TestReactionData(3.0), TestReactionData(4.0)));
@@ -558,17 +554,20 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   auto particle_group = create_test_particle_group(1600);
 
   struct TestDeviceRateBufferReaction
-      : public LinearReactionBase<0, FixedRateData,
-                                  IoniseReactionKernels<2>> {
+      : public LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
+                                  DataCalculator<FixedRateData>> {
 
     TestDeviceRateBufferReaction(ParticleGroupSharedPtr particle_group)
-        : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>>(
+        : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
+                             DataCalculator<FixedRateData>>(
               particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
-              std::array<int, 0>{}, std::vector<ParticleProp<REAL>>{},
-              std::vector<ParticleProp<INT>>{}, FixedRateData(1),
-              IoniseReactionKernels<2>(Species("ION", 1.0, 1.0, 0), Species("ELECTRON"),
+              std::array<int, 0>{}, FixedRateData(1),
+              IoniseReactionKernels<2>(Species("ION", 1.0, 1.0, 0),
+                                       Species("ELECTRON"),
                                        Species("ELECTRON")),
-              particle_group->get_particle_spec()) {}
+              particle_group->get_particle_spec(),
+              DataCalculator<FixedRateData>(particle_group->get_particle_spec(),
+                                            FixedRateData(1))) {}
 
     const LocalArraySharedPtr<REAL> &get_device_rate_buffer_derived() {
       return this->get_device_rate_buffer();
@@ -577,12 +576,12 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
 
   auto test_reaction = TestDeviceRateBufferReaction(particle_group);
 
-  //Starting particle number in cell #0: 100
+  // Starting particle number in cell #0: 100
   test_reaction.cellwise_flush_buffer(
       std::make_shared<ParticleSubGroup>(particle_group), 0);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 200);
 
-  //Subtract 70 particles
+  // Subtract 70 particles
   std::vector<INT> cells;
   std::vector<INT> layers;
   cells.reserve(70);
@@ -595,10 +594,33 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
 
   particle_group->remove_particles(cells.size(), cells, layers);
 
-  //Check resize of device_rate_buffer to n_part_cell*2 = 60
+  // Check resize of device_rate_buffer to n_part_cell*2 = 60
   test_reaction.cellwise_flush_buffer(
-    std::make_shared<ParticleSubGroup>(particle_group), 0);
+      std::make_shared<ParticleSubGroup>(particle_group), 0);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 60);
+
+  particle_group->domain->mesh->free();
+}
+
+TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+
+  auto particle_group = create_test_particle_group(100);
+
+  struct TestDataCalcNdimReaction
+      : public LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>> {
+    TestDataCalcNdimReaction(ParticleGroupSharedPtr particle_group)
+        : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>>(
+              particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+              std::array<int, 0>{}, FixedRateData(1),
+              IoniseReactionKernels<>(Species("ION", 1.0, 1.0, 0),
+                                      Species("ELECTRON"), Species("ELECTRON")),
+              particle_group->get_particle_spec()) {}
+  };
+
+  EXPECT_THROW((TestDataCalcNdimReaction(particle_group)), std::logic_error);
+
+  particle_group->domain->mesh->free();
 }
 
 TEST(Species, getters) {

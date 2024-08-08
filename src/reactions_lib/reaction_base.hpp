@@ -12,13 +12,10 @@
 #include <neso_particles/particle_group.hpp>
 #include <neso_particles/particle_sub_group.hpp>
 #include <neso_particles/typedefs.hpp>
-#include <optional>
 #include <particle_properties_map.hpp>
+#include <stdexcept>
+#include <type_traits>
 #include <vector>
-
-// TODO: Consider simplifying the descendent particle prop arguments in
-// LinearReactionBase construction - pass in the string names maybe and get the
-// props based on those from the passed particle spec?
 
 #define MAX_BUFFER_SIZE 16384
 
@@ -74,6 +71,12 @@ public:
 
   virtual void flush_pre_req_data() {}
 
+  const Sym<REAL> &get_weight_sym() const { return weight_sym; }
+
+  void set_weight_sym(const Sym<REAL> &weight_sym) {
+    this->weight_sym = weight_sym;
+  }
+
 protected:
   /**
    * @brief Setters and getters for private members.
@@ -107,8 +110,6 @@ protected:
     this->pre_req_data = pre_req_data_;
   }
 
-  const Sym<REAL> &get_weight_sym() const { return weight_sym; }
-
 private:
   Sym<REAL> total_reaction_rate;
   LocalArraySharedPtr<REAL> device_rate_buffer;
@@ -130,7 +131,7 @@ private:
  * @tparam ReactionKernels template class for reaction_kernels constructor
  * argument
  * @tparam DataCalc typename for the DataCalculator object used to calculate
- * prerequisite data
+ * prerequisite data (defaults to DataCalculator<>)
  *
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
@@ -140,15 +141,13 @@ private:
  * which the derived reaction is acting on.
  * @param out_states Array of integers specifying the species IDs of the
  * descendants produced by the derived reaction.
- * @param real_descendant_particles_props Array of ParticleProp<REAL> that
- * specify the REAL particle props to be modified on the descendant products.
- * @param int_descendant_particles_props Array of ParticleProp<INT> that
- * specify the INT particle props to be modified on the descendant products.
  * @param reaction_data ReactionData object to be used in run_rate_loop.
  * @param reaction_kernels ReactionKernels object to be used in
  * descendant_product_loop.
  * @param particle_spec_ ParticleSpec object containing particle properties to
  * use to construct sym_vectors.
+ * @param data_calculator DataCalculator object for filling in the
+ * pre_req_data buffer
  */
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels, typename DataCalc = DataCalculator<>>
@@ -156,35 +155,39 @@ struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = delete;
 
-  LinearReactionBase(
-      SYCLTargetSharedPtr sycl_target, const Sym<REAL> total_rate_dat,
-      int in_state, std::array<int, num_products_per_parent> out_states,
-      std::vector<ParticleProp<REAL>> real_descendant_particles_props,
-      std::vector<ParticleProp<INT>> int_descendant_particles_props,
-      ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const ParticleSpec &particle_spec_,
-      Sym<REAL> weight_sym = Sym<REAL>("WEIGHT"))
-      : AbstractReaction(sycl_target, total_rate_dat, weight_sym),
-        in_state(in_state), out_states(out_states),
-        real_descendant_particles_props(real_descendant_particles_props),
-        int_descendant_particles_props(int_descendant_particles_props),
-        reaction_data(reaction_data), reaction_kernels(reaction_kernels),
-        particle_spec(particle_spec_),
-        default_data_calculator(DataCalculator<>(particle_spec_)) {
-    // These assertions are necessary since the typenames for ReactionData and
-    // ReactionKernels could be any type and for run_rate_loop and
-    // descendant_product_loop to operate correctly, ReactionData and
-    // ReactionKernels have to be derived from ReactionKernelsBase and
-    // AbstractReactionKernels respectively
+  LinearReactionBase(SYCLTargetSharedPtr sycl_target,
+                     const Sym<REAL> total_rate_dat, int in_state,
+                     std::array<int, num_products_per_parent> out_states,
+                     ReactionData reaction_data,
+                     ReactionKernels reaction_kernels,
+                     const ParticleSpec &particle_spec_,
+                     DataCalc data_calculator_)
+      : AbstractReaction(sycl_target, total_rate_dat), in_state(in_state),
+        out_states(out_states), reaction_data(reaction_data),
+        reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
+        data_calculator(data_calculator_) {
+    // These assertions are necessary since the typenames for ReactionData,
+    // ReactionKernels and DataCalc could be any type and for run_rate_loop and
+    // descendant_product_loop to operate correctly, ReactionData,
+    // ReactionKernels and DataCalc have to be derived from ReactionDataBase,
+    // ReactionKernelsBase and AbstractDataCalculator respectively
     static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
-    static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
-                  "Template parameter ReactionKernels is not derived from "
-                  "ReactionKernelsBase...");
     static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
                   "Template parameter DataCalc is not derived from "
                   "AbstractDataCalculator...");
+    static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
+                  "Template parameter ReactionKernels is not derived from "
+                  "ReactionKernelsBase...");
+    if (this->data_calculator.get_data_size() !=
+        this->reaction_kernels.get_pre_ndims()) {
+      throw std::logic_error(
+          "The number of ReactionData-derived objects in DataCalculator "
+          "does not match the required number of dimensions for the "
+          "provided ReactionKernels object.");
+    }
+
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
@@ -200,26 +203,16 @@ struct LinearReactionBase : public AbstractReaction {
     descendant_product_loop_real_syms = utils::build_sym_vector<REAL>(
         this->particle_spec, reaction_kernel_buffer.get_required_real_props());
 
-    auto descendant_particles_spec = ParticleSpec();
-    for (auto ireal_prop : this->get_real_descendant_props()) {
-      descendant_particles_spec.push(ireal_prop);
-    }
-    for (auto iint_prop : this->get_int_descendant_props()) {
-      descendant_particles_spec.push(iint_prop);
-    }
-
-    // Product matrix spec for descendant particles that specifies which
-    // properties of the descendant particles are to be modified in this
-    // reaction upon creation of the descendant particles
     auto descendant_matrix_spec =
-        product_matrix_spec(descendant_particles_spec);
+        reaction_kernel_buffer.get_descendant_matrix_spec();
 
     this->descendant_particles = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec,
         num_products_per_parent);
 
     auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        AbstractReaction::get_sycl_target(), 0, 0, 0);
+        AbstractReaction::get_sycl_target(), 0,
+        this->data_calculator.get_data_size(), 0);
 
     this->set_pre_req_data(empty_pre_req_data);
   }
@@ -232,8 +225,6 @@ struct LinearReactionBase : public AbstractReaction {
    * @tparam ReactionData typename for reaction_data constructor argument
    * @tparam ReactionKernels template class for reaction_kernels constructor
    * argument
-   * @tparam DataCalc typename for the DataCalculator object used to calculate
-   * prerequisite data
    *
    * @param sycl_target Compute device used by the instance.
    * @param total_rate_dat Symbol index for a ParticleDat that's used to track
@@ -243,38 +234,21 @@ struct LinearReactionBase : public AbstractReaction {
    * which the derived reaction is acting on.
    * @param out_states Array of integers specifying the species IDs of the
    * descendants produced by the derived reaction.
-   * @param real_desecendant_particles_props Array of ParticleProp<REAL> that
-   * specify the REAL particle props to be modified on the descendant products.
-   * @param int_desecendant_particles_props Array of ParticleProp<INT> that
-   * specify the INT particle props to be modified on the descendant products.
    * @param reaction_data ReactionData object to be used in run_rate_loop.
    * @param reaction_kernels ReactionKernels object to be used in
    * descendant_product_loop.
-   * @param data_claculator DataCalculator object for filling in the
-   * pre_req_data buffer
    * @param particle_spec_ ParticleSpec object containing particle properties to
    * use to construct sym_vectors.
    */
-  LinearReactionBase(
-      SYCLTargetSharedPtr sycl_target, const Sym<REAL> total_rate_dat,
-      int in_state, std::array<int, num_products_per_parent> out_states,
-      std::vector<ParticleProp<REAL>> real_descendant_particles_props,
-      std::vector<ParticleProp<INT>> int_descendant_particles_props,
-      ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const ParticleSpec &particle_spec_, DataCalc data_calculator_,
-      Sym<REAL> weight_sym = Sym<REAL>("WEIGHT"))
+  LinearReactionBase(SYCLTargetSharedPtr sycl_target,
+                     const Sym<REAL> total_rate_dat, int in_state,
+                     std::array<int, num_products_per_parent> out_states,
+                     ReactionData reaction_data,
+                     ReactionKernels reaction_kernels,
+                     const ParticleSpec &particle_spec_)
       : LinearReactionBase(sycl_target, total_rate_dat, in_state, out_states,
-                           real_descendant_particles_props,
-                           int_descendant_particles_props, reaction_data,
-                           reaction_kernels, particle_spec_, weight_sym) {
-    this->data_calculator = data_calculator_;
-
-    auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        AbstractReaction::get_sycl_target(), 0,
-        this->data_calculator->get_data_size(), 0);
-
-    this->set_pre_req_data(empty_pre_req_data);
-  }
+                           reaction_data, reaction_kernels, particle_spec_,
+                           DataCalc()) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -331,14 +305,8 @@ struct LinearReactionBase : public AbstractReaction {
 
     loop->execute(cell_idx);
 
-    if (this->data_calculator) {
-      this->data_calculator->fill_buffer(this->get_pre_req_data(),
-                                         particle_sub_group, cell_idx);
-    } else {
-      this->default_data_calculator.fill_buffer(this->get_pre_req_data(),
-                                                particle_sub_group, cell_idx);
-    }
-
+    this->data_calculator.fill_buffer(this->get_pre_req_data(),
+                                      particle_sub_group, cell_idx);
     return;
   }
 
@@ -543,29 +511,9 @@ struct LinearReactionBase : public AbstractReaction {
     return std::vector<int>(out_states.begin(), out_states.end());
   }
 
-  /**
-   * @brief Getter for real_descendant_particles_props that define which
-   * REAL properties are modified for descendant particles.
-   * @return std::vector<ParticleProp<REAL>> Vector of REAL ParticleProps.
-   */
-  std::vector<ParticleProp<REAL>> get_real_descendant_props() {
-    return this->real_descendant_particles_props;
-  }
-
-  /**
-   * @brief Getter for int_descendant_particles_props that define which
-   * INT properties are modified for descendant particles.
-   * @return std::vector<ParticleProp<INT>> Vector of INT ParticleProps.
-   */
-  std::vector<ParticleProp<INT>> get_int_descendant_props() {
-    return this->int_descendant_particles_props;
-  }
-
 private:
   int in_state;
   std::array<int, num_products_per_parent> out_states;
-  std::vector<ParticleProp<REAL>> real_descendant_particles_props;
-  std::vector<ParticleProp<INT>> int_descendant_particles_props;
   ReactionData reaction_data;
   ReactionKernels reaction_kernels;
   std::shared_ptr<DescendantProducts> descendant_particles;
@@ -577,7 +525,6 @@ private:
   std::vector<Sym<REAL>> descendant_product_loop_real_syms;
 
   ParticleSpec particle_spec;
-  std::optional<DataCalc> data_calculator;
-  DataCalculator<> default_data_calculator;
+  DataCalc data_calculator;
 };
 } // namespace Reactions

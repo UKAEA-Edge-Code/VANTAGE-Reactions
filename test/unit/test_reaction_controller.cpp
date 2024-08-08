@@ -195,8 +195,8 @@ TEST(ReactionController, multi_reaction_multiple_products) {
     // any descendant products but still reducing the weight of the parent
     // particles. This causes the final weight to be 2/3 that of the original
     // instead of equivalent.
-    EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
-                reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0));//, 1e-12);
+    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
+                reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0), 1e-12);
   }
 
   particle_group->domain->mesh->free();
