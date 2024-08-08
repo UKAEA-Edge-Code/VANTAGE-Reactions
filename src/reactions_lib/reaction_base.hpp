@@ -12,15 +12,10 @@
 #include <neso_particles/particle_group.hpp>
 #include <neso_particles/particle_sub_group.hpp>
 #include <neso_particles/typedefs.hpp>
-#include <optional>
 #include <particle_properties_map.hpp>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
-
-// TODO: Consider simplifying the descendent particle prop arguments in
-// LinearReactionBase construction - pass in the string names maybe and get the
-// props based on those from the passed particle spec?
 
 #define MAX_BUFFER_SIZE 16384
 
@@ -136,7 +131,7 @@ private:
  * @tparam ReactionKernels template class for reaction_kernels constructor
  * argument
  * @tparam DataCalc typename for the DataCalculator object used to calculate
- * prerequisite data
+ * prerequisite data (defaults to DataCalculator<>)
  *
  * @param sycl_target Compute device used by the instance.
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
@@ -171,11 +166,11 @@ struct LinearReactionBase : public AbstractReaction {
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
         data_calculator(data_calculator_) {
-    // These assertions are necessary since the typenames for ReactionData and
-    // ReactionKernels could be any type and for run_rate_loop and
-    // descendant_product_loop to operate correctly, ReactionData and
-    // ReactionKernels have to be derived from ReactionKernelsBase and
-    // AbstractReactionKernels respectively
+    // These assertions are necessary since the typenames for ReactionData,
+    // ReactionKernels and DataCalc could be any type and for run_rate_loop and
+    // descendant_product_loop to operate correctly, ReactionData,
+    // ReactionKernels and DataCalc have to be derived from ReactionDataBase,
+    // ReactionKernelsBase and AbstractDataCalculator respectively
     static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
@@ -230,8 +225,6 @@ struct LinearReactionBase : public AbstractReaction {
    * @tparam ReactionData typename for reaction_data constructor argument
    * @tparam ReactionKernels template class for reaction_kernels constructor
    * argument
-   * @tparam DataCalc typename for the DataCalculator object used to calculate
-   * prerequisite data
    *
    * @param sycl_target Compute device used by the instance.
    * @param total_rate_dat Symbol index for a ParticleDat that's used to track

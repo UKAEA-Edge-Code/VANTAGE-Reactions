@@ -19,7 +19,9 @@ using namespace Reactions;
  * @tparam RateData ReactionData template parameter used for the rate
  * calculation
  * @tparam EnergyRateData ReactionData template parameter used for the energy
- * rate calculation
+ * rate calculation,
+ * @tparam ndim Optional template parameter defining the ndim_velocity template
+ * parameter to use with IoniseReactionKernels
  */
 template <typename RateData, typename EnergyRateData, int ndim = 2>
 struct ElectronImpactIonisation
