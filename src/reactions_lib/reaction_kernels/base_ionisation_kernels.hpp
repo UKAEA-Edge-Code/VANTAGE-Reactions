@@ -23,7 +23,7 @@ const std::vector<int> required_species_real_props = {
 
 /**
  * struct IoniseReactionKernelsOnDevice - SYCL device-compatible kernel for
- * ionisation reactions. Defaults to a 2V model.
+ * ionisation reactions.
  */
 template <int ndim_velocity, int ndim_source_momentum,
           bool has_momentum_req_data>
@@ -116,10 +116,10 @@ public:
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
- * @tparam ndim_source_momentum Number of dimensions for electron
- * source momentum property (default value of 2)
+ * @tparam ndim_source_momentum Optional number of dimensions for electron
+ * source momentum property (default value of ndim_veloctiy)
  * @tparam has_momentum_req_data Optional boolean specifying whether a
- * projectile momentum req_data is available
+ * projectile momentum req_data is available (default value of false)
  */
 template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity,
           bool has_momentum_req_data = false>

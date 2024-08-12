@@ -34,7 +34,7 @@ const std::vector<int> required_descendant_simple_real_props = {props.velocity,
 
 /**
  * struct CXReactionKernelsOnDevice - SYCL device-compatible kernel for
- * charge exchange reactions. Defaults to a 2V model.
+ * charge exchange reactions.
  */
 template <int ndim_velocity, int ndim_source_momentum>
 struct CXReactionKernelsOnDevice
@@ -223,8 +223,8 @@ public:
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
- * @tparam ndim_source_momentum Number of dimensions for electron
- * source momentum property (default value of 2)
+ * @tparam ndim_source_momentum Optional number of dimensions for electron
+ * source momentum property (default value of ndim_velocity)
  */
 template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity>
 struct CXReactionKernels : public ReactionKernelsBase {
