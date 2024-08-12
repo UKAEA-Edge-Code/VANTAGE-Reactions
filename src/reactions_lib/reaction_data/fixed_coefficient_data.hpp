@@ -26,7 +26,7 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * coefficient reaction
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_rate is called. Access using either
+   * inside which calc_data is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -35,13 +35,13 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the calculation
    */
-  REAL calc_rate(const Access::LoopIndex::Read &index,
+  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
                  const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType  &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
-    return weight * this->rate;
+    return std::array<REAL,1>{weight * this->rate};
   }
 
 public:

@@ -10,7 +10,7 @@ using namespace NESO::Particles;
 /**
  * @brief Base reaction data object.
  */
-template <typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
+template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBase {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
@@ -54,6 +54,8 @@ struct ReactionDataBase {
 
   std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
 
+ static constexpr size_t get_dim() { return dim; }
+
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
@@ -63,30 +65,32 @@ protected:
 /**
  * @brief Base reaction data object to be used on SYCL devices.
  */
-template <typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
+template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBaseOnDevice {
   using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBaseOnDevice() = default;
 
   /**
-   * @brief Virtual function to calculate the reaction rate.
+   * @brief Virtual function to calculate the reaction data.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_rate is called. Access using either
+   * inside which calc_data is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
+   * need to be used for the reaction data calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * need to be used for the reaction data calculation.
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation
    */
-  virtual REAL
-  calc_rate(const Access::LoopIndex::Read &index,
+  virtual std::array<REAL, dim>
+  calc_data(const Access::LoopIndex::Read &index,
             const Access::SymVector::Read<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             const typename RNG_TYPE::KernelType &rng_kernel) const {
-    return 0.0;
+    return std::array<REAL, dim>{0.0};
   }
+
+  static constexpr size_t get_dim() { return dim; }
 };

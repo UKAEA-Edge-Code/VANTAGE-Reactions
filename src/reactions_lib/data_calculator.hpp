@@ -29,9 +29,10 @@ template <typename... DATATYPE>
 struct DataCalculator : public AbstractDataCalculator {
 
   DataCalculator() {
-    static_assert(sizeof...(DATATYPE) == 0,
-               "particle_spec is required to be passed for this constructor if "
-               "non-zero number of ReactionData objects are being passed as well.");
+    static_assert(
+        sizeof...(DATATYPE) == 0,
+        "particle_spec is required to be passed for this constructor if "
+        "non-zero number of ReactionData objects are being passed as well.");
   };
 
   DataCalculator(ParticleSpec particle_spec, DATATYPE... data)
@@ -41,7 +42,10 @@ struct DataCalculator : public AbstractDataCalculator {
     (
         [&] {
           static_assert(
-              std::is_base_of_v<ReactionDataBase<typename decltype(data)::RNG_KERNEL_TYPE>, decltype(data)>,
+              std::is_base_of_v<
+                  ReactionDataBase<data.get_dim(),
+                                   typename decltype(data)::RNG_KERNEL_TYPE>,
+                  decltype(data)>,
               "DATATYPE provided is not derived from ReactionDataBase.");
           type_check_counter++;
         }(),
@@ -88,15 +92,20 @@ struct DataCalculator : public AbstractDataCalculator {
                 auto reaction_data_on_device = args.get_on_device_obj();
                 // Maybe make into a vector of loop shared_ptrs and use submit
                 // instead of execute
+                constexpr auto data_dim = reaction_data_on_device.get_dim();
                 auto loop = particle_loop(
                     "data_calc_loop", particle_sub_group,
                     [=](auto particle_index, auto req_int_props,
                         auto req_real_props, auto buffer, auto kernel) {
                       INT current_count =
                           particle_index.get_loop_linear_index();
-                      REAL rate = reaction_data_on_device.calc_rate(
-                          particle_index, req_int_props, req_real_props, kernel);
-                      buffer.at(current_count, dat_idx) = rate;
+                      std::array<REAL, data_dim> rate =
+                          reaction_data_on_device.calc_data(
+                              particle_index, req_int_props, req_real_props,
+                              kernel);
+                      for (auto i = 0; i < data_dim; i++) {
+                        buffer.at(current_count, dat_idx + i) = rate[i];
+                      }
                     },
                     Access::read(ParticleLoopIndex{}),
                     Access::read(sym_vector<INT>(
@@ -104,11 +113,10 @@ struct DataCalculator : public AbstractDataCalculator {
                     Access::read(
                         sym_vector<REAL>(particle_sub_group,
                                          this->data_loop_real_syms[dat_idx])),
-                    Access::write(buffer),
-                    Access::read(args.get_rng_kernel()));
+                    Access::write(buffer), Access::read(args.get_rng_kernel()));
 
                 loop->execute(cell_idx);
-                dat_idx++;
+                dat_idx += data_dim;
               }(),
               ...);
         },
@@ -118,7 +126,21 @@ struct DataCalculator : public AbstractDataCalculator {
   /**
    * @brief Getter for the size of the stored ReactionData tuple
    */
-  constexpr size_t get_data_size() const { return sizeof...(DATATYPE); }
+  constexpr size_t get_data_size() const { 
+    size_t dat_idx = 0u;
+    std::apply(
+        [&](auto &&...args) {
+          (
+              [&] {
+                constexpr auto data_dim = args.get_dim();
+                dat_idx += data_dim;
+              }(),
+              ...);
+        },
+        this->data);
+    return dat_idx;
+  }
+
 
 private:
   std::tuple<DATATYPE...> data;

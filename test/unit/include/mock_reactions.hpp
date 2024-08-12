@@ -25,13 +25,13 @@ using namespace ParticlePropertiesIndices;
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
-  REAL calc_rate(
+  std::array<REAL,1> calc_data(
       Access::LoopIndex::Read &index,
       Access::SymVector::Read<INT> &req_int_props,
       Access::SymVector::Read<REAL> &req_real_props,
       const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
 
-    return this->rate;
+    return std::array<REAL,1>{this->rate};
   }
 
 private:
@@ -213,13 +213,13 @@ const std::vector<int> required_simple_real_props = {props.position};
 struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionVarDataOnDevice() = default;
 
-  REAL calc_rate(
+  std::array<REAL,1>calc_data(
       Access::LoopIndex::Read &index,
       Access::SymVector::Read<INT> req_int_props,
       Access::SymVector::Read<REAL> req_real_props,
       const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
 
-    return req_real_props.at(position_ind, index, 0);
+    return std::array<REAL,1>{req_real_props.at(position_ind, index, 0)};
   }
 
 public:
