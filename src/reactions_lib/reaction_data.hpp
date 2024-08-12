@@ -10,33 +10,26 @@ using namespace NESO::Particles;
 /**
  * @brief Base reaction data object.
  */
-
+template <typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBase {
 
-  ReactionDataBase() {
-    auto rng_lambda = [&]() -> REAL { return 0; };
-    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
-  }
-  ReactionDataBase(Properties<INT> required_int_props)
-      : required_int_props(required_int_props) {
-    auto rng_lambda = [&]() -> REAL { return 0; };
-    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
-  }
-
-  ReactionDataBase(Properties<REAL> required_real_props)
-      : required_real_props(required_real_props) {
-    auto rng_lambda = [&]() -> REAL { return 0; };
-    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
-  }
-
+  using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBase(Properties<INT> required_int_props,
                    Properties<REAL> required_real_props)
       : required_int_props(required_int_props),
         required_real_props(required_real_props) {
     auto rng_lambda = [&]() -> REAL { return 0; };
-    this->rng_kernel = host_kernel_rng<REAL>(rng_lambda, 0);
+    this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
+  ReactionDataBase()
+      : ReactionDataBase(Properties<INT>(), Properties<REAL>()) {}
+
+  ReactionDataBase(Properties<INT> required_int_props)
+      : ReactionDataBase(required_int_props, Properties<REAL>()) {}
+
+  ReactionDataBase(Properties<REAL> required_real_props)
+      : ReactionDataBase(Properties<INT>(), required_real_props) {}
 
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
@@ -59,18 +52,20 @@ struct ReactionDataBase {
     this->rng_kernel = rng_kernel;
   }
 
-  std::shared_ptr<KernelRNG<REAL>> get_rng_kernel() { return this->rng_kernel; }
+  std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
 
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
-  std::shared_ptr<KernelRNG<REAL>> rng_kernel;
+  std::shared_ptr<RNG_TYPE> rng_kernel;
 };
 
 /**
  * @brief Base reaction data object to be used on SYCL devices.
  */
+template <typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBaseOnDevice {
+  using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBaseOnDevice() = default;
 
   /**
@@ -84,13 +79,14 @@ struct ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param rng_kernel The random number generator kernel potentially used in the calculation
+   * @param rng_kernel The random number generator kernel potentially used in
+   * the calculation
    */
   virtual REAL
   calc_rate(const Access::LoopIndex::Read &index,
             const Access::SymVector::Read<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
-            const Access::KernelRNG::Read<REAL> &rng_kernel) const {
+            const typename RNG_TYPE::KernelType &rng_kernel) const {
     return 0.0;
   }
 };

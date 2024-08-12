@@ -1,6 +1,5 @@
 #pragma once
 #include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
 #include <array>
 #include <cmath>
 #include <neso_particles.hpp>
@@ -39,7 +38,7 @@ const std::vector<int> required_simple_real_props = {
  * reaction rate calculation.
  */
 template <int num_coeffs>
-struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
+struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
   AMJUEL1DDataOnDevice(const REAL &evolved_quantity_normalisation_,
                        const REAL &density_normalisation_,
                        const REAL &temperature_normalisation_,
@@ -67,7 +66,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
   REAL calc_rate(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
@@ -110,7 +109,7 @@ public:
  * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
  * reaction rate calculation.
  */
-template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase {
+template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
 
   AMJUEL1DData(const REAL &evolved_quantity_normalisation_,
                const REAL &density_normalisation_,

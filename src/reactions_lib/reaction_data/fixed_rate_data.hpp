@@ -15,7 +15,7 @@ using namespace Reactions;
  *
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
-struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice {
+struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
   FixedRateDataOnDevice(const REAL &rate_) : rate(rate_){};
 
   /**
@@ -34,7 +34,7 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice {
   REAL calc_rate(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
 
     return this->rate;
   }
@@ -48,7 +48,7 @@ private:
  *
  * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
-struct FixedRateData : public ReactionDataBase {
+struct FixedRateData : public ReactionDataBase<> {
 
   FixedRateData(const REAL &rate_)
       : fixed_rate_data_on_device(FixedRateDataOnDevice(rate_)) {}

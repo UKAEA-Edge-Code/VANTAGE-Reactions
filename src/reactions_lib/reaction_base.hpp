@@ -176,7 +176,7 @@ struct LinearReactionBase : public AbstractReaction {
     // descendant_product_loop to operate correctly, ReactionData and
     // ReactionKernels have to be derived from ReactionKernelsBase and
     // AbstractReactionKernels respectively
-    static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
+    static_assert(std::is_base_of_v<ReactionDataBase<typename ReactionData::RNG_KERNEL_TYPE>, ReactionData>,
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
     static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,

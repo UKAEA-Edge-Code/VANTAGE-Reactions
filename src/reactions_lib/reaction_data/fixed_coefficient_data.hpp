@@ -1,6 +1,5 @@
 #pragma once
 #include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
@@ -19,7 +18,7 @@ const auto props = ParticlePropertiesIndices::default_properties;
 const std::vector<int> required_simple_real_props = {props.weight};
 } // namespace FIXED_COEFFICIENT_DATA
 
-struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice {
+struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 
   /**
@@ -39,7 +38,7 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice {
   REAL calc_rate(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType  &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
     return weight * this->rate;
@@ -58,7 +57,7 @@ public:
  * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
  * and the particle weight)
  */
-struct FixedCoefficientData : public ReactionDataBase {
+struct FixedCoefficientData : public ReactionDataBase<> {
 
   FixedCoefficientData(REAL rate_coefficient)
       : ReactionDataBase(
