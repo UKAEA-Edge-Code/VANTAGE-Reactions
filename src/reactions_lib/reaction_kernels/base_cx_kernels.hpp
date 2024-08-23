@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <gtest/gtest.h>
 #include <neso_particles.hpp>
 #include <neso_particles/containers/product_matrix.hpp>
 #include <particle_properties_map.hpp>

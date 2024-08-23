@@ -160,7 +160,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
         // et/wt is the momentum**2 for either of the result particles, and
         // pt/wt is the momentum in the direction of the total momentum vector
         // so the below is the perpendicular momentum of the resulting particles
-        REAL p_perp = std::sqrt(et / wt - pt * pt / (wt * wt));
+        REAL p_perp = std::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
+        p_perp = std::sqrt(p_perp);
 
         if constexpr (ndim == 2) {
 

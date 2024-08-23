@@ -206,6 +206,23 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
   }
 
   /**
+   * @brief Sets cell-wise accumulated data from a standard vector of CellData objects
+   *
+   * @param data_name Name of the particle dat to be set
+   * @param cell_data Standard vector of CellData objects with data to be assigned
+   */
+  void set_cell_data(std::string data_name,
+                     std::vector<CellData<T>> cell_data) {
+
+    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+               "Attempted to retrieve values for " + data_name +
+                   " which is not registered in the CellwiseAccumulator");
+    for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
+      this->values[Sym<T>(data_name)]->set_cell(i, cell_data[i]);
+    }
+  }
+
+  /**
    * @brief Zero out the accumulation buffer for a given particle dat
    *
    * @param data_name Name of the dat whose associated buffer should be zeroed
@@ -316,8 +333,8 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
   std::vector<CellData<REAL>> get_cell_data(std::string data_name) {
 
     NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
-               "Attempted to retrieve values for " + data_name +
-                   " which is not registered in the WeightedCellwiseAccumulator");
+        "Attempted to retrieve values for " + data_name +
+            " which is not registered in the WeightedCellwiseAccumulator");
     auto result = std::vector<CellData<REAL>>();
 
     for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
@@ -354,8 +371,8 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
     } else {
 
       NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
-               "Attempted to zero out buffer for " + data_name +
-                   " which is not registered in the WeightedCellwiseAccumulator");
+          "Attempted to zero out buffer for " + data_name +
+              " which is not registered in the WeightedCellwiseAccumulator");
       this->values[Sym<T>(data_name)]->fill(0);
     }
   }

@@ -280,6 +280,35 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
     EXPECT_DOUBLE_EQ(accumulated_2d[cellx]->at(1, 0), 0);
     EXPECT_DOUBLE_EQ(accumulated_2d[cellx]->at(0, 0), 0);
   };
+
+  // Testing out setting modified cell data
+
+  test_wrapper.transform(particle_group);
+
+  double scale_1d = 2.5;
+  double scale_2d = 3.7;
+  accumulated_2d = accumulator_transform->get_cell_data("MOCK_SOURCE2D");
+  accumulated_1d = accumulator_transform->get_cell_data("MOCK_SOURCE1D");
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    accumulated_1d[cellx]->at(0, 0) *= scale_1d;
+    accumulated_2d[cellx]->at(0, 0) *= scale_2d;
+    accumulated_2d[cellx]->at(1, 0) *= scale_2d;
+  }
+
+  accumulator_transform->set_cell_data("MOCK_SOURCE1D", accumulated_1d);
+  accumulator_transform->set_cell_data("MOCK_SOURCE2D", accumulated_2d);
+
+  auto updated_accumulated_1d = accumulator_transform->get_cell_data("MOCK_SOURCE1D");
+  auto updated_accumulated_2d = accumulator_transform->get_cell_data("MOCK_SOURCE2D");
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto num_parts = particle_group->get_npart_cell(cellx);
+
+    EXPECT_NEAR(updated_accumulated_1d[cellx]->at(0, 0), scale_1d * 0.5 * num_parts, 1e-10);
+    EXPECT_NEAR(updated_accumulated_2d[cellx]->at(0, 0), scale_2d * 0.1 * num_parts, 1e-10);
+    EXPECT_NEAR(updated_accumulated_2d[cellx]->at(1, 0), scale_2d * 0.2 * num_parts, 1e-10);
+  }
+
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
