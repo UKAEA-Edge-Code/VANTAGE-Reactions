@@ -25,7 +25,7 @@ const std::vector<int> required_simple_real_props = {
 } // namespace AMJUEL_2D_DATA
 
 /**
- * @brief A struct that contains data and calc_rate functions that are to be
+ * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed for 2D AMJUEL reaction
@@ -41,7 +41,7 @@ const std::vector<int> required_simple_real_props = {
  * AMJUEL reaction rate calculation.
  */
 template <int num_coeffs_T, int num_coeffs_n>
-struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice {
+struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
   AMJUEL2DDataOnDevice(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
@@ -57,7 +57,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice {
    * reaction.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_rate is called. Access using either
+   * inside which calc_data is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -66,10 +66,10 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the calculation
    */
-  REAL calc_rate(const Access::LoopIndex::Read &index,
+  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
@@ -99,7 +99,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice {
             this->time_normalisation * this->density_normalisation *
             this->evolved_quantity_normalisation;
 
-    return rate;
+    return std::array<REAL,1>{rate};
   }
 
 public:
@@ -126,7 +126,7 @@ public:
  * @param coeffs A real-valued 2D array of coefficients to be used in a 2D AMJUEL
  * reaction rate calculation.
  */
-template <int num_coeffs_T, int num_coeffs_n> struct AMJUEL2DData : public ReactionDataBase {
+template <int num_coeffs_T, int num_coeffs_n> struct AMJUEL2DData : public ReactionDataBase<> {
 
   AMJUEL2DData(const REAL &evolved_quantity_normalisation_,
                const REAL &density_normalisation_,

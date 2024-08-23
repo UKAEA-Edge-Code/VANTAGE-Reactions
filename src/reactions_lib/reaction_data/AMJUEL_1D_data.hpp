@@ -1,6 +1,5 @@
 #pragma once
 #include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
 #include <array>
 #include <cmath>
 #include <neso_particles.hpp>
@@ -25,7 +24,7 @@ const std::vector<int> required_simple_real_props = {
 } // namespace AMJUEL_1D_DATA
 
 /**
- * @brief A struct that contains data and calc_rate functions that are to be
+ * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.
  *
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
@@ -39,7 +38,7 @@ const std::vector<int> required_simple_real_props = {
  * reaction rate calculation.
  */
 template <int num_coeffs>
-struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
+struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
   AMJUEL1DDataOnDevice(const REAL &evolved_quantity_normalisation_,
                        const REAL &density_normalisation_,
                        const REAL &temperature_normalisation_,
@@ -55,7 +54,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
    * reaction.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_rate is called. Access using either
+   * inside which calc_data is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -64,10 +63,10 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the calculation
    */
-  REAL calc_rate(const Access::LoopIndex::Read &index,
+  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
@@ -87,7 +86,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice {
             this->time_normalisation * this->density_normalisation *
             this->evolved_quantity_normalisation;
 
-    return rate;
+    return std::array<REAL,1>{rate};
   }
 
 public:
@@ -110,7 +109,7 @@ public:
  * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
  * reaction rate calculation.
  */
-template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase {
+template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
 
   AMJUEL1DData(const REAL &evolved_quantity_normalisation_,
                const REAL &density_normalisation_,

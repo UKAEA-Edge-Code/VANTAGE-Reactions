@@ -22,22 +22,23 @@ using namespace NESO::Particles;
 using namespace Reactions;
 using namespace ParticlePropertiesIndices;
 
-struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice {
+struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> &req_int_props,
-                 Access::SymVector::Read<REAL> &req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+  std::array<REAL,1> calc_data(
+      Access::LoopIndex::Read &index,
+      Access::SymVector::Read<INT> &req_int_props,
+      Access::SymVector::Read<REAL> &req_real_props,
+      const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
 
-    return this->rate;
+    return std::array<REAL,1>{this->rate};
   }
 
 private:
   REAL rate;
 };
 
-struct TestReactionData : public ReactionDataBase {
+struct TestReactionData : public ReactionDataBase<> {
 
   TestReactionData(REAL rate_)
       : rate(rate_),
@@ -209,22 +210,23 @@ const auto props = ParticlePropertiesIndices::default_properties;
 const std::vector<int> required_simple_real_props = {props.position};
 } // namespace TEST_REACTION_VAR_DATA
 
-struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice {
+struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionVarDataOnDevice() = default;
 
-  REAL calc_rate(Access::LoopIndex::Read &index,
-                 Access::SymVector::Read<INT> req_int_props,
-                 Access::SymVector::Read<REAL> req_real_props,
-                 const Access::KernelRNG::Read<REAL> &kernel) const {
+  std::array<REAL,1>calc_data(
+      Access::LoopIndex::Read &index,
+      Access::SymVector::Read<INT> req_int_props,
+      Access::SymVector::Read<REAL> req_real_props,
+      const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
 
-    return req_real_props.at(position_ind, index, 0);
+    return std::array<REAL,1>{req_real_props.at(position_ind, index, 0)};
   }
 
 public:
   int position_ind;
 };
 
-struct TestReactionVarData : public ReactionDataBase {
+struct TestReactionVarData : public ReactionDataBase<> {
   TestReactionVarData()
       : ReactionDataBase(
             Properties<REAL>(TEST_REACTION_VAR_DATA::required_simple_real_props,
@@ -432,8 +434,8 @@ public:
   }
 };
 
-inline auto
-create_test_particle_group(int N_total) -> std::shared_ptr<ParticleGroup> {
+inline auto create_test_particle_group(int N_total)
+    -> std::shared_ptr<ParticleGroup> {
 
   const int ndim = 2;
   std::vector<int> dims(ndim);

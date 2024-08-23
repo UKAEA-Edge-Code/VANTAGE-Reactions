@@ -166,12 +166,12 @@ struct LinearReactionBase : public AbstractReaction {
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
         data_calculator(data_calculator_) {
-    // These assertions are necessary since the typenames for ReactionData,
-    // ReactionKernels and DataCalc could be any type and for run_rate_loop and
-    // descendant_product_loop to operate correctly, ReactionData,
-    // ReactionKernels and DataCalc have to be derived from ReactionDataBase,
-    // ReactionKernelsBase and AbstractDataCalculator respectively
-    static_assert(std::is_base_of_v<ReactionDataBase, ReactionData>,
+    // These assertions are necessary since the typenames for ReactionData and
+    // ReactionKernels could be any type and for run_rate_loop and
+    // descendant_product_loop to operate correctly, ReactionData and
+    // ReactionKernels have to be derived from ReactionKernelsBase and
+    // AbstractReactionKernels respectively
+    static_assert(std::is_base_of_v<ReactionDataBase<reaction_data.get_dim(),typename ReactionData::RNG_KERNEL_TYPE>, ReactionData>,
                   "Template parameter ReactionData is not derived from "
                   "ReactionDataBase...");
     static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
@@ -283,16 +283,16 @@ struct LinearReactionBase : public AbstractReaction {
                    "the sycl_target passed to Reaction object..."
                 << std::endl;
     }
-
+    constexpr auto data_dim = reaction_data_buffer.get_dim();
     auto loop = particle_loop(
-        "calc_rate_loop", particle_sub_group,
+        "calc_data_loop", particle_sub_group,
         [=](auto particle_index, auto req_int_props, auto req_real_props,
             auto tot_rate, auto buffer, auto kernel) {
           INT current_count = particle_index.get_loop_linear_index();
-          REAL rate = reaction_data_on_device.calc_rate(
+          std::array<REAL, data_dim> rate = reaction_data_on_device.calc_data(
               particle_index, req_int_props, req_real_props, kernel);
-          buffer[current_count] = rate;
-          tot_rate[0] += rate;
+          buffer[current_count] = rate[0];
+          tot_rate[0] += rate[0];
         },
         Access::read(ParticleLoopIndex{}),
         Access::read(
