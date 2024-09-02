@@ -4,6 +4,7 @@
 #include "reaction_kernel_pre_reqs.hpp"
 #include <cmath>
 #include <data_calculator.hpp>
+#include <functional>
 #include <memory>
 #include <neso_particles.hpp>
 #include <neso_particles/compute_target.hpp>
@@ -11,6 +12,7 @@
 #include <neso_particles/containers/product_matrix.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
 #include <neso_particles/particle_spec.hpp>
+#include <numeric>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
@@ -25,13 +27,14 @@ using namespace ParticlePropertiesIndices;
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
-  std::array<REAL,1> calc_data(
-      Access::LoopIndex::Read &index,
-      Access::SymVector::Read<INT> &req_int_props,
-      Access::SymVector::Read<REAL> &req_real_props,
-      const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+  std::array<REAL, 1>
+  calc_data(Access::LoopIndex::Read &index,
+            Access::SymVector::Read<INT> &req_int_props,
+            Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
 
-    return std::array<REAL,1>{this->rate};
+    return std::array<REAL, 1>{this->rate};
   }
 
 private:
@@ -213,13 +216,14 @@ const std::vector<int> required_simple_real_props = {props.position};
 struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionVarDataOnDevice() = default;
 
-  std::array<REAL,1>calc_data(
-      Access::LoopIndex::Read &index,
-      Access::SymVector::Read<INT> req_int_props,
-      Access::SymVector::Read<REAL> req_real_props,
-      const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+  std::array<REAL, 1>
+  calc_data(Access::LoopIndex::Read &index,
+            Access::SymVector::Read<INT> req_int_props,
+            Access::SymVector::Read<REAL> req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
 
-    return std::array<REAL,1>{req_real_props.at(position_ind, index, 0)};
+    return std::array<REAL, 1>{req_real_props.at(position_ind, index, 0)};
   }
 
 public:
@@ -434,20 +438,21 @@ public:
   }
 };
 
+template <size_t ndim=2>
 inline auto create_test_particle_group(int N_total)
     -> std::shared_ptr<ParticleGroup> {
 
-  const int ndim = 2;
-  std::vector<int> dims(ndim);
-  dims[0] = 2;
-  dims[1] = 2;
+  auto dims = std::vector<int>(ndim, 2);
 
   const double cell_extent = 1.0;
   const int subdivision_order = 1;
   const int stencil_width = 1;
 
+  const int pre_subdivision_cells =
+      std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<int>());
+
   const int global_cell_count =
-      dims[0] * dims[1] * std::pow(std::pow(2, subdivision_order), ndim);
+      pre_subdivision_cells * std::pow(std::pow(2, subdivision_order), ndim);
   const int npart_per_cell =
       std::round((double)N_total / (double)global_cell_count);
 
@@ -482,6 +487,7 @@ inline auto create_test_particle_group(int N_total)
       ParticleProp(Sym<REAL>("ION2_SOURCE_MOMENTUM"), ndim),
       ParticleProp(Sym<REAL>("ION2_SOURCE_ENERGY"), 1),
       ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
+      ParticleProp(Sym<REAL>("FLUID_FLOW_SPEED"), ndim),
       ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
       std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
@@ -514,6 +520,8 @@ inline auto create_test_particle_group(int N_total)
           velocities.at(dimx).at(px);
       initial_distribution[Sym<REAL>("ELECTRON_SOURCE_MOMENTUM")][px][dimx] =
           0.0;
+      initial_distribution[Sym<REAL>("FLUID_FLOW_SPEED")][px][dimx] =
+          1.0 + 2.0 * dimx;
     }
     initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
     initial_distribution[Sym<INT>("ID")][px][0] = px;

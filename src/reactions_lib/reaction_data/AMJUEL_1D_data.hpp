@@ -66,7 +66,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
   std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =

@@ -1,11 +1,7 @@
 #pragma once
-#include "particle_properties_map.hpp"
-#include <algorithm>
-#include <cstring>
 #include <map>
 #include <string>
 #include <utility>
-#include <vector>
 
 /**
  * @namespace ParticlePropertiesIndices A namespace containing a struct
@@ -41,11 +37,13 @@ public:
     internal_state,
     temperature,
     density,
+    flow_speed,
     source_energy,
     source_momentum,
     source_density,
     fluid_density,
-    fluid_temperature
+    fluid_temperature,
+    fluid_flow_speed
   };
 };
 
@@ -75,11 +73,13 @@ private:
       {default_properties.internal_state, "INTERNAL_STATE"},
       {default_properties.temperature, "TEMPERATURE"},
       {default_properties.density, "DENSITY"},
+      {default_properties.flow_speed, "FLOW_SPEED"},
       {default_properties.source_energy, "SOURCE_ENERGY"},
       {default_properties.source_momentum, "SOURCE_MOMENTUM"},
       {default_properties.source_density, "SOURCE_DENSITY"},
       {default_properties.fluid_density, "FLUID_DENSITY"},
-      {default_properties.fluid_temperature, "FLUID_TEMPERATURE"}};
+      {default_properties.fluid_temperature, "FLUID_TEMPERATURE"},
+      {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
 const auto default_map = properties_map().get_map();

@@ -4,9 +4,48 @@
 #include <neso_particles.hpp>
 #include <stdexcept>
 
-// TODO: Update docs
 using namespace NESO::Particles;
 
+/**
+ * struct AbstractCrossSection - Abstract base class for cross-section objects.
+ * All classes derived from this class should be device copyable in order to be
+ * used within ReactionData classes.
+ */
+struct AbstractCrossSection {
+
+  /**
+   * @brief Get the value of the cross section for a given relative velocity
+   * value of projectile and target
+   *
+   * @param relative_vel Magnitude of relative velocity of target and projectile
+   * @return REAL-valued cross-section at requested relative vel magnitude
+   */
+  virtual REAL get_value_at(const REAL &relative_vel) const {};
+
+  /**
+   * @brief Get the maximum value of sigma*v_r where sigma is this cross-section
+   * evaluated at v_r and v_r is the relative speed of the projectile and target
+   *
+   * @return REAL-valued maximum rate
+   */
+  virtual REAL get_max_rate_val() const {};
+
+  /**
+   * @brief Accept-reject function for when this cross-section is used in
+   * rejection methods. Accepts if the uniform random number on (0,1) is less
+   * than the ratio of sigma*v evaluated at a given relative speed to the
+   * maximum value of sigma*v.
+   *
+   * @param relative_vel Magnitude of relative velocity of the projectile and
+   * target
+   * @param uniform_rand Uniformly sampled random number on (0,1)
+   * @return true if relative_vel value is accepted, false otherwise
+   */
+  virtual bool accept_reject(REAL relative_vel, REAL uniform_rand) const {
+    return uniform_rand < this->get_value_at(relative_vel) * relative_vel /
+                              this->get_max_rate_val();
+  }
+};
 /**
  * @brief Base reaction data object.
  */
@@ -48,13 +87,13 @@ struct ReactionDataBase {
     }
     return prop_names;
   }
-  void set_rng_kernel(std::shared_ptr<KernelRNG<REAL>> rng_kernel) {
+  void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
 
   std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
 
- static constexpr size_t get_dim() { return dim; }
+  static constexpr size_t get_dim() { return dim; }
 
 protected:
   Properties<INT> required_int_props;
@@ -88,7 +127,7 @@ struct ReactionDataBaseOnDevice {
   calc_data(const Access::LoopIndex::Read &index,
             const Access::SymVector::Read<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
-            const typename RNG_TYPE::KernelType &rng_kernel) const {
+            typename RNG_TYPE::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
   }
 
