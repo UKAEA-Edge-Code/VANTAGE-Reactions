@@ -28,10 +28,10 @@ const std::vector<int> required_simple_real_props = {
  * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.
  *
- * @tparam num_coeffs_T The number of fit parameters in the T direction needed for 2D AMJUEL reaction
- * rate calculation.
- * @tparam num_coeffs_n The number of fit parameters in the n direction needed for 2D AMJUEL reaction
- * rate calculation.
+ * @tparam num_coeffs_T The number of fit parameters in the T direction needed
+ * for 2D AMJUEL reaction rate calculation.
+ * @tparam num_coeffs_n The number of fit parameters in the n direction needed
+ * for 2D AMJUEL reaction rate calculation.
  * @param evolved_quantity_normalisation Normalisation constant for the evolved
  * quantity (for default rates should be 1)
  * @param density_normalisation Density normalisation constant in m^{-3}
@@ -47,10 +47,10 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_)
-      : evolved_quantity_normalisation(1.0 / evolved_quantity_normalisation_),
+      : mult_const(time_normalisation_*density_normalisation_/ evolved_quantity_normalisation_),
         density_normalisation(density_normalisation_),
         temperature_normalisation(temperature_normalisation_),
-        time_normalisation(time_normalisation_), coeffs(coeffs_){};
+        coeffs(coeffs_){};
 
   /**
    * @brief Function to calculate the reaction rate for a 2D AMJUEL-based
@@ -64,17 +64,21 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the calculation
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
    */
-  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props,
-                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+  std::array<REAL, 1>
+  calc_data(const Access::LoopIndex::Read &index,
+            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
-
+    REAL log_temp =
+        std::log(fluid_temperature_dat * this->temperature_normalisation);
     REAL log_rate = 0.0;
     // Ensuring the Coronal asymptote gets treated correctly
     // TODO: Add variable Coronal cut-off density
@@ -82,32 +86,27 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
         (fluid_density_dat * this->density_normalisation >= 1e14)
             ? std::log(fluid_density_dat * this->density_normalisation / 1e14)
             : 0;
-    //TODO: Ensure LTE asymptotic behaviour obeyed
+    // TODO: Ensure LTE asymptotic behaviour obeyed
     for (int j = 0; j < num_coeffs_n; j++) {
       auto log_n_m = (j == 0) ? 1.0 : std::pow(log_n, j);
       for (int i = 0; i < num_coeffs_T; i++) {
-        log_rate += this->coeffs[i][j] * log_n_m *
-                    std::pow(std::log(fluid_temperature_dat *
-                                      this->temperature_normalisation),
-                             i);
+        log_rate += this->coeffs[i][j] * log_n_m * std::pow(log_temp, i);
       }
     }
 
     REAL rate = std::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
-            this->time_normalisation * this->density_normalisation *
-            this->evolved_quantity_normalisation;
+            this->mult_const;
 
-    return std::array<REAL,1>{rate};
+    return std::array<REAL, 1>{rate};
   }
 
 public:
   int fluid_density_ind, fluid_temperature_ind, weight_ind;
-  REAL evolved_quantity_normalisation;
   REAL density_normalisation;
   REAL temperature_normalisation;
-  REAL time_normalisation;
+  REAL mult_const;
   std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> coeffs;
 };
 
@@ -116,29 +115,31 @@ public:
  * assuming density is the second parameter. Handles Coronal approximation
  * correctly.
  *
- * @tparam num_coeffs_T The number of fit parameters in the T direction needed for 2D AMJUEL reaction
- * rate calculation.
- * @tparam num_coeffs_n The number of fit parameters in the n direction needed for 2D AMJUEL reaction
- * rate calculation.
+ * @tparam num_coeffs_T The number of fit parameters in the T direction needed
+ * for 2D AMJUEL reaction rate calculation.
+ * @tparam num_coeffs_n The number of fit parameters in the n direction needed
+ * for 2D AMJUEL reaction rate calculation.
  * @param density_normalisation Density normalisation constant in m^{-3}
  * @param temperature_normalisation Temperature normalisation in eV
  * @param time_normalisation Time normalisation in seconds
- * @param coeffs A real-valued 2D array of coefficients to be used in a 2D AMJUEL
- * reaction rate calculation.
+ * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
+ * AMJUEL reaction rate calculation.
  */
-template <int num_coeffs_T, int num_coeffs_n> struct AMJUEL2DData : public ReactionDataBase<> {
+template <int num_coeffs_T, int num_coeffs_n>
+struct AMJUEL2DData : public ReactionDataBase<> {
 
-  AMJUEL2DData(const REAL &evolved_quantity_normalisation_,
-               const REAL &density_normalisation_,
-               const REAL &temperature_normalisation_,
-               const REAL &time_normalisation_,
-               const std::array<std::array<REAL,num_coeffs_n>, num_coeffs_T> &coeffs_)
+  AMJUEL2DData(
+      const REAL &evolved_quantity_normalisation_,
+      const REAL &density_normalisation_,
+      const REAL &temperature_normalisation_, const REAL &time_normalisation_,
+      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_)
       : ReactionDataBase(
             Properties<REAL>(AMJUEL_2D_DATA::required_simple_real_props,
                              std::vector<Species>{}, std::vector<int>{})),
-        amjuel_2d_data_on_device(AMJUEL2DDataOnDevice<num_coeffs_T,num_coeffs_n>(
-            evolved_quantity_normalisation_, density_normalisation_,
-            temperature_normalisation_, time_normalisation_, coeffs_)) {
+        amjuel_2d_data_on_device(
+            AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>(
+                evolved_quantity_normalisation_, density_normalisation_,
+                temperature_normalisation_, time_normalisation_, coeffs_)) {
 
     auto props = AMJUEL_2D_DATA::props;
 
@@ -151,7 +152,7 @@ template <int num_coeffs_T, int num_coeffs_n> struct AMJUEL2DData : public React
   }
 
 private:
-  AMJUEL2DDataOnDevice<num_coeffs_T,num_coeffs_n> amjuel_2d_data_on_device;
+  AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n> amjuel_2d_data_on_device;
 
 public:
   /**
@@ -159,7 +160,7 @@ public:
    * struct.
    */
 
-  AMJUEL2DDataOnDevice<num_coeffs_T,num_coeffs_n> get_on_device_obj() {
+  AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n> get_on_device_obj() {
     return this->amjuel_2d_data_on_device;
   }
 };
