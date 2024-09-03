@@ -88,8 +88,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
 
     REAL E = 0;
     for (int i; i < dim; i++) {
-      E += std::pow(req_real_props(this->fluid_flow_speed_ind, index, i) -
-                        req_real_props(this->velocity_ind, index, i),
+      E += std::pow(req_real_props.at(this->fluid_flow_speed_ind, index, i) -
+                        req_real_props.at(this->velocity_ind, index, i),
                     2);
     }
     REAL log_E = std::log(en_mult_const * E);
