@@ -7,8 +7,8 @@ using namespace NESO::Particles;
 /**
  * struct AMJUELFitCrossSection - General H.1 AMJUEL cross section fit, with
  * left and right asymptotic treatment. Assumes monotonically decreasing
- * cross-sections, and takes as the maximum value the evaluated cross-section at
- * some minimum lab frame impact energy.
+ * cross-sections, and takes as the maximum value the evaluated rate at
+ * some maximum lab frame impact energy.
  *
  * @tparam num_coeffs Number of coefficients in the bulk of the validity range
  * (usually 9).
@@ -36,14 +36,15 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * (if there are any coefficients)
    * @param lab_E_max Energy value above which the right asymptote fit is used
    * (if there are any coefficients)
-   * @param min_E Lowest energy for which the cross-section is evaluated. This
-   * is where the maximum value of the cross-section is assumed to be.
+   * @param max_E Highest energy for which the cross-section is evaluated. This
+   * is where the maximum value of the rate is assumed to be. After this value,
+   * the cross section is off the form max_val/v_r.
    */
   AMJUELFitCrossSection(REAL vel_norm, REAL cs_norm, REAL mass_amu,
                         std::array<REAL, num_coeffs> coeffs,
                         std::array<REAL, num_l_coeffs> l_coeffs,
                         std::array<REAL, num_r_coeffs> r_coeffs, REAL lab_E_min,
-                        REAL lab_E_max, REAL min_E)
+                        REAL lab_E_max, REAL max_E)
       : cs_norm(cs_norm), mult_const(vel_norm * vel_norm * mass_amu *
                                      1.66053904e-27 / (2 * 1.60217663e-19)),
         coeffs(coeffs), l_coeffs(l_coeffs), r_coeffs(r_coeffs),
@@ -51,9 +52,10 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
 
     // Make sure that the uninitialised value is never returned in the upcoming
     // call
-    this->min_E = -1.0;
-    this->max_val = this->get_value_at(std::sqrt(min_E / this->mult_const));
-    this->min_E = min_E;
+    this->max_E = 1e128;
+    this->max_val = this->get_value_at(std::sqrt(max_E / this->mult_const)) *
+                    std::sqrt(max_E / this->mult_const);
+    this->max_E = max_E;
   };
 
   /**
@@ -70,8 +72,8 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
     REAL E = this->mult_const * relative_vel * relative_vel;
 
     REAL logE = std::log(E);
-    if (E <= this->min_E) {
-      return this->max_val;
+    if (E >= this->max_E) {
+      return this->max_val / relative_vel;
     };
 
     bool left_asymptote = E <= this->lab_E_min && num_l_coeffs > 0;
@@ -109,7 +111,7 @@ private:
   REAL max_val;
   REAL mult_const;
   REAL cs_norm;
-  REAL min_E;
+  REAL max_E;
   REAL lab_E_min;
   REAL lab_E_max;
   std::array<REAL, num_coeffs> coeffs;
