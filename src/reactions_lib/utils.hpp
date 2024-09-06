@@ -1,10 +1,10 @@
 #pragma once
 #include <cassert>
 #include <cmath>
+#include <neso_particles.hpp>
 #include <numeric>
 #include <type_traits>
 #include <vector>
-#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 namespace Reactions::utils {
@@ -90,4 +90,19 @@ build_sym_vector(ParticleSpec particle_spec,
   return syms;
 }
 
+/**
+ * @brief Perform the standard deterministic Box-Muller transform and store the
+ * two normal variates into an array (to avoid use of tuples/pairs in order to
+ * maximise SYCL compatibility)
+ *
+ * @param u1 First uniformly distributed random number
+ * @param u2 Second uniformly distributed random number
+ */
+inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
+  constexpr REAL two_pi = 2 * M_PI;
+
+  auto magnitude = sqrt(-2 * log(u1));
+  // The compiler should optimise this into a sincos call
+  return std::array<REAL, 2>{magnitude*cos(two_pi * u2), magnitude*sin(two_pi * u2)};
+};
 } // namespace Reactions::utils

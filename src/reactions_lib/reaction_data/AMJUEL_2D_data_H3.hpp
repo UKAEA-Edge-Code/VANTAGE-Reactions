@@ -16,44 +16,50 @@ using namespace ParticlePropertiesIndices;
 
 // AMJUEL 2D Fit
 
-namespace AMJUEL_2D_DATA {
+namespace AMJUEL_2D_DATA_H3 {
 
 const auto props = ParticlePropertiesIndices::default_properties;
 
 const std::vector<int> required_simple_real_props = {
-    props.fluid_density, props.fluid_temperature, props.weight};
-} // namespace AMJUEL_2D_DATA
+    props.fluid_density, props.fluid_temperature, props.fluid_flow_speed,
+    props.weight, props.velocity};
+} // namespace AMJUEL_2D_DATA_H3
 
 /**
- * @brief A struct that contains data and calc_data functions that are to be
- * stored on and used on a SYCL device.
+ * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
+ * against neutral particle energy and ion/plasma temperature
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @tparam num_coeffs_n The number of fit parameters in the n direction needed
+ * @tparam num_coeffs_E The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
  * @param evolved_quantity_normalisation Normalisation constant for the evolved
  * quantity (for default rates should be 1)
  * @param density_normalisation Density normalisation constant in m^{-3}
  * @param temperature_normalisation Temperature normalisation in eV
  * @param time_normalisation Time normalisation in seconds
+ * @param velocity_normalisation Velocity normalisation in m/s
+ * @param mass_amu Mass of the neutral particle in amus
  * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
  * AMJUEL reaction rate calculation.
  */
-template <int num_coeffs_T, int num_coeffs_n>
-struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
-  AMJUEL2DDataOnDevice(
+template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim>
+struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
+  AMJUEL2DDataH3OnDevice(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
-      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_)
-      : mult_const(time_normalisation_*density_normalisation_/ evolved_quantity_normalisation_),
-        density_normalisation(density_normalisation_),
+      const REAL &velocity_normalisation_, const REAL &mass_amu_,
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_)
+      : mult_const(time_normalisation_ * density_normalisation_ /
+                   evolved_quantity_normalisation_),
         temperature_normalisation(temperature_normalisation_),
+        en_mult_const(std::pow(velocity_normalisation_, 2) * mass_amu_ *
+                      1.66053904e-27 / (2 * 1.60217663e-19)),
         coeffs(coeffs_){};
 
   /**
-   * @brief Function to calculate the reaction rate for a 2D AMJUEL-based
+   * @brief Function to calculate the reaction rate for a 2D H.3 AMJUEL-based
    * reaction.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
@@ -79,18 +85,19 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
         std::log(fluid_temperature_dat * this->temperature_normalisation);
+
+    REAL E = 0;
+    for (int i = 0; i < dim; i++) {
+      E += std::pow(req_real_props.at(this->fluid_flow_speed_ind, index, i) -
+                        req_real_props.at(this->velocity_ind, index, i),
+                    2);
+    }
+    REAL log_E = std::log(en_mult_const * E);
     REAL log_rate = 0.0;
-    // Ensuring the Coronal asymptote gets treated correctly
-    // TODO: Add variable Coronal cut-off density
-    auto log_n =
-        (fluid_density_dat * this->density_normalisation >= 1e14)
-            ? std::log(fluid_density_dat * this->density_normalisation / 1e14)
-            : 0;
-    // TODO: Ensure LTE asymptotic behaviour obeyed
-    for (int j = 0; j < num_coeffs_n; j++) {
-      auto log_n_m = (j == 0) ? 1.0 : std::pow(log_n, j);
+    for (int j = 0; j < num_coeffs_E; j++) {
+      auto log_E_m = std::pow(log_E, j);
       for (int i = 0; i < num_coeffs_T; i++) {
-        log_rate += this->coeffs[i][j] * log_n_m * std::pow(log_temp, i);
+        log_rate += this->coeffs[i][j] * log_E_m * std::pow(log_temp, i);
       }
     }
 
@@ -103,56 +110,67 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
   }
 
 public:
-  int fluid_density_ind, fluid_temperature_ind, weight_ind;
-  REAL density_normalisation;
+  int fluid_density_ind, fluid_temperature_ind, fluid_flow_speed_ind,
+      velocity_ind, weight_ind;
   REAL temperature_normalisation;
+  REAL en_mult_const;
   REAL mult_const;
-  std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> coeffs;
+  std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> coeffs;
 };
 
 /**
- * @brief A struct defining the data needed for a 2D AMJUEL rate calculation,
- * assuming density is the second parameter. Handles Coronal approximation
- * correctly.
+ * @brief  Reaction rate data calculation based on AMJUEL H.3 fits against
+ * neutral particle energy and ion/plasma temperature
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @tparam num_coeffs_n The number of fit parameters in the n direction needed
+ * @tparam num_coeffs_E The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
+ * @param evolved_quantity_normalisation Normalisation constant for the evolved
+ * quantity (for default rates should be 1)
  * @param density_normalisation Density normalisation constant in m^{-3}
  * @param temperature_normalisation Temperature normalisation in eV
  * @param time_normalisation Time normalisation in seconds
+ * @param velocity_normalisation Velocity normalisation in m/s
+ * @param mass_amu Mass of the neutral particle in amus
  * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
  * AMJUEL reaction rate calculation.
  */
-template <int num_coeffs_T, int num_coeffs_n>
-struct AMJUEL2DData : public ReactionDataBase<> {
+template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim = 2>
+struct AMJUEL2DDataH3 : public ReactionDataBase<> {
 
-  AMJUEL2DData(
+  AMJUEL2DDataH3(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
-      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_)
+      const REAL &velocity_normalisation_, const REAL &mass_amu_,
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_)
       : ReactionDataBase(
-            Properties<REAL>(AMJUEL_2D_DATA::required_simple_real_props,
+            Properties<REAL>(AMJUEL_2D_DATA_H3::required_simple_real_props,
                              std::vector<Species>{}, std::vector<int>{})),
         amjuel_2d_data_on_device(
-            AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>(
+            AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
                 evolved_quantity_normalisation_, density_normalisation_,
-                temperature_normalisation_, time_normalisation_, coeffs_)) {
+                temperature_normalisation_, time_normalisation_,
+                velocity_normalisation_, mass_amu_, coeffs_)) {
 
-    auto props = AMJUEL_2D_DATA::props;
+    auto props = AMJUEL_2D_DATA_H3::props;
 
     this->amjuel_2d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density);
     this->amjuel_2d_data_on_device.fluid_temperature_ind =
         this->required_real_props.simple_prop_index(props.fluid_temperature);
+    this->amjuel_2d_data_on_device.fluid_flow_speed_ind =
+        this->required_real_props.simple_prop_index(props.fluid_flow_speed);
     this->amjuel_2d_data_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
+    this->amjuel_2d_data_on_device.velocity_ind =
+        this->required_real_props.simple_prop_index(props.velocity);
   }
 
 private:
-  AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n> amjuel_2d_data_on_device;
+  AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>
+      amjuel_2d_data_on_device;
 
 public:
   /**
@@ -160,7 +178,7 @@ public:
    * struct.
    */
 
-  AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n> get_on_device_obj() {
+  AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim> get_on_device_obj() {
     return this->amjuel_2d_data_on_device;
   }
 };

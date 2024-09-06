@@ -34,7 +34,7 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
   std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
                  const Access::SymVector::Read<INT> &req_int_props,
                  const Access::SymVector::Read<REAL> &req_real_props,
-                 const typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
 
     return std::array<REAL,1>{this->rate};
   }
