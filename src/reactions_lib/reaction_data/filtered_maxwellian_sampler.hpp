@@ -75,17 +75,17 @@ struct FilteredMaxwellianOnDevice
     std::array<REAL, num_req_samples> total_samples;
 
     std::array<REAL, ndim> neutral_vels;
-    for (int i; i < ndim; i++) {
+    for (int i = 0; i < ndim; i++) {
       neutral_vels[i] = req_real_props.at(this->velocity_ind, index, i);
     }
     std::array<REAL, ndim> fluid_flows;
-    for (int i; i < ndim; i++) {
+    for (int i = 0; i < ndim; i++) {
       fluid_flows[i] = req_real_props.at(this->fluid_flow_speed_ind, index, i);
     }
     while (!accepted) {
 
       // Get the unit variance zero mean normal variates
-      for (int i; i < num_req_samples; i += 2) {
+      for (int i = 0; i < num_req_samples; i += 2) {
 
         auto current_samples = utils::box_muller_transform(
             kernel.at(index, i), kernel.at(index, i + 1));
@@ -95,7 +95,7 @@ struct FilteredMaxwellianOnDevice
       // Calculate the relative velocity magnitude by rescaling the sampled
       // normal variables
       REAL relative_vel_sq = 0;
-      for (int i; i < ndim; i++) {
+      for (int i = 0; i < ndim; i++) {
         sampled_vels[i] =
             fluid_temperature_dat * this->norm_ratio * total_samples[i] +
             fluid_flows[i];

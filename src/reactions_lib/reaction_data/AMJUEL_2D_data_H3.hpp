@@ -87,7 +87,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
         std::log(fluid_temperature_dat * this->temperature_normalisation);
 
     REAL E = 0;
-    for (int i; i < dim; i++) {
+    for (int i = 0; i < dim; i++) {
       E += std::pow(req_real_props.at(this->fluid_flow_speed_ind, index, i) -
                         req_real_props.at(this->velocity_ind, index, i),
                     2);

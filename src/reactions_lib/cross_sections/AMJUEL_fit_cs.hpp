@@ -82,7 +82,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
     REAL sum_E = 0;
     if (left_asymptote) {
 
-      for (int i; i < num_l_coeffs; i++) {
+      for (int i = 0; i < num_l_coeffs; i++) {
 
         sum_E += this->l_coeffs[i] * std::pow(logE, i);
       }
@@ -90,14 +90,14 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
 
         (right_asymptote) {
 
-      for (int i; i < num_r_coeffs; i++) {
+      for (int i = 0; i < num_r_coeffs; i++) {
 
         sum_E += this->r_coeffs[i] * std::pow(logE, i);
       }
     }
 
     else {
-      for (int i; i < num_coeffs; i++) {
+      for (int i = 0; i < num_coeffs; i++) {
 
         sum_E += this->coeffs[i] * std::pow(logE, i);
       }

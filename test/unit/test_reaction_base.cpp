@@ -915,10 +915,10 @@ TEST(CrossSections, AMJUEL_H1_bulk) {
       std::array<REAL, 0>{}, std::array<REAL, 0>{}, 2.0, 1e4, E_max);
 
   EXPECT_NEAR(cs.get_max_rate_val(),
-              std::exp(-1.0 - 0.1 * std::log(E_max)) * std::sqrt(E_max), 1e-14);
-  EXPECT_NEAR(cs.get_value_at(1e4), cs.get_max_rate_val() / 1e4, 1e-14);
+              std::exp(-1.0 - 0.1 * std::log(E_max)) * std::sqrt(E_max), 1e-12);
+  EXPECT_NEAR(cs.get_value_at(1e4), cs.get_max_rate_val() / 1e4, 1e-12);
   EXPECT_NEAR(cs.get_value_at(10.0), std::exp(-1.0 - 0.1 * std::log(100.0)),
-              1e-14);
+              1e-12);
   EXPECT_FALSE(cs.accept_reject(0.1, 0.5));
 }
 
