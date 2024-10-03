@@ -377,6 +377,8 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
     EXPECT_DOUBLE_EQ(accumulated_2d[cellx]->at(1, 0), 0);
     EXPECT_DOUBLE_EQ(accumulated_2d[cellx]->at(0, 0), 0);
   };
+
+  particle_group->domain->mesh->free();
 }
 
 TEST(TransformationWrapper, CellwiseAccumulatorINT) {
@@ -425,4 +427,6 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
     EXPECT_DOUBLE_EQ(accumulated_weight[cellx]->at(0, 0), 0.5 * num_parts); //, 1e-10);
     EXPECT_DOUBLE_EQ(accumulated_1d[cellx]->at(0, 0), 0.5 *num_parts); //, 1e-10);
   };
+
+  particle_group->domain->mesh->free();
 }

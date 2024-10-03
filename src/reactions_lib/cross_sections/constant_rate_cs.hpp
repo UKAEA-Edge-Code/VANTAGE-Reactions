@@ -53,7 +53,7 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @param uniform_rand Uniformly distributed random number
    * @return true
    */
-  bool accept_reject(REAL relative_vel, REAL uniform_rand) const {
+  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at, REAL max_rate_val) const {
     return true;
   }
 

@@ -919,7 +919,7 @@ TEST(CrossSections, AMJUEL_H1_bulk) {
   EXPECT_NEAR(cs.get_value_at(1e4), cs.get_max_rate_val() / 1e4, 1e-12);
   EXPECT_NEAR(cs.get_value_at(10.0), std::exp(-1.0 - 0.1 * std::log(100.0)),
               1e-12);
-  EXPECT_FALSE(cs.accept_reject(0.1, 0.5));
+  EXPECT_FALSE(cs.accept_reject(0.1, 0.5, cs.get_value_at(0.1), cs.get_max_rate_val()));
 }
 
 TEST(CrossSections, AMJUEL_H1_low_energy) {
