@@ -1,5 +1,6 @@
 #pragma once
 #include "particle_properties_map.hpp"
+#include "reaction_kernel_pre_reqs.hpp"
 #include <gtest/gtest.h>
 #include <particle_spec_builder.hpp>
 #include <reaction_base.hpp>
@@ -37,14 +38,36 @@ public:
 
 auto custom_props = custom_properties_enum();
 
-struct custom_prop_map_struct : properties_map {
-  custom_prop_map_struct() {
+struct custom_extend_prop_map_struct : properties_map {
+  custom_extend_prop_map_struct() {
     properties_map::extend_map(custom_props.test_custom_prop1, "TEST_PROP1");
     properties_map::extend_map(custom_props.test_custom_prop2, "TEST_PROP2");
   }
 };
 
-const auto custom_prop_map = custom_prop_map_struct().get_map();
+const auto custom_extend_prop_map = custom_extend_prop_map_struct().get_map();
+
+struct custom_partial_prop_map_struct : properties_map {
+  custom_partial_prop_map_struct() {
+    properties_map::replace_entry(default_properties.temperature, custom_props.test_custom_prop1, "TEST_PROP1");
+    properties_map::replace_entry(default_properties.density, custom_props.test_custom_prop2, "TEST_PROP2");
+  }
+};
+
+const auto custom_partial_prop_map = custom_partial_prop_map_struct().get_map();
+
+struct custom_full_prop_map_struct : properties_map {
+  custom_full_prop_map_struct() {
+    std::map<int, std::string> custom_map = {
+      {custom_props.test_custom_prop1, "TEST_PROP1"},
+      {custom_props.test_custom_prop2, "TEST_PROP2"}
+    };
+    properties_map::replace_map(custom_map);
+  }
+};
+
+const auto custom_full_prop_map = custom_full_prop_map_struct().get_map();
+
 } // namespace PropertiesTest
 
 // Testing required_simple_prop_names call for Properties struct
@@ -78,7 +101,7 @@ TEST(Properties, simple_prop_names) {
                                                   "TEST_PROP2"};
 
   auto custom_prop_names = custom_simple_props_obj.simple_prop_names(
-      PropertiesTest::custom_prop_map);
+      PropertiesTest::custom_extend_prop_map);
 
   EXPECT_EQ(custom_prop_names.size(), simple_custom_props.size());
 
@@ -108,6 +131,30 @@ TEST(Properties, simple_prop_names) {
   for (int i = 0; i < real_prop_names.size(); i++) {
     EXPECT_STREQ(real_prop_names[i].c_str(), simple_real_props[i].c_str());
   }
+
+  // Since default_properties.weight will not be a key in the fully custom_full_prop_map
+  EXPECT_THROW(custom_simple_props_obj.simple_prop_names(PropertiesTest::custom_full_prop_map), std::out_of_range);
+  
+  auto custom_partial_simple_props_obj = Properties<REAL>(
+    std::vector<int>{
+      PropertiesTest::custom_props.test_custom_prop1,
+      PropertiesTest::custom_props.test_custom_prop2,
+      default_properties.temperature
+    }
+  );
+
+  // Since default_properties.temperature will not be a key in the custom_partial_prop_map
+  EXPECT_THROW(custom_partial_simple_props_obj.simple_prop_names(PropertiesTest::custom_partial_prop_map), std::out_of_range);
+
+  auto custom_full_simple_props_obj = Properties<REAL>(
+    std::vector<int>{
+      PropertiesTest::custom_props.test_custom_prop1,
+      PropertiesTest::custom_props.test_custom_prop2
+    }
+  );
+
+  auto custom_full_prop_names = custom_full_simple_props_obj.simple_prop_names(PropertiesTest::custom_full_prop_map);
+  EXPECT_EQ(custom_full_prop_names.size(), 2);
 }
 
 // Testing required_simple_prop_index call for Properties struct
@@ -188,7 +235,7 @@ TEST(Properties, species_prop_names) {
       "ION_DENSITY", "ION_TEST_PROP1", "ION_TEST_PROP2"};
 
   auto custom_prop_names = custom_species_props_obj.species_prop_names(
-      PropertiesTest::custom_prop_map);
+      PropertiesTest::custom_extend_prop_map);
 
   EXPECT_EQ(species_custom_props.size(), custom_prop_names.size());
 

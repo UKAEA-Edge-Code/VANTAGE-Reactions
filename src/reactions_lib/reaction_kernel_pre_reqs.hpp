@@ -1,9 +1,11 @@
 #pragma once
 #include "particle_properties_map.hpp"
+#include <iterator>
 #include <neso_particles.hpp>
-#include <stdexcept>
-#include <vector>
 #include <optional>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 using namespace NESO::Particles;
 using namespace ParticlePropertiesIndices;
@@ -34,39 +36,39 @@ public:
   /**
    * @brief Getters and setters for name, mass, charge and id of the species.
    */
-  const std::string get_name() const { 
+  const std::string get_name() const {
     if (this->name) {
       return (*this->name);
-    }
-    else {
-      throw std::logic_error("The member variable: Species.name, has not been assigned.");
+    } else {
+      throw std::logic_error(
+          "The member variable: Species.name, has not been assigned.");
     }
   }
 
   const INT get_id() const {
     if (this->id) {
       return (*this->id);
-    }
-    else {
-      throw std::logic_error("The member variable: Species.id has not been assigned.");
+    } else {
+      throw std::logic_error(
+          "The member variable: Species.id has not been assigned.");
     }
   }
 
-  const REAL get_mass() const { 
+  const REAL get_mass() const {
     if (this->mass) {
       return (*this->mass);
-    }
-    else {
-      throw std::logic_error("The member variable: Species.mass has not been assigned.");
+    } else {
+      throw std::logic_error(
+          "The member variable: Species.mass has not been assigned.");
     }
   }
 
   const REAL get_charge() const {
     if (this->charge) {
       return (*this->charge);
-    }
-    else {
-      throw std::logic_error("The member variable: Species.charge has not been assigned.");
+    } else {
+      throw std::logic_error(
+          "The member variable: Species.charge has not been assigned.");
     }
   }
 
@@ -140,7 +142,16 @@ template <typename PROP_TYPE> struct Properties {
 
     std::vector<std::string> simple_prop_names_vec;
     for (auto req_prop : this->simple_props) {
-      simple_prop_names_vec.push_back(std::string(properties_map.at(req_prop)));
+      std::string error_msg =
+          "The property referenced by index: " + std::to_string(req_prop) +
+          ", is not present in the property map provided";
+      if (properties_map.find(req_prop) != properties_map.end()) {
+        simple_prop_names_vec.push_back(
+            std::string(properties_map.at(req_prop)));
+      } else {
+        // throw std::out_of_range(error_msg);
+        throw std::out_of_range(error_msg);
+      }
     }
 
     return simple_prop_names_vec;
@@ -251,25 +262,26 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Getter for combined prop_names vector
    */
   const std::vector<std::string> get_prop_names(
-    const std::map<int, std::string> &properties_map = default_map
-  ) {
+      const std::map<int, std::string> &properties_map = default_map) {
     std::vector<std::string> simple_prop_names;
     std::vector<std::string> species_props_names;
 
     try {
       simple_prop_names = this->simple_prop_names(properties_map);
+    } catch (std::logic_error) {
     }
-    catch (std::logic_error) {}
 
     try {
       species_props_names = this->species_prop_names(properties_map);
+    } catch (std::logic_error) {
     }
-    catch (std::logic_error) {}
 
     std::vector<std::string> comb_prop_names;
-    comb_prop_names.insert(comb_prop_names.end(), simple_prop_names.begin(), simple_prop_names.end());
-    comb_prop_names.insert(comb_prop_names.end(), species_props_names.begin(), species_props_names.end());
-    
+    comb_prop_names.insert(comb_prop_names.end(), simple_prop_names.begin(),
+                           simple_prop_names.end());
+    comb_prop_names.insert(comb_prop_names.end(), species_props_names.begin(),
+                           species_props_names.end());
+
     if (comb_prop_names.empty()) {
       throw std::logic_error("No properties have been defined.");
     }

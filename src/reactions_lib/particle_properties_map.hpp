@@ -62,6 +62,17 @@ struct properties_map {
       this->private_map.emplace(std::make_pair(property_key, property_name));
     }
 
+    void replace_entry(int old_property_key, int new_property_key, std::string new_property_name) {
+      auto entry = this->private_map.extract(old_property_key);
+      entry.key() = new_property_key;
+      private_map.insert(std::move(entry));
+      private_map[new_property_key] = new_property_name;
+    }
+
+    void replace_map(std::map<int, std::string> custom_map) {
+      this->private_map = custom_map;
+    }
+
 private:
   std::map<int, std::string> private_map{
       {default_properties.position, "POSITION"},
