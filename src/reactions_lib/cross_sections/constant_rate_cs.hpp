@@ -4,6 +4,7 @@
 #include <reaction_data.hpp>
 
 using namespace NESO::Particles;
+namespace Reactions {
 
 /**
  * struct ConstantRateCrossSection - Cross section class evaluating to K/v_r
@@ -60,3 +61,4 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
 private:
   REAL constant_sigma_v;
 };
+}; // namespace Reactions

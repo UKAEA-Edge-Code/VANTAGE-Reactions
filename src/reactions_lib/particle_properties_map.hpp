@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+namespace Reactions {
+
 /**
  * @namespace ParticlePropertiesIndices A namespace containing a struct
  * containing an enumerator with labels that correspond to standard property
@@ -19,7 +21,7 @@ namespace ParticlePropertiesIndices {
   struct custom_properties_enum : standard_properties_enum {
     public:
       enum {
-        custom_prop_1 = standard_properties_enum::fluid_temparture+1,
+        custom_prop_1 = standard_properties_enum::fluid_flow_speed+1,
         custom_prop_2,
         custom_prop_3
       };
@@ -55,12 +57,12 @@ const auto default_properties = standard_properties_enum();
 struct properties_map {
   properties_map() = default;
 
-  public:
-    std::map<int, std::string> get_map() { return this->private_map; }
+public:
+  std::map<int, std::string> get_map() { return this->private_map; }
 
-    void extend_map(int property_key, std::string property_name) {
-      this->private_map.emplace(std::make_pair(property_key, property_name));
-    }
+  void extend_map(int property_key, std::string property_name) {
+    this->private_map.emplace(std::make_pair(property_key, property_name));
+  }
 
 private:
   std::map<int, std::string> private_map{
@@ -84,3 +86,4 @@ private:
 
 const auto default_map = properties_map().get_map();
 }; // namespace ParticlePropertiesIndices
+}; // namespace Reactions

@@ -11,7 +11,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+namespace Reactions {
 using namespace ParticlePropertiesIndices;
 
 // AMJUEL 2D Fit
@@ -47,7 +47,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_)
-      : mult_const(time_normalisation_*density_normalisation_/ evolved_quantity_normalisation_),
+      : mult_const(time_normalisation_ * density_normalisation_ /
+                   evolved_quantity_normalisation_),
         density_normalisation(density_normalisation_),
         temperature_normalisation(temperature_normalisation_),
         coeffs(coeffs_){};
@@ -164,3 +165,4 @@ public:
     return this->amjuel_2d_data_on_device;
   }
 };
+}; // namespace Reactions

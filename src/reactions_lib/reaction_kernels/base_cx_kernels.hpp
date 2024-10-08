@@ -12,6 +12,7 @@
 // loops?
 
 using namespace NESO::Particles;
+namespace Reactions {
 
 namespace BASE_CX_KERNEL {
 constexpr int num_products_per_parent = 1;
@@ -333,3 +334,4 @@ public:
     return this->cx_reaction_kernels_on_device;
   }
 };
+}; // namespace Reactions

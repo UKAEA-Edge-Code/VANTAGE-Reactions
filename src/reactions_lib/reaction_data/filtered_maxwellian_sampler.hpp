@@ -12,7 +12,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+namespace Reactions {
 using namespace ParticlePropertiesIndices;
 
 namespace FILTERED_MAXWALLIAN_SAMPLER {
@@ -181,3 +181,4 @@ public:
     return this->device_obj;
   }
 };
+}; // namespace Reactions

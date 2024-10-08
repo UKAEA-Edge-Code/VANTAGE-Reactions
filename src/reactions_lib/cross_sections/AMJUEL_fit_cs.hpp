@@ -3,6 +3,7 @@
 #include <reaction_data.hpp>
 
 using namespace NESO::Particles;
+namespace Reactions{
 
 /**
  * struct AMJUELFitCrossSection - General H.1 AMJUEL cross section fit, with
@@ -117,4 +118,5 @@ private:
   std::array<REAL, num_coeffs> coeffs;
   std::array<REAL, num_l_coeffs> l_coeffs;
   std::array<REAL, num_r_coeffs> r_coeffs;
+};
 };

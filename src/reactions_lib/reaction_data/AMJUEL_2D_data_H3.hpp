@@ -11,7 +11,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+namespace Reactions {
 using namespace ParticlePropertiesIndices;
 
 // AMJUEL 2D Fit
@@ -182,3 +182,4 @@ public:
     return this->amjuel_2d_data_on_device;
   }
 };
+}; // namespace Reactions

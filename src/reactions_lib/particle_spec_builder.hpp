@@ -1,17 +1,15 @@
 #ifndef PARTICLE_SPEC_BUILDER
 #define PARTICLE_SPEC_BUILDER
 
-#include <algorithm>
-#include <iterator>
 #include <neso_particles.hpp>
 #include <neso_particles/particle_spec.hpp>
 #include <reaction_kernel_pre_reqs.hpp>
 
 using namespace NESO::Particles;
-using namespace ParticlePropertiesIndices;
 
 namespace Reactions {
 
+using namespace ParticlePropertiesIndices;
 /**
  * @brief Helper struct to build custom particle specs based on user provided
  * particle properties (or if necessary extend existing particle specs.)

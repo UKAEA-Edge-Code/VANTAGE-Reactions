@@ -8,6 +8,8 @@
 
 using namespace NESO::Particles;
 
+namespace Reactions {
+
 namespace BASE_IONISATION_KERNEL {
 constexpr int num_products_per_parent = 0;
 
@@ -197,3 +199,4 @@ public:
 
   auto get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
 };
+}; // namespace Reactions
