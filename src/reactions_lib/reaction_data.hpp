@@ -4,7 +4,7 @@
 #include <neso_particles.hpp>
 #include <stdexcept>
 
-//TODO: Generalise cross-section get_max_rate_val()
+// TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
 
 /**
@@ -42,9 +42,9 @@ struct AbstractCrossSection {
    * @param uniform_rand Uniformly sampled random number on (0,1)
    * @return true if relative_vel value is accepted, false otherwise
    */
-  virtual bool accept_reject(REAL relative_vel, REAL uniform_rand) const {
-    return uniform_rand < this->get_value_at(relative_vel) * relative_vel /
-                              this->get_max_rate_val();
+  virtual bool accept_reject(REAL relative_vel, REAL uniform_rand,
+                             REAL value_at, REAL max_rate_val) const {
+    return uniform_rand < (value_at * relative_vel / max_rate_val);
   }
 };
 /**
