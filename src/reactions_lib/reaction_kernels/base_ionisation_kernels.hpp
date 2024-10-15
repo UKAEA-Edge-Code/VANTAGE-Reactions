@@ -137,14 +137,14 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   IoniseReactionKernels(const Species &target_species,
                         const Species &electron_species,
                         const Species &projectile_species,
-                        std::map<int, std::string> properties_map=ParticlePropertiesIndices::default_map)
+                        std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
       : ReactionKernelsBase(
             Properties<REAL>(
                 BASE_IONISATION_KERNEL::required_simple_real_props,
                 std::vector<Species>{target_species, electron_species,
                                      projectile_species},
                 BASE_IONISATION_KERNEL::required_species_real_props),
-            has_momentum_req_data ? 2 : 1) {
+            has_momentum_req_data ? 2 : 1, properties_map_) {
     static_assert(
         (ndim_velocity >= ndim_source_momentum),
         "Number of dimension for VELOCITY must be greater than or "
@@ -153,34 +153,34 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
     auto props = BASE_IONISATION_KERNEL::props;
 
     this->ionise_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity, properties_map);
+        this->required_real_props.simple_prop_index(props.velocity, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.electron_source_density_ind =
         this->required_real_props.species_prop_index(
-            electron_species.get_name(), props.source_density, properties_map);
+            electron_species.get_name(), props.source_density, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.target_source_density_ind =
         this->required_real_props.species_prop_index(target_species.get_name(),
-                                                     props.source_density, properties_map);
+                                                     props.source_density, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.target_source_momentum_ind =
         this->required_real_props.species_prop_index(target_species.get_name(),
-                                                     props.source_momentum, properties_map);
+                                                     props.source_momentum, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.target_source_energy_ind =
         this->required_real_props.species_prop_index(target_species.get_name(),
-                                                     props.source_energy, properties_map);
+                                                     props.source_energy, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.projectile_source_momentum_ind =
         this->required_real_props.species_prop_index(
-            projectile_species.get_name(), props.source_momentum, properties_map);
+            projectile_species.get_name(), props.source_momentum, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.projectile_source_energy_ind =
         this->required_real_props.species_prop_index(
-            projectile_species.get_name(), props.source_energy, properties_map);
+            projectile_species.get_name(), props.source_energy, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight, properties_map);
+        this->required_real_props.simple_prop_index(props.weight, this->properties_map);
 
     this->ionise_reaction_kernels_on_device.target_mass =
         target_species.get_mass();

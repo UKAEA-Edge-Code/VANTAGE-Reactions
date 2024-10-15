@@ -61,12 +61,15 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the calculation
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
    */
-  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props,
-                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+  std::array<REAL, 1>
+  calc_data(const Access::LoopIndex::Read &index,
+            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
@@ -86,7 +89,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
             this->time_normalisation * this->density_normalisation *
             this->evolved_quantity_normalisation;
 
-    return std::array<REAL,1>{rate};
+    return std::array<REAL, 1>{rate};
   }
 
 public:
@@ -115,10 +118,13 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
                const REAL &density_normalisation_,
                const REAL &temperature_normalisation_,
                const REAL &time_normalisation_,
-               const std::array<REAL, num_coeffs> &coeffs_)
+               const std::array<REAL, num_coeffs> &coeffs_,
+               std::map<int, std::string> properties_map_ =
+                   ParticlePropertiesIndices::default_map)
       : ReactionDataBase(
             Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})),
+                             std::vector<Species>{}, std::vector<int>{}),
+            properties_map_),
         amjuel_1d_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
             evolved_quantity_normalisation_, density_normalisation_,
             temperature_normalisation_, time_normalisation_, coeffs_)) {
@@ -126,11 +132,14 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
     auto props = AMJUEL_1D_DATA::props;
 
     this->amjuel_1d_data_on_device.fluid_density_ind =
-        this->required_real_props.simple_prop_index(props.fluid_density);
+        this->required_real_props.simple_prop_index(props.fluid_density,
+                                                    this->properties_map);
     this->amjuel_1d_data_on_device.fluid_temperature_ind =
-        this->required_real_props.simple_prop_index(props.fluid_temperature);
+        this->required_real_props.simple_prop_index(props.fluid_temperature,
+                                                    this->properties_map);
     this->amjuel_1d_data_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight,
+                                                    this->properties_map);
   }
 
 private:

@@ -144,10 +144,12 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const REAL &velocity_normalisation_, const REAL &mass_amu_,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_)
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_,
+      std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
       : ReactionDataBase(
             Properties<REAL>(AMJUEL_2D_DATA_H3::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})),
+                             std::vector<Species>{}, std::vector<int>{}),
+                             properties_map_),
         amjuel_2d_data_on_device(
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
                 evolved_quantity_normalisation_, density_normalisation_,
@@ -157,15 +159,15 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
     auto props = AMJUEL_2D_DATA_H3::props;
 
     this->amjuel_2d_data_on_device.fluid_density_ind =
-        this->required_real_props.simple_prop_index(props.fluid_density);
+        this->required_real_props.simple_prop_index(props.fluid_density, this->properties_map);
     this->amjuel_2d_data_on_device.fluid_temperature_ind =
-        this->required_real_props.simple_prop_index(props.fluid_temperature);
+        this->required_real_props.simple_prop_index(props.fluid_temperature, this->properties_map);
     this->amjuel_2d_data_on_device.fluid_flow_speed_ind =
-        this->required_real_props.simple_prop_index(props.fluid_flow_speed);
+        this->required_real_props.simple_prop_index(props.fluid_flow_speed, this->properties_map);
     this->amjuel_2d_data_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight, this->properties_map);
     this->amjuel_2d_data_on_device.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity);
+        this->required_real_props.simple_prop_index(props.velocity, this->properties_map);
   }
 
 private:

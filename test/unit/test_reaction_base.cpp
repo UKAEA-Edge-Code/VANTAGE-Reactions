@@ -2,7 +2,9 @@
 #include "common_markers.hpp"
 #include "data_calculator.hpp"
 #include "mock_reactions.hpp"
+#include "particle_properties_map.hpp"
 #include "reaction_base.hpp"
+#include "reaction_data.hpp"
 #include "reaction_data/filtered_maxwellian_sampler.hpp"
 #include "reaction_kernels/base_ionisation_kernels.hpp"
 #include "transformation_wrapper.hpp"
@@ -10,10 +12,16 @@
 #include <common_transformations.hpp>
 #include <cross_sections/AMJUEL_fit_cs.hpp>
 #include <cross_sections/constant_rate_cs.hpp>
+#include <cstring>
 #include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/boundary_conditions.hpp>
+#include <neso_particles/cell_binning.hpp>
 #include <neso_particles/containers/rng/host_atomic_block_kernel_rng.hpp>
+#include <neso_particles/loop/particle_loop_index.hpp>
+#include <neso_particles/mesh_interface.hpp>
+#include <neso_particles/particle_dat.hpp>
 #include <neso_particles/particle_group.hpp>
 #include <neso_particles/typedefs.hpp>
 #include <reaction_data/AMJUEL_2D_data.hpp>
@@ -27,6 +35,101 @@
 
 using namespace NESO::Particles;
 using namespace Reactions;
+
+TEST(LinearReactionBase, properties_map_setting) {
+  std::map<int, std::string> test_property_map = {
+      {0, "TEST_PROP1"}, {1, "TEST_PROP2"}, {2, "TEST_PROP3"}};
+
+  struct test_reaction_data : ReactionDataBase<> {
+    test_reaction_data(std::map<int, std::string> property_map_) : ReactionDataBase(property_map_) {}
+
+    std::map<int, std::string> get_property_map() { return this->properties_map; }
+  };
+
+  auto test_reaction_data_base = test_reaction_data(test_property_map);
+
+  auto returned_property_map = test_reaction_data_base.get_property_map();
+
+  auto count = 0;
+  for (auto prop : returned_property_map) {
+    EXPECT_EQ(count, prop.first);
+    count++;
+    char test_prop[11];
+    std::sprintf(test_prop, "TEST_PROP%d", count);
+    EXPECT_STREQ(test_prop, prop.second.c_str());
+  }
+}
+
+TEST(LinearReactionBase, full_use_properties_map) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group(N_total);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_prop1 = ParticleProp(Sym<REAL>("TEST_PROP1"), 1);
+  auto test_prop2 = ParticleProp(Sym<REAL>("TEST_PROP2"), 1);
+
+  auto test_prop1_dat = ParticleDat<REAL>(particle_group->sycl_target, Sym<REAL>("TEST_PROP1"), 1, cell_count);
+  auto test_prop2_dat = ParticleDat<REAL>(particle_group->sycl_target, Sym<REAL>("TEST_PROP2"), 1, cell_count);
+
+  particle_group->add_particle_dat(test_prop1_dat);
+  particle_group->add_particle_dat(test_prop2_dat);
+
+  particle_loop(
+    particle_group,
+    [=](auto test_prop1_write, auto test_prop2_write) {
+      test_prop1_write[0] = 3.0e18;
+      test_prop2_write[0] = 2.0;
+    },
+    Access::write(Sym<REAL>("TEST_PROP1")),
+    Access::write(Sym<REAL>("TEST_PROP2"))
+  )->execute();
+
+  particle_group->remove_particle_dat(Sym<REAL>("FLUID_DENSITY"));
+  particle_group->remove_particle_dat(Sym<REAL>("FLUID_TEMPERATURE"));
+
+  auto test_prop_map = default_map;
+  test_prop_map[ParticlePropertiesIndices::default_properties.fluid_density] =
+      "TEST_PROP1";
+  test_prop_map[ParticlePropertiesIndices::default_properties
+                    .fluid_temperature] = "TEST_PROP2";
+
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto amjuel_data = AMJUEL2DData<2, 2>(
+      3e12, 1.0, 1.0, 1.0,
+      std::array<std::array<REAL, 2>, 2>{std::array<REAL, 2>{1.0, 0.02},
+                                         std::array<REAL, 2>{0.01, 0.02}},
+      test_prop_map);
+
+  auto test_reaction =
+      LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          std::array<int, 0>{}, amjuel_data,
+          TestReactionKernels<0>(test_prop_map), particle_spec);
+
+  auto descendant_particles = std::make_shared<ParticleGroup>(
+      particle_group->domain, particle_group->get_particle_spec(),
+      particle_group->sycl_target);
+
+  // Rate calculated based on ne=3e18, T=2eV, with the evolved quantity
+  // normalised to 3e12
+  auto expected_rate = 3.880728735562758;
+  for (int i = 0; i < cell_count; i++) {
+
+    test_reaction.run_rate_loop(particle_sub_group, i);
+    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+    const int nrow = rate->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_DOUBLE_EQ(rate->at(rowx, 0), expected_rate); // 1e-15);
+    }
+  }
+
+  particle_group->domain->mesh->free();
+}
 
 TEST(LinearReactionBase, calc_rate) {
   const int N_total = 1000;
@@ -919,7 +1022,8 @@ TEST(CrossSections, AMJUEL_H1_bulk) {
   EXPECT_NEAR(cs.get_value_at(1e4), cs.get_max_rate_val() / 1e4, 1e-12);
   EXPECT_NEAR(cs.get_value_at(10.0), std::exp(-1.0 - 0.1 * std::log(100.0)),
               1e-12);
-  EXPECT_FALSE(cs.accept_reject(0.1, 0.5, cs.get_value_at(0.1), cs.get_max_rate_val()));
+  EXPECT_FALSE(
+      cs.accept_reject(0.1, 0.5, cs.get_value_at(0.1), cs.get_max_rate_val()));
 }
 
 TEST(CrossSections, AMJUEL_H1_low_energy) {

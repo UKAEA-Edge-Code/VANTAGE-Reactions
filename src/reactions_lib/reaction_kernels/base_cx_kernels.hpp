@@ -238,13 +238,13 @@ struct CXReactionKernels : public ReactionKernelsBase {
    */
   CXReactionKernels(const Species &target_species,
                     const Species &projectile_species,
-                    std::map<int, std::string> properties_map=ParticlePropertiesIndices::default_map)
+                    std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
       : ReactionKernelsBase(
             Properties<REAL>(
                 BASE_CX_KERNEL::required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
                 BASE_CX_KERNEL::required_species_real_props),
-            ndim_velocity) {
+            ndim_velocity, properties_map_) {
 
     static_assert((ndim_velocity >= ndim_source_momentum),
                   "Number of dimension for VELOCITY must be greater than or "
@@ -259,34 +259,34 @@ struct CXReactionKernels : public ReactionKernelsBase {
     auto props = BASE_CX_KERNEL::props;
 
     this->cx_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity, properties_map);
+        this->required_real_props.simple_prop_index(props.velocity, this->properties_map);
 
     this->cx_reaction_kernels_on_device.target_source_density_ind =
         this->required_real_props.species_prop_index(target_species.get_name(),
-                                                     props.source_density, properties_map);
+                                                     props.source_density, this->properties_map);
 
     this->cx_reaction_kernels_on_device.target_source_momentum_ind =
         this->required_real_props.species_prop_index(target_species.get_name(),
-                                                     props.source_momentum, properties_map);
+                                                     props.source_momentum, this->properties_map);
 
     this->cx_reaction_kernels_on_device.target_source_energy_ind =
         this->required_real_props.species_prop_index(target_species.get_name(),
-                                                     props.source_energy, properties_map);
+                                                     props.source_energy, this->properties_map);
 
     this->cx_reaction_kernels_on_device.projectile_source_density_ind =
         this->required_real_props.species_prop_index(
-            projectile_species.get_name(), props.source_density, properties_map);
+            projectile_species.get_name(), props.source_density, this->properties_map);
 
     this->cx_reaction_kernels_on_device.projectile_source_momentum_ind =
         this->required_real_props.species_prop_index(
-            projectile_species.get_name(), props.source_momentum, properties_map);
+            projectile_species.get_name(), props.source_momentum, this->properties_map);
 
     this->cx_reaction_kernels_on_device.projectile_source_energy_ind =
         this->required_real_props.species_prop_index(
-            projectile_species.get_name(), props.source_energy, properties_map);
+            projectile_species.get_name(), props.source_energy, this->properties_map);
 
     this->cx_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight, properties_map);
+        this->required_real_props.simple_prop_index(props.weight, this->properties_map);
 
     this->cx_reaction_kernels_on_device.target_mass = target_species.get_mass();
     this->cx_reaction_kernels_on_device.projectile_mass =
@@ -294,21 +294,21 @@ struct CXReactionKernels : public ReactionKernelsBase {
 
     this->cx_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
-            props.internal_state, properties_map);
+            props.internal_state, this->properties_map);
     this->cx_reaction_kernels_on_device.descendant_velocity_ind =
-        this->required_descendant_real_props.simple_prop_index(props.velocity, properties_map);
+        this->required_descendant_real_props.simple_prop_index(props.velocity, this->properties_map);
     this->cx_reaction_kernels_on_device.descendant_weight_ind =
-        this->required_descendant_real_props.simple_prop_index(props.weight, properties_map);
+        this->required_descendant_real_props.simple_prop_index(props.weight, this->properties_map);
 
     const auto descendant_internal_state_prop =
         ParticleProp<INT>(Sym<INT>(ParticlePropertiesIndices::default_map.at(
                               props.internal_state)),
                           1);
     const auto descendant_velocity_prop = ParticleProp<REAL>(
-        Sym<REAL>(properties_map.at(props.velocity)),
+        Sym<REAL>(this->properties_map.at(props.velocity)),
         ndim_velocity);
     const auto descendant_weight_prop = ParticleProp<REAL>(
-        Sym<REAL>(properties_map.at(props.weight)), 1);
+        Sym<REAL>(this->properties_map.at(props.weight)), 1);
 
     auto descendant_particles_spec = ParticleSpec();
     descendant_particles_spec.push(descendant_internal_state_prop);

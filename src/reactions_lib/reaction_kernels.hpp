@@ -1,4 +1,5 @@
 #pragma once
+#include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
 #include <neso_particles/containers/product_matrix.hpp>
@@ -11,22 +12,31 @@ using namespace NESO::Particles;
  * @brief Base reaction kernels object.
  */
 struct ReactionKernelsBase {
-  ReactionKernelsBase() = default;
+  ReactionKernelsBase(std::map<int, std::string> properties_map_ =
+                          ParticlePropertiesIndices::default_map)
+      : properties_map(properties_map_) {}
 
-  ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0)
-      : required_int_props(required_int_props), pre_req_ndims(pre_req_ndims) {}
+  ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
+                      std::map<int, std::string> properties_map_ =
+                          ParticlePropertiesIndices::default_map)
+      : required_int_props(required_int_props), pre_req_ndims(pre_req_ndims),
+        properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<REAL> required_real_props,
-                      INT pre_req_ndims = 0)
-      : required_real_props(required_real_props), pre_req_ndims(pre_req_ndims) {
-  }
+                      INT pre_req_ndims = 0,
+                      std::map<int, std::string> properties_map_ =
+                          ParticlePropertiesIndices::default_map)
+      : required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
+        properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props,
                       Properties<REAL> required_real_props,
-                      INT pre_req_ndims = 0)
+                      INT pre_req_ndims = 0,
+                      std::map<int, std::string> properties_map_ =
+                          ParticlePropertiesIndices::default_map)
       : required_int_props(required_int_props),
-        required_real_props(required_real_props), pre_req_ndims(pre_req_ndims) {
-  }
+        required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
+        properties_map(properties_map_) {}
   /**
    * @brief Virtual getters functions that can be overidden by an implementation
    * in a derived struct.
@@ -34,7 +44,7 @@ struct ReactionKernelsBase {
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_int_props.get_prop_names();
+      prop_names = this->required_int_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
@@ -43,25 +53,27 @@ struct ReactionKernelsBase {
   std::vector<std::string> get_required_real_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_real_props.get_prop_names();
+      prop_names = this->required_real_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
   }
 
-  const Properties<INT>& get_required_descendant_int_props() {
+  const Properties<INT> &get_required_descendant_int_props() {
     return this->required_descendant_int_props;
   }
 
-  void set_required_descendant_int_props(const Properties<INT>& required_descendant_int_props) {
+  void set_required_descendant_int_props(
+      const Properties<INT> &required_descendant_int_props) {
     this->required_descendant_int_props = required_descendant_int_props;
   }
 
-  const Properties<REAL>& get_required_descendant_real_props() {
+  const Properties<REAL> &get_required_descendant_real_props() {
     return this->required_descendant_real_props;
   }
 
-  void set_required_descendant_real_props(const Properties<REAL>& required_descendant_real_props) {
+  void set_required_descendant_real_props(
+      const Properties<REAL> &required_descendant_real_props) {
     this->required_descendant_real_props = required_descendant_real_props;
   }
 
@@ -69,13 +81,12 @@ struct ReactionKernelsBase {
     return this->descendant_matrix_spec;
   }
 
-  void set_descendant_matrix_spec(std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec) {
+  void set_descendant_matrix_spec(
+      std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec) {
     this->descendant_matrix_spec = descendant_matrix_spec;
   }
 
-  const INT& get_pre_ndims() const {
-    return this->pre_req_ndims;
-  }
+  const INT &get_pre_ndims() const { return this->pre_req_ndims; }
 
 protected:
   Properties<INT> required_int_props;
@@ -84,9 +95,12 @@ protected:
   Properties<INT> required_descendant_int_props;
   Properties<REAL> required_descendant_real_props;
 
-  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec = std::make_shared<ProductMatrixSpec>();
+  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec =
+      std::make_shared<ProductMatrixSpec>();
 
   INT pre_req_ndims;
+
+  std::map<int, std::string> properties_map;
 };
 
 /**

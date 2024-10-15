@@ -24,6 +24,66 @@ using namespace NESO::Particles;
 using namespace Reactions;
 using namespace ParticlePropertiesIndices;
 
+namespace PropertiesTest {
+inline auto int_props = Properties<INT>(
+    std::vector<int>{default_properties.id, default_properties.internal_state,
+                     default_properties.cell_id});
+
+inline auto real_props = Properties<REAL>(
+    std::vector<int>{
+        default_properties.position, default_properties.velocity,
+        default_properties.tot_reaction_rate, default_properties.weight,
+        default_properties.fluid_density, default_properties.fluid_temperature,
+        default_properties.fluid_flow_speed},
+    std::vector<Species>{Species("ELECTRON")},
+    std::vector<int>{
+        default_properties.temperature, default_properties.density,
+        default_properties.flow_speed, default_properties.source_energy,
+        default_properties.source_density, default_properties.source_momentum});
+
+struct custom_properties_enum : standard_properties_enum {
+public:
+  enum {
+    test_custom_prop1 = default_properties.fluid_flow_speed + 1,
+    test_custom_prop2
+  };
+};
+
+inline auto custom_props = custom_properties_enum();
+
+struct custom_prop_map_struct {
+  custom_prop_map_struct() {
+    this->private_map[custom_props.test_custom_prop1] = "TEST_PROP1";
+    this->private_map[custom_props.test_custom_prop2] = "TEST_PROP2";
+  }
+
+  std::map<int, std::string> get_map() { return this->private_map; }
+
+private:
+  std::map<int, std::string> private_map = default_map;
+};
+
+inline auto custom_prop_map =
+    properties_map(custom_prop_map_struct().get_map()).get_map();
+
+struct custom_prop_map_no_weight_struct {
+  custom_prop_map_no_weight_struct() {
+    this->private_map[custom_props.test_custom_prop1] = "TEST_PROP1";
+    this->private_map[custom_props.test_custom_prop2] = "TEST_PROP2";
+    this->private_map.extract(default_properties.weight);
+  }
+
+  std::map<int, std::string> get_map() { return this->private_map; }
+
+private:
+  std::map<int, std::string> private_map = default_map;
+};
+
+inline auto custom_prop_no_weight_map =
+    properties_map(custom_prop_map_no_weight_struct().get_map()).get_map();
+
+} // namespace PropertiesTest
+
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
 
@@ -135,9 +195,9 @@ public:
 
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
-  TestReactionKernels()
+  TestReactionKernels(std::map<int, std::string> properties_map_ = ParticlePropertiesIndices::default_map)
       : ReactionKernelsBase(Properties<REAL>(
-            TEST_REACTION_KERNEL::required_simple_real_props)) {
+            TEST_REACTION_KERNEL::required_simple_real_props), 0, properties_map_) {
 
     this->set_required_descendant_int_props(Properties<INT>(
         TEST_REACTION_KERNEL::required_descendant_simple_int_props));
@@ -148,27 +208,27 @@ struct TestReactionKernels : public ReactionKernelsBase {
     auto props = TEST_REACTION_KERNEL::props;
 
     this->test_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity);
+        this->required_real_props.simple_prop_index(props.velocity, this->properties_map);
     this->test_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight, this->properties_map);
 
     this->test_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
-            props.internal_state);
+            props.internal_state, this->properties_map);
     this->test_reaction_kernels_on_device.descendant_velocity_ind =
-        this->required_descendant_real_props.simple_prop_index(props.velocity);
+        this->required_descendant_real_props.simple_prop_index(props.velocity, this->properties_map);
     this->test_reaction_kernels_on_device.descendant_weight_ind =
-        this->required_descendant_real_props.simple_prop_index(props.weight);
+        this->required_descendant_real_props.simple_prop_index(props.weight, this->properties_map);
 
     const auto descendant_internal_state_prop =
-        ParticleProp<INT>(Sym<INT>(ParticlePropertiesIndices::default_map.at(
+        ParticleProp<INT>(Sym<INT>(this->properties_map.at(
                               props.internal_state)),
                           1);
     const auto descendant_velocity_prop = ParticleProp<REAL>(
-        Sym<REAL>(ParticlePropertiesIndices::default_map.at(props.velocity)),
+        Sym<REAL>(this->properties_map.at(props.velocity)),
         2);
     const auto descendant_weight_prop = ParticleProp<REAL>(
-        Sym<REAL>(ParticlePropertiesIndices::default_map.at(props.weight)), 1);
+        Sym<REAL>(this->properties_map.at(props.weight)), 1);
 
     auto descendant_particles_spec = ParticleSpec();
     descendant_particles_spec.push(descendant_internal_state_prop);
@@ -405,25 +465,6 @@ struct TestReactionDataCalcKernels : public ReactionKernelsBase {
         this->required_real_props.species_prop_index("ELECTRON",
                                                      props.source_energy);
   }
-
-  // public:
-  // std::vector<std::string> get_required_real_props() {
-  //   std::vector<std::string> simple_props;
-  //   try {
-  //     simple_props = this->required_real_props.simple_prop_names();
-  //   } catch (std::logic_error) {
-  //     simple_props = {};
-  //   }
-  //   std::vector<std::string> species_props;
-  //   try {
-  //     species_props = this->required_real_props.species_prop_names();
-  //   } catch (std::logic_error) {
-  //     species_props = {};
-  //   }
-  //   simple_props.insert(simple_props.end(), species_props.begin(),
-  //                       species_props.end());
-  //   return simple_props;
-  // }
 
 private:
   TestReactionKernelsDataCalcOnDevice<num_products_per_parent>

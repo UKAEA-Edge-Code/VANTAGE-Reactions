@@ -59,17 +59,18 @@ public:
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
-  FixedCoefficientData(REAL rate_coefficient)
+  FixedCoefficientData(REAL rate_coefficient,
+  std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
       : ReactionDataBase(
             Properties<REAL>(FIXED_COEFFICIENT_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})),
+                             std::vector<Species>{}, std::vector<int>{}), properties_map_),
         fixed_coefficient_data_on_device(
             FixedCoefficientDataOnDevice(rate_coefficient)) {
 
     auto props = FIXED_COEFFICIENT_DATA::props;
 
     this->fixed_coefficient_data_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight, this->properties_map);
   }
 
 private:

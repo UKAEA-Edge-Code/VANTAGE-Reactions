@@ -1,5 +1,7 @@
 #pragma once
 #include <map>
+#include <neso_particles/typedefs.hpp>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -53,25 +55,26 @@ const auto default_properties = standard_properties_enum();
  * integer indices defined in an enumerator from a struct in
  * ParticlePropertiesIndices. */
 struct properties_map {
+
   properties_map() = default;
 
-  public:
-    std::map<int, std::string> get_map() { return this->private_map; }
-
-    void extend_map(int property_key, std::string property_name) {
-      this->private_map.emplace(std::make_pair(property_key, property_name));
+  properties_map(std::map<int, std::string> custom_map)
+      : private_map(custom_map) {
+    // replace default_properties.fluid_flow_speed with the last enum in
+    // standard_properties_enum if any changes are made to it.
+    for (int i = 0; i < default_properties.fluid_flow_speed; i++) {
+      NESOWARN(
+          this->private_map.find(i) != this->private_map.end(),
+          "The custom properties map provided does not contain all enums from "
+          "default_properties in it's list of keys.");
     }
+  }
 
-    void replace_entry(int old_property_key, int new_property_key, std::string new_property_name) {
-      auto entry = this->private_map.extract(old_property_key);
-      entry.key() = new_property_key;
-      private_map.insert(std::move(entry));
-      private_map[new_property_key] = new_property_name;
-    }
+public:
+  std::map<int, std::string> get_map() { return this->private_map; }
 
-    void replace_map(std::map<int, std::string> custom_map) {
-      this->private_map = custom_map;
-    }
+  // Just exposes the bounds-checked accessor to the private_map.
+  std::string &at(const int &key) { return this->private_map.at(key); };
 
 private:
   std::map<int, std::string> private_map{
