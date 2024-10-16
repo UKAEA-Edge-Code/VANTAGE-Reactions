@@ -5,13 +5,15 @@
 #include <string>
 #include <utility>
 
+namespace Reactions {
+
 /**
  * @namespace ParticlePropertiesIndices A namespace containing a struct
  * containing an enumerator with labels that correspond to standard property
  * names and a map that maps the values of the enumerator to strings that the
  * properties inside a ParticleSpec need to be formatted in.
  */
-namespace ParticlePropertiesIndices {
+// namespace ParticlePropertiesIndices {
 /*! An enum with labels consisting of the variable names in
  * standard_properties*/
 
@@ -21,7 +23,7 @@ namespace ParticlePropertiesIndices {
   struct custom_properties_enum : standard_properties_enum {
     public:
       enum {
-        custom_prop_1 = standard_properties_enum::fluid_temparture+1,
+        custom_prop_1 = standard_properties_enum::fluid_flow_speed+1,
         custom_prop_2,
         custom_prop_3
       };
@@ -97,4 +99,5 @@ private:
 };
 
 const auto default_map = properties_map().get_map();
-}; // namespace ParticlePropertiesIndices
+// }; // namespace ParticlePropertiesIndices
+}; // namespace Reactions

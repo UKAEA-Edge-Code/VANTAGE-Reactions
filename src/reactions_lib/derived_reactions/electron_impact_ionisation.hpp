@@ -10,7 +10,7 @@
 #include <reaction_kernels/base_ionisation_kernels.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+namespace Reactions {
 
 /**
  * struct ElectronImpactIonisation - Reaction representing electron impact
@@ -41,7 +41,8 @@ struct ElectronImpactIonisation
    * @param target_species Species object representing the ionisation target
    * (and the corresponding ion fluid)
    * @param electron_species Species object corresponding to the electrons
-   * @param particle_spec ParticleSpec associated with the particle group this
+
+   * @param particle_spec ParticleSpec associated with the particle group thi
    * reaction should act on
    */
   ElectronImpactIonisation(SYCLTargetSharedPtr sycl_target_,
@@ -58,3 +59,4 @@ struct ElectronImpactIonisation
             particle_spec,
             DataCalculator<EnergyRateData>(particle_spec, energy_rate_data)) {}
 };
+}; // namespace Reactions

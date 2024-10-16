@@ -8,8 +8,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace ParticlePropertiesIndices;
-
+namespace Reactions {
 /**
  * @brief Species struct to hold a limited description of a species that may be
  * used in reactions.
@@ -309,3 +308,4 @@ private:
   std::vector<int> species_props;
   std::vector<int> all_props;
 };
+}; // namespace Reactions

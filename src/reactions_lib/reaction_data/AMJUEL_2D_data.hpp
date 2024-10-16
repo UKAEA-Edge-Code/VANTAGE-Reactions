@@ -11,14 +11,13 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
-using namespace ParticlePropertiesIndices;
+namespace Reactions {
 
 // AMJUEL 2D Fit
 
 namespace AMJUEL_2D_DATA {
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {
     props.fluid_density, props.fluid_temperature, props.weight};
@@ -47,7 +46,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_)
-      : mult_const(time_normalisation_*density_normalisation_/ evolved_quantity_normalisation_),
+      : mult_const(time_normalisation_ * density_normalisation_ /
+                   evolved_quantity_normalisation_),
         density_normalisation(density_normalisation_),
         temperature_normalisation(temperature_normalisation_),
         coeffs(coeffs_){};
@@ -133,7 +133,7 @@ struct AMJUEL2DData : public ReactionDataBase<> {
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_,
-      std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
+      std::map<int, std::string> properties_map_=default_map)
       : ReactionDataBase(
             Properties<REAL>(AMJUEL_2D_DATA::required_simple_real_props,
                              std::vector<Species>{}, std::vector<int>{}), properties_map_),
@@ -165,3 +165,4 @@ public:
     return this->amjuel_2d_data_on_device;
   }
 };
+}; // namespace Reactions

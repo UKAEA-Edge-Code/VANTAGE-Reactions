@@ -10,14 +10,13 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
-using namespace ParticlePropertiesIndices;
+namespace Reactions {
 
 // AMJUEL 1D Fit
 
 namespace AMJUEL_1D_DATA {
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {
     props.fluid_density, props.fluid_temperature, props.weight};
@@ -119,8 +118,7 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
                const REAL &temperature_normalisation_,
                const REAL &time_normalisation_,
                const std::array<REAL, num_coeffs> &coeffs_,
-               std::map<int, std::string> properties_map_ =
-                   ParticlePropertiesIndices::default_map)
+               std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase(
             Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
                              std::vector<Species>{}, std::vector<int>{}),
@@ -155,3 +153,4 @@ public:
     return this->amjuel_1d_data_on_device;
   }
 };
+}; // namespace Reactions

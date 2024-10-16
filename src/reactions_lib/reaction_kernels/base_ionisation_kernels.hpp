@@ -8,10 +8,12 @@
 
 using namespace NESO::Particles;
 
+namespace Reactions {
+
 namespace BASE_IONISATION_KERNEL {
 constexpr int num_products_per_parent = 0;
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {props.weight,
                                                      props.velocity};
@@ -137,7 +139,7 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   IoniseReactionKernels(const Species &target_species,
                         const Species &electron_species,
                         const Species &projectile_species,
-                        std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
+                        std::map<int, std::string> properties_map_=default_map)
       : ReactionKernelsBase(
             Properties<REAL>(
                 BASE_IONISATION_KERNEL::required_simple_real_props,
@@ -198,3 +200,4 @@ public:
 
   auto get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
 };
+}; // namespace Reactions

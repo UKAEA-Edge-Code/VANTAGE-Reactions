@@ -12,12 +12,11 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
-using namespace ParticlePropertiesIndices;
+namespace Reactions {
 
 namespace FILTERED_MAXWALLIAN_SAMPLER {
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {
     props.fluid_temperature, props.fluid_flow_speed, props.velocity};
@@ -145,7 +144,7 @@ struct FilteredMaxwellianSampler
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
+      std::map<int, std::string> properties_map_=default_map)
       : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(Properties<REAL>(
             FILTERED_MAXWALLIAN_SAMPLER::required_simple_real_props,
             std::vector<Species>{}, std::vector<int>{}), properties_map_),
@@ -186,3 +185,4 @@ public:
     return this->device_obj;
   }
 };
+}; // namespace Reactions

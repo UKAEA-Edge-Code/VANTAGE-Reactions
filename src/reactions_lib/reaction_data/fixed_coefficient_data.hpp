@@ -1,5 +1,4 @@
 #pragma once
-#include "particle_properties_map.hpp"
 #include <neso_particles.hpp>
 #include <reaction_base.hpp>
 #include <reaction_controller.hpp>
@@ -8,12 +7,11 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
-using namespace ParticlePropertiesIndices;
+namespace Reactions {
 
 namespace FIXED_COEFFICIENT_DATA {
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {props.weight};
 } // namespace FIXED_COEFFICIENT_DATA
@@ -33,15 +31,18 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the calculation
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
    */
-  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props,
-                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType  &kernel) const {
+  std::array<REAL, 1>
+  calc_data(const Access::LoopIndex::Read &index,
+            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
-    return std::array<REAL,1>{weight * this->rate};
+    return std::array<REAL, 1>{weight * this->rate};
   }
 
 public:
@@ -60,7 +61,7 @@ public:
 struct FixedCoefficientData : public ReactionDataBase<> {
 
   FixedCoefficientData(REAL rate_coefficient,
-  std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
+  std::map<int, std::string> properties_map_=default_map)
       : ReactionDataBase(
             Properties<REAL>(FIXED_COEFFICIENT_DATA::required_simple_real_props,
                              std::vector<Species>{}, std::vector<int>{}), properties_map_),
@@ -86,3 +87,4 @@ public:
     return this->fixed_coefficient_data_on_device;
   }
 };
+}; // namespace Reactions

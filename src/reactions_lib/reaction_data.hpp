@@ -1,5 +1,4 @@
 #pragma once
-#include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
 #include <neso_particles.hpp>
@@ -7,6 +6,7 @@
 
 // TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
+namespace Reactions{
 
 /**
  * struct AbstractCrossSection - Abstract base class for cross-section objects.
@@ -57,20 +57,20 @@ struct ReactionDataBase {
   using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBase(Properties<INT> required_int_props,
                    Properties<REAL> required_real_props,
-                   std::map<int, std::string> properties_map_ = ParticlePropertiesIndices::default_map)
+                   std::map<int, std::string> properties_map_ = default_map)
       : required_int_props(required_int_props),
         required_real_props(required_real_props), properties_map(properties_map_) {
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
-  ReactionDataBase(std::map<int, std::string> properties_map_ = ParticlePropertiesIndices::default_map)
+  ReactionDataBase(std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase(Properties<INT>(), Properties<REAL>(), properties_map_) {}
 
-  ReactionDataBase(Properties<INT> required_int_props, std::map<int, std::string> properties_map_ = ParticlePropertiesIndices::default_map)
+  ReactionDataBase(Properties<INT> required_int_props, std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase(required_int_props, Properties<REAL>(), properties_map_) {}
 
-  ReactionDataBase(Properties<REAL> required_real_props, std::map<int, std::string> properties_map_ = ParticlePropertiesIndices::default_map)
+  ReactionDataBase(Properties<REAL> required_real_props, std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase(Properties<INT>(), required_real_props, properties_map_) {}
 
   std::vector<std::string> get_required_int_props() {
@@ -136,4 +136,5 @@ struct ReactionDataBaseOnDevice {
   }
 
   static constexpr size_t get_dim() { return dim; }
+};
 };

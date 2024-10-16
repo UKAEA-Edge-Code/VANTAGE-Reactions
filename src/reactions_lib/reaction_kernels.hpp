@@ -1,31 +1,30 @@
 #pragma once
-#include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
 #include <neso_particles/containers/product_matrix.hpp>
-#include <stdexcept>
-#include <string>
+#include "particle_properties_map.hpp"
+#include "reaction_kernel_pre_reqs.hpp"
 
 using namespace NESO::Particles;
+namespace Reactions {
 
 /**
  * @brief Base reaction kernels object.
  */
 struct ReactionKernelsBase {
   ReactionKernelsBase(std::map<int, std::string> properties_map_ =
-                          ParticlePropertiesIndices::default_map)
+                          default_map)
       : properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
                       std::map<int, std::string> properties_map_ =
-                          ParticlePropertiesIndices::default_map)
+                          default_map)
       : required_int_props(required_int_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
                       std::map<int, std::string> properties_map_ =
-                          ParticlePropertiesIndices::default_map)
+                          default_map)
       : required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
 
@@ -33,7 +32,7 @@ struct ReactionKernelsBase {
                       Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
                       std::map<int, std::string> properties_map_ =
-                          ParticlePropertiesIndices::default_map)
+                          default_map)
       : required_int_props(required_int_props),
         required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
@@ -236,3 +235,4 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
     return;
   }
 };
+}; // namespace Reactions

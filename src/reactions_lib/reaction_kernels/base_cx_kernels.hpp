@@ -12,11 +12,12 @@
 // loops?
 
 using namespace NESO::Particles;
+namespace Reactions {
 
 namespace BASE_CX_KERNEL {
 constexpr int num_products_per_parent = 1;
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {props.weight,
                                                      props.velocity};
@@ -238,7 +239,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
    */
   CXReactionKernels(const Species &target_species,
                     const Species &projectile_species,
-                    std::map<int, std::string> properties_map_=ParticlePropertiesIndices::default_map)
+                    std::map<int, std::string> properties_map_=default_map)
       : ReactionKernelsBase(
             Properties<REAL>(
                 BASE_CX_KERNEL::required_simple_real_props,
@@ -301,7 +302,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
         this->required_descendant_real_props.simple_prop_index(props.weight, this->properties_map);
 
     const auto descendant_internal_state_prop =
-        ParticleProp<INT>(Sym<INT>(ParticlePropertiesIndices::default_map.at(
+        ParticleProp<INT>(Sym<INT>(default_map.at(
                               props.internal_state)),
                           1);
     const auto descendant_velocity_prop = ParticleProp<REAL>(
@@ -334,3 +335,4 @@ public:
     return this->cx_reaction_kernels_on_device;
   }
 };
+}; // namespace Reactions

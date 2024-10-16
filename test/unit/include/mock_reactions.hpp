@@ -22,7 +22,6 @@
 
 using namespace NESO::Particles;
 using namespace Reactions;
-using namespace ParticlePropertiesIndices;
 
 namespace PropertiesTest {
 inline auto int_props = Properties<INT>(
@@ -119,7 +118,7 @@ public:
 };
 
 namespace TEST_REACTION_KERNEL {
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 const std::vector<int> required_simple_real_props = {props.velocity,
                                                      props.weight};
 
@@ -195,7 +194,7 @@ public:
 
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
-  TestReactionKernels(std::map<int, std::string> properties_map_ = ParticlePropertiesIndices::default_map)
+  TestReactionKernels(std::map<int, std::string> properties_map_ = default_map)
       : ReactionKernelsBase(Properties<REAL>(
             TEST_REACTION_KERNEL::required_simple_real_props), 0, properties_map_) {
 
@@ -269,7 +268,7 @@ struct TestReaction
 };
 
 namespace TEST_REACTION_VAR_DATA {
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 const std::vector<int> required_simple_real_props = {props.position};
 } // namespace TEST_REACTION_VAR_DATA
 
@@ -313,7 +312,7 @@ public:
 namespace TEST_REACTION_VAR_KERNEL {
 constexpr int num_products_per_parent = 0;
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {props.weight};
 } // namespace TEST_REACTION_VAR_KERNEL
@@ -370,7 +369,7 @@ struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
 };
 
 namespace TEST_REACTION_KERNEL_DATA_CALC {
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 const std::vector<int> required_simple_real_props = {props.velocity,
                                                      props.weight};
 const std::vector<int> required_species_real_props = {props.source_density,

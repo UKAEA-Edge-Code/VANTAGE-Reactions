@@ -89,9 +89,9 @@ TEST(LinearReactionBase, full_use_properties_map) {
   particle_group->remove_particle_dat(Sym<REAL>("FLUID_TEMPERATURE"));
 
   auto test_prop_map = default_map;
-  test_prop_map[ParticlePropertiesIndices::default_properties.fluid_density] =
+  test_prop_map[default_properties.fluid_density] =
       "TEST_PROP1";
-  test_prop_map[ParticlePropertiesIndices::default_properties
+  test_prop_map[default_properties
                     .fluid_temperature] = "TEST_PROP2";
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
