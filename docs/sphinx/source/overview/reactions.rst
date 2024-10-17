@@ -1,26 +1,6 @@
-********
-Overview
-********
-
-What Reactions (the library) is
-===============================
-
-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library.
-
-Features provided by the library are:
-
-#. An extensible reaction abstraction, designed to be modular, separating the data and the actions on the parents/products 
-#. A uniform and extensible interface for producing particle subgroups by composing marking strategies 
-#. A uniform and extensible interface for defining, composing, and applying transformations to particle groups, including marking 
-#. An interface for the simultaneous application of multiple reactions to the relevant particles and the handling of reaction products
-#. Various helper interfaces for defining particle species as well as generating uniform particle specs 
-#. A collection of pre-built reactions/reaction data/reaction kernels
-
-What Reactions isn't
-====================
-
-This library deals only with the definition and application of particle transformations useful when dealing with reacting particles in particle codes. It is **NOT** a particle code itself. 
-It does not deal with moving the particles around, and is mesh agnostic. It does not define a standard set of reactions/species but provides the tools to do so. 
+******************************
+Reactions and their components
+******************************
 
 What reactions (the abstraction) are
 ====================================
@@ -40,3 +20,23 @@ In the abstract, a reaction is fully defined by:
 We make a distinction between linear and non-linear reactions in the particle sense. A linear reaction is any reaction where only one of the reactants is represented as a particle.
 There are no constraints on the number of reaction products in linear reactions. In contrast, a non-linear reaction is a reaction where two or more reactants are represented as particles in the simulation.
 An example of a non-linear reaction would be an elastic collision between two neutrals of the same species. There exist linearisation techniques for some of these reactions, so the initial focus of the framework is linear reactions.
+
+Linear Reaction structure
+=========================
+
+The main components of reactions are the reaction data and reaction kernel objects. Their overall responsibilities are as follows:
+
+* Reaction data - calculate the per particle data required for the application of the reaction. This could be reaction rates, values randomly sampled from some distributions, etc. 
+* Reaction kernels - define the properties of the products of the reaction (velocities, weights, internal states), as well as the feedback on fields and the parent particle 
+
+The key idea behind this separation of concern is the ability to separate the data and the physics, and allow the combination of different data calculation methods and different reaction physics. For example, the physics of an ionisation reaction is the same regardless of the reaction rate or the energy cost of the reaction, and the goal of flexibility in Reactions has lead to the data+kernel design. 
+
+The implementation of reactions, as well as reaction kernels will be covered in the developer guide, as it involves considerations of SYCL host and device types, as well as NESO-Particles :class:`ParticleLoop` constructs. 
+
+Both data and kernels, in executing their responsibilities, access particle data, and use the property map system [TODO: add before Reactions section]
+
+Reaction data
+=============
+
+
+
