@@ -126,7 +126,7 @@ struct DataCalculator : public AbstractDataCalculator {
   /**
    * @brief Getter for the size of the stored ReactionData tuple
    */
-  constexpr size_t get_data_size() const { 
+  constexpr size_t get_data_size() const {
     size_t dat_idx = 0u;
     std::apply(
         [&](auto &&...args) {
@@ -140,7 +140,6 @@ struct DataCalculator : public AbstractDataCalculator {
         this->data);
     return dat_idx;
   }
-
 
 private:
   std::tuple<DATATYPE...> data;

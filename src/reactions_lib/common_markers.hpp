@@ -43,7 +43,7 @@ template <typename T> struct EqualsComp {
  * in two INTs or two REALs
  * @tparam U REAL or INT, same as the templating on T
  */
-template <typename U, template < typename V> typename T>
+template <typename U, template <typename V> typename T>
 struct ComparisonMarkerSingle
     : MarkingStrategyBase<ComparisonMarkerSingle<U, T>> {
 
@@ -58,11 +58,13 @@ private:
       : MarkingFunctionWrapperBase<ComparisonMarkerSingleDevice> {
 
     ComparisonMarkerSingleDevice()
-        : comparison_val(0), comparison_component(0), comparison_wrapper(T<U>()) {}
+        : comparison_val(0), comparison_component(0),
+          comparison_wrapper(T<U>()) {}
 
     ComparisonMarkerSingleDevice(U comparison_value, INT comparison_component)
         : comparison_val(comparison_value),
-          comparison_component(comparison_component), comparison_wrapper(T<U>()) {}
+          comparison_component(comparison_component),
+          comparison_wrapper(T<U>()) {}
 
     bool marking_condition(Access::SymVector::Read<REAL> &real_vars,
                            Access::SymVector::Read<INT> &int_vars) const {
@@ -87,7 +89,7 @@ private:
                       //!< to marking_condition against using <
     INT comparison_component; //!< Component of the passed real-valued
                               //!< ParticleDat to compare
-    T<U> comparison_wrapper;     //!< Comparison function wrapper (see
+    T<U> comparison_wrapper;  //!< Comparison function wrapper (see
                               //!< ComparisonMarkerSingle description for
                               //!< requirements on this)
   };

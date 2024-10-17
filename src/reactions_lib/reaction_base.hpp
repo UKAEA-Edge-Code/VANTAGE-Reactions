@@ -38,8 +38,7 @@ struct AbstractReaction {
   AbstractReaction() = default;
 
   AbstractReaction(SYCLTargetSharedPtr sycl_target,
-                   const Sym<REAL> total_rate_dat,
-                   Sym<REAL> weight_sym)
+                   const Sym<REAL> total_rate_dat, Sym<REAL> weight_sym)
       : sycl_target_stored(sycl_target), total_reaction_rate(total_rate_dat),
         device_rate_buffer(
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
@@ -156,18 +155,17 @@ struct LinearReactionBase : public AbstractReaction {
   LinearReactionBase() = delete;
 
   LinearReactionBase(SYCLTargetSharedPtr sycl_target,
-                     const Sym<REAL> total_rate_dat,
-                     const Sym<REAL> weight_sym,
+                     const Sym<REAL> total_rate_dat, const Sym<REAL> weight_sym,
                      int in_state,
                      std::array<int, num_products_per_parent> out_states,
                      ReactionData reaction_data,
                      ReactionKernels reaction_kernels,
                      const ParticleSpec &particle_spec_,
                      DataCalc data_calculator_)
-      : AbstractReaction(sycl_target, total_rate_dat, weight_sym), in_state(in_state),
-        out_states(out_states), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
-        data_calculator(data_calculator_) {
+      : AbstractReaction(sycl_target, total_rate_dat, weight_sym),
+        in_state(in_state), out_states(out_states),
+        reaction_data(reaction_data), reaction_kernels(reaction_kernels),
+        particle_spec(particle_spec_), data_calculator(data_calculator_) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and
@@ -246,16 +244,15 @@ struct LinearReactionBase : public AbstractReaction {
    * use to construct sym_vectors.
    */
   LinearReactionBase(SYCLTargetSharedPtr sycl_target,
-                     const Sym<REAL> total_rate_dat,
-                     const Sym<REAL> weight_sym,
+                     const Sym<REAL> total_rate_dat, const Sym<REAL> weight_sym,
                      int in_state,
                      std::array<int, num_products_per_parent> out_states,
                      ReactionData reaction_data,
                      ReactionKernels reaction_kernels,
                      const ParticleSpec &particle_spec_)
-      : LinearReactionBase(sycl_target, total_rate_dat, weight_sym, in_state, out_states,
-                           reaction_data, reaction_kernels, particle_spec_,
-                           DataCalc()) {}
+      : LinearReactionBase(sycl_target, total_rate_dat, weight_sym, in_state,
+                           out_states, reaction_data, reaction_kernels,
+                           particle_spec_, DataCalc()) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given

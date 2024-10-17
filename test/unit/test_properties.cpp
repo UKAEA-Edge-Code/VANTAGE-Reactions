@@ -1,4 +1,5 @@
 #pragma once
+#include "mock_reactions.hpp"
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <gtest/gtest.h>
@@ -7,7 +8,6 @@
 #include <reaction_controller.hpp>
 #include <reaction_data.hpp>
 #include <stdexcept>
-#include "mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -21,10 +21,13 @@ TEST(Properties, property_constructor) {
 
 TEST(Properties, modify_property_map) {
   auto test_map_obj = properties_map(PropertiesTest::custom_prop_map);
-  test_map_obj.at(PropertiesTest::custom_props.test_custom_prop2) = "TEST_PROP3";
+  test_map_obj.at(PropertiesTest::custom_props.test_custom_prop2) =
+      "TEST_PROP3";
   auto test_map = test_map_obj.get_map();
 
-  EXPECT_STREQ(test_map.at(PropertiesTest::custom_props.test_custom_prop2).c_str(), "TEST_PROP3");
+  EXPECT_STREQ(
+      test_map.at(PropertiesTest::custom_props.test_custom_prop2).c_str(),
+      "TEST_PROP3");
 }
 
 // Testing required_simple_prop_names call for Properties struct

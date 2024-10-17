@@ -1,8 +1,8 @@
 #pragma once
-#include <neso_particles.hpp>
-#include <neso_particles/containers/product_matrix.hpp>
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
+#include <neso_particles.hpp>
+#include <neso_particles/containers/product_matrix.hpp>
 
 using namespace NESO::Particles;
 namespace Reactions {
@@ -11,28 +11,24 @@ namespace Reactions {
  * @brief Base reaction kernels object.
  */
 struct ReactionKernelsBase {
-  ReactionKernelsBase(std::map<int, std::string> properties_map_ =
-                          default_map)
+  ReactionKernelsBase(std::map<int, std::string> properties_map_ = default_map)
       : properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ =
-                          default_map)
+                      std::map<int, std::string> properties_map_ = default_map)
       : required_int_props(required_int_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ =
-                          default_map)
+                      std::map<int, std::string> properties_map_ = default_map)
       : required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props,
                       Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ =
-                          default_map)
+                      std::map<int, std::string> properties_map_ = default_map)
       : required_int_props(required_int_props),
         required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
@@ -43,7 +39,8 @@ struct ReactionKernelsBase {
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_int_props.get_prop_names(this->properties_map);
+      prop_names =
+          this->required_int_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
@@ -52,7 +49,8 @@ struct ReactionKernelsBase {
   std::vector<std::string> get_required_real_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_real_props.get_prop_names(this->properties_map);
+      prop_names =
+          this->required_real_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;

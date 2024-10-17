@@ -237,9 +237,11 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
 
     // Kept as EXPECT_NEAR for consistency with accumulated_2d checks
     EXPECT_NEAR(accumulated_1d[cellx]->at(0, 0), 0.5 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.1 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.2 * num_parts, 1e-10);
   };
 
@@ -263,9 +265,11 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
 
     // Kept as EXPECT_NEAR for consistency with accumulated_2d checks
     EXPECT_NEAR(accumulated_1d[cellx]->at(0, 0), 1.0 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.1 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.2 * num_parts, 1e-10);
   };
 
@@ -298,15 +302,20 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
   accumulator_transform->set_cell_data("MOCK_SOURCE1D", accumulated_1d);
   accumulator_transform->set_cell_data("MOCK_SOURCE2D", accumulated_2d);
 
-  auto updated_accumulated_1d = accumulator_transform->get_cell_data("MOCK_SOURCE1D");
-  auto updated_accumulated_2d = accumulator_transform->get_cell_data("MOCK_SOURCE2D");
+  auto updated_accumulated_1d =
+      accumulator_transform->get_cell_data("MOCK_SOURCE1D");
+  auto updated_accumulated_2d =
+      accumulator_transform->get_cell_data("MOCK_SOURCE2D");
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
     auto num_parts = particle_group->get_npart_cell(cellx);
 
-    EXPECT_NEAR(updated_accumulated_1d[cellx]->at(0, 0), scale_1d * 0.5 * num_parts, 1e-10);
-    EXPECT_NEAR(updated_accumulated_2d[cellx]->at(0, 0), scale_2d * 0.1 * num_parts, 1e-10);
-    EXPECT_NEAR(updated_accumulated_2d[cellx]->at(1, 0), scale_2d * 0.2 * num_parts, 1e-10);
+    EXPECT_NEAR(updated_accumulated_1d[cellx]->at(0, 0),
+                scale_1d * 0.5 * num_parts, 1e-10);
+    EXPECT_NEAR(updated_accumulated_2d[cellx]->at(0, 0),
+                scale_2d * 0.1 * num_parts, 1e-10);
+    EXPECT_NEAR(updated_accumulated_2d[cellx]->at(1, 0),
+                scale_2d * 0.2 * num_parts, 1e-10);
   }
 
   particle_group->domain->mesh->free();
@@ -335,9 +344,11 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
 
     // Kept as EXPECT_NEAR for consistency with accumulated_2d checks
     EXPECT_NEAR(accumulated_weight[cellx]->at(0, 0), 0.5 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.5 * 0.1 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.5 * 0.2 * num_parts, 1e-10);
   };
   // Testing out zeroing features and repeated accumulation
@@ -360,10 +371,12 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
 
     // Kept as EXPECT_NEAR for consistency with accumulated_2d checks
     EXPECT_NEAR(accumulated_weight[cellx]->at(0, 0), 1.0 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
-    EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.5*0.1 * num_parts, 1e-10);
-    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not appropriate.
-    EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.5*0.2 * num_parts, 1e-10);
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
+    EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.5 * 0.1 * num_parts, 1e-10);
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
+    EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.5 * 0.2 * num_parts, 1e-10);
   };
 
   accumulator_transform->zero_all_buffers();
@@ -387,8 +400,7 @@ TEST(TransformationWrapper, CellwiseAccumulatorINT) {
   auto particle_group = create_test_particle_group_marking(N_total);
 
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<INT>>(
-      particle_group,
-      std::vector<std::string>{"MOCK_INT"});
+      particle_group, std::vector<std::string>{"MOCK_INT"});
 
   auto test_wrapper = TransformationWrapper(
       std::dynamic_pointer_cast<TransformationStrategy>(accumulator_transform));
@@ -424,8 +436,10 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
   for (int cellx = 0; cellx < num_cells; cellx++) {
     auto num_parts = particle_group->get_npart_cell(cellx);
 
-    EXPECT_DOUBLE_EQ(accumulated_weight[cellx]->at(0, 0), 0.5 * num_parts); //, 1e-10);
-    EXPECT_DOUBLE_EQ(accumulated_1d[cellx]->at(0, 0), 0.5 *num_parts); //, 1e-10);
+    EXPECT_DOUBLE_EQ(accumulated_weight[cellx]->at(0, 0),
+                     0.5 * num_parts); //, 1e-10);
+    EXPECT_DOUBLE_EQ(accumulated_1d[cellx]->at(0, 0),
+                     0.5 * num_parts); //, 1e-10);
   };
 
   particle_group->domain->mesh->free();

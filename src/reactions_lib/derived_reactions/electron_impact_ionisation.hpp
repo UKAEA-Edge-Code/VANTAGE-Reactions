@@ -46,16 +46,14 @@ struct ElectronImpactIonisation
    * reaction should act on
    */
   ElectronImpactIonisation(SYCLTargetSharedPtr sycl_target_,
-                           Sym<REAL> total_reaction_rate,
-                           Sym<REAL> weight_sym, 
-                           RateData rate_data,
-                           EnergyRateData energy_rate_data,
+                           Sym<REAL> total_reaction_rate, Sym<REAL> weight_sym,
+                           RateData rate_data, EnergyRateData energy_rate_data,
                            Species target_species, Species electron_species,
                            const ParticleSpec &particle_spec)
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
-            sycl_target_, total_reaction_rate, weight_sym, target_species.get_id(),
-            std::array<int, 0>{}, rate_data,
+            sycl_target_, total_reaction_rate, weight_sym,
+            target_species.get_id(), std::array<int, 0>{}, rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species),
             particle_spec,

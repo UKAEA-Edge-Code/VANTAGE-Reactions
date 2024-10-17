@@ -193,16 +193,19 @@ public:
             this->species_groups[in_state], i, dt, child_group);
       }
 
-      for (auto it = this->child_ids.begin(); it != this->child_ids.end(); it++) {
+      for (auto it = this->child_ids.begin(); it != this->child_ids.end();
+           it++) {
         for (auto tr : this->child_transform) {
           auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-          transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
+          transform_buffer->add_marking_strategy(
+              this->sub_group_selectors[*it]);
           transform_buffer->transform(child_group, i);
         }
       }
     }
 
-    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end(); it++) {
+    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end();
+         it++) {
       for (auto tr : this->parent_transform) {
         auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
         transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
