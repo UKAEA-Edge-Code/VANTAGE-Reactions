@@ -3,7 +3,6 @@
 
 #include "common_markers.hpp"
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <functional>
 #include <limits>

@@ -8,7 +8,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+namespace Reactions {
 using namespace ParticlePropertiesIndices;
 
 namespace FIXED_COEFFICIENT_DATA {
@@ -33,15 +33,18 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the calculation
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
    */
-  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props,
-                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType  &kernel) const {
+  std::array<REAL, 1>
+  calc_data(const Access::LoopIndex::Read &index,
+            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
-    return std::array<REAL,1>{weight * this->rate};
+    return std::array<REAL, 1>{weight * this->rate};
   }
 
 public:
@@ -85,3 +88,4 @@ public:
     return this->fixed_coefficient_data_on_device;
   }
 };
+}; // namespace Reactions

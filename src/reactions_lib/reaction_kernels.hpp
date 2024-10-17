@@ -1,11 +1,9 @@
 #pragma once
-#include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
 #include <neso_particles/containers/product_matrix.hpp>
-#include <stdexcept>
-#include <string>
 
 using namespace NESO::Particles;
+namespace Reactions {
 
 /**
  * @brief Base reaction kernels object.
@@ -49,19 +47,21 @@ struct ReactionKernelsBase {
     return prop_names;
   }
 
-  const Properties<INT>& get_required_descendant_int_props() {
+  const Properties<INT> &get_required_descendant_int_props() {
     return this->required_descendant_int_props;
   }
 
-  void set_required_descendant_int_props(const Properties<INT>& required_descendant_int_props) {
+  void set_required_descendant_int_props(
+      const Properties<INT> &required_descendant_int_props) {
     this->required_descendant_int_props = required_descendant_int_props;
   }
 
-  const Properties<REAL>& get_required_descendant_real_props() {
+  const Properties<REAL> &get_required_descendant_real_props() {
     return this->required_descendant_real_props;
   }
 
-  void set_required_descendant_real_props(const Properties<REAL>& required_descendant_real_props) {
+  void set_required_descendant_real_props(
+      const Properties<REAL> &required_descendant_real_props) {
     this->required_descendant_real_props = required_descendant_real_props;
   }
 
@@ -69,13 +69,12 @@ struct ReactionKernelsBase {
     return this->descendant_matrix_spec;
   }
 
-  void set_descendant_matrix_spec(std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec) {
+  void set_descendant_matrix_spec(
+      std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec) {
     this->descendant_matrix_spec = descendant_matrix_spec;
   }
 
-  const INT& get_pre_ndims() const {
-    return this->pre_req_ndims;
-  }
+  const INT &get_pre_ndims() const { return this->pre_req_ndims; }
 
 protected:
   Properties<INT> required_int_props;
@@ -84,7 +83,8 @@ protected:
   Properties<INT> required_descendant_int_props;
   Properties<REAL> required_descendant_real_props;
 
-  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec = std::make_shared<ProductMatrixSpec>();
+  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec =
+      std::make_shared<ProductMatrixSpec>();
 
   INT pre_req_ndims;
 };
@@ -222,3 +222,4 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
     return;
   }
 };
+}; // namespace Reactions

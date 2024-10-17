@@ -6,9 +6,8 @@
 #include <reaction_data.hpp>
 #include <reaction_kernels.hpp>
 
-//TODO: docs
 using namespace NESO::Particles;
-using namespace Reactions;
+namespace Reactions {
 
 /**
  * @brief SYCL device-compatible ReactionData class returning a fixed rate
@@ -29,14 +28,17 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the calculation
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
    */
-  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props,
-                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType &kernel) const {
+  std::array<REAL, 1>
+  calc_data(const Access::LoopIndex::Read &index,
+            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
 
-    return std::array<REAL,1>{this->rate};
+    return std::array<REAL, 1>{this->rate};
   }
 
 private:
@@ -64,3 +66,4 @@ public:
     return this->fixed_rate_data_on_device;
   }
 };
+}; // namespace Reactions

@@ -6,6 +6,7 @@
 
 // TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
+namespace Reactions{
 
 /**
  * struct AbstractCrossSection - Abstract base class for cross-section objects.
@@ -133,4 +134,5 @@ struct ReactionDataBaseOnDevice {
   }
 
   static constexpr size_t get_dim() { return dim; }
+};
 };
