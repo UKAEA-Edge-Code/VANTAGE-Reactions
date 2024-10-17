@@ -106,7 +106,8 @@ TEST(LinearReactionBase, full_use_properties_map) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"), 0,
           std::array<int, 0>{}, amjuel_data,
           TestReactionKernels<0>(test_prop_map), particle_spec);
 
@@ -146,7 +147,7 @@ TEST(LinearReactionBase, calc_rate) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, 0>{}, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -181,7 +182,7 @@ TEST(LinearReactionBase, calc_var_rate) {
 
   auto test_reaction =
       TestReactionVarRate(particle_group->sycl_target,
-                          Sym<REAL>("TOT_REACTION_RATE"), 0, particle_spec);
+                          Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 0, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -215,7 +216,8 @@ TEST(ReactionData, FixedCoefficientData) {
 
   auto test_reaction =
       LinearReactionBase<0, FixedCoefficientData, TestReactionKernels<0>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"), 0,
           std::array<int, 0>{}, FixedCoefficientData(2.0),
           TestReactionKernels<0>(), particle_spec);
 
@@ -256,7 +258,8 @@ TEST(ReactionData, AMJUEL2DData) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"), 0,
           std::array<int, 0>{}, amjuel_data, TestReactionKernels<0>(),
           particle_spec);
 
@@ -305,7 +308,8 @@ TEST(ReactionData, AMJUEL2DDataH3) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DDataH3<2, 2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"), 0,
           std::array<int, 0>{}, amjuel_data, TestReactionKernels<0>(),
           particle_spec);
 
@@ -351,7 +355,8 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"), 0,
           std::array<int, 0>{}, amjuel_data, TestReactionKernels<0>(),
           particle_spec);
 
@@ -401,11 +406,11 @@ TEST(LinearReactionBase, split_group_single_reaction) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<0>(particle_group->sycl_target,
-                                        Sym<REAL>("TOT_REACTION_RATE"), 1, 2,
+                                        Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 1, 2,
                                         std::array<int, 0>{}, particle_spec);
 
   auto test_reaction2 = TestReaction<1>(particle_group->sycl_target,
-                                        Sym<REAL>("TOT_REACTION_RATE"), 2, 3,
+                                        Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 2, 3,
                                         std::array<int, 1>{4}, particle_spec);
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions = {
@@ -479,17 +484,17 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<0>(particle_group->sycl_target,
-                                        Sym<REAL>("TOT_REACTION_RATE"), 1, 0,
+                                        Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 1, 0,
                                         std::array<int, 0>{}, particle_spec);
 
   auto test_reaction2 = TestReaction<0>(particle_group->sycl_target,
-                                        Sym<REAL>("TOT_REACTION_RATE"), 1, 0,
+                                        Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 1, 0,
                                         std::array<int, 0>{}, particle_spec);
 
   const INT num_products_per_parent = 1;
 
   auto test_reaction3 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 2, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 2, 0,
       std::array<int, 1>{1}, particle_spec);
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions{};
@@ -553,7 +558,7 @@ TEST(IoniseReaction, calc_rate) {
   auto target_species = Species("ION", 1.0);
   target_species.set_id(0);
   auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_data,
       test_data, target_species, electron_species, particle_spec);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -594,7 +599,7 @@ TEST(ChargeExchange, simple_beam_exchange) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<>,
                          DataCalculator<FixedRateData, FixedRateData>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 0,
           std::array<int, 1>{1}, FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
           particle_spec,
@@ -679,7 +684,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<>,
                          DataCalculator<FilteredMaxwellianSampler<2>>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 0,
           std::array<int, 1>{1}, FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
           particle_spec,
@@ -774,7 +779,7 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<3>,
                          DataCalculator<FilteredMaxwellianSampler<3>>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 0,
           std::array<int, 1>{1}, FixedRateData(1.0),
           CXReactionKernels<3>(target_species, projectile_species),
           particle_spec,
@@ -870,7 +875,8 @@ TEST(DataCalculator, custom_sources) {
       LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
                          DataCalculator<TestReactionData, TestReactionData>>(
 
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"), 0,
           std::array<int, 0>{}, TestReactionData(2.0),
           TestReactionDataCalcKernels<0>(), particle_spec,
           DataCalculator<TestReactionData, TestReactionData>(
@@ -914,7 +920,8 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
     TestDeviceRateBufferReaction(ParticleGroupSharedPtr particle_group)
         : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
                              DataCalculator<FixedRateData>>(
-              particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+              particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+              Sym<REAL>("WEIGHT"), 0,
               std::array<int, 0>{}, FixedRateData(1),
               IoniseReactionKernels<2>(Species("ION", 1.0, 1.0, 0),
                                        Species("ELECTRON"),
@@ -965,7 +972,8 @@ TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
       : public LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>> {
     TestDataCalcNdimReaction(ParticleGroupSharedPtr particle_group)
         : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>>(
-              particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), 0,
+              particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+              Sym<REAL>("WEIGHT"), 0,
               std::array<int, 0>{}, FixedRateData(1),
               IoniseReactionKernels<>(Species("ION", 1.0, 1.0, 0),
                                       Species("ELECTRON"), Species("ELECTRON")),

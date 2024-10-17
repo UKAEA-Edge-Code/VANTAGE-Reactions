@@ -43,7 +43,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -140,7 +140,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<0>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, 0>{}, particle_spec);
 
   const INT num_products_per_parent = 2;
@@ -148,7 +148,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   test_rate = 10.0;
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, num_products_per_parent>{1, 2}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -234,13 +234,13 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
   test_rate = 10.0; // example rate
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 2,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_rate, 2,
       std::array<int, num_products_per_parent>{3}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -317,7 +317,7 @@ TEST(ReactionController, parent_transform) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction = TestReaction<0>(particle_group->sycl_target,
-                                       Sym<REAL>("TOT_REACTION_RATE"), 1, 0,
+                                       Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), 1, 0,
                                        std::array<int, 0>{}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -369,7 +369,7 @@ TEST(ReactionController, ionisation_reaction) {
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_data,
       test_data, target_species, electron_species, particle_spec);
 
   reaction_controller.add_reaction(
@@ -415,7 +415,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), Sym<REAL>("WEIGHT"), test_data,
       test_data, target_species, electron_species, particle_spec);
 
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
@@ -521,6 +521,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto ionise_reaction =
       ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>(
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+          Sym<REAL>("WEIGHT"),
           test_data, fixed_rate, target_species, electron_species,
           particle_spec);
 

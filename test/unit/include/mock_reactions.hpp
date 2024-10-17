@@ -257,12 +257,13 @@ struct TestReaction
   TestReaction() = default;
 
   TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
+               Sym<REAL> weight_sym_,
                REAL rate_, int in_states_,
                const std::array<int, num_products_per_parent> out_states_,
                const ParticleSpec &particle_spec)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
-            sycl_target_, total_reaction_rate_, in_states_, out_states_,
+            sycl_target_, total_reaction_rate_, weight_sym_, in_states_, out_states_,
             TestReactionData(rate_),
             TestReactionKernels<num_products_per_parent>(), particle_spec) {}
 };
@@ -360,10 +361,12 @@ struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {
 
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
-                      Sym<REAL> total_reaction_rate_, int in_states_,
+                      Sym<REAL> total_reaction_rate_, 
+                      Sym<REAL> weight_sym,
+                      int in_states_,
                       const ParticleSpec &particle_spec)
       : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
-            sycl_target_, total_reaction_rate_, in_states_,
+            sycl_target_, total_reaction_rate_, weight_sym, in_states_,
             std::array<int, 0>{}, TestReactionVarData(),
             TestReactionVarKernels(), particle_spec) {}
 };
