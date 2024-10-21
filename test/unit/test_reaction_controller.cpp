@@ -43,7 +43,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -76,7 +77,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 2);
 
-    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
@@ -86,7 +88,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
 
-    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
@@ -113,7 +116,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto test_vec = test_la->get();
   for (auto rate : test_vec) {
 
-    EXPECT_DOUBLE_EQ(rate, 5.0);//, 1e-12);
+    EXPECT_DOUBLE_EQ(rate, 5.0); //, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -140,15 +143,16 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<0>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
-      std::array<int, 0>{}, particle_spec);
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_rate, 0, std::array<int, 0>{}, particle_spec);
 
   const INT num_products_per_parent = 2;
 
   test_rate = 10.0;
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, num_products_per_parent>{1, 2}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -234,13 +238,15 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 0,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
   test_rate = 10.0; // example rate
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_rate, 2,
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_rate, 2,
       std::array<int, num_products_per_parent>{3}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -283,7 +289,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
     EXPECT_EQ(merged_group2->get_npart_cell(icell), 2);
 
     EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
-                reduction->get_cell(icell)->at(0, 0));//, 1e-12);
+                     reduction->get_cell(icell)->at(0, 0)); //, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -316,9 +322,9 @@ TEST(ReactionController, parent_transform) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction = TestReaction<0>(particle_group->sycl_target,
-                                       Sym<REAL>("TOT_REACTION_RATE"), 1, 0,
-                                       std::array<int, 0>{}, particle_spec);
+  auto test_reaction = TestReaction<0>(
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), 1, 0, std::array<int, 0>{}, particle_spec);
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));
@@ -345,7 +351,7 @@ TEST(ReactionController, parent_transform) {
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
 
     EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
-                reduction->get_cell(icell)->at(0, 0));//, 1e-12);
+                     reduction->get_cell(icell)->at(0, 0)); //, 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -369,8 +375,9 @@ TEST(ReactionController, ionisation_reaction) {
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
-      test_data, target_species, electron_species, particle_spec);
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_data, test_data, target_species,
+      electron_species, particle_spec);
 
   reaction_controller.add_reaction(
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
@@ -415,8 +422,9 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"), test_data,
-      test_data, target_species, electron_species, particle_spec);
+      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
+      Sym<REAL>("WEIGHT"), test_data, test_data, target_species,
+      electron_species, particle_spec);
 
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY"});
@@ -454,7 +462,8 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   for (int icell = 0; icell < num_cells; icell++) {
 
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
-    EXPECT_DOUBLE_EQ(accumulated_1d[icell]->at(0, 0), num_parts[icell] * 0.5);//, 1e-10);
+    EXPECT_DOUBLE_EQ(accumulated_1d[icell]->at(0, 0),
+                     num_parts[icell] * 0.5); //, 1e-10);
   };
 
   particle_group->domain->mesh->free();
@@ -521,8 +530,8 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto ionise_reaction =
       ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>(
           particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-          test_data, fixed_rate, target_species, electron_species,
-          particle_spec);
+          Sym<REAL>("WEIGHT"), test_data, fixed_rate, target_species,
+          electron_species, particle_spec);
 
   reaction_controller.add_reaction(
       std::make_shared<

@@ -107,7 +107,8 @@ struct FilteredMaxwellianOnDevice
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 
       accepted = this->cross_section.accept_reject(
-          relative_vel, kernel.at(index, num_req_samples), value_at, max_rate_val);
+          relative_vel, kernel.at(index, num_req_samples), value_at,
+          max_rate_val);
     }
 
     return sampled_vels;
@@ -144,10 +145,12 @@ struct FilteredMaxwellianSampler
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map_=default_map)
-      : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(Properties<REAL>(
-            FILTERED_MAXWALLIAN_SAMPLER::required_simple_real_props,
-            std::vector<Species>{}, std::vector<int>{}), properties_map_),
+      std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
+            Properties<REAL>(
+                FILTERED_MAXWALLIAN_SAMPLER::required_simple_real_props,
+                std::vector<Species>{}, std::vector<int>{}),
+            properties_map_),
         device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
             norm_ratio, cross_section)) {
 
@@ -157,11 +160,13 @@ struct FilteredMaxwellianSampler
     auto props = FILTERED_MAXWALLIAN_SAMPLER::props;
 
     this->device_obj.fluid_flow_speed_ind =
-        this->required_real_props.simple_prop_index(props.fluid_flow_speed, this->properties_map);
+        this->required_real_props.simple_prop_index(props.fluid_flow_speed,
+                                                    this->properties_map);
     this->device_obj.fluid_temperature_ind =
-        this->required_real_props.simple_prop_index(props.fluid_temperature, this->properties_map);
-    this->device_obj.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity, this->properties_map);
+        this->required_real_props.simple_prop_index(props.fluid_temperature,
+                                                    this->properties_map);
+    this->device_obj.velocity_ind = this->required_real_props.simple_prop_index(
+        props.velocity, this->properties_map);
 
     this->set_rng_kernel(rng_kernel);
   }

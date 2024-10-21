@@ -115,7 +115,7 @@ struct TransformationWrapper {
       NESOASSERT(
           cell_id < cell_num,
           "Transformation wrapper transform called with cell id out of range");
-      auto marker_subgroup = particle_sub_group(target_group,cell_id);
+      auto marker_subgroup = particle_sub_group(target_group, cell_id);
     }
     for (auto &strat : this->marking_strat) {
       marker_subgroup = strat->make_marker_subgroup(marker_subgroup);

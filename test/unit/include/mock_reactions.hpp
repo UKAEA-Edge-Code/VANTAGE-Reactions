@@ -195,8 +195,9 @@ public:
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
   TestReactionKernels(std::map<int, std::string> properties_map_ = default_map)
-      : ReactionKernelsBase(Properties<REAL>(
-            TEST_REACTION_KERNEL::required_simple_real_props), 0, properties_map_) {
+      : ReactionKernelsBase(
+            Properties<REAL>(TEST_REACTION_KERNEL::required_simple_real_props),
+            0, properties_map_) {
 
     this->set_required_descendant_int_props(Properties<INT>(
         TEST_REACTION_KERNEL::required_descendant_simple_int_props));
@@ -207,27 +208,28 @@ struct TestReactionKernels : public ReactionKernelsBase {
     auto props = TEST_REACTION_KERNEL::props;
 
     this->test_reaction_kernels_on_device.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity, this->properties_map);
+        this->required_real_props.simple_prop_index(props.velocity,
+                                                    this->properties_map);
     this->test_reaction_kernels_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight, this->properties_map);
+        this->required_real_props.simple_prop_index(props.weight,
+                                                    this->properties_map);
 
     this->test_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
             props.internal_state, this->properties_map);
     this->test_reaction_kernels_on_device.descendant_velocity_ind =
-        this->required_descendant_real_props.simple_prop_index(props.velocity, this->properties_map);
+        this->required_descendant_real_props.simple_prop_index(
+            props.velocity, this->properties_map);
     this->test_reaction_kernels_on_device.descendant_weight_ind =
-        this->required_descendant_real_props.simple_prop_index(props.weight, this->properties_map);
+        this->required_descendant_real_props.simple_prop_index(
+            props.weight, this->properties_map);
 
-    const auto descendant_internal_state_prop =
-        ParticleProp<INT>(Sym<INT>(this->properties_map.at(
-                              props.internal_state)),
-                          1);
+    const auto descendant_internal_state_prop = ParticleProp<INT>(
+        Sym<INT>(this->properties_map.at(props.internal_state)), 1);
     const auto descendant_velocity_prop = ParticleProp<REAL>(
-        Sym<REAL>(this->properties_map.at(props.velocity)),
-        2);
-    const auto descendant_weight_prop = ParticleProp<REAL>(
-        Sym<REAL>(this->properties_map.at(props.weight)), 1);
+        Sym<REAL>(this->properties_map.at(props.velocity)), 2);
+    const auto descendant_weight_prop =
+        ParticleProp<REAL>(Sym<REAL>(this->properties_map.at(props.weight)), 1);
 
     auto descendant_particles_spec = ParticleSpec();
     descendant_particles_spec.push(descendant_internal_state_prop);
@@ -257,13 +259,13 @@ struct TestReaction
   TestReaction() = default;
 
   TestReaction(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate_,
-               REAL rate_, int in_states_,
+               Sym<REAL> weight_sym_, REAL rate_, int in_states_,
                const std::array<int, num_products_per_parent> out_states_,
                const ParticleSpec &particle_spec)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
-            sycl_target_, total_reaction_rate_, in_states_, out_states_,
-            TestReactionData(rate_),
+            sycl_target_, total_reaction_rate_, weight_sym_, in_states_,
+            out_states_, TestReactionData(rate_),
             TestReactionKernels<num_products_per_parent>(), particle_spec) {}
 };
 
@@ -360,10 +362,10 @@ struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {
 
   TestReactionVarRate(SYCLTargetSharedPtr sycl_target_,
-                      Sym<REAL> total_reaction_rate_, int in_states_,
-                      const ParticleSpec &particle_spec)
+                      Sym<REAL> total_reaction_rate_, Sym<REAL> weight_sym,
+                      int in_states_, const ParticleSpec &particle_spec)
       : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
-            sycl_target_, total_reaction_rate_, in_states_,
+            sycl_target_, total_reaction_rate_, weight_sym, in_states_,
             std::array<int, 0>{}, TestReactionVarData(),
             TestReactionVarKernels(), particle_spec) {}
 };
@@ -478,7 +480,7 @@ public:
   }
 };
 
-template <size_t ndim=2>
+template <size_t ndim = 2>
 inline auto create_test_particle_group(int N_total)
     -> std::shared_ptr<ParticleGroup> {
 

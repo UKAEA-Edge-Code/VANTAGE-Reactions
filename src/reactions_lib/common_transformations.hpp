@@ -206,10 +206,12 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
   }
 
   /**
-   * @brief Sets cell-wise accumulated data from a standard vector of CellData objects
+   * @brief Sets cell-wise accumulated data from a standard vector of CellData
+   * objects
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_data Standard vector of CellData objects with data to be assigned
+   * @param cell_data Standard vector of CellData objects with data to be
+   * assigned
    */
   void set_cell_data(std::string data_name,
                      std::vector<CellData<T>> cell_data) {
@@ -332,7 +334,8 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    */
   std::vector<CellData<REAL>> get_cell_data(std::string data_name) {
 
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(
+        this->values.find(Sym<T>(data_name)) != this->values.end(),
         "Attempted to retrieve values for " + data_name +
             " which is not registered in the WeightedCellwiseAccumulator");
     auto result = std::vector<CellData<REAL>>();
@@ -370,7 +373,8 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
       this->weight_buffer->fill(0);
     } else {
 
-      NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+      NESOASSERT(
+          this->values.find(Sym<T>(data_name)) != this->values.end(),
           "Attempted to zero out buffer for " + data_name +
               " which is not registered in the WeightedCellwiseAccumulator");
       this->values[Sym<T>(data_name)]->fill(0);

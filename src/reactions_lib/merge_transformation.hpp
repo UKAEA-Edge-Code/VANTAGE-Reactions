@@ -60,8 +60,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
         part_group->domain, part_group->particle_spec, part_group->sycl_target);
     bool ndim_check = part_group->domain->mesh->get_ndim() == ndim;
     NESOASSERT(ndim_check,
-                  "The number of dimensions of the target_subgroup's mesh does "
-                  "not match the value of the template parameter: ndim");
+               "The number of dimensions of the target_subgroup's mesh does "
+               "not match the value of the template parameter: ndim");
 
     /*Buffers for the reduction quantities. Scalars are stored in the order
     weight,total energy

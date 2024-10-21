@@ -6,7 +6,7 @@
 
 // TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
-namespace Reactions{
+namespace Reactions {
 
 /**
  * struct AbstractCrossSection - Abstract base class for cross-section objects.
@@ -59,24 +59,31 @@ struct ReactionDataBase {
                    Properties<REAL> required_real_props,
                    std::map<int, std::string> properties_map_ = default_map)
       : required_int_props(required_int_props),
-        required_real_props(required_real_props), properties_map(properties_map_) {
+        required_real_props(required_real_props),
+        properties_map(properties_map_) {
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
   ReactionDataBase(std::map<int, std::string> properties_map_ = default_map)
-      : ReactionDataBase(Properties<INT>(), Properties<REAL>(), properties_map_) {}
+      : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
+                         properties_map_) {}
 
-  ReactionDataBase(Properties<INT> required_int_props, std::map<int, std::string> properties_map_ = default_map)
-      : ReactionDataBase(required_int_props, Properties<REAL>(), properties_map_) {}
+  ReactionDataBase(Properties<INT> required_int_props,
+                   std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase(required_int_props, Properties<REAL>(),
+                         properties_map_) {}
 
-  ReactionDataBase(Properties<REAL> required_real_props, std::map<int, std::string> properties_map_ = default_map)
-      : ReactionDataBase(Properties<INT>(), required_real_props, properties_map_) {}
+  ReactionDataBase(Properties<REAL> required_real_props,
+                   std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase(Properties<INT>(), required_real_props,
+                         properties_map_) {}
 
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_int_props.get_prop_names(this->properties_map);
+      prop_names =
+          this->required_int_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
@@ -85,7 +92,8 @@ struct ReactionDataBase {
   std::vector<std::string> get_required_real_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_real_props.get_prop_names(this->properties_map);
+      prop_names =
+          this->required_real_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
@@ -137,4 +145,4 @@ struct ReactionDataBaseOnDevice {
 
   static constexpr size_t get_dim() { return dim; }
 };
-};
+}; // namespace Reactions
