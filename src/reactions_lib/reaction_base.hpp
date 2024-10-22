@@ -21,6 +21,8 @@
 
 using namespace NESO::Particles;
 
+//TODO: Improve docs - implementation specific parameter descriptions - avoid!!!
+
 namespace Reactions {
 
 /**
