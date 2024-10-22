@@ -9,6 +9,19 @@ namespace Reactions {
 
 /**
  * @brief Base reaction kernels object.
+ *
+ * @param required_int_props Properties<INT> object containing information
+ * regarding the required INT-based properties for the reaction kernel.
+ * @param required_real_props Properties<REAL> object containing information
+ * regarding the required REAL-based properties for the reaction kernel.
+ * @param pre_req_ndims Integer defining the number of dimensions required by a
+ * reaction kernel (this in turn matches the number of ReactionData-derived
+ * objects that must be passed to the constructor of a DataCalculator object
+ * when this kernel and the DataCalculator object are passed to a
+ * LinearReactionBase-derived object constructor).
+ * @param properties_map_ A std::map<int, std::string> object to be used when
+ * retrieving property names (in get_required_real_props(...) and
+ * get_required_int_props(...)).
  */
 struct ReactionKernelsBase {
   ReactionKernelsBase(std::map<int, std::string> properties_map_ = default_map)
@@ -32,10 +45,7 @@ struct ReactionKernelsBase {
       : required_int_props(required_int_props),
         required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
-  /**
-   * @brief Virtual getters functions that can be overidden by an implementation
-   * in a derived struct.
-   */
+
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
@@ -60,13 +70,20 @@ struct ReactionKernelsBase {
     return this->required_descendant_int_props;
   }
 
+  const Properties<REAL> &get_required_descendant_real_props() {
+    return this->required_descendant_real_props;
+  }
+
+  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec() {
+    return this->descendant_matrix_spec;
+  }
+
+  const INT &get_pre_ndims() const { return this->pre_req_ndims; }
+
+protected:
   void set_required_descendant_int_props(
       const Properties<INT> &required_descendant_int_props) {
     this->required_descendant_int_props = required_descendant_int_props;
-  }
-
-  const Properties<REAL> &get_required_descendant_real_props() {
-    return this->required_descendant_real_props;
   }
 
   void set_required_descendant_real_props(
@@ -74,18 +91,11 @@ struct ReactionKernelsBase {
     this->required_descendant_real_props = required_descendant_real_props;
   }
 
-  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec() {
-    return this->descendant_matrix_spec;
-  }
-
   void set_descendant_matrix_spec(
       std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec) {
     this->descendant_matrix_spec = descendant_matrix_spec;
   }
 
-  const INT &get_pre_ndims() const { return this->pre_req_ndims; }
-
-protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
 

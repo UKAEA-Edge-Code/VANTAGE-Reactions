@@ -136,6 +136,10 @@ public:
  * and v are the temperature and velocity normalisation constants
  * @param cross_section Cross section object to be used in the rejection method
  * sampling
+ * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
+ * set as the rng_kernel in ReactionDataBase.
+ * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * ReactionDataBase
  *
  */
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
@@ -171,6 +175,9 @@ struct FilteredMaxwellianSampler
     this->set_rng_kernel(rng_kernel);
   }
 
+  /**
+   * @brief Overloaded constructor which sets default values for the cross_section.
+   */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel)

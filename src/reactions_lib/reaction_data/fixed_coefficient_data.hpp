@@ -57,6 +57,8 @@ public:
  *
  * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
  * and the particle weight)
+ * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * ReactionDataBase
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 

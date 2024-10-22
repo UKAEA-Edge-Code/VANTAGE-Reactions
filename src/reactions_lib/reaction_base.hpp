@@ -136,6 +136,8 @@ private:
  * @param total_rate_dat Symbol index for a ParticleDat that's used to track
  * the cumulative weighted reaction rate modification imposed on all of the
  * particles in the ParticleSubGroup passed to run_rate_loop(...).
+ * @param weight_sym Symbol index for a ParticleDat that's associated with the
+ * weight of a particle.
  * @param in_state Integer specifying the ID of the species on
  * which the derived reaction is acting on.
  * @param out_states Array of integers specifying the species IDs of the
@@ -233,6 +235,8 @@ struct LinearReactionBase : public AbstractReaction {
    * @param total_rate_dat Symbol index for a ParticleDat that's used to track
    * the cumulative weighted reaction rate modification imposed on all of the
    * particles in the ParticleSubGroup passed to run_rate_loop(...).
+   * @param weight_sym Symbol index for a ParticleDat that's associated with the
+   * weight of a particle.
    * @param in_state Integer specifying the ID of the species on
    * which the derived reaction is acting on.
    * @param out_states Array of integers specifying the species IDs of the

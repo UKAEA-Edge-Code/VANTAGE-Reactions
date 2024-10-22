@@ -131,6 +131,9 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Function to return a vector of strings containing the names of the
    * required simple properties.
    *
+   * @param properties_map_ A std::map<int, std::string> object to be used in
+   * recovering the property names.
+   *
    * @return simple_prop_names
    */
   std::vector<std::string> simple_prop_names(
@@ -148,7 +151,6 @@ template <typename PROP_TYPE> struct Properties {
         simple_prop_names_vec.push_back(
             std::string(properties_map.at(req_prop)));
       } else {
-        // throw std::out_of_range(error_msg);
         throw std::out_of_range(error_msg);
       }
     }
@@ -163,6 +165,8 @@ template <typename PROP_TYPE> struct Properties {
    * @param prop An integer that corresponds to a value from the enumerator in
    * ParticlePropertiesIndices (eg. for "VELOCITY" this would be the variable
    * name - velocity - which corresponds to 1.)
+   * @param properties_map_ A std::map<int, std::string> object to be used in
+   * recovering the property indices.
    *
    * @return simple_prop_index
    */
@@ -185,6 +189,9 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Function to return a vector of strings containing the names of the
    * required species props combined with the species as a prefix. (eg.
    * "ELECTRON" + "_" + "DENSITY")
+   *
+   * @param properties_map_ A std::map<int, std::string> object to be used in
+   * recovering the property names.
    *
    * @return species_prop_names
    */
@@ -214,6 +221,8 @@ template <typename PROP_TYPE> struct Properties {
    * @param prop An integer that corresponds to a value from the enumerator in
    * ParticlePropertiesIndices (eg. for "DENSITY" this would be the variable
    * name - density - which corresponds to 8).
+   * @param properties_map_ A std::map<int, std::string> object to be used in
+   * recovering the property indices.
    *
    * @return species_prop_index
    */
@@ -259,6 +268,9 @@ template <typename PROP_TYPE> struct Properties {
 
   /**
    * @brief Getter for combined prop_names vector
+   *
+   * @param properties_map_ A std::map<int, std::string> object to be used in
+   * recovering the property names.
    */
   const std::vector<std::string> get_prop_names(
       const std::map<int, std::string> &properties_map = default_map) {
@@ -290,7 +302,7 @@ template <typename PROP_TYPE> struct Properties {
 
   /**
    * @brief Getters for simple_props, species and
-   * species_props.
+   * species_props and all props.
    */
   const std::vector<int> get_simple_props() const { return this->simple_props; }
 

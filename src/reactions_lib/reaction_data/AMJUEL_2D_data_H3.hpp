@@ -134,6 +134,8 @@ public:
  * @param mass_amu Mass of the neutral particle in amus
  * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
  * AMJUEL reaction rate calculation.
+ * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * ReactionDataBase
  */
 template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim = 2>
 struct AMJUEL2DDataH3 : public ReactionDataBase<> {

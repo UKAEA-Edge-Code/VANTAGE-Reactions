@@ -7,14 +7,7 @@
 
 namespace Reactions {
 
-/**
- * @namespace ParticlePropertiesIndices A namespace containing a struct
- * containing an enumerator with labels that correspond to standard property
- * names and a map that maps the values of the enumerator to strings that the
- * properties inside a ParticleSpec need to be formatted in.
- */
-// namespace ParticlePropertiesIndices {
-/*! An enum with labels consisting of the variable names in
+/*! A struct containing an enum with labels consisting of the variable names in
  * standard_properties*/
 
 /*! This can be extended by deriving from this struct and defining a public enum
@@ -53,13 +46,18 @@ public:
 
 const auto default_properties = standard_properties_enum();
 
-/*! A map to reference strings associated with properties in ParticleSpec via
- * integer indices defined in an enumerator from a struct in
+/*! A struct containing a map to reference strings associated with properties in
+ * ParticleSpec via integer indices defined in an enumerator from a struct in
  * ParticlePropertiesIndices. */
 struct properties_map {
 
   properties_map() = default;
 
+  /**
+   * @brief properties_map constructor
+   *
+   * @param custom_map User-provided custom map to replace the default private_map.
+   */
   properties_map(std::map<int, std::string> custom_map)
       : private_map(custom_map) {
     // replace default_properties.fluid_flow_speed with the last enum in
@@ -99,5 +97,4 @@ private:
 };
 
 const auto default_map = properties_map().get_map();
-// }; // namespace ParticlePropertiesIndices
 }; // namespace Reactions

@@ -124,6 +124,8 @@ public:
  * @param time_normalisation Time normalisation in seconds
  * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
  * AMJUEL reaction rate calculation.
+ * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * ReactionDataBase
  */
 template <int num_coeffs_T, int num_coeffs_n>
 struct AMJUEL2DData : public ReactionDataBase<> {

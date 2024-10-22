@@ -41,6 +41,12 @@ struct AbstractCrossSection {
    * @param relative_vel Magnitude of relative velocity of the projectile and
    * target
    * @param uniform_rand Uniformly sampled random number on (0,1)
+   * @param value_at Value of cross section for a given relative velocity value
+   * of projectile and target (NOTE this is currently a workaround due to the
+   * limitation on calling get_value_at(...) inside this function.)
+   * @param max_rate_val Maximum value of sigma*v_r (NOTE this is currently a
+   * workaround due to the limitation on calling get_max_rate_val(...) inside
+   * this function.)
    * @return true if relative_vel value is accepted, false otherwise
    */
   virtual bool accept_reject(REAL relative_vel, REAL uniform_rand,
@@ -50,6 +56,14 @@ struct AbstractCrossSection {
 };
 /**
  * @brief Base reaction data object.
+ *
+ * @param required_int_props Properties<INT> object containing information
+ * regarding the required INT-based properties for the reaction data.
+ * @param required_real_props Properties<REAL> object containing information
+ * regarding the required REAL-based properties for the reaction data.
+ * @param properties_map_ A std::map<int, std::string> object to be used when
+ * retrieving property names (in get_required_real_props(...) and
+ * get_required_int_props(...)).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBase {
@@ -79,6 +93,10 @@ struct ReactionDataBase {
       : ReactionDataBase(Properties<INT>(), required_real_props,
                          properties_map_) {}
 
+  /**
+   * Getters for the vector of std::string objects that represent the names of
+   * either INT or REAL-based properties.
+   */
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
@@ -98,6 +116,7 @@ struct ReactionDataBase {
     }
     return prop_names;
   }
+
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
