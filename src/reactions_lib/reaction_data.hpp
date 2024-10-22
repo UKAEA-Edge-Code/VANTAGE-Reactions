@@ -6,7 +6,7 @@
 
 // TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
-namespace Reactions{
+namespace Reactions {
 
 /**
  * struct AbstractCrossSection - Abstract base class for cross-section objects.
@@ -41,6 +41,12 @@ struct AbstractCrossSection {
    * @param relative_vel Magnitude of relative velocity of the projectile and
    * target
    * @param uniform_rand Uniformly sampled random number on (0,1)
+   * @param value_at Value of cross section for a given relative velocity value
+   * of projectile and target (NOTE this is currently a workaround due to the
+   * limitation on calling get_value_at(...) inside this function.)
+   * @param max_rate_val Maximum value of sigma*v_r (NOTE this is currently a
+   * workaround due to the limitation on calling get_max_rate_val(...) inside
+   * this function.)
    * @return true if relative_vel value is accepted, false otherwise
    */
   virtual bool accept_reject(REAL relative_vel, REAL uniform_rand,
@@ -50,32 +56,52 @@ struct AbstractCrossSection {
 };
 /**
  * @brief Base reaction data object.
+ *
+ * @param required_int_props Properties<INT> object containing information
+ * regarding the required INT-based properties for the reaction data.
+ * @param required_real_props Properties<REAL> object containing information
+ * regarding the required REAL-based properties for the reaction data.
+ * @param properties_map_ A std::map<int, std::string> object to be used when
+ * retrieving property names (in get_required_real_props(...) and
+ * get_required_int_props(...)).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBase {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBase(Properties<INT> required_int_props,
-                   Properties<REAL> required_real_props)
+                   Properties<REAL> required_real_props,
+                   std::map<int, std::string> properties_map_ = default_map)
       : required_int_props(required_int_props),
-        required_real_props(required_real_props) {
+        required_real_props(required_real_props),
+        properties_map(properties_map_) {
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
-  ReactionDataBase()
-      : ReactionDataBase(Properties<INT>(), Properties<REAL>()) {}
+  ReactionDataBase(std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
+                         properties_map_) {}
 
-  ReactionDataBase(Properties<INT> required_int_props)
-      : ReactionDataBase(required_int_props, Properties<REAL>()) {}
+  ReactionDataBase(Properties<INT> required_int_props,
+                   std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase(required_int_props, Properties<REAL>(),
+                         properties_map_) {}
 
-  ReactionDataBase(Properties<REAL> required_real_props)
-      : ReactionDataBase(Properties<INT>(), required_real_props) {}
+  ReactionDataBase(Properties<REAL> required_real_props,
+                   std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase(Properties<INT>(), required_real_props,
+                         properties_map_) {}
 
+  /**
+   * Getters for the vector of std::string objects that represent the names of
+   * either INT or REAL-based properties.
+   */
   std::vector<std::string> get_required_int_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_int_props.get_prop_names();
+      prop_names =
+          this->required_int_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
@@ -84,11 +110,13 @@ struct ReactionDataBase {
   std::vector<std::string> get_required_real_props() {
     std::vector<std::string> prop_names;
     try {
-      prop_names = this->required_real_props.get_prop_names();
+      prop_names =
+          this->required_real_props.get_prop_names(this->properties_map);
     } catch (std::logic_error) {
     }
     return prop_names;
   }
+
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
@@ -101,6 +129,7 @@ protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
   std::shared_ptr<RNG_TYPE> rng_kernel;
+  std::map<int, std::string> properties_map;
 };
 
 /**
@@ -135,4 +164,4 @@ struct ReactionDataBaseOnDevice {
 
   static constexpr size_t get_dim() { return dim; }
 };
-};
+}; // namespace Reactions

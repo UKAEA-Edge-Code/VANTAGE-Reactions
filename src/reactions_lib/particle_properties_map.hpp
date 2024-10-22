@@ -1,18 +1,13 @@
 #pragma once
 #include <map>
+#include <neso_particles/typedefs.hpp>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
 namespace Reactions {
 
-/**
- * @namespace ParticlePropertiesIndices A namespace containing a struct
- * containing an enumerator with labels that correspond to standard property
- * names and a map that maps the values of the enumerator to strings that the
- * properties inside a ParticleSpec need to be formatted in.
- */
-namespace ParticlePropertiesIndices {
-/*! An enum with labels consisting of the variable names in
+/*! A struct containing an enum with labels consisting of the variable names in
  * standard_properties*/
 
 /*! This can be extended by deriving from this struct and defining a public enum
@@ -51,18 +46,35 @@ public:
 
 const auto default_properties = standard_properties_enum();
 
-/*! A map to reference strings associated with properties in ParticleSpec via
- * integer indices defined in an enumerator from a struct in
+/*! A struct containing a map to reference strings associated with properties in
+ * ParticleSpec via integer indices defined in an enumerator from a struct in
  * ParticlePropertiesIndices. */
 struct properties_map {
+
   properties_map() = default;
+
+  /**
+   * @brief properties_map constructor
+   *
+   * @param custom_map User-provided custom map to replace the default private_map.
+   */
+  properties_map(std::map<int, std::string> custom_map)
+      : private_map(custom_map) {
+    // replace default_properties.fluid_flow_speed with the last enum in
+    // standard_properties_enum if any changes are made to it.
+    for (int i = 0; i < default_properties.fluid_flow_speed; i++) {
+      NESOWARN(
+          this->private_map.find(i) != this->private_map.end(),
+          "The custom properties map provided does not contain all enums from "
+          "default_properties in it's list of keys.");
+    }
+  }
 
 public:
   std::map<int, std::string> get_map() { return this->private_map; }
 
-  void extend_map(int property_key, std::string property_name) {
-    this->private_map.emplace(std::make_pair(property_key, property_name));
-  }
+  // Just exposes the bounds-checked accessor to the private_map.
+  std::string &at(const int &key) { return this->private_map.at(key); };
 
 private:
   std::map<int, std::string> private_map{
@@ -85,5 +97,4 @@ private:
 };
 
 const auto default_map = properties_map().get_map();
-}; // namespace ParticlePropertiesIndices
 }; // namespace Reactions

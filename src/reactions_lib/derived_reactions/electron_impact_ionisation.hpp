@@ -35,25 +35,25 @@ struct ElectronImpactIonisation
    * NESO-Particles routines
    * @param total_reaction_rate Sym<REAL> associated with the total reaction
    * rate ParticleDat
+   * @param weight_sym Sym<REAL> associated with the weight ParticleDat
    * @param rate_data ReactionData object used to calculate the ionisation rate
    * @param energy_rate_data ReactionData object used to calculate the electron
    * energy loss rate
    * @param target_species Species object representing the ionisation target
    * (and the corresponding ion fluid)
    * @param electron_species Species object corresponding to the electrons
-
-   * @param particle_spec ParticleSpec associated with the particle group thi
+   * @param particle_spec ParticleSpec associated with the particle group this
    * reaction should act on
    */
   ElectronImpactIonisation(SYCLTargetSharedPtr sycl_target_,
-                           Sym<REAL> total_reaction_rate, RateData rate_data,
-                           EnergyRateData energy_rate_data,
+                           Sym<REAL> total_reaction_rate, Sym<REAL> weight_sym,
+                           RateData rate_data, EnergyRateData energy_rate_data,
                            Species target_species, Species electron_species,
                            const ParticleSpec &particle_spec)
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
-            sycl_target_, total_reaction_rate, target_species.get_id(),
-            std::array<int, 0>{}, rate_data,
+            sycl_target_, total_reaction_rate, weight_sym,
+            target_species.get_id(), std::array<int, 0>{}, rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species),
             particle_spec,

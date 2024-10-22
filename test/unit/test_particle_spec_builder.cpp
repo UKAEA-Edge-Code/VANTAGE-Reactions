@@ -1,5 +1,4 @@
 #pragma once
-#include "particle_properties_map.hpp"
 #include <gtest/gtest.h>
 #include <mock_reactions.hpp>
 #include <particle_spec_builder.hpp>
@@ -11,7 +10,7 @@ using namespace Reactions;
 TEST(ParticleSpecBuilder, add_particle_prop) {
   auto test_particle_spec_builder = ParticleSpecBuilder();
 
-  auto props = ParticlePropertiesIndices::default_properties;
+  auto props = default_properties;
 
   auto position_prop = Properties<REAL>(std::vector<int>{props.position});
   test_particle_spec_builder.add_particle_prop(position_prop);

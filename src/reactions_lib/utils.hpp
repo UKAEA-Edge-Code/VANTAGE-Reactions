@@ -103,6 +103,7 @@ inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
 
   auto magnitude = sqrt(-2 * log(u1));
   // The compiler should optimise this into a sincos call
-  return std::array<REAL, 2>{magnitude*cos(two_pi * u2), magnitude*sin(two_pi * u2)};
+  return std::array<REAL, 2>{magnitude * cos(two_pi * u2),
+                             magnitude * sin(two_pi * u2)};
 };
 } // namespace Reactions::utils

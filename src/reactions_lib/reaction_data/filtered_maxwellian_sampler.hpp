@@ -13,11 +13,10 @@
 
 using namespace NESO::Particles;
 namespace Reactions {
-using namespace ParticlePropertiesIndices;
 
 namespace FILTERED_MAXWALLIAN_SAMPLER {
 
-const auto props = ParticlePropertiesIndices::default_properties;
+const auto props = default_properties;
 
 const std::vector<int> required_simple_real_props = {
     props.fluid_temperature, props.fluid_flow_speed, props.velocity};
@@ -108,7 +107,8 @@ struct FilteredMaxwellianOnDevice
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 
       accepted = this->cross_section.accept_reject(
-          relative_vel, kernel.at(index, num_req_samples), value_at, max_rate_val);
+          relative_vel, kernel.at(index, num_req_samples), value_at,
+          max_rate_val);
     }
 
     return sampled_vels;
@@ -136,6 +136,10 @@ public:
  * and v are the temperature and velocity normalisation constants
  * @param cross_section Cross section object to be used in the rejection method
  * sampling
+ * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
+ * set as the rng_kernel in ReactionDataBase.
+ * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * ReactionDataBase
  *
  */
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
@@ -144,10 +148,13 @@ struct FilteredMaxwellianSampler
 
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
-      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel)
-      : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(Properties<REAL>(
-            FILTERED_MAXWALLIAN_SAMPLER::required_simple_real_props,
-            std::vector<Species>{}, std::vector<int>{})),
+      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
+      std::map<int, std::string> properties_map_ = default_map)
+      : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
+            Properties<REAL>(
+                FILTERED_MAXWALLIAN_SAMPLER::required_simple_real_props,
+                std::vector<Species>{}, std::vector<int>{}),
+            properties_map_),
         device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
             norm_ratio, cross_section)) {
 
@@ -157,15 +164,20 @@ struct FilteredMaxwellianSampler
     auto props = FILTERED_MAXWALLIAN_SAMPLER::props;
 
     this->device_obj.fluid_flow_speed_ind =
-        this->required_real_props.simple_prop_index(props.fluid_flow_speed);
+        this->required_real_props.simple_prop_index(props.fluid_flow_speed,
+                                                    this->properties_map);
     this->device_obj.fluid_temperature_ind =
-        this->required_real_props.simple_prop_index(props.fluid_temperature);
-    this->device_obj.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity);
+        this->required_real_props.simple_prop_index(props.fluid_temperature,
+                                                    this->properties_map);
+    this->device_obj.velocity_ind = this->required_real_props.simple_prop_index(
+        props.velocity, this->properties_map);
 
     this->set_rng_kernel(rng_kernel);
   }
 
+  /**
+   * @brief Overloaded constructor which sets default values for the cross_section.
+   */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel)
