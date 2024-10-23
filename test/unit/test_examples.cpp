@@ -13,6 +13,9 @@ using namespace Reactions;
 #include "./example_sources/example_composite_strategy.hpp"
 #include "./example_sources/example_merging_strategy.hpp"
 #include "./example_sources/example_transformation_wrapper.hpp"
+#include "./example_sources/example_custom_properties.hpp"
+#include "./example_sources/example_custom_property_map.hpp"
+#include "./example_sources/example_property_container.hpp"
 
 TEST(Examples, all){
 
@@ -27,4 +30,6 @@ TEST(Examples, all){
   composite_strategy_example(particle_group);
   merging_strategy_example(particle_group);
   transformation_wrapper_example(particle_group);
+  custom_property_map_example();
+  property_container_example();
 }
