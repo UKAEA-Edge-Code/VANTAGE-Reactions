@@ -33,20 +33,21 @@ struct ParticleSpecBuilder {
    * will apply to all properties from properties_)
    * @param positions Boolean to indicate whether the properties to be added are
    * particle position or cell id or not.
+   * @param properties_map Property map to be used when adding properties into the spec. Defaults to default_map.
    */
   template <typename PROP_TYPE>
   void add_particle_prop(Properties<PROP_TYPE> properties_, int ndim = 1,
-                         bool positions = false) {
+                         bool positions = false, const std::map<int, std::string> &properties_map = default_map ) {
     std::vector<std::string> simple_prop_names;
     try {
-      simple_prop_names = properties_.simple_prop_names();
+      simple_prop_names = properties_.simple_prop_names(properties_map);
     } catch (std::logic_error) {
       simple_prop_names = {};
     }
 
     std::vector<std::string> species_prop_names;
     try {
-      species_prop_names = properties_.species_prop_names();
+      species_prop_names = properties_.species_prop_names(properties_map);
     } catch (std::logic_error) {
       species_prop_names = {};
     }
@@ -118,8 +119,7 @@ struct ParticleSpecBuilder {
   const ParticleSpec &get_particle_spec() { return particle_spec; }
 
 private:
-  ParticleSpec particle_spec{ParticleProp(Sym<REAL>("POSITION"), 2, true),
-                             ParticleProp(Sym<INT>("CELL_ID"), 1, true)};
+  ParticleSpec particle_spec;
 };
 } // namespace Reactions
 
