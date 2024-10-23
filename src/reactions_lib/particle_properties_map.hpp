@@ -76,6 +76,8 @@ public:
   // Just exposes the bounds-checked accessor to the private_map.
   std::string &at(const int &key) { return this->private_map.at(key); };
 
+  std::string &operator[](const int &key) { return this->private_map[key]; };
+
 private:
   std::map<int, std::string> private_map{
       {default_properties.position, "POSITION"},
