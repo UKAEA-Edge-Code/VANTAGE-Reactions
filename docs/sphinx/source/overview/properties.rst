@@ -87,5 +87,3 @@ The :class:Properties` container class can be used to build up :class:`ParticleS
    :language: cpp
    :caption: Constructing a particle spec using the builder
 
-
-
