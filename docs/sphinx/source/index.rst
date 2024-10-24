@@ -11,7 +11,6 @@ Reactions documentation
    :glob:
 
    overview
-..
    guide-user
    guide-developer
 

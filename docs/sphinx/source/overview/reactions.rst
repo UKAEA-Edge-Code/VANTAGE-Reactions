@@ -33,10 +33,47 @@ The key idea behind this separation of concern is the ability to separate the da
 
 The implementation of reactions, as well as reaction kernels will be covered in the developer guide, as it involves considerations of SYCL host and device types, as well as NESO-Particles :class:`ParticleLoop` constructs. 
 
-Both data and kernels, in executing their responsibilities, access particle data, and use the property map system [TODO: add before Reactions section]
+Both data and kernels, in executing their responsibilities, access particle data, and use the property map system.
 
-Reaction data
-=============
+Reaction data and kernels are invoked in the two main :class:`ParticleLoop`-containing methods in the linear reaction class, with the idea that data is calculated first, storing anything needed for the application of the kernels or for the global management of reaction application. Both loops are assumed to be invoked cell-wise, which allows for the reuse of various buffers.
 
+Reaction data and the LinearReaction data loop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Reaction data objects calculate a fixed number of components per particle. For example, data objects used to calculate reaction rates have a single component, while an object that is sampling velocities from a distribution might have two or more components. Each reaction needs at least one reaction data object - responsible for the calculation of the rate for the reaction. Further data calculation can be bundled using the :class:`DataCalculator` container of reaction data. 
+
+Invoking the rate loop on a reaction object does the following:
+
+#. Calculates the reaction rate and stores it in a local buffer used to apply the reaction using the kernels
+#. Adds the calculated reaction rate to a total reaction rate :class:`ParticleDat` - used in the global management of reaction application
+#. Calculates and stores any :class:`DataCalculator` results for use by the kernels
+
+Reaction kernels and the product loop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With any data required to apply the reaction calculated and stored for some particles, the next step is to apply the reaction, which might involve feedback on fields and the ingoing particle, as well as some specification of product properties following the reaction. This is (semi-)independently specified by choosing a reaction kernel. The only requirement on the data that a kernel might have is that any required data exists, i.e. that the total dimensionality of data conforms with whatever the kernel requires. For example, if a kernel requires 2 sampled velocities, the :class:`DataCalculator` must produce a total of 2 data values per perticle. Other than this requirement, data and kernels are independent. 
+
+Each kernel object consists of four kernel functions, in order to allow for extensibility. These are:
+
+#. The scattering kernel - nominally specifies the velocities of the products
+#. The weight kernel - nominally specifies the weights of the products
+#. The transformation kernel - nominally specifies any complex internal state changes of the product
+#. The feedback kernel - nominally specifies any feedback on the parent particle an on any fields, such as fluid sources
+
+The above are applied in that order, and the product loop stores any products/children into a separate particle group in order to allow for any transformations before they are added into the group with the parents (see :class:`ReactionController` documentation). 
+
+As noted above, both kernels and data specify their required particle properties using the property enum+map system, so that on-the-fly remaping of required variables is possible. 
+
+Putting a linear reaction together
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As noted above, to construct a linear reaction, we need to know the state IDs of the ingoing (parent/reactant) and outgoing (children/products) particles, as well as the data and kernels. 
+
+Below an example with the built-in charge-exchange kernels using fixed values for all of the data. It demonstrates the pipeline needed to build a linear reaction object, as well as some of the method calls on the object relating to the two loops described above. More detailes on the individual data and kernel objects and their required properties will be presented below. 
+
+
+.. literalinclude:: ../example_sources/example_linear_reaction_CX.hpp
+   :language: cpp
+   :caption: Constructing a CX reaction with a fixed rate and with a beam of ions
 
 
