@@ -16,6 +16,8 @@ using namespace Reactions;
 #include "./example_sources/example_custom_properties.hpp"
 #include "./example_sources/example_custom_property_map.hpp"
 #include "./example_sources/example_property_container.hpp"
+#include "./example_sources/example_spec_builder.hpp"
+#include "./example_sources/example_linear_reaction_CX.hpp"
 
 TEST(Examples, all){
 
@@ -32,4 +34,6 @@ TEST(Examples, all){
   transformation_wrapper_example(particle_group);
   custom_property_map_example();
   property_container_example();
+  spec_builder_example();
+  linear_reaction_CX_example(particle_group);
 }

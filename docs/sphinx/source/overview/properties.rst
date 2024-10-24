@@ -65,22 +65,27 @@ To create new maps with custom enums or remap the above we can use the following
 The main utility with property maps comes from the added flexibility when working with reaction abstractions. For example, a developer can write a reaction data object that uses the fluid_temperature enum,
 and the user can use that object with, for example, both "ELECTRON_TEMPERATURE" and "ION_TEMPERATURE" particle properties by passing a custom map (see examples with reaction data and kernels). 
 
-Species and the Property container
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Species and the Properties container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Reactions offers a simple :class:`Species` class to encapsulate species data. It specifies the species name, and optionally the species mass, charge, and integer ID associated with it. Together with the :class:`Property` class, species can be used to bundle required properties for use in reaction abstractions, as well as in incremental construction of NESO-Particles :class:`ParticleSpec` objects. 
+Reactions offers a simple :class:`Species` class to encapsulate species data. It specifies the species name, and optionally the species mass, charge, and integer ID associated with it. Together with the :class:Properties` class, species can be used to bundle required properties for use in reaction abstractions, as well as in incremental construction of NESO-Particles :class:`ParticleSpec` objects, see below. 
 
-A :class:`Property` container can have simple properties (directly translated to :class:`Sym` names) and species properties, which are combined with species name to get the NESO-Particles :class:`Sym` names.
-:class:`Property` containers use the property enums and maps as defined above. This allows for flexibility when defining required properties and their mapping to data stored on particles.
+A :class:Properties` container can have simple properties (directly translated to :class:`Sym` names) and species properties, which are combined with species name to get the NESO-Particles :class:`Sym` names.
+:class:Properties` containers use the property enums and maps as defined above. This allows for flexibility when defining required properties and their mapping to data stored on particles.
 
 .. literalinclude:: ../example_sources/example_property_container.hpp
    :language: cpp
-   :caption: Example of constructing Species and Property containers
+   :caption: Example of constructing Species and Properties containers
 
 ParticleSpecBuilder
 ~~~~~~~~~~~~~~~~~~~
 
+The :class:Properties` container class can be used to build up :class:`ParticleSpec` objects using the :class:`ParticleSpecBuilder` class. It allows for mixing :class:`ParticleSpec` objects and :class:Properties` objects to construct a final :class:`ParticleSpec`. 
 
+
+.. literalinclude:: ../example_sources/example_spec_builder.hpp
+   :language: cpp
+   :caption: Constructing a particle spec using the builder
 
 
 
