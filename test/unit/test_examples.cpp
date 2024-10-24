@@ -27,4 +27,6 @@ TEST(Examples, all){
   composite_strategy_example(particle_group);
   merging_strategy_example(particle_group);
   transformation_wrapper_example(particle_group);
+
+  particle_group->domain->mesh->free();
 }
