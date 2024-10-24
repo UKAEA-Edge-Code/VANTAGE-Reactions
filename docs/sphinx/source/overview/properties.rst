@@ -76,6 +76,18 @@ A :class:Properties` container can have simple properties (directly translated t
 .. literalinclude:: ../example_sources/example_property_container.hpp
    :language: cpp
    :caption: Example of constructing Species and Properties containers
+   
+Species and the Property container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Reactions offers a simple :class:`Species` class to encapsulate species data. It specifies the species name, and optionally the species mass, charge, and integer ID associated with it. Together with the :class:`Property` class, species can be used to bundle required properties for use in reaction abstractions, as well as in incremental construction of NESO-Particles :class:`ParticleSpec` objects. 
+
+A :class:`Property` container can have simple properties (directly translated to :class:`Sym` names) and species properties, which are combined with species name to get the NESO-Particles :class:`Sym` names.
+:class:`Property` containers use the property enums and maps as defined above. This allows for flexibility when defining required properties and their mapping to data stored on particles.
+
+.. literalinclude:: ../example_sources/example_property_container.hpp
+   :language: cpp
+   :caption: Example of constructing Species and Property containers
 
 ParticleSpecBuilder
 ~~~~~~~~~~~~~~~~~~~
@@ -86,6 +98,5 @@ The :class:Properties` container class can be used to build up :class:`ParticleS
 .. literalinclude:: ../example_sources/example_spec_builder.hpp
    :language: cpp
    :caption: Constructing a particle spec using the builder
-
 
 
