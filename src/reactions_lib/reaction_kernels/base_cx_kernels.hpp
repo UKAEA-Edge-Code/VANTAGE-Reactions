@@ -314,7 +314,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
             props.weight, this->properties_map);
 
     const auto descendant_internal_state_prop =
-        ParticleProp<INT>(Sym<INT>(default_map.at(props.internal_state)), 1);
+        ParticleProp<INT>(Sym<INT>(this->properties_map.at(props.internal_state)), 1);
     const auto descendant_velocity_prop = ParticleProp<REAL>(
         Sym<REAL>(this->properties_map.at(props.velocity)), ndim_velocity);
     const auto descendant_weight_prop =
