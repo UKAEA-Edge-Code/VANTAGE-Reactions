@@ -69,11 +69,174 @@ Putting a linear reaction together
 
 As noted above, to construct a linear reaction, we need to know the state IDs of the ingoing (parent/reactant) and outgoing (children/products) particles, as well as the data and kernels. 
 
-Below an example with the built-in charge-exchange kernels using fixed values for all of the data. It demonstrates the pipeline needed to build a linear reaction object, as well as some of the method calls on the object relating to the two loops described above. More detailes on the individual data and kernel objects and their required properties will be presented below. 
+An example with the built-in charge-exchange kernels using fixed values for all of the data is given below. It demonstrates the pipeline needed to build a linear reaction object, as well as some of the method calls on the object relating to the two loops described above. More details on the individual data and kernel objects and their required properties will be presented below. 
 
 
 .. literalinclude:: ../example_sources/example_linear_reaction_CX.hpp
    :language: cpp
    :caption: Constructing a CX reaction with a fixed rate and with a beam of ions
 
+Reaction data types
+===================
 
+Reactions offers a number of built-in data types. These will be covered here in the following format:
+
+#. Dimensionality - the number of data values produced by the data object per particle
+#. Required properties - all reaction data objects provided by Reactions use the default properties enum and their required properties will be listed (both simple and species properties, where applicable)
+#. Details - any explantion of the calculations done by the data object, e.g. formulae, restrictions, etc.
+#. Example - where the constructor of the object is non-trivial an example of how to construct it is given
+
+Fixed rate data
+~~~~~~~~~~~~~~~
+
+#. Dimensionality: 1
+#. Required properties: none
+#. Details: The rate is simply set to a fixed value
+#. Example: See the example in the previous section
+
+Fixed rate coefficient data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Dimensionality: 1
+#. Required properties: Simple props: weight; Species props: none
+#. Details: Given a coefficient :math:`K`, and a particle weight :math:`w`, the rate is given as :math:`Kw`, with :math:`K` being fixed.
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_fixed_coeff.hpp
+   :language: cpp
+   :caption: Constructing a fixed rate coefficient data object
+
+AMJUEL 1D rate fit
+~~~~~~~~~~~~~~~~~~
+
+#. Dimensionality: 1
+#. Required properties: Simple props: fluid_density, fluid_temperature, weight; Species props: none 
+#. Details: Uses the following fit for the rate coefficient from AMJUEL
+
+    .. math:: 
+
+        K=\ln\langle\sigma v\rangle = \sum_{n=0}^N b_n (\ln T)^n
+
+where the number of coefficients :math:`N` and the coefficients :math:`b_n` are set on construction. 
+The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
+is the particle weight. All normalisation is set in the constructor (see the example).
+The rate is assumed to evolve some quantity :math:`q`, and requires the knowledge of the normalisation of 
+that quantity. For example, if evolving the weight it should be left at 1.0 while if evolving a background 
+energy field (e.g. providing an energy source) it would require the normalisation of the energy density.
+    
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_amjuel1d.hpp
+   :language: cpp
+   :caption: Constructing an AMJUEL 1D rate fit
+
+AMJUEL 2D rate fit (n,T)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Dimensionality: 1
+#. Required properties: Simple props: fluid_density, fluid_temperature, weight; Species props: none 
+#. Details: Uses the following fit for the rate coefficient from AMJUEL
+
+    .. math:: 
+
+        K=\ln\langle\sigma v\rangle = \sum_{n=0}^N \sum_{m=0}^M \alpha_{n,m}(\ln \tilde{n})^m (\ln T)^n
+        
+where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
+:math:`\tilde{n}` is density rescaled to :math:`10^{14} m^{-3}`. Density dependence is dropped below :math:`\tilde{n}=1`, and only the
+:math:`m=0` coefficients are used (this is the Coronal approximation). 
+The LTE limit is not implemented yet (for densities above :math:`10^{22} m^{-3}`). 
+The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
+is the particle weight. Normalisation as in the 1D fit case. 
+
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_amjuel2d.hpp
+   :language: cpp
+   :caption: Constructing an AMJUEL 2D rate fit
+
+AMJUEL 2D rate fit (E,T)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Dimensionality: 1
+#. Required properties: Simple props: fluid_density, fluid_temperature, fluid_flow_speed, weight, velocity; Species props: none 
+#. Details: Uses the following fit for the rate coefficient from AMJUEL section H.3 
+
+    .. math:: 
+
+        K=\ln\langle\sigma v\rangle = \sum_{n=0}^N \sum_{m=0}^M \alpha_{n,m}(\ln E)^m (\ln T)^n
+        
+where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
+The neutral energy :math:`E` is relative to the fluid flow speed.
+The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
+is the particle weight. Normalisation as in the 1D fit case, with the added normalisation of the velocity and the requirement for
+the neutral energy to be specified in amus. 
+
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_amjuel2dH3.hpp
+   :language: cpp
+   :caption: Constructing an AMJUEL 2D rate fit as a function of neutral energy
+
+Filtered Maxwellian sampler
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Dimensionality: variable - corresponds to fluid flow field dimensionality 
+#. Required properties: Simple props: fluid_temperature, fluid_flow_speed, velocity; Species props: none 
+#. Details: Produces velocity components sampled from a drifting Maxwellian at the local fluid temperature and with local mean fluid flow. 
+   Optionally filters the sampled velocities based on an interaction cross section using a rejection method, effectively sampling from
+
+   .. math::
+
+        f(\vec{v}) \propto \sigma(v_{rel}) f_M(\vec{v},\vec{u},T)
+
+where :math:`\sigma(v_{rel})` is the interaction cross-section evaluated at the relative velocity :math:`|\vec{v}-\vec{u}|`, and :math:`\vec{u}`
+and :math:`T` are the fluid flow speed and temperature, respectively. By default, the cross-section is assumed constant, which just leads to sampling 
+from a drifting Maxwellian. See below for cross-section objects.
+
+#. Example:
+
+.. literalinclude:: ../example_sources/example_maxwellian_sampler.hpp
+   :language: cpp
+   :caption: Constructing a Maxwellian sampler in two velocity space dimensions
+
+Cross-section objects
+~~~~~~~~~~~~~~~~~~~~~
+
+Currently, cross-section objects are restricted to being used by the above sampler. For that purpose, they can be evaluated at a given relative velocity, and 
+have an associated maximum :math:`\sigma v_{rel}`, used for rejection sampling. 
+
+Constant rate cross-section
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the simplest cross section, with :math:`\sigma v_{rel} = c`. It always accepts all samples. See the above sampler example.  
+
+AMJUEL H.1 cross-section fit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These are single parameter fits in lab energy from AMJUEL of the form 
+
+.. math::
+    
+    \ln \sigma = \sum_{n=0}^N a_n (\ln E)^n
+
+where we convert to the centre-of-mass energy. The coefficients :math:`a_n` can be given for asymptotic values of the energy, as well, both high or low.
+
+
+.. literalinclude:: ../example_sources/example_amjuel_cs.hpp
+   :language: cpp
+   :caption: Example of AMJUEL H.1 fit cross-section object construction
+
+Reaction kernel types
+=====================
+
+Base ionisation kernels
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Base charge-exchange kernels
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pre-built reactions
+===================
+
+Electron-impact ionisation
+~~~~~~~~~~~~~~~~~~~~~~~~~~

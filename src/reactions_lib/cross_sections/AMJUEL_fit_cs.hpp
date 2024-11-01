@@ -27,7 +27,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    *
    * @param vel_norm Velocity normalisation in m/s
    * @param cs_norm Cross-section normalisation in m^2
-   * @param mass_amu Mass of the ion in the H.1 reaction
+   * @param mass_amu Reduced mass of the collision partners in the H.1 reaction in amus
    * @param coeffs Bulk fit coefficients
    * @param l_coeffs Left asymptote coefficients (size 0 if no low-energy
    * treatment)
@@ -39,7 +39,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * (if there are any coefficients)
    * @param max_E Highest energy for which the cross-section is evaluated. This
    * is where the maximum value of the rate is assumed to be. After this value,
-   * the cross section is off the form max_val/v_r.
+   * the cross section is of the form max_val/v_r.
    */
   AMJUELFitCrossSection(REAL vel_norm, REAL cs_norm, REAL mass_amu,
                         std::array<REAL, num_coeffs> coeffs,
