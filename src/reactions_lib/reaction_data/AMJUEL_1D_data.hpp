@@ -105,6 +105,7 @@ public:
  *
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
  * rate calculation.
+ * @param evolved_quantity_normalisation Normalisation of the evolved quantity (the one evolved with this rate)
  * @param density_normalisation Density normalisation constant in m^{-3}
  * @param temperature_normalisation Temperature normalisation in eV
  * @param time_normalisation Time normalisation in seconds

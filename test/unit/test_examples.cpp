@@ -18,6 +18,12 @@ using namespace Reactions;
 #include "./example_sources/example_property_container.hpp"
 #include "./example_sources/example_spec_builder.hpp"
 #include "./example_sources/example_linear_reaction_CX.hpp"
+#include "./example_sources/example_fixed_coeff.hpp"
+#include "./example_sources/example_amjuel1d.hpp"
+#include "./example_sources/example_amjuel2d.hpp"
+#include "./example_sources/example_amjuel2dH3.hpp"
+#include "./example_sources/example_maxwellian_sampler.hpp"
+#include "./example_sources/example_amjuel_cs.hpp"
 
 TEST(Examples, all){
 
@@ -36,4 +42,10 @@ TEST(Examples, all){
   property_container_example();
   spec_builder_example();
   linear_reaction_CX_example(particle_group);
+  fixed_rate_coeff_example();
+  amjuel_1d_example();
+  amjuel_2d_example();
+  amjuel_2d_H3_example();
+  maxwellian_sampler_example();
+  amjuel_h1_cs_example();
 }
