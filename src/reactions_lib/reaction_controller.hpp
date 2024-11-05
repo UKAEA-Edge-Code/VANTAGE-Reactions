@@ -26,6 +26,7 @@ namespace Reactions {
  * to specify which particles reactions will be applied to
  * @param tot_rate_buffer Symbol of the total reaction rate ParticleDat that
  * will be automatically flushed
+ * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer. Defaults to true.
  */
 struct ReactionController {
 
@@ -118,7 +119,6 @@ public:
    * @brief Function to add reactions to a stored vector of AbstractReaction
    * pointers.
    *
-   * @tparam ReactionType The derived type of the reaction object to be added.
    * @param reaction The reaction to be added
    */
   void add_reaction(std::shared_ptr<AbstractReaction> reaction) {
