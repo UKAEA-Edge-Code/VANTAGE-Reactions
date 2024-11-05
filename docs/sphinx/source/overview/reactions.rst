@@ -221,7 +221,6 @@ These are single parameter fits in lab energy from AMJUEL of the form
 
 where we convert to the centre-of-mass energy. The coefficients :math:`a_n` can be given for asymptotic values of the energy, as well, both high or low.
 
-
 .. literalinclude:: ../example_sources/example_amjuel_cs.hpp
    :language: cpp
    :caption: Example of AMJUEL H.1 fit cross-section object construction
@@ -229,14 +228,70 @@ where we convert to the centre-of-mass energy. The coefficients :math:`a_n` can 
 Reaction kernel types
 =====================
 
+Reactions offers several built-in reaction kernels. These are presented in the following format:
+
+#. Overview - general description, number of products, required :class:`DataCalculator` total dimensionality, etc. 
+#. Required properties - the required properties from the default properties enum (as for reaction data) - here split into parent and descendant
+#. Scattering kernel - if there are any products, how their velocities are calculated 
+#. Weight kernel - if there are any products, how weight is distributed amongst them
+#. Transformation kernel - if there are any products, how aspects of their internal states are set
+#. Feedback kernel - determines how the parent weight is affected, as well as how the various source :class:`ParticleDat` values on the parent are set
+#. Example - example of constructing the kernel 
+
+Kernels that produce products have a set of specified descendant particle required properties. These are usually the particle velocities and weights, and are modified by the kernel. 
+All other properties are copied from the parent, so care should be taken if some of these need zeroing (sources, etc.).
+
+**NOTE**: Reactions assumes all sources are :class:`ParticleDat` objects on particles. All pre-built kernels also assume that the sources are not rates, i.e. that the user will divide them by the timestep 
+lenght to get the rate after applying reactions. This is so that different length timesteps could be used for different reactions, or so that operator splitting can be done without worrying about the individual steps.
+
 Base ionisation kernels
 ~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Overview: These are general ionisation kernels with the fewest possible assumptions. Since ionisation is an absorption process, there are no descendant particles. 
+   This implementation allows for different electron, projectile, and target species, i.e. it represents projectile-impact target ionisation. It expects at least one :class:`DataCalculator` value,
+   representing the energy loss rate of the projectile species in the process. Optionally, a momentum loss rate can be included, with the momentum being transferred to the target species. Electron momentum is assumed negligible.
+
+#. Required properties: 
+
+   * Parent: Simple props: weight, velocity; Species props: source_density, source_energy, source_momentum
+     
+   * Descendant: N/A
+#. Scattering kernel: N/A
+#. Weight kernel: N/A
+#. Transformation kernel: N/A
+#. Feedback kernel: The total weight participating in the reaction is removed from the parent particle. The first :class:`DataCalculator` value is used as the energy rate, and if a momentum rate is marked as set, the second value is interpreted as that. Density sources for the target and electron species are set to that same weight value. The target momentum source always includes the momentum of the ionised neutral, regardless of the presence of a momentum kernel. 
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_ionisation_kernels.hpp
+   :language: cpp
+   :caption: Example of constructing ionisation reaction kernels
 
 Base charge-exchange kernels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+#. Overview: These kernels perform direct charge-exchange with a pre-sampled ion. The ion velocities are assumed to be set in the accompanying :class:`DataCalculator` object. As such, this kernel is not in charge of the sampling process (use, for example, the :class:`FilteredMaxwellianSampler`). These kernels assume one reaction product, which is the resulting charge-exchanged neutral particle. 
+#. Required properties: 
+
+   * Parent: Simple props: weight, velocity; Species props: source_density, source_energy, source_momentum
+     
+   * Descendant: Simple props: weight, velocity, internal_state; Species props: N/A
+#. Scattering kernel: Sets the product velocities to the pre-calculated velocities from the :class:`DataCalculator`.
+#. Weight kernel: The product gets the full weight that participated in the reaction
+#. Transformation kernel: The products internal_state is set to the correct species ID
+#. Feedback kernel: The total weight participating in the reaction is removed from the parent particle. The energy and momentum sources are computed from the participating particles' velocities (the parent and the sample ion)
+#. Example: See the above example on putting together a linear reaction for an example of a CX kernel being constructed and used
+
 Pre-built reactions
 ===================
 
+Reactions offers pre-built reaction classes that bundle commonly used options together. It should be noted that these can be completely reproduced by users from the base reaction class and data and kernels.
+
 Electron-impact ionisation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Given that the most commonly treated class of ionisation reactions is electron-impact ionisation, Reactions offers a streamlined way of constructing electron-impact ionisation reactions. See below for an example of such a reaction. 
+
+
+.. literalinclude:: ../example_sources/example_electron_impact_ion.hpp
+   :language: cpp
+   :caption: Example of contructing the built-in electron-impact ionisation reaction

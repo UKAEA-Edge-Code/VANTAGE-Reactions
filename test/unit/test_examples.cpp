@@ -24,6 +24,9 @@ using namespace Reactions;
 #include "./example_sources/example_amjuel2dH3.hpp"
 #include "./example_sources/example_maxwellian_sampler.hpp"
 #include "./example_sources/example_amjuel_cs.hpp"
+#include "./example_sources/example_ionisation_kernels.hpp"
+#include "./example_sources/example_electron_impact_ion.hpp"
+#include "./example_sources/example_reaction_controller.hpp"
 
 TEST(Examples, all){
 
@@ -48,4 +51,7 @@ TEST(Examples, all){
   amjuel_2d_H3_example();
   maxwellian_sampler_example();
   amjuel_h1_cs_example();
+  ionisation_kernels_example();
+  electron_impact_ion_example(particle_group);
+  reaction_controller_example(particle_group);
 }
