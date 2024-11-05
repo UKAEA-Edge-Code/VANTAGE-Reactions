@@ -44,18 +44,21 @@ struct ElectronImpactIonisation
    * @param electron_species Species object corresponding to the electrons
    * @param particle_spec ParticleSpec associated with the particle group this
    * reaction should act on
+   * @param properties_map Optional property map to be used with the ionisation
+   * kernels. Defaults to the default_map object
    */
-  ElectronImpactIonisation(SYCLTargetSharedPtr sycl_target_,
-                           Sym<REAL> total_reaction_rate, Sym<REAL> weight_sym,
-                           RateData rate_data, EnergyRateData energy_rate_data,
-                           Species target_species, Species electron_species,
-                           const ParticleSpec &particle_spec)
+  ElectronImpactIonisation(
+      SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate,
+      Sym<REAL> weight_sym, RateData rate_data, EnergyRateData energy_rate_data,
+      Species target_species, Species electron_species,
+      const ParticleSpec &particle_spec,
+      std::map<int, std::string> properties_map = default_map)
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
             sycl_target_, total_reaction_rate, weight_sym,
             target_species.get_id(), std::array<int, 0>{}, rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
-                                        electron_species),
+                                        electron_species, properties_map),
             particle_spec,
             DataCalculator<EnergyRateData>(particle_spec, energy_rate_data)) {}
 };
