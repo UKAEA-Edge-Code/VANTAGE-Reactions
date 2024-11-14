@@ -198,13 +198,6 @@ struct TestReactionKernels : public ReactionKernelsBase {
       : ReactionKernelsBase(
             Properties<REAL>(TEST_REACTION_KERNEL::required_simple_real_props),
             0, properties_map_) {
-
-    this->set_required_descendant_int_props(Properties<INT>(
-        TEST_REACTION_KERNEL::required_descendant_simple_int_props));
-
-    this->set_required_descendant_real_props(Properties<REAL>(
-        TEST_REACTION_KERNEL::required_descendant_simple_real_props));
-
     auto props = TEST_REACTION_KERNEL::props;
 
     this->test_reaction_kernels_on_device.velocity_ind =
@@ -213,6 +206,12 @@ struct TestReactionKernels : public ReactionKernelsBase {
     this->test_reaction_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight,
                                                     this->properties_map);
+
+    this->set_required_descendant_int_props(Properties<INT>(
+        TEST_REACTION_KERNEL::required_descendant_simple_int_props));
+
+    this->set_required_descendant_real_props(Properties<REAL>(
+        TEST_REACTION_KERNEL::required_descendant_simple_real_props));
 
     this->test_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
@@ -223,22 +222,8 @@ struct TestReactionKernels : public ReactionKernelsBase {
     this->test_reaction_kernels_on_device.descendant_weight_ind =
         this->required_descendant_real_props.simple_prop_index(
             props.weight, this->properties_map);
-
-    const auto descendant_internal_state_prop = ParticleProp<INT>(
-        Sym<INT>(this->properties_map.at(props.internal_state)), 1);
-    const auto descendant_velocity_prop = ParticleProp<REAL>(
-        Sym<REAL>(this->properties_map.at(props.velocity)), 2);
-    const auto descendant_weight_prop =
-        ParticleProp<REAL>(Sym<REAL>(this->properties_map.at(props.weight)), 1);
-
-    auto descendant_particles_spec = ParticleSpec();
-    descendant_particles_spec.push(descendant_internal_state_prop);
-    descendant_particles_spec.push(descendant_velocity_prop);
-    descendant_particles_spec.push(descendant_weight_prop);
-
-    auto matrix_spec = product_matrix_spec(descendant_particles_spec);
-
-    this->set_descendant_matrix_spec(matrix_spec);
+    
+    this->set_descendant_matrix_spec<2, num_products_per_parent>();
   }
 
 private:

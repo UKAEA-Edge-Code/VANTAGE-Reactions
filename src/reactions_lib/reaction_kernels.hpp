@@ -91,9 +91,40 @@ protected:
     this->required_descendant_real_props = required_descendant_real_props;
   }
 
-  void set_descendant_matrix_spec(
-      std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec) {
-    this->descendant_matrix_spec = descendant_matrix_spec;
+  template <int ndim_velocity = 2, int num_products_per_parent = 0>
+  void set_descendant_matrix_spec() {
+    if constexpr (num_products_per_parent < 1) {
+      return;
+    } else {
+      NESOWARN(((this->required_descendant_int_props.get_props().size() == 0) &&
+                (this->required_descendant_real_props.get_props().size() == 0)),
+               "The number of products per parent is >= 1 but no required "
+               "descendant properties are set. This will result in an empty "
+               "descendant_matrix_spec.")
+
+      auto descendant_particles_spec = ParticleSpec();
+
+      for (auto prop : this->required_descendant_int_props.get_props()) {
+        auto descendant_prop =
+            ParticleProp<INT>(Sym<INT>(this->properties_map.at(prop)), 1);
+        descendant_particles_spec.push(descendant_prop);
+      }
+
+      for (auto prop : this->required_descendant_real_props.get_props()) {
+        if (prop == default_properties.velocity) {
+          auto descendant_prop = ParticleProp<REAL>(
+              Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
+          descendant_particles_spec.push(descendant_prop);
+        } else {
+          auto descendant_prop =
+              ParticleProp<REAL>(Sym<REAL>(this->properties_map.at(prop)), 1);
+          descendant_particles_spec.push(descendant_prop);
+        }
+      }
+
+      this->descendant_matrix_spec =
+          product_matrix_spec(descendant_particles_spec);
+    }
   }
 
   Properties<INT> required_int_props;
