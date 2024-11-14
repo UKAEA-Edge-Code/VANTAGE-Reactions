@@ -48,7 +48,7 @@ struct DummyData :
     public ReactionDataBase<1 // The data dimensionality here again
                    > {
 
-  FixedCoefficientData(REAL rate_coefficient,
+  DummyData(REAL rate_coefficient,
                        std::map<int, std::string> properties_map = default_map // Here we allow for property remapping 
                        )
       : ReactionDataBase(

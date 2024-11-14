@@ -27,6 +27,7 @@ using namespace Reactions;
 #include "./example_sources/example_ionisation_kernels.hpp"
 #include "./example_sources/example_electron_impact_ion.hpp"
 #include "./example_sources/example_reaction_controller.hpp"
+#include "./example_sources/example_new_reaction_data.hpp"
 
 TEST(Examples, all){
 
