@@ -122,7 +122,7 @@ The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid
 is the particle weight. All normalisation is set in the constructor (see the example).
 The rate is assumed to evolve some quantity :math:`q`, and requires the knowledge of the normalisation of 
 that quantity. For example, if evolving the weight it should be left at 1.0 while if evolving a background 
-energy field (e.g. providing an energy source) it would require the normalisation of the energy density.
+energy field (e.g. providing an energy source) it would require the normalisation of the energy density (see below for the assumed normalisation in case of built-in kernels).
     
 #. Example: 
 
@@ -249,7 +249,7 @@ Base ionisation kernels
 
 #. Overview: These are general ionisation kernels with the fewest possible assumptions. Since ionisation is an absorption process, there are no descendant particles. 
    This implementation allows for different electron, projectile, and target species, i.e. it represents projectile-impact target ionisation. It expects at least one :class:`DataCalculator` value,
-   representing the energy loss rate of the projectile species in the process. Optionally, a momentum loss rate can be included, with the momentum being transferred to the target species. Electron momentum is assumed negligible.
+   representing the energy loss rate of the projectile species in the process. Optionally, a momentum loss rate can be included, with the momentum being transferred to the target species. Electron momentum is assumed negligible. **NOTE**: The units of the energy and momentum sources are tied to the velocity normalisation via the weight and amu - e.g. the energy source normalisation is assumed to be :math:`w_0m_0 v_0^2`, where :math:`m_0` is the amu, :math:`v_0` is the velocity normalisation, and :math:`w_0` represents the weight normalisation (for example a number of particles associated with unit weight)
 
 #. Required properties: 
 
@@ -269,7 +269,7 @@ Base ionisation kernels
 Base charge-exchange kernels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. Overview: These kernels perform direct charge-exchange with a pre-sampled ion. The ion velocities are assumed to be set in the accompanying :class:`DataCalculator` object. As such, this kernel is not in charge of the sampling process (use, for example, the :class:`FilteredMaxwellianSampler`). These kernels assume one reaction product, which is the resulting charge-exchanged neutral particle. 
+#. Overview: These kernels perform direct charge-exchange with a pre-sampled ion. The ion velocities are assumed to be set in the accompanying :class:`DataCalculator` object. As such, this kernel is not in charge of the sampling process (use, for example, the :class:`FilteredMaxwellianSampler`). These kernels assume one reaction product, which is the resulting charge-exchanged neutral particle. **NOTE**: Energy and momentum source normalisation are the same here as in the ionisation kernels.
 #. Required properties: 
 
    * Parent: Simple props: weight, velocity; Species props: source_density, source_energy, source_momentum
