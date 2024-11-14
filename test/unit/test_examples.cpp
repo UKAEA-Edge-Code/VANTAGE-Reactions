@@ -55,4 +55,6 @@ TEST(Examples, all){
   ionisation_kernels_example();
   electron_impact_ion_example(particle_group);
   reaction_controller_example(particle_group);
+
+  particle_group->domain->mesh->free()
 }
