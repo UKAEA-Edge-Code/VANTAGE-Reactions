@@ -940,7 +940,7 @@ TEST(DataCalculator, mixed_multi_dim) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = pre_req_data->index.shape;
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell * 2;
+    size_t buffer_size = n_part_cell;
     pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape[1], 0);
 
@@ -948,11 +948,13 @@ TEST(DataCalculator, mixed_multi_dim) {
 
     auto temp_dat = pre_req_data->get();
 
-    for (int ipart = 0; ipart < n_part_cell; ipart++) {
-      EXPECT_DOUBLE_EQ(temp_dat[shape[1] * ipart], 0.1);
-      EXPECT_DOUBLE_EQ(temp_dat[(shape[1] * ipart) + 1], 1);  // FLUID_FLOW_SPEED x
-      EXPECT_DOUBLE_EQ(temp_dat[(shape[1] * ipart) + 2], 3);  // FLUID_FLOW_SPEED y
-      EXPECT_DOUBLE_EQ(temp_dat[(shape[1] * ipart) + 3], 1.5);
+    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
+      auto dim_size = pre_req_data->index.shape[1];
+
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 0], 0.1);
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 1], 1);  // FLUID_FLOW_SPEED x
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 2], 3);  // FLUID_FLOW_SPEED y
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 3], 1.5);
     }
   }
 
