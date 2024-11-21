@@ -908,6 +908,57 @@ TEST(DataCalculator, custom_sources) {
   descendant_particles->domain->mesh->free();
 }
 
+TEST(DataCalculator, mixed_multi_dim) {
+  const int N_total = 100;
+
+  auto particle_group = create_test_particle_group(N_total);
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto energy_dat_0 = FixedRateData(0.1);
+  auto energy_dat_1 = FixedRateData(1.5);
+
+  // std::mt19937 rng = std::mt19937(std::random_device{}());
+  // const double extents[1] = {1.0};
+  auto rng_lambda = [&]() -> REAL { return 1.0; };
+  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, N_total);
+
+  // auto constant_rate_cross_section = ConstantRateCrossSection(1.0);
+  auto vel_dat = FilteredMaxwellianSampler<2>(2.0, rng_kernel);
+
+  // (1D, 2D, 1D) order of ReactionData dimensions
+  auto data_calc_obj = DataCalculator<decltype(energy_dat_0), decltype(vel_dat),
+                                      decltype(energy_dat_1)>(
+      particle_spec, energy_dat_0, vel_dat, energy_dat_1);
+
+  auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+      particle_group->sycl_target, 0, data_calc_obj.get_data_size(), 0);
+
+  const int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  for (int i = 0; i < cell_count; i++) {
+    auto shape = pre_req_data->index.shape;
+    auto n_part_cell = particle_sub_group->get_npart_cell(i);
+    size_t buffer_size = n_part_cell * 2;
+    pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape[1], 0);
+
+    data_calc_obj.fill_buffer(pre_req_data, particle_sub_group, i);
+
+    auto temp_dat = pre_req_data->get();
+
+    for (int ipart = 0; ipart < n_part_cell; ipart++) {
+      EXPECT_DOUBLE_EQ(temp_dat[shape[1] * ipart], 0.1);
+      EXPECT_DOUBLE_EQ(temp_dat[(shape[1] * ipart) + 1], 1);  // FLUID_FLOW_SPEED x
+      EXPECT_DOUBLE_EQ(temp_dat[(shape[1] * ipart) + 2], 3);  // FLUID_FLOW_SPEED y
+      EXPECT_DOUBLE_EQ(temp_dat[(shape[1] * ipart) + 3], 1.5);
+    }
+  }
+
+  particle_group->domain->mesh->free();
+}
+
 TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   auto particle_group = create_test_particle_group(1600);
 

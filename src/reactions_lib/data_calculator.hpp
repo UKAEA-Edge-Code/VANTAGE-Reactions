@@ -87,6 +87,7 @@ struct DataCalculator : public AbstractDataCalculator {
     std::apply(
         [&](auto &&...args) {
           size_t dat_idx = 0u;
+          size_t dat_dim_idx = 0u;
           (
               [&] {
                 auto reaction_data_on_device = args.get_on_device_obj();
@@ -104,7 +105,7 @@ struct DataCalculator : public AbstractDataCalculator {
                               particle_index, req_int_props, req_real_props,
                               kernel);
                       for (auto i = 0; i < data_dim; i++) {
-                        buffer.at(current_count, dat_idx + i) = rate[i];
+                        buffer.at(current_count, dat_dim_idx + i) = rate[i];
                       }
                     },
                     Access::read(ParticleLoopIndex{}),
@@ -116,7 +117,8 @@ struct DataCalculator : public AbstractDataCalculator {
                     Access::write(buffer), Access::read(args.get_rng_kernel()));
 
                 loop->execute(cell_idx);
-                dat_idx += data_dim;
+                dat_idx++;
+                dat_dim_idx += data_dim;
               }(),
               ...);
         },
@@ -124,9 +126,10 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Getter for the size of the stored ReactionData tuple
+   * @brief Getter for the total number of dimensions of the objects in the
+   * ReactionData tuple
    */
-  constexpr size_t get_data_size() const {
+  const size_t get_data_size() const {
     size_t dat_idx = 0u;
     std::apply(
         [&](auto &&...args) {
@@ -140,6 +143,11 @@ struct DataCalculator : public AbstractDataCalculator {
         this->data);
     return dat_idx;
   }
+
+  /**
+   * @brief Getter of the total number of objects in the ReactionData tuple
+   */
+  const size_t get_data_tuple_size() const { return std::size(this->data); }
 
 private:
   std::tuple<DATATYPE...> data;
