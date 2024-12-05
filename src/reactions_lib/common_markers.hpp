@@ -9,6 +9,20 @@ namespace Reactions {
 // TODO: improve documentation
 
 /**
+ * @brief Wrapper for more than comparison to be used by the the comparison
+ * marking strategy
+ *
+ * @tparam T REAL or INT
+ */
+template <typename T> struct MoreThanComp {
+  
+  bool operator()(const T &var, const T &comp_val) const {
+
+    return var > comp_val;
+  }
+};
+
+/**
  * @brief Wrapper for less than comparison to be used by the the comparison
  * marking strategy
  *
