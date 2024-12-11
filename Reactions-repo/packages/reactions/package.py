@@ -12,11 +12,18 @@ class Reactions(CMakePackage):
     version("working", branch="reactions-base", preferred=True)
 
     variant("nvcxx", default=False, description="Builds with CUDA CMake flags.")
+    variant("test", default=False, description="Enable tests.")
 
     depends_on("mpi", type=("build", "link", "run"))
     depends_on("neso-particles", type=("build", "link", "run"))
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
+
+    def setup_build_environment(self, env):
+        if "+test" in self.spec:
+            env.set("BUILD_TYPE", "TEST")
+        else:
+            env.set("BUILD_TYPE", "RELEASE")
 
     def cmake_args(self):
         args = []

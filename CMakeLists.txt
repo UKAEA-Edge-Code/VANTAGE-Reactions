@@ -28,9 +28,8 @@ find_package(hipSYCL REQUIRED)
 # Set the build type environment variable
 ############################################################
 if(BUILD_TYPE STREQUAL "TEST")
-  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0;--coverage")
-  link_libraries(gcov)
-  set(TEST_LIBRARIES "gcov")
+  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O2;")
+  add_subdirectory(test)
 elseif(BUILD_TYPE STREQUAL "DEBUG")
   set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
   set(TEST_LIBRARIES "")
@@ -43,7 +42,6 @@ endif()
 # Add directories with source files
 ############################################################
 add_subdirectory(src)
-add_subdirectory(test)
 
 ############################################################
 # all configurable options
