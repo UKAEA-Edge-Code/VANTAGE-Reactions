@@ -22,7 +22,7 @@ struct AbstractCrossSection {
    * @param relative_vel Magnitude of relative velocity of target and projectile
    * @return REAL-valued cross-section at requested relative vel magnitude
    */
-  virtual REAL get_value_at(const REAL &relative_vel) const {};
+  REAL get_value_at(const REAL &relative_vel) const {};
 
   /**
    * @brief Get the maximum value of sigma*v_r where sigma is this cross-section
@@ -30,7 +30,7 @@ struct AbstractCrossSection {
    *
    * @return REAL-valued maximum rate
    */
-  virtual REAL get_max_rate_val() const {};
+  REAL get_max_rate_val() const {};
 
   /**
    * @brief Accept-reject function for when this cross-section is used in
@@ -49,7 +49,7 @@ struct AbstractCrossSection {
    * this function.)
    * @return true if relative_vel value is accepted, false otherwise
    */
-  virtual bool accept_reject(REAL relative_vel, REAL uniform_rand,
+  bool accept_reject(REAL relative_vel, REAL uniform_rand,
                              REAL value_at, REAL max_rate_val) const {
     return uniform_rand < (value_at * relative_vel / max_rate_val);
   }
@@ -141,7 +141,7 @@ struct ReactionDataBaseOnDevice {
   ReactionDataBaseOnDevice() = default;
 
   /**
-   * @brief Virtual function to calculate the reaction data.
+   * @brief Function to calculate the reaction data.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
    * inside which calc_data is called. Access using either
@@ -154,7 +154,7 @@ struct ReactionDataBaseOnDevice {
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation
    */
-  virtual std::array<REAL, dim>
+  std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,
             const Access::SymVector::Read<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
