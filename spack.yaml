@@ -5,9 +5,17 @@
 spack:
   # add package specs to the `specs` list
   specs:
-  - nec_reactions.reactions~nvcxx ^neso.neso-particles~nvcxx%gcc@11.3.0 ^openblas ^neso.hipsycl ^hdf5@1.12.2
-  - nec_reactions.reactions+nvcxx ^neso.neso-particles+nvcxx%gcc@11.3.0 ^openblas ^neso.hipsycl+nvcxx~omp_llvm ^hdf5@1.12.2 ^cuda@12.2.1
+  - nec_reactions.reactions~nvcxx build_option=RELEASE ^neso.neso-particles~nvcxx~build_tests ^openblas ^neso.hipsycl ^hdf5
+  - nec_reactions.reactions~nvcxx build_option=DEBUG ^neso.neso-particles~nvcxx~build_tests ^openblas ^neso.hipsycl ^hdf5
+  - nec_reactions.reactions~nvcxx build_option=TEST ^neso.neso-particles~nvcxx+build_tests ^openblas ^neso.hipsycl ^hdf5
+  - nec_reactions.reactions+nvcxx build_option=RELEASE ^neso.neso-particles+nvcxx~build_tests ^openblas ^neso.hipsycl+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx build_option=DEBUG ^neso.neso-particles+nvcxx~build_tests ^openblas ^neso.hipsycl+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx build_option=TEST ^neso.neso-particles+nvcxx+build_tests ^openblas ^neso.hipsycl+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
+
   view: false
+  packages:
+    all:
+      compiler: [gcc]
   concretizer:
     unify: when_possible
   repos:

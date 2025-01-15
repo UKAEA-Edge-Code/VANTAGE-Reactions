@@ -11,8 +11,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 #include(${CMAKE_SOURCE_DIR}/cmake/SetBuildType.cmake)
 
-enable_testing()
-
 ## put all targets in bin
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 ## put all libraries in lib
@@ -25,25 +23,26 @@ find_package(NESO-Particles REQUIRED)
 find_package(hipSYCL REQUIRED)
 
 ############################################################
+# Add directories with source files
+############################################################
+add_subdirectory(src)
+
+############################################################
 # Set the build type environment variable
 ############################################################
 if(BUILD_TYPE STREQUAL "TEST")
-  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0;--coverage")
+  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O2;--coverage")
   link_libraries(gcov)
   set(TEST_LIBRARIES "gcov")
+  enable_testing()
+  add_subdirectory(test)
 elseif(BUILD_TYPE STREQUAL "DEBUG")
-  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
+  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O2")
   set(TEST_LIBRARIES "")
 elseif(BUILD_TYPE STREQUAL "RELEASE")
   set(BUILD_TYPE_COMPILE_FLAGS "-O2")
   set(TEST_LIBRARIES "")
 endif()
-
-############################################################
-# Add directories with source files
-############################################################
-add_subdirectory(src)
-add_subdirectory(test)
 
 ############################################################
 # all configurable options
