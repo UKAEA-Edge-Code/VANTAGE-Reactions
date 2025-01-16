@@ -1,9 +1,9 @@
 #pragma once
 #include <array>
 #include <neso_particles.hpp>
-#include <particle_properties_map.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
-#include <reaction_kernels.hpp>
+#include "../particle_properties_map.hpp"
+#include "../reaction_kernel_pre_reqs.hpp"
+#include "../reaction_kernels.hpp"
 #include <vector>
 
 using namespace NESO::Particles;

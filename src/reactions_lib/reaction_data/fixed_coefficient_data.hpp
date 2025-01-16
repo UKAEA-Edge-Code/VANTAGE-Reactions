@@ -1,9 +1,6 @@
 #pragma once
 #include <neso_particles.hpp>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_kernels.hpp>
+#include "../reaction_data.hpp"
 #include <vector>
 
 using namespace NESO::Particles;

@@ -1,13 +1,9 @@
 #pragma once
-#include <data_calculator.hpp>
+#include "../data_calculator.hpp"
 #include <neso_particles.hpp>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_data/fixed_rate_data.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
-#include <reaction_kernels.hpp>
-#include <reaction_kernels/base_ionisation_kernels.hpp>
+#include "../reaction_base.hpp"
+#include "../reaction_kernel_pre_reqs.hpp"
+#include "../reaction_kernels/base_ionisation_kernels.hpp"
 
 using namespace NESO::Particles;
 namespace Reactions {

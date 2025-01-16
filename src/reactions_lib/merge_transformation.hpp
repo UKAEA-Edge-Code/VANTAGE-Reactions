@@ -8,8 +8,8 @@
 #include <limits>
 #include <memory>
 #include <neso_particles.hpp>
-#include <transformation_wrapper.hpp>
-#include <utils.hpp>
+#include "transformation_wrapper.hpp"
+#include "utils.hpp"
 #include <vector>
 
 using namespace NESO::Particles;

@@ -12,7 +12,7 @@ class Reactions(CMakePackage):
     version("working", branch="reactions-base", preferred=True)
 
     variant("nvcxx", default=False, description="Builds with CUDA CMake flags.")
-    variant("build_option", default="RELEASE", description="CMake build type", values=("DEBUG", "RELEASE", "TEST"))
+    variant("enable_tests", default=False, description="Enable tests")
 
     depends_on("mpi", type=("build", "link", "run"))
     depends_on("neso-particles", type=("build", "link", "run"))
@@ -21,7 +21,7 @@ class Reactions(CMakePackage):
 
     def cmake_args(self):
         args = []
-        args.append(self.define("BUILD_TYPE", self.spec.variants["build_option"].value))
+        args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
         if "+nvcxx" in self.spec:
             args.append("-DNESO_PARTICLES_DEVICE_TYPE=GPU")
             args.append("-DHIPSYCL_TARGETS=cuda-nvcxx")

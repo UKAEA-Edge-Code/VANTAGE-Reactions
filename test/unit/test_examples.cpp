@@ -1,7 +1,6 @@
-#include <reactions.hpp>
 #include <neso_particles.hpp>
 #include <gtest/gtest.h>
-#include <mock_reactions.hpp>
+#include "include/mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;

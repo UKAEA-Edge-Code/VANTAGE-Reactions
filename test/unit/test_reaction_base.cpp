@@ -1,37 +1,11 @@
 #pragma once
-#include "common_markers.hpp"
-#include "data_calculator.hpp"
-#include "mock_reactions.hpp"
-#include "particle_properties_map.hpp"
-#include "reaction_base.hpp"
-#include "reaction_data.hpp"
-#include "reaction_data/filtered_maxwellian_sampler.hpp"
-#include "reaction_kernels/base_ionisation_kernels.hpp"
-#include "transformation_wrapper.hpp"
-#include "gtest/gtest.h"
-#include <common_transformations.hpp>
-#include <cross_sections/AMJUEL_fit_cs.hpp>
-#include <cross_sections/constant_rate_cs.hpp>
 #include <cstring>
-#include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
 #include <memory>
-#include <neso_particles/boundary_conditions.hpp>
-#include <neso_particles/cell_binning.hpp>
-#include <neso_particles/containers/rng/host_atomic_block_kernel_rng.hpp>
-#include <neso_particles/loop/particle_loop_index.hpp>
-#include <neso_particles/mesh_interface.hpp>
-#include <neso_particles/particle_dat.hpp>
-#include <neso_particles/particle_group.hpp>
-#include <neso_particles/typedefs.hpp>
-#include <reaction_data/AMJUEL_2D_data.hpp>
-#include <reaction_data/AMJUEL_2D_data_H3.hpp>
-#include <reaction_data/fixed_coefficient_data.hpp>
-#include <reaction_data/fixed_rate_data.hpp>
-#include <reaction_kernels/base_cx_kernels.hpp>
 #include <stdexcept>
-#include <transformation_wrapper.hpp>
 #include <vector>
+#include <neso_particles.hpp>
+#include "include/mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;

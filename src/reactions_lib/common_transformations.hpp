@@ -2,7 +2,7 @@
 #define COMMON_TRANSFORMATIONS_H
 #include <memory>
 #include <neso_particles.hpp>
-#include <transformation_wrapper.hpp>
+#include "transformation_wrapper.hpp"
 #include <utility>
 
 using namespace NESO::Particles;

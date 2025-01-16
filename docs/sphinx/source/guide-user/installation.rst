@@ -6,7 +6,7 @@ Pre-requisites
 ==============
 
 * gcc 11.3.0+: Tested up to 13.3.0
-* spack v0.21.0+: Tested up to v0.22.3
+* spack v0.21.0+: Tested up to v0.23.0
 
 Spack environment setup
 =======================
@@ -14,9 +14,9 @@ Spack environment setup
 To start with, it's necessary to clone spack:
 ::
 
-    git clone -c feature.manyFiles=true -b v0.22.3 https://github.com/spack/spack.git $HOME/.spack
+    git clone -c feature.manyFiles=true -b v0.23.0 https://github.com/spack/spack.git $HOME/.spack
 
-It can also be useful to create a temporary directory in your home directory in case there are any permission issues (eg. ``mkdir $HOME/temp_dir``).
+It can also be useful to create a temporary directory in your home directory in case there are any permission issues (eg. ``mkdir $HOME/temp_dir`).
 Set the environment variables and run the spack environment setup:
 ::
 
@@ -60,10 +60,10 @@ For a standard install (CPU-only, no tests) run the commands:
 ::
 
     spack install --only-concrete --only dependencies neso-particles~nvcxx~build_tests
-    spack install -j1 --only-concrete --only dependencies reactions~nvcxx build_option=RELEASE
-    spack install -j1 --only-concrete reactions~nvcxx build_option=RELEASE
+    spack install --only-concrete --only dependencies reactions~nvcxx~enable_tests
+    spack install --only-concrete reactions~nvcxx~enable_tests
 
-This will place a ``libreactions.so`` in the ``lib`` directory of the repo, this is the library to link against to use Reactions in another project.
+Note if there is a compiler error when running the last two commands then add ``-j1`` after ``spack install`` and try again.
 
 CUDA installation (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,15 +72,13 @@ For a NVIDIA-GPU specific installation, if not already done then repeat the step
 ::
 
     spack install --only-concrete --only dependencies neso-particles+nvcxx~build_tests
-    spack install -j1 --only-concrete --only dependencies reactions+nvcxx build_option=RELEASE
-    spack install -j1 --only-concrete reactions+nvcxx build_option=RELEASE
-
-Again this will place ``libreactions.so`` in the ``lib`` directory of the repo.
+    spack install --only-concrete --only dependencies reactions+nvcxx~enable_tests
+    spack install --only-concrete reactions+nvcxx~enable_tests
 
 Unit tests (Optional)
 =====================
 
-Building the unit-tests is mostly the same as a standard installation with some install options changed. The compilation will produce ``libreactions.so`` as with the standard installation but will also produce a ``unit_tests`` executable in the ``bin`` directory of the repo.
+Building the unit-tests is mostly the same as a standard installation with some install options changed. The compilation will produce a ``unit_tests`` executable in the ``test/unit`` directory inside the build directory created by spack during installation.
 
 Note that for running the tests, it might be necessary to load the relevant MPI package that spack has installed. It's possible to identify this by using ``spack find mpich`` or ``spack find openmpi`` and subsequently loading the relevant package (if both are present feel free to choose either) with ``spack load`` before running the unit tests.
 
@@ -91,8 +89,8 @@ For the CPU specific version:
 ::
 
     spack install --only-concrete --only dependencies neso-particles~nvcxx+build_tests
-    spack install -j1 --only-concrete --only dependencies reactions~nvcxx build_option=TEST
-    spack install -j1 --only-concrete reactions~nvcxx build_option=TEST
+    spack install --only-concrete --only dependencies reactions~nvcxx+enable_tests
+    spack install --only-concrete reactions~nvcxx+enable_tests
 
 Build unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -101,8 +99,8 @@ For the GPU specific version:
 ::
 
     spack install --only-concrete --only dependencies neso-particles+nvcxx+build_tests
-    spack install -j1 --only-concrete --only dependencies reactions+nvcxx build_option=TEST
-    spack install -j1 --only-concrete reactions+nvcxx build_option=TEST
+    spack install --only-concrete --only dependencies reactions+nvcxx+enable_tests
+    spack install --only-concrete reactions+nvcxx+enable_tests
 
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
@@ -110,7 +108,7 @@ Run unit-tests (CPU)
 The CPU specific command to run the unit tests is:
 ::
 
-    OMP_NUM_THREADS=1 mpirun -n 1 ./bin/unit_tests
+    OMP_NUM_THREADS=1 mpirun -n 1 {build_dir}/test/unit/unit_tests
 
 Run unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~
@@ -118,4 +116,4 @@ Run unit-tests (GPU)
 The GPU specific command to run the unit tests is:
 ::
 
-    SYCL_DEVICE_FILTER=GPU mpirun -n 1 ./bin/unit_tests
+    SYCL_DEVICE_FILTER=GPU mpirun -n 1 {build_dir}/test/unit/unit_tests

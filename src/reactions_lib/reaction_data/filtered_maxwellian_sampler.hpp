@@ -1,14 +1,10 @@
 #pragma once
-#include "cross_sections/constant_rate_cs.hpp"
-#include "particle_properties_map.hpp"
+#include "../cross_sections/constant_rate_cs.hpp"
+#include "../particle_properties_map.hpp"
 #include <array>
 #include <neso_particles.hpp>
 #include <neso_particles/containers/rng/host_atomic_block_kernel_rng.hpp>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_kernels.hpp>
-#include <utils.hpp>
+#include "../utils.hpp"
 #include <vector>
 
 using namespace NESO::Particles;
