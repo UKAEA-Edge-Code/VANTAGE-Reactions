@@ -16,7 +16,7 @@ To start with, it's necessary to clone spack:
 
     git clone -c feature.manyFiles=true -b v0.23.0 https://github.com/spack/spack.git $HOME/.spack
 
-It can also be useful to create a temporary directory in your home directory in case there are any permission issues (eg. ``mkdir $HOME/temp_dir`).
+It can also be useful to create a temporary directory in your home directory in case there are any permission issues (eg. ``mkdir $HOME/temp_dir``).
 Set the environment variables and run the spack environment setup:
 ::
 
