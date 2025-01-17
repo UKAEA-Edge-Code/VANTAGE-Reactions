@@ -4,7 +4,6 @@
 #include <neso_particles.hpp>
 #include <neso_particles/compute_target.hpp>
 #include <neso_particles/typedefs.hpp>
-#include <particle_properties_map.hpp>
 #include <tuple>
 #include <type_traits>
 #include <vector>

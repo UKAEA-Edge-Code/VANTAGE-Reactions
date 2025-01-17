@@ -1,8 +1,6 @@
 #pragma once
 #include <gtest/gtest.h>
-#include <mock_reactions.hpp>
-#include <particle_spec_builder.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
+#include "include/mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;

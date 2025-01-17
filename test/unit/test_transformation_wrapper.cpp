@@ -1,9 +1,7 @@
-#include "common_markers.hpp"
-#include "common_transformations.hpp"
-#include "transformation_wrapper.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
+#include <reactions.hpp>
 
 using namespace NESO::Particles;
 using namespace Reactions;

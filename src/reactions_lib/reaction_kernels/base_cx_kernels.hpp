@@ -2,9 +2,9 @@
 #include <array>
 #include <neso_particles.hpp>
 #include <neso_particles/containers/product_matrix.hpp>
-#include <particle_properties_map.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
-#include <reaction_kernels.hpp>
+#include "../particle_properties_map.hpp"
+#include "../reaction_kernel_pre_reqs.hpp"
+#include "../reaction_kernels.hpp"
 #include <vector>
 
 // TODO: docs double-check

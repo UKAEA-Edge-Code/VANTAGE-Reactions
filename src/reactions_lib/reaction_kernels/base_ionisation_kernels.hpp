@@ -1,9 +1,9 @@
 #pragma once
 #include <array>
 #include <neso_particles.hpp>
-#include <particle_properties_map.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
-#include <reaction_kernels.hpp>
+#include "../particle_properties_map.hpp"
+#include "../reaction_kernel_pre_reqs.hpp"
+#include "../reaction_kernels.hpp"
 #include <vector>
 
 using namespace NESO::Particles;
@@ -90,7 +90,7 @@ struct IoniseReactionKernelsOnDevice
         req_real_props.at(this->target_source_momentum_ind, index, sm_dim) +=
             pre_req_data.at(index.get_loop_linear_index(), 1) * dt;
         req_real_props.at(this->projectile_source_momentum_ind, index,
-                          sm_dim) +=
+                          sm_dim) -=
             pre_req_data.at(index.get_loop_linear_index(), 1) * dt;
       }
     }

@@ -12,7 +12,6 @@
 #include <neso_particles/particle_group.hpp>
 #include <neso_particles/particle_sub_group.hpp>
 #include <neso_particles/typedefs.hpp>
-#include <particle_properties_map.hpp>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>

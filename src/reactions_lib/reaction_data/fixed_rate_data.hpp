@@ -1,10 +1,7 @@
 #pragma once
 #include <neso_particles.hpp>
 #include <neso_particles/containers/sym_vector.hpp>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_kernels.hpp>
+#include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
 namespace Reactions {

@@ -1,15 +1,28 @@
-file(GLOB_RECURSE src_files "*.h" "*.hpp" "*.cpp")
+file(GLOB_RECURSE src_files "*.hpp")
 
 message(STATUS "src files:")
 message(STATUS ${src_files})
 
-# make a shared object library to link against for testing
-add_library(${PROJECT_LIB_NAME} SHARED ${src_files})
-target_compile_options(${PROJECT_LIB_NAME} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(INCLUDE_REACTIONS_DIR ${INCLUDE_DIR}/reactions_lib)
+set(HEADER_FILES ${src_files})
 
-target_include_directories(${PROJECT_LIB_NAME} PUBLIC ${NESO_PARTICLES_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
-target_link_libraries(${PROJECT_LIB_NAME} PUBLIC ${MPI_CXX_LINK_FLAGS} ${MPI_CXX_LIBRARIES} ${NESO_PARTICLES_LIBRARIES} ${NESO_PARTICLES_LINK_FLAGS})
-set_target_properties(${PROJECT_LIB_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(${PROJECT_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+target_sources(
+    Reactions
+    PUBLIC FILE_SET
+        public_headers
+        TYPE
+        HEADERS
+        BASE_DIRS
+        ${INCLUDE_DIR}
+        FILES
+        ${HEADER_FILES}
+)
 
-install(TARGETS ${PROJECT_LIB_NAME} DESTINATION lib)
+target_link_libraries(Reactions INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles)
+
+install(
+    TARGETS Reactions
+    FILE_SET public_headers
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)

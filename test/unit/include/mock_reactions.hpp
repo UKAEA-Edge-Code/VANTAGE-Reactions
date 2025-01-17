@@ -1,22 +1,10 @@
 #pragma once
-#include "mock_reactions.hpp"
-#include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
 #include <cmath>
-#include <data_calculator.hpp>
 #include <functional>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/compute_target.hpp>
-#include <neso_particles/containers/descendant_products.hpp>
-#include <neso_particles/containers/product_matrix.hpp>
-#include <neso_particles/containers/sym_vector.hpp>
-#include <neso_particles/particle_spec.hpp>
+#include <reactions.hpp>
 #include <numeric>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_kernels.hpp>
 #include <string>
 #include <vector>
 

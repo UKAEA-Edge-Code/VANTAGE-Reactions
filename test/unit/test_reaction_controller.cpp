@@ -1,23 +1,9 @@
 #pragma once
-#include "common_markers.hpp"
-#include "common_transformations.hpp"
-#include "merge_transformation.hpp"
-#include "mock_reactions.hpp"
-#include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
-#include "transformation_wrapper.hpp"
 #include <array>
-#include <derived_reactions/electron_impact_ionisation.hpp>
 #include <gtest/gtest.h>
 #include <memory>
-#include <neso_particles/containers/local_array.hpp>
-#include <neso_particles/loop/particle_loop_index.hpp>
-#include <particle_spec_builder.hpp>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_data/AMJUEL_1D_data.hpp>
-#include <reaction_data/fixed_rate_data.hpp>
+#include <neso_particles.hpp>
+#include "include/mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;

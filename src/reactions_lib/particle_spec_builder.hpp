@@ -3,7 +3,7 @@
 
 #include <neso_particles.hpp>
 #include <neso_particles/particle_spec.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
+#include "reaction_kernel_pre_reqs.hpp"
 
 using namespace NESO::Particles;
 
