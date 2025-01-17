@@ -171,7 +171,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  virtual void
+  void
   scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                     Access::DescendantProducts::Write &descendant_products,
                     Access::SymVector::Write<INT> &req_int_props,
@@ -202,7 +202,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  virtual void
+  void
   feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                   Access::DescendantProducts::Write &descendant_products,
                   Access::SymVector::Write<INT> &req_int_props,
@@ -233,7 +233,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  virtual void transformation_kernel(
+  void transformation_kernel(
       REAL &modified_weight, Access::LoopIndex::Read &index,
       Access::DescendantProducts::Write &descendant_products,
       Access::SymVector::Write<INT> &req_int_props,
@@ -263,7 +263,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  virtual void
+  void
   weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
                 Access::DescendantProducts::Write &descendant_products,
                 Access::SymVector::Write<INT> &req_int_props,

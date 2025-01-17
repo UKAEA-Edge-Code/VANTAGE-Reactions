@@ -109,14 +109,18 @@ struct TransformationWrapper {
    */
   void transform(ParticleGroupSharedPtr target_group, int cell_id) {
 
-    auto marker_subgroup = std::make_shared<ParticleSubGroup>(target_group);
+    ParticleSubGroupSharedPtr marker_subgroup;
     if (cell_id >= 0) {
       auto cell_num = target_group->domain->mesh->get_cell_count();
       NESOASSERT(
           cell_id < cell_num,
           "Transformation wrapper transform called with cell id out of range");
-      auto marker_subgroup = particle_sub_group(target_group, cell_id);
+      marker_subgroup = particle_sub_group(target_group, cell_id);
     }
+    else {
+      marker_subgroup = particle_sub_group(target_group);
+    }
+
     for (auto &strat : this->marking_strat) {
       marker_subgroup = strat->make_marker_subgroup(marker_subgroup);
     }
@@ -167,6 +171,9 @@ struct MarkingStrategyBase : MarkingStrategy {
 
   ParticleSubGroupSharedPtr
   make_marker_subgroup(ParticleSubGroupSharedPtr particle_sub_group) override {
+
+    NESOASSERT(particle_sub_group != nullptr,
+    "Passing nullptr for particle_sub_group argument!");
 
     const auto &underlying = static_cast<MarkingStrategyDerived &>(*this);
     auto device_type = underlying.get_device_data();

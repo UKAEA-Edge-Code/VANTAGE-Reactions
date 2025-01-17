@@ -53,7 +53,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
    *
    * @param target_subgroup
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
     auto new_particle_group = std::make_shared<ParticleGroup>(
