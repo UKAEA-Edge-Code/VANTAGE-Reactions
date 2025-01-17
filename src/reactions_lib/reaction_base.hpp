@@ -68,7 +68,7 @@ public:
   // TODO: This probably needs changing now
   virtual void pre_calc_req_data(int cell_idx) {}
 
-  virtual void flush_buffer() {}
+  virtual void flush_buffer(size_t buffer_size) {}
 
   virtual void flush_pre_req_data() {}
 
@@ -426,7 +426,7 @@ struct LinearReactionBase : public AbstractReaction {
    * @param buffer_size Size of the empty buffer that needs to be created and
    * stored.
    */
-  void flush_buffer(size_t buffer_size) {
+  void flush_buffer(size_t buffer_size) override {
     auto empty_device_rate_buffer = std::make_shared<LocalArray<REAL>>(
         AbstractReaction::get_sycl_target(), buffer_size, 0);
     AbstractReaction::set_device_rate_buffer(empty_device_rate_buffer);

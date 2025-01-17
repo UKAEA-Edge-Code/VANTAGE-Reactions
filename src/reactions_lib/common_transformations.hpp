@@ -28,7 +28,7 @@ struct SimpleRemovalTransformationStrategy : TransformationStrategy {
    *
    * @param target_subgroup ParticleSubgroup to remove
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
     auto particle_group = target_subgroup->get_particle_group();
 
     particle_group->remove_particles(target_subgroup);
@@ -51,7 +51,7 @@ struct CompositeTransform : TransformationStrategy {
    *
    * @param target_subgroup Particle subgroup to apply the transform to
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
     for (auto &comp : this->components) {
       comp->transform(target_subgroup);
     }
@@ -88,7 +88,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
    *
    * @param target_subgroup Particle subgroup to apply the transform to
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
 
     std::vector<INT> num_comps_vec;
     auto particle_group = target_subgroup->get_particle_group();
@@ -167,7 +167,7 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
 
     for (auto i = 0; i < size(this->dats); i++) {
 
@@ -304,7 +304,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
 
     for (auto i = 0; i < size(this->dats); i++) {
 

@@ -43,10 +43,9 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
                        const REAL &temperature_normalisation_,
                        const REAL &time_normalisation_,
                        const std::array<REAL, num_coeffs> &coeffs_)
-      : evolved_quantity_normalisation(1.0 / evolved_quantity_normalisation_),
-        density_normalisation(density_normalisation_),
+      : mult_const(density_normalisation_ * time_normalisation_ / evolved_quantity_normalisation_),
         temperature_normalisation(temperature_normalisation_),
-        time_normalisation(time_normalisation_), coeffs(coeffs_){};
+        coeffs(coeffs_){};
 
   /**
    * @brief Function to calculate the reaction rate for a 1D AMJUEL-based
@@ -85,18 +84,15 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
     REAL rate = std::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
-            this->time_normalisation * this->density_normalisation *
-            this->evolved_quantity_normalisation;
+            this->mult_const;
 
     return std::array<REAL, 1>{rate};
   }
 
 public:
   int fluid_density_ind, fluid_temperature_ind, weight_ind;
-  REAL evolved_quantity_normalisation;
-  REAL density_normalisation;
   REAL temperature_normalisation;
-  REAL time_normalisation;
+  REAL mult_const;
   std::array<REAL, num_coeffs> coeffs;
 };
 
