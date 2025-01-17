@@ -25,9 +25,11 @@ class Reactions(CMakePackage):
         if "+nvcxx" in self.spec:
             args.append("-DNESO_PARTICLES_DEVICE_TYPE=GPU")
             args.append("-DHIPSYCL_TARGETS=cuda-nvcxx")
+            args.append("-DREACTIONS_DEVICE_TYPE=GPU")
         elif "~nvcxx" in self.spec:
             args.append("-DNESO_PARTICLES_DEVICE_TYPE=CPU")
             args.append("-DHIPSYCL_TARGETS=omp")
+            args.append("-DREACTIONS_DEVICE_TYPE=CPU")
 
         return args
 
