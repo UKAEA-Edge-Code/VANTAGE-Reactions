@@ -30,7 +30,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       particle_group->sycl_target,
       Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
       Sym<REAL>(prop_map[default_properties.weight]), ion_species_1.get_id(),
-      std::array<int, 1>{ion_species_2.get_id()}, rate_data, cx_kernel,
+      std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data, cx_kernel,
       particle_spec, data_calculator);
 
   // Ionisation reactions

@@ -134,7 +134,7 @@ struct DataCalculator : public AbstractDataCalculator {
         [&](auto &&...args) {
           (
               [&] {
-                constexpr auto data_dim = args.get_dim();
+                const auto data_dim = args.get_dim();
                 dat_idx += data_dim;
               }(),
               ...);
