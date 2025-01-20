@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.24)
 
 # no space in these names! used as shared object name and python module name
 set(PROJECT_NAME Reactions)
-set(PROJECT_LIB_NAME ${PROJECT_NAME}-lib)
 
 project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
+
+include(GNUInstallDirs)
 
 # Produce compile_commands.json for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -40,6 +41,34 @@ if (REACTIONS_ENABLE_TESTS)
   add_subdirectory(test)
 endif()
 
+install(
+    TARGETS Reactions
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE_SET public_headers
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE ${PROJECT_NAME}Targets.cmake
+    NAMESPACE ${PROJECT_NAME}::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
+export(
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/${PROJECT_NAME}Targets.cmake"
+    NAMESPACE ${PROJECT_NAME}::
+)
 ############################################################
 # all configurable options
 ############################################################

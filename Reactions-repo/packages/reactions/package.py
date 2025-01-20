@@ -19,12 +19,6 @@ class Reactions(CMakePackage):
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
 
-    def setup_build_environment(self, env):
-        if "+test" in self.spec:
-            env.set("BUILD_TYPE", "TEST")
-        else:
-            env.set("BUILD_TYPE", "RELEASE")
-
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))

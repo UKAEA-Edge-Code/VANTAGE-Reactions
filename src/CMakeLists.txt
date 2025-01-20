@@ -19,10 +19,4 @@ target_sources(
         ${HEADER_FILES}
 )
 
-target_link_libraries(Reactions INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles)
-
-install(
-    TARGETS Reactions
-    FILE_SET public_headers
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+target_link_libraries(Reactions INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles Reactions)
