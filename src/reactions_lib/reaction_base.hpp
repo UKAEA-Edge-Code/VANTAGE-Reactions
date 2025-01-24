@@ -7,11 +7,6 @@
 #include <cstring>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/compute_target.hpp>
-#include <neso_particles/loop/access_descriptors.hpp>
-#include <neso_particles/particle_group.hpp>
-#include <neso_particles/particle_sub_group.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>

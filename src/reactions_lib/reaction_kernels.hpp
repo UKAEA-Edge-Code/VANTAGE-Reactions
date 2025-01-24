@@ -2,7 +2,6 @@
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
-#include <neso_particles/containers/product_matrix.hpp>
 
 using namespace NESO::Particles;
 namespace Reactions {

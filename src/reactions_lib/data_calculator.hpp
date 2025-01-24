@@ -2,8 +2,6 @@
 #include "reaction_data.hpp"
 #include "utils.hpp"
 #include <neso_particles.hpp>
-#include <neso_particles/compute_target.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <tuple>
 #include <type_traits>
 #include <vector>

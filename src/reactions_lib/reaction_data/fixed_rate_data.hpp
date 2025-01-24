@@ -1,6 +1,5 @@
 #pragma once
 #include <neso_particles.hpp>
-#include <neso_particles/containers/sym_vector.hpp>
 #include "../reaction_data.hpp"
 
 using namespace NESO::Particles;

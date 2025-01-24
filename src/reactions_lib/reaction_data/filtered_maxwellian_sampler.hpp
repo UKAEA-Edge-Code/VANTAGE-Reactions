@@ -3,7 +3,6 @@
 #include "../particle_properties_map.hpp"
 #include <array>
 #include <neso_particles.hpp>
-#include <neso_particles/containers/rng/host_atomic_block_kernel_rng.hpp>
 #include "../utils.hpp"
 #include <vector>
 

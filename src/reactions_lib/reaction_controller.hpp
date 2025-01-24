@@ -6,7 +6,6 @@
 #include <map>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <set>
 #include <vector>
 

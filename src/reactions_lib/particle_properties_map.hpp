@@ -1,6 +1,6 @@
 #pragma once
 #include <map>
-#include <neso_particles/typedefs.hpp>
+#include <neso_particles.hpp>
 #include <stdexcept>
 #include <string>
 #include <utility>
