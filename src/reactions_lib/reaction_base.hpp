@@ -2,20 +2,27 @@
 #include "data_calculator.hpp"
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
-#include "utils.hpp"
 #include <array>
 #include <cstring>
-#include <memory>
 #include <neso_particles.hpp>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
 
-#define MAX_BUFFER_SIZE 16384
+#ifndef REACTIONS_MAX_PART_PER_CELL
+#define REACTIONS_MAX_PART_PER_CELL 16384
+#endif // !REACTIONS_MAX_PART_PER_CELL
+
+#ifndef REACTIONS_CELL_BLOCK_SIZE
+#define REACTIONS_CELL_BLOCK_SIZE 2
+#endif // !REACTIONS_CELL_BLOCK_SIZE
 
 using namespace NESO::Particles;
 
-//TODO: Improve docs - implementation specific parameter descriptions - avoid!!!
+// TODO: Improve docs - implementation specific parameter descriptions -
+// avoid!!!
+// TODO: cell block update docs
+// TODO: add assertions to limit block size in calls
 
 namespace Reactions {
 
@@ -48,19 +55,16 @@ public:
    * struct.
    */
   virtual void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
-                             INT cell_idx) {}
+                             INT cell_idx_start, INT cell_idx_end) {}
 
   virtual void
   descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
-                          INT cell_idx, double dt,
+                          INT cell_idx_start, INT cell_idx_end, double dt,
                           ParticleGroupSharedPtr child_group) {}
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
 
   virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
-
-  // TODO: This probably needs changing now
-  virtual void pre_calc_req_data(int cell_idx) {}
 
   virtual void flush_buffer(size_t buffer_size) {}
 
@@ -266,13 +270,16 @@ struct LinearReactionBase : public AbstractReaction {
    * ParticleLoop to calculate reaction rates.
    */
   void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
-                     INT cell_idx) override {
+                     INT cell_idx_start, INT cell_idx_end) override {
+
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
     auto sycl_target_stored = this->get_sycl_target();
-    this->cellwise_flush_buffer(particle_sub_group, cell_idx);
-    this->cellwise_flush_pre_req_data(particle_sub_group, cell_idx);
+    this->blockwise_flush_buffer(particle_sub_group, cell_idx_start,
+                                 cell_idx_end);
+    this->blockwise_flush_pre_req_data(particle_sub_group, cell_idx_start,
+                                       cell_idx_end);
     auto device_rate_buffer = this->get_device_rate_buffer();
 
     try {
@@ -288,6 +295,7 @@ struct LinearReactionBase : public AbstractReaction {
                 << std::endl;
     }
     constexpr auto data_dim = reaction_data_buffer.get_dim();
+
     auto loop = particle_loop(
         "calc_data_loop", particle_sub_group,
         [=](auto particle_index, auto req_int_props, auto req_real_props,
@@ -307,10 +315,11 @@ struct LinearReactionBase : public AbstractReaction {
         Access::write(device_rate_buffer),
         Access::read(this->reaction_data.get_rng_kernel()));
 
-    loop->execute(cell_idx);
+    loop->execute(cell_idx_start, cell_idx_end);
 
     this->data_calculator.fill_buffer(this->get_pre_req_data(),
-                                      particle_sub_group, cell_idx);
+                                      particle_sub_group, cell_idx_start,
+                                      cell_idx_end);
     return;
   }
 
@@ -329,7 +338,7 @@ struct LinearReactionBase : public AbstractReaction {
    * into which descendants are placed after generation.
    */
   void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
-                               INT cell_idx, double dt,
+                               INT cell_idx_start, INT cell_idx_end, double dt,
                                ParticleGroupSharedPtr child_group) override {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
@@ -350,8 +359,6 @@ struct LinearReactionBase : public AbstractReaction {
                    "the sycl_target passed to Reaction object..."
                 << std::endl;
     }
-
-    this->pre_calc_req_data(cell_idx);
 
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,
@@ -403,10 +410,14 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(this->get_weight_sym()),
         Access::write(this->get_total_reaction_rate()));
 
-    this->descendant_particles->reset(
-        particle_sub_group->get_npart_cell(cell_idx));
+    INT npart_block = 0;
+    for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
+      npart_block += particle_sub_group->get_npart_cell(cx);
+    }
 
-    loop->execute(cell_idx);
+    this->descendant_particles->reset(npart_block);
+
+    loop->execute(cell_idx_start, cell_idx_end);
 
     child_group->add_particles_local(this->descendant_particles,
                                      particle_sub_group->get_particle_group());
@@ -427,28 +438,33 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
-   * @brief Flushes the rate buffer cellwise, allocating extra memory if
+   * @brief Flushes the rate buffer blockwise, allocating extra memory if
    * necessary.
    *
    * @param particle_sub_group Particle subgroup used to infer the number of
    * particles in the cell
    * @param cell_idx Index of the cell for which the buffer flush is performed
    */
-  void cellwise_flush_buffer(ParticleSubGroupSharedPtr particle_sub_group,
-                             int cell_idx) {
+  void blockwise_flush_buffer(ParticleSubGroupSharedPtr particle_sub_group,
+                              int cell_idx_start, int cell_idx_end) {
     auto device_rate_buffer_size = this->get_device_rate_buffer_size();
-    auto n_part_cell = particle_sub_group->get_npart_cell(cell_idx);
-    if (device_rate_buffer_size < n_part_cell) {
-      NESOASSERT(n_part_cell <= MAX_BUFFER_SIZE,
+    INT npart_block = 0;
+    for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
+      npart_block += particle_sub_group->get_npart_cell(cx);
+    }
+    constexpr size_t REACTIONS_MAX_BUFFER_SIZE =
+        REACTIONS_MAX_PART_PER_CELL * REACTIONS_CELL_BLOCK_SIZE;
+    if (device_rate_buffer_size < npart_block) {
+      NESOASSERT(npart_block <= REACTIONS_MAX_BUFFER_SIZE,
                  "Number of particles in cell exceeds the maximum reaction "
                  "buffer size");
-      if ((n_part_cell * 2) < MAX_BUFFER_SIZE) {
-        this->flush_buffer(n_part_cell * 2);
+      if ((npart_block * 2) < REACTIONS_MAX_BUFFER_SIZE) {
+        this->flush_buffer(npart_block * 2);
       } else {
-        this->flush_buffer(MAX_BUFFER_SIZE);
+        this->flush_buffer(REACTIONS_MAX_BUFFER_SIZE);
       }
-    } else if (n_part_cell < (device_rate_buffer_size / 4)) {
-      this->flush_buffer((n_part_cell * 2));
+    } else if (npart_block < (device_rate_buffer_size / 4)) {
+      this->flush_buffer((npart_block * 2));
     }
   }
 
@@ -472,29 +488,35 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
-   * @brief Flushes the pre_req_data buffer cellwise, allocating extra memory if
-   * necessary.
+   * @brief Flushes the pre_req_data buffer blockwise, allocating extra memory
+   * if necessary.
    *
    * @param particle_sub_group Particle subgroup used to infer the number of
    * particles in the cell
    * @param cell_idx Index of the cell for which the buffer flush is performed
    */
-  void cellwise_flush_pre_req_data(ParticleSubGroupSharedPtr particle_sub_group,
-                                   int cell_idx) {
+  void
+  blockwise_flush_pre_req_data(ParticleSubGroupSharedPtr particle_sub_group,
+                               int cell_idx_start, int cell_idx_end) {
     auto shape = this->get_pre_req_data()->index.shape;
     auto pre_req_buffer_size = shape[0];
-    auto n_part_cell = particle_sub_group->get_npart_cell(cell_idx);
-    if (pre_req_buffer_size < n_part_cell) {
-      NESOASSERT(n_part_cell <= MAX_BUFFER_SIZE,
+    INT npart_block = 0;
+    for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
+      npart_block += particle_sub_group->get_npart_cell(cx);
+    }
+    constexpr size_t REACTIONS_MAX_BUFFER_SIZE =
+        REACTIONS_MAX_PART_PER_CELL * REACTIONS_CELL_BLOCK_SIZE;
+    if (pre_req_buffer_size < npart_block) {
+      NESOASSERT(npart_block <= REACTIONS_MAX_BUFFER_SIZE,
                  "Number of particles in cell exceeds the maximum reaction "
                  "buffer size");
-      if ((n_part_cell * 2) < MAX_BUFFER_SIZE) {
-        this->flush_pre_req_data(n_part_cell * 2);
+      if ((npart_block * 2) < REACTIONS_MAX_BUFFER_SIZE) {
+        this->flush_pre_req_data(npart_block * 2);
       } else {
-        this->flush_pre_req_data(MAX_BUFFER_SIZE);
+        this->flush_pre_req_data(REACTIONS_MAX_BUFFER_SIZE);
       }
-    } else if (n_part_cell < (pre_req_buffer_size / 4)) {
-      this->flush_pre_req_data((n_part_cell * 2));
+    } else if (npart_block < (pre_req_buffer_size / 4)) {
+      this->flush_pre_req_data((npart_block * 2));
     }
   }
   /**

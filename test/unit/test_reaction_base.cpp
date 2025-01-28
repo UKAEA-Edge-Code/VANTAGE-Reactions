@@ -1,11 +1,11 @@
 #pragma once
+#include "include/mock_reactions.hpp"
 #include <cstring>
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles.hpp>
 #include <stdexcept>
 #include <vector>
-#include <neso_particles.hpp>
-#include "include/mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -96,7 +96,7 @@ TEST(LinearReactionBase, full_use_properties_map) {
   auto expected_rate = 3.880728735562758;
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
@@ -130,8 +130,8 @@ TEST(LinearReactionBase, calc_rate) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -164,8 +164,8 @@ TEST(LinearReactionBase, calc_var_rate) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -202,11 +202,11 @@ TEST(ReactionData, FixedCoefficientData) {
       particle_group->sycl_target);
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
     auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
@@ -247,7 +247,7 @@ TEST(ReactionData, AMJUEL2DData) {
   auto expected_rate = 3.880728735562758;
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
@@ -294,7 +294,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
   REAL logT = std::log(2);
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     auto vel = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
     const int nrow = rate->nrow;
@@ -343,7 +343,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   auto expected_rate = 2.737188973785161;
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
@@ -414,11 +414,11 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(subgroups[reaction], i);
+      reactions[reaction]->run_rate_loop(subgroups[reaction], i, i + 1);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->descendant_product_loop(subgroups[reaction], i, 0.1,
+      reactions[reaction]->descendant_product_loop(subgroups[reaction], i, i+1,0.1,
                                                    descendant_particles);
     }
 
@@ -493,12 +493,12 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
         std::make_shared<ParticleSubGroup>(particle_group);
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(particle_sub_group, i);
+      reactions[reaction]->run_rate_loop(particle_sub_group, i, i + 1);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->descendant_product_loop(particle_sub_group, i, 0.1,
-                                                   descendant_particles);
+      reactions[reaction]->descendant_product_loop(particle_sub_group, i, i + 1,
+                                                   0.1, descendant_particles);
     }
 
     auto internal_state =
@@ -541,8 +541,8 @@ TEST(IoniseReaction, calc_rate) {
       particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
@@ -586,8 +586,8 @@ TEST(ChargeExchange, simple_beam_exchange) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
@@ -671,8 +671,8 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
@@ -766,8 +766,8 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
@@ -861,8 +861,8 @@ TEST(DataCalculator, custom_sources) {
       particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-    test_reaction.run_rate_loop(particle_sub_group, i);
-    test_reaction.descendant_product_loop(particle_sub_group, i, 0.1,
+    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
@@ -918,7 +918,7 @@ TEST(DataCalculator, mixed_multi_dim) {
     pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape[1], 0);
 
-    data_calc_obj.fill_buffer(pre_req_data, particle_sub_group, i);
+    data_calc_obj.fill_buffer(pre_req_data, particle_sub_group, i,i+1);
 
     auto temp_dat = pre_req_data->get();
 
@@ -926,8 +926,10 @@ TEST(DataCalculator, mixed_multi_dim) {
       auto dim_size = pre_req_data->index.shape[1];
 
       EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 0], 0.1);
-      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 1], 1);  // FLUID_FLOW_SPEED x
-      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 2], 3);  // FLUID_FLOW_SPEED y
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 1],
+                       1); // FLUID_FLOW_SPEED x
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 2],
+                       3); // FLUID_FLOW_SPEED y
       EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 3], 1.5);
     }
   }
@@ -962,8 +964,8 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   auto test_reaction = TestDeviceRateBufferReaction(particle_group);
 
   // Starting particle number in cell #0: 100
-  test_reaction.cellwise_flush_buffer(
-      std::make_shared<ParticleSubGroup>(particle_group), 0);
+  test_reaction.blockwise_flush_buffer(
+      std::make_shared<ParticleSubGroup>(particle_group), 0,1);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 200);
 
   // Subtract 70 particles
@@ -980,8 +982,8 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   particle_group->remove_particles(cells.size(), cells, layers);
 
   // Check resize of device_rate_buffer to n_part_cell*2 = 60
-  test_reaction.cellwise_flush_buffer(
-      std::make_shared<ParticleSubGroup>(particle_group), 0);
+  test_reaction.blockwise_flush_buffer(
+      std::make_shared<ParticleSubGroup>(particle_group), 0,1);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 60);
 
   particle_group->domain->mesh->free();

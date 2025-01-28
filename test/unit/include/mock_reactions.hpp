@@ -1,12 +1,8 @@
 #pragma once
 #include <cmath>
-#include <functional>
-#include <memory>
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 #include <numeric>
-#include <string>
-#include <vector>
 
 using namespace NESO::Particles;
 using namespace Reactions;

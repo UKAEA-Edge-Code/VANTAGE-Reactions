@@ -25,7 +25,8 @@ namespace Reactions {
  * to specify which particles reactions will be applied to
  * @param tot_rate_buffer Symbol of the total reaction rate ParticleDat that
  * will be automatically flushed
- * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer. Defaults to true.
+ * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+ * Defaults to true.
  */
 struct ReactionController {
 
@@ -176,30 +177,36 @@ public:
         particle_group->domain, particle_group->get_particle_spec(),
         particle_group->sycl_target);
 
-    for (int i = 0; i < cell_count; i++) {
+    for (int i = 0; i < cell_count; i += REACTIONS_CELL_BLOCK_SIZE) {
 
       for (int r = 0; r < this->reactions.size(); r++) {
 
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        this->reactions[r]->run_rate_loop(this->species_groups[in_state], i);
+        this->reactions[r]->run_rate_loop(
+            this->species_groups[in_state], i,
+            std::min(i + REACTIONS_CELL_BLOCK_SIZE, cell_count));
       }
 
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
         this->reactions[r]->descendant_product_loop(
-            this->species_groups[in_state], i, dt, child_group);
+            this->species_groups[in_state], i,
+            std::min(i + REACTIONS_CELL_BLOCK_SIZE, cell_count), dt,
+            child_group);
       }
-
-      for (auto it = this->child_ids.begin(); it != this->child_ids.end();
-           it++) {
-        for (auto tr : this->child_transform) {
-          auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-          transform_buffer->add_marking_strategy(
-              this->sub_group_selectors[*it]);
-          transform_buffer->transform(child_group, i);
-        }
+        
+      for (int cx = i; cx<i+REACTIONS_CELL_BLOCK_SIZE;cx++){
+          for (auto it = this->child_ids.begin(); it != this->child_ids.end();
+               it++) {
+            for (auto tr : this->child_transform) {
+              auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+              transform_buffer->add_marking_strategy(
+                  this->sub_group_selectors[*it]);
+              transform_buffer->transform(child_group, cx);
+            }
+          }
       }
     }
 
