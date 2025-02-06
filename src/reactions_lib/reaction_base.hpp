@@ -39,8 +39,10 @@ struct AbstractReaction {
         device_rate_buffer(
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
-            std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0, 0.0)),
-        weight_sym(weight_sym) {}
+            std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
+        weight_sym(weight_sym) {
+          this->pre_req_data->fill(0.0);
+        }
 
 public:
   /**
@@ -213,7 +215,8 @@ struct LinearReactionBase : public AbstractReaction {
 
     auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         AbstractReaction::get_sycl_target(), 0,
-        this->data_calculator.get_data_size(), 0);
+        this->data_calculator.get_data_size());
+    empty_pre_req_data->fill(0);
 
     this->set_pre_req_data(empty_pre_req_data);
   }
@@ -467,7 +470,8 @@ struct LinearReactionBase : public AbstractReaction {
   void flush_pre_req_data(size_t buffer_size) {
     auto shape = this->get_pre_req_data()->index.shape;
     auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        AbstractReaction::get_sycl_target(), buffer_size, shape[1], 0);
+        AbstractReaction::get_sycl_target(), buffer_size, shape[1]);
+    empty_pre_req_data->fill(0);
     AbstractReaction::set_pre_req_data(empty_pre_req_data);
   }
 
