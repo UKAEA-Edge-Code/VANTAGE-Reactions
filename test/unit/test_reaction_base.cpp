@@ -907,7 +907,8 @@ TEST(DataCalculator, mixed_multi_dim) {
       particle_spec, energy_dat_0, vel_dat, energy_dat_1);
 
   auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-      particle_group->sycl_target, 0, data_calc_obj.get_data_size(), 0);
+      particle_group->sycl_target, 0, data_calc_obj.get_data_size());
+  pre_req_data->fill(0);
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -916,7 +917,8 @@ TEST(DataCalculator, mixed_multi_dim) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        particle_group->sycl_target, buffer_size, shape[1], 0);
+        particle_group->sycl_target, buffer_size, shape[1]);
+    pre_req_data->fill(0);
 
     data_calc_obj.fill_buffer(pre_req_data, particle_sub_group, i,i+1);
 
