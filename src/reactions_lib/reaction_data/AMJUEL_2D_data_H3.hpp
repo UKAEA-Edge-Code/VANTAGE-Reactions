@@ -82,18 +82,37 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
     REAL log_temp =
         std::log(fluid_temperature_dat * this->temperature_normalisation);
 
+    if (log_temp < 0) {
+      return std::array<REAL, 1>{0.0};
+    }
+
     REAL E = 0;
     for (int i = 0; i < dim; i++) {
-      E += std::pow(req_real_props.at(this->fluid_flow_speed_ind, index, i) -
-                        req_real_props.at(this->velocity_ind, index, i),
-                    2);
+      REAL rel_v = req_real_props.at(this->fluid_flow_speed_ind, index, i) - 
+        req_real_props.at(this->velocity_ind, index, i);
+      E += rel_v * rel_v;
     }
     REAL log_E = std::log(en_mult_const * E);
+    if (log_E < 0) {
+      return std::array<REAL, 1>{0.0};
+    }
+
+    std::array<REAL, num_coeffs_E> log_E_m_arr;
+    log_E_m_arr[0] = 1.0;
+    for (int i = 1; i < num_coeffs_E; i++) {
+      log_E_m_arr[i] = log_E_m_arr[i-1] * log_E;
+    }
+
+    std::array<REAL, num_coeffs_T> log_temp_arr;
+    log_temp_arr[0] = 1.0;
+    for (int i = 1; i < num_coeffs_T; i++) {
+      log_temp_arr[i] = log_temp_arr[i-1] * log_temp;
+    }
+
     REAL log_rate = 0.0;
     for (int j = 0; j < num_coeffs_E; j++) {
-      auto log_E_m = std::pow(log_E, j);
       for (int i = 0; i < num_coeffs_T; i++) {
-        log_rate += this->coeffs[i][j] * log_E_m * std::pow(log_temp, i);
+        log_rate += this->coeffs[i][j] * log_E_m_arr[j] * log_temp_arr[i];
       }
     }
 
