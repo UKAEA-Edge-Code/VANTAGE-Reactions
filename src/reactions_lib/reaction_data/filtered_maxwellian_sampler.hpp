@@ -76,7 +76,8 @@ struct FilteredMaxwellianOnDevice
     for (int i = 0; i < ndim; i++) {
       fluid_flows[i] = req_real_props.at(this->fluid_flow_speed_ind, index, i);
     }
-    while (!accepted) {
+    int sample_counter = 0;
+    while (!accepted && (sample_counter < 10)) {
 
       // Get the unit variance zero mean normal variates
       for (int i = 0; i < num_req_samples; i += 2) {
@@ -104,6 +105,12 @@ struct FilteredMaxwellianOnDevice
       accepted = this->cross_section.accept_reject(
           relative_vel, kernel.at(index, num_req_samples), value_at,
           max_rate_val);
+      
+      sample_counter++;
+    }
+  
+    if (!accepted) {
+      throw std::runtime_error("Cannot find acceptable velocity samples given the cross_section provided!");
     }
 
     return sampled_vels;
