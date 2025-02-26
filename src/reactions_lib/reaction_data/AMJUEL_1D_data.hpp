@@ -71,10 +71,6 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
 
     auto log_temp = std::log(fluid_temperature_dat * this->temperature_normalisation);
 
-    if (log_temp < 0) {
-      return std::array<REAL, 1>{0.0};
-    }
-
     std::array<REAL, num_coeffs> log_rate_arr;
     log_rate_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs; i++) {

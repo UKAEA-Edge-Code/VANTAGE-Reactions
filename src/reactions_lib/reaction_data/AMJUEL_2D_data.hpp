@@ -75,9 +75,6 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
         std::log(fluid_temperature_dat * this->temperature_normalisation);
-    if (log_temp < 0) {
-      return std::array<REAL, 1>{0.0};
-    }
     
     std::array<REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;
@@ -93,9 +90,6 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
             ? std::log(fluid_density_dat * this->density_normalisation / 1e14)
             : 0;
     // TODO: Ensure LTE asymptotic behaviour obeyed
-    if (log_n < 0) {
-      return std::array<REAL, 1>{0.0};
-    }
 
     std::array<REAL, num_coeffs_n> log_n_arr;
     log_n_arr[0] = 1.0;

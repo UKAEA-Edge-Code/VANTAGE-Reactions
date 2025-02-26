@@ -92,10 +92,10 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->velocity_ind, index, i);
       E += rel_v * rel_v;
     }
-    REAL log_E = std::log(en_mult_const * E);
-    if (log_E < 0) {
-      return std::array<REAL, 1>{0.0};
-    }
+    E *= en_mult_const;
+    if (E < 0.1) { E = 0.1; }
+
+    REAL log_E = std::log(E);
 
     std::array<REAL, num_coeffs_E> log_E_m_arr;
     log_E_m_arr[0] = 1.0;
