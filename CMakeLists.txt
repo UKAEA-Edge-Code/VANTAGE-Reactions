@@ -18,7 +18,7 @@ set_property(TARGET Reactions PROPERTY CXX_STANDARD 17)
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
-find_package(hipSYCL REQUIRED)
+find_sycl_if_required()
 
 ############################################################
 # Add directories with source files
