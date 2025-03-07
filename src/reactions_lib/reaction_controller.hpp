@@ -197,7 +197,7 @@ public:
             child_group);
       }
         
-      for (int cx = i; cx<i+REACTIONS_CELL_BLOCK_SIZE;cx++){
+      for (int cx = i; cx<std::min(i+REACTIONS_CELL_BLOCK_SIZE, cell_count) ; cx++){
           for (auto it = this->child_ids.begin(); it != this->child_ids.end();
                it++) {
             for (auto tr : this->child_transform) {
