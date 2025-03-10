@@ -2,14 +2,14 @@
 #define MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
+#include "transformation_wrapper.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <neso_particles.hpp>
-#include "transformation_wrapper.hpp"
-#include "utils.hpp"
 #include <vector>
 
 using namespace NESO::Particles;
@@ -43,7 +43,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
   MergeTransformationStrategy(const Sym<REAL> &position,
                               const Sym<REAL> &weight,
                               const Sym<REAL> &momentum)
-      : position(position), weight(weight), momentum(momentum) {
+      : position(position), weight(weight), momentum(momentum),
+        min_npart_marker(MinimumNPartInCellMarker(3)) {
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
   };
@@ -125,8 +126,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
 
       reduction_loop->execute();
     }
-    
-    // Store the particle counts for each cell to avoid calling get_npart_cell again.
+
+    // Store the particle counts for each cell to avoid calling get_npart_cell
+    // again.
     std::vector<int> target_subgroup_npart_cell(cell_count);
 
     // Vector to hold the offsets into the ParticleSet we create for the new
@@ -146,9 +148,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
       target_subgroup_npart_cell[cx] = npart_cell;
       // Only perform merging for those cells where there are more than 2
       // particles in the subgroup
-      if(npart_cell > 2){
+      if (npart_cell > 2) {
         particle_set_offsets[cx] = current_offset;
-        current_offset+=2;
+        current_offset += 2;
         cells_to_extract.push_back(cx);
         cells_to_extract.push_back(cx);
         layers_to_extract.push_back(0);
@@ -158,8 +160,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
 
     // Extract from the target subgroup the source particles for the merged
     // particles
-    auto new_particles = target_subgroup->get_particles(
-      cells_to_extract, layers_to_extract);
+    auto new_particles =
+        target_subgroup->get_particles(cells_to_extract, layers_to_extract);
 
     auto merge_pos = std::vector<REAL>(ndim);
     auto mom_tot = std::vector<REAL>(ndim);
@@ -253,29 +255,24 @@ struct MergeTransformationStrategy : TransformationStrategy {
         const int particle_set_index_start = particle_set_offsets[cx];
 
         // Modify the data in the ParticleSet to be the merged properties.
-        for (int i = particle_set_index_start; i < (particle_set_index_start+2); i++) {
+        for (int i = particle_set_index_start;
+             i < (particle_set_index_start + 2); i++) {
           for (int dimx = 0; dimx < ndim; dimx++) {
             new_particles->at(this->position, i, dimx) = merge_pos[dimx];
           }
           new_particles->at(this->weight, i, 0) = wt / 2;
         }
         for (int dimx = 0; dimx < ndim; dimx++) {
-          new_particles->at(this->momentum, particle_set_index_start, dimx) = mom_a[dimx];
-          new_particles->at(this->momentum, particle_set_index_start+1, dimx) = mom_b[dimx];
+          new_particles->at(this->momentum, particle_set_index_start, dimx) =
+              mom_a[dimx];
+          new_particles->at(this->momentum, particle_set_index_start + 1,
+                            dimx) = mom_b[dimx];
         }
       }
     }
 
-    // Remove the particles which were merged into the new particles but keep
-    // particles in cells with only one particle. TODO make a new marking
-    // strategy?
-    auto to_remove_sub_group = std::make_shared<ParticleSubGroup>(
-      target_subgroup,
-      [=](auto cell_info_npart){
-        return cell_info_npart.get() > 2;
-      },
-      Access::read(CellInfoNPart{})
-    );
+    auto to_remove_sub_group =
+        this->min_npart_marker.make_marker_subgroup(target_subgroup);
     part_group->remove_particles(to_remove_sub_group);
 
     // Add the particles that are the new particles with the merged properties.
@@ -286,6 +283,7 @@ private:
   Sym<REAL> position;
   Sym<REAL> weight;
   Sym<REAL> momentum;
+  MinimumNPartInCellMarker min_npart_marker;
 };
 } // namespace Reactions
 #endif

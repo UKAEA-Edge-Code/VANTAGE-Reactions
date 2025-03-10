@@ -1,7 +1,7 @@
 #ifndef COMMON_MARKERS_H
 #define COMMON_MARKERS_H
-#include <neso_particles.hpp>
 #include "transformation_wrapper.hpp"
+#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 
@@ -15,7 +15,7 @@ namespace Reactions {
  * @tparam T REAL or INT
  */
 template <typename T> struct MoreThanComp {
-  
+
   bool operator()(const T &var, const T &comp_val) const {
 
     return var > comp_val;
@@ -157,6 +157,35 @@ protected:
 private:
   ComparisonMarkerSingleDevice
       device_wrapper; //!< Device copyable wrapper for the comparison function
+};
+
+/**
+ * @brief Marking strategy that selects only those particles in cells containing
+ * some minimum number of particles
+ *
+ */
+struct MinimumNPartInCellMarker : MarkingStrategy {
+
+public:
+  MinimumNPartInCellMarker() = delete;
+
+  MinimumNPartInCellMarker(INT min_npart) : min_npart(min_npart){};
+
+  ParticleSubGroupSharedPtr
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+
+    auto min_npart = this->min_npart;
+    auto marker_subgroup = std::make_shared<ParticleSubGroup>(
+        particle_group,
+        [=](auto cell_info_npart) {
+          return cell_info_npart.get() >= min_npart;
+        },
+        Access::read(CellInfoNPart{}));
+    return marker_subgroup;
+  };
+
+private:
+  INT min_npart;
 };
 
 } // namespace Reactions
