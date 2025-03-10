@@ -100,24 +100,46 @@ struct TransformationWrapper {
   }
 
   /**
-   * @brief Applies the marking and transfomation strategies to a given
-   * ParticleGroup, transforming those particle that satisfy some condition in a
-   * given cell.
+   * @brief Applies the marking and transformation strategies to a given
+   * ParticleGroup, transforming those particles that satisfy some condition in
+   * a given cell.
    *
    * @param target_group ParticleGroup to transform
-   * @param cell_id Local cell id to restrict the transformation to
+   * @param cell_id Local cell id index to restrict the transformation to
    */
   void transform(ParticleGroupSharedPtr target_group, int cell_id) {
 
+    this->transform(target_group, cell_id, cell_id + 1);
+  }
+  /**
+   * @brief Applies the marking and transfomation strategies to a given
+   * ParticleGroup, transforming those particle that satisfy some condition in a
+   * given block of cells.
+   *
+   * @param target_group ParticleGroup to transform
+   * @param cell_id_start Local cell id block start index to restrict the
+   * transformation to
+   * @param cell_id_end Local cell id block end index to restrict the
+   * transformation to
+   */
+  void transform(ParticleGroupSharedPtr target_group, int cell_id_start,
+                 int cell_id_end) {
+
     ParticleSubGroupSharedPtr marker_subgroup;
-    if (cell_id >= 0) {
+    if (cell_id_start >= 0) {
       auto cell_num = target_group->domain->mesh->get_cell_count();
       NESOASSERT(
-          cell_id < cell_num,
+          cell_id_start < cell_num,
           "Transformation wrapper transform called with cell id out of range");
-      marker_subgroup = particle_sub_group(target_group, cell_id);
-    }
-    else {
+      NESOASSERT(
+          cell_id_end < cell_num + 1,
+          "Transformation wrapper transform called with cell id out of range");
+      NESOASSERT(cell_id_start < cell_id_end,
+                 "Transformation wrapper transform called with cell_id_end not "
+                 "strictly greater than cell_id_start");
+      marker_subgroup =
+          particle_sub_group(target_group, cell_id_start, cell_id_end);
+    } else {
       marker_subgroup = particle_sub_group(target_group);
     }
 
@@ -173,7 +195,7 @@ struct MarkingStrategyBase : MarkingStrategy {
   make_marker_subgroup(ParticleSubGroupSharedPtr particle_sub_group) override {
 
     NESOASSERT(particle_sub_group != nullptr,
-    "Passing nullptr for particle_sub_group argument!");
+               "Passing nullptr for particle_sub_group argument!");
 
     const auto &underlying = static_cast<MarkingStrategyDerived &>(*this);
     auto device_type = underlying.get_device_data();
