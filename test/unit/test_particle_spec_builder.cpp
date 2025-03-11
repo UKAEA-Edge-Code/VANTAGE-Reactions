@@ -1,6 +1,5 @@
-#pragma once
+#include "include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
-#include "include/mock_reactions.hpp"
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -17,7 +16,7 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
   test_particle_spec_builder.add_particle_prop(position_prop, 2, true);
 
   auto cell_id_prop = Properties<INT>(std::vector<int>{props.cell_id});
-  test_particle_spec_builder.add_particle_prop(cell_id_prop), 1, true;
+  test_particle_spec_builder.add_particle_prop(cell_id_prop, 1, true);
 
   int num_position_props = 0;
   int num_cell_id_props = 0;

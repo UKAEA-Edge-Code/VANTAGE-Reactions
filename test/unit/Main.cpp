@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include <iostream>
 #include <mpi.h>
 #include <neso_particles.hpp>
