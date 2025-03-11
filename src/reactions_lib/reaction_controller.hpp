@@ -196,17 +196,17 @@ public:
             std::min(i + REACTIONS_CELL_BLOCK_SIZE, cell_count), dt,
             child_group);
       }
-        
-      for (int cx = i; cx<i+REACTIONS_CELL_BLOCK_SIZE;cx++){
-          for (auto it = this->child_ids.begin(); it != this->child_ids.end();
-               it++) {
-            for (auto tr : this->child_transform) {
-              auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-              transform_buffer->add_marking_strategy(
-                  this->sub_group_selectors[*it]);
-              transform_buffer->transform(child_group, cx);
-            }
-          }
+
+      for (auto it = this->child_ids.begin(); it != this->child_ids.end();
+           it++) {
+        for (auto tr : this->child_transform) {
+          auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+          transform_buffer->add_marking_strategy(
+              this->sub_group_selectors[*it]);
+          transform_buffer->transform(
+              child_group, i,
+              std::min(i + REACTIONS_CELL_BLOCK_SIZE, cell_count));
+        }
       }
     }
 

@@ -2,14 +2,14 @@
 #define MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
+#include "transformation_wrapper.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <neso_particles.hpp>
-#include "transformation_wrapper.hpp"
-#include "utils.hpp"
 #include <vector>
 
 using namespace NESO::Particles;
@@ -43,7 +43,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
   MergeTransformationStrategy(const Sym<REAL> &position,
                               const Sym<REAL> &weight,
                               const Sym<REAL> &momentum)
-      : position(position), weight(weight), momentum(momentum) {
+      : position(position), weight(weight), momentum(momentum),
+        min_npart_marker(MinimumNPartInCellMarker(3)) {
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
   };
@@ -56,8 +57,6 @@ struct MergeTransformationStrategy : TransformationStrategy {
   void transform(ParticleSubGroupSharedPtr target_subgroup) override {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
-    auto new_particle_group = std::make_shared<ParticleGroup>(
-        part_group->domain, part_group->particle_spec, part_group->sycl_target);
     bool ndim_check = part_group->domain->mesh->get_ndim() == ndim;
     NESOASSERT(ndim_check,
                "The number of dimensions of the target_subgroup's mesh does "
@@ -128,30 +127,63 @@ struct MergeTransformationStrategy : TransformationStrategy {
       reduction_loop->execute();
     }
 
-    std::vector<INT> layers = {0, 1};
+    // Store the particle counts for each cell to avoid calling get_npart_cell
+    // again.
+    std::vector<int> target_subgroup_npart_cell(cell_count);
+
+    // Vector to hold the offsets into the ParticleSet we create for the new
+    // particles that hold the merged properties.
+    std::vector<int> particle_set_offsets(cell_count);
+    int current_offset = 0;
+
+    // Vector of cell indices to collect which will form the basis of the new
+    // particles with the merged properties.
+    std::vector<INT> cells_to_extract;
+    std::vector<INT> layers_to_extract;
+    cells_to_extract.reserve(cell_count * 2);
+    layers_to_extract.reserve(cell_count * 2);
+
+    for (int cx = 0; cx < cell_count; cx++) {
+      const int npart_cell = target_subgroup->get_npart_cell(cx);
+      target_subgroup_npart_cell[cx] = npart_cell;
+      // Only perform merging for those cells where there are more than 2
+      // particles in the subgroup
+      if (npart_cell > 2) {
+        particle_set_offsets[cx] = current_offset;
+        current_offset += 2;
+        cells_to_extract.push_back(cx);
+        cells_to_extract.push_back(cx);
+        layers_to_extract.push_back(0);
+        layers_to_extract.push_back(1);
+      }
+    }
+
+    // Extract from the target subgroup the source particles for the merged
+    // particles
+    auto new_particles =
+        target_subgroup->get_particles(cells_to_extract, layers_to_extract);
+
+    auto merge_pos = std::vector<REAL>(ndim);
+    auto mom_tot = std::vector<REAL>(ndim);
+    auto mom_a = std::vector<REAL>(ndim);
+    auto mom_b = std::vector<REAL>(ndim);
 
     for (int cx = 0; cx < cell_count; cx++) {
 
       // Only perform merging for those cells where there are more than 2
       // particles in the subgroup
-
-      if (target_subgroup->get_npart_cell(cx) > 2) {
+      if (target_subgroup_npart_cell[cx] > 2) {
         auto cell_data_scalars = cell_dat_reduction_scalars->get_cell(cx);
         auto cell_data_pos = cell_dat_reduction_pos->get_cell(cx);
         auto cell_data_mom = cell_dat_reduction_mom->get_cell(cx);
 
-        auto merge_pos = std::vector<REAL>();
-        auto mom_tot = std::vector<REAL>();
-        auto mom_a = std::vector<REAL>();
-        auto mom_b = std::vector<REAL>();
-
         REAL wt = cell_data_scalars->at(0, 0);
         REAL et = cell_data_scalars->at(1, 0);
         for (int dimx = 0; dimx < ndim; dimx++) {
-          merge_pos.push_back(cell_data_pos->at(dimx, 0) / wt);
-          mom_tot.push_back(cell_data_mom->at(dimx, 0));
-          mom_a.push_back(mom_tot[dimx] / wt);
-          mom_b.push_back(mom_tot[dimx] / wt);
+          merge_pos[dimx] = cell_data_pos->at(dimx, 0) / wt;
+          mom_tot[dimx] = cell_data_mom->at(dimx, 0);
+          mom_a[dimx] = mom_tot[dimx] / wt;
+          mom_b[dimx] = mom_tot[dimx] / wt;
         }
 
         REAL pt = utils::norm2(mom_tot);
@@ -217,52 +249,41 @@ struct MergeTransformationStrategy : TransformationStrategy {
             mom_b[i] -= mom_perp[i];
           }
         }
-        // Add above particles
 
-        std::vector<INT> cells = {cx, cx};
-        auto new_particles = target_subgroup->get_particles(cells, layers);
+        // The index for the first particle in the new particles ParticleSet for
+        // this cell.
+        const int particle_set_index_start = particle_set_offsets[cx];
 
-        for (int i = 0; i < 2; i++) {
+        // Modify the data in the ParticleSet to be the merged properties.
+        for (int i = particle_set_index_start;
+             i < (particle_set_index_start + 2); i++) {
           for (int dimx = 0; dimx < ndim; dimx++) {
             new_particles->at(this->position, i, dimx) = merge_pos[dimx];
           }
           new_particles->at(this->weight, i, 0) = wt / 2;
         }
-
         for (int dimx = 0; dimx < ndim; dimx++) {
-          new_particles->at(this->momentum, 0, dimx) = mom_a[dimx];
-          new_particles->at(this->momentum, 1, dimx) = mom_b[dimx];
+          new_particles->at(this->momentum, particle_set_index_start, dimx) =
+              mom_a[dimx];
+          new_particles->at(this->momentum, particle_set_index_start + 1,
+                            dimx) = mom_b[dimx];
         }
-
-        new_particle_group->add_particles_local(new_particles);
-
-        auto cell_select_strategy =
-            make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                Sym<INT>("CELL_ID"), cx);
-
-        auto target_subgroup_cx =
-            cell_select_strategy->make_marker_subgroup(target_subgroup);
-
-        auto new_particle_group_cx = cell_select_strategy->make_marker_subgroup(
-            std::make_shared<ParticleSubGroup>(new_particle_group));
-
-        part_group->remove_particles(target_subgroup_cx);
-
-        part_group->add_particles_local(new_particle_group_cx);
       }
     }
 
-    // remove the marked particles
+    auto to_remove_sub_group =
+        this->min_npart_marker.make_marker_subgroup(target_subgroup);
+    part_group->remove_particles(to_remove_sub_group);
 
-    // part_group->remove_particles(target_subgroup);
-
-    // part_group->add_particles_local(new_particle_group);
+    // Add the particles that are the new particles with the merged properties.
+    part_group->add_particles_local(new_particles);
   }
 
 private:
   Sym<REAL> position;
   Sym<REAL> weight;
   Sym<REAL> momentum;
+  MinimumNPartInCellMarker min_npart_marker;
 };
 } // namespace Reactions
 #endif
