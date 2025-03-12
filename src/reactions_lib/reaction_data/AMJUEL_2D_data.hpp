@@ -75,6 +75,13 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
         std::log(fluid_temperature_dat * this->temperature_normalisation);
+    
+    std::array<REAL, num_coeffs_T> log_temp_arr;
+    log_temp_arr[0] = 1.0;
+    for (int i = 1; i < num_coeffs_T; i++) {
+      log_temp_arr[i] = log_temp_arr[i-1] * log_temp;
+    }
+
     REAL log_rate = 0.0;
     // Ensuring the Coronal asymptote gets treated correctly
     // TODO: Add variable Coronal cut-off density
@@ -83,10 +90,16 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
             ? std::log(fluid_density_dat * this->density_normalisation / 1e14)
             : 0;
     // TODO: Ensure LTE asymptotic behaviour obeyed
+
+    std::array<REAL, num_coeffs_n> log_n_arr;
+    log_n_arr[0] = 1.0;
+    for (int i = 1; i < num_coeffs_n; i++) {
+      log_n_arr[i] = log_n_arr[i-1] * log_n;
+    }
+
     for (int j = 0; j < num_coeffs_n; j++) {
-      auto log_n_m = (j == 0) ? 1.0 : std::pow(log_n, j);
       for (int i = 0; i < num_coeffs_T; i++) {
-        log_rate += this->coeffs[i][j] * log_n_m * std::pow(log_temp, i);
+        log_rate += this->coeffs[i][j] * log_n_arr[j] * log_temp_arr[i];
       }
     }
 
