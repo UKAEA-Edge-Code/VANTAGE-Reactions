@@ -1,7 +1,5 @@
-#include <gtest/gtest.h>
-#include <memory>
-#include <vector>
 #include <reactions.hpp>
+#include <gtest/gtest.h>
 
 using namespace NESO::Particles;
 using namespace Reactions;

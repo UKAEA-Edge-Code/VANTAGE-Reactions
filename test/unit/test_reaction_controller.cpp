@@ -1,9 +1,7 @@
-#pragma once
-#include <array>
-#include <gtest/gtest.h>
-#include <memory>
-#include <neso_particles.hpp>
+#include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include <gtest/gtest.h>
+
 
 using namespace NESO::Particles;
 using namespace Reactions;
