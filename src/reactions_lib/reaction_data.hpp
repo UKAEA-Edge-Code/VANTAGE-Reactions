@@ -4,7 +4,6 @@
 #include <neso_particles.hpp>
 #include <stdexcept>
 
-// TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
 namespace Reactions {
 

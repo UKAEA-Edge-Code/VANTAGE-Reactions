@@ -121,6 +121,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   auto reaction_controller = ReactionController(
       test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+  reaction_controller.set_cell_block_size(2);
 
   REAL test_rate = 5.0;
 

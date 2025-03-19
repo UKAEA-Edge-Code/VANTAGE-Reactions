@@ -31,7 +31,7 @@ The currently implemented reaction controller class applies all reactions to all
 #. Perform any transformations on the post-reaction parents
 #. Add the child group to the parent group, completing the application of reactions
 
-The above is done cell-wise, so that buffers do not overflow when many reactions are applied. 
+The above is done cell-block-wise, so that buffers do not overflow when many reactions are applied. The user can control the maximum number of particles per cell (on average) and the number of cells per block. The defaults are intentionally greedy, and should be reduced in case of memory issues. 
 
 .. literalinclude:: ../example_sources/example_reaction_controller.hpp
    :language: cpp

@@ -7,22 +7,13 @@
 #include <neso_particles.hpp>
 #include <stdexcept>
 #include <type_traits>
+
 #include <vector>
-
-#ifndef REACTIONS_MAX_PART_PER_CELL
-#define REACTIONS_MAX_PART_PER_CELL 16384
-#endif // !REACTIONS_MAX_PART_PER_CELL
-
-#ifndef REACTIONS_CELL_BLOCK_SIZE
-#define REACTIONS_CELL_BLOCK_SIZE 2
-#endif // !REACTIONS_CELL_BLOCK_SIZE
 
 using namespace NESO::Particles;
 
 // TODO: Improve docs - implementation specific parameter descriptions -
 // avoid!!!
-// TODO: cell block update docs
-// TODO: add assertions to limit block size in calls
 
 namespace Reactions {
 
@@ -47,9 +38,9 @@ struct AbstractReaction {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        weight_sym(weight_sym) {
-          this->pre_req_data->fill(0.0);
-        }
+        weight_sym(weight_sym), max_buffer_size(16384 * 256) {
+    this->pre_req_data->fill(0.0);
+  }
 
 public:
   /**
@@ -71,6 +62,16 @@ public:
   virtual void flush_buffer(size_t buffer_size) {}
 
   virtual void flush_pre_req_data() {}
+
+  /**
+   * @brief Set the maximum size for data buffers on this reaction
+   *
+   * @param max_size Maximum size (per dimension) of data buffers on this
+   * reaction
+   */
+  void set_max_buffer_size(size_t max_size) {
+    this->max_buffer_size = max_size;
+  }
 
   const Sym<REAL> &get_weight_sym() const { return weight_sym; }
 
@@ -111,6 +112,8 @@ protected:
     this->pre_req_data = pre_req_data_;
   }
 
+  size_t get_max_buffer_size() { return this->max_buffer_size; }
+
 private:
   Sym<REAL> total_reaction_rate;
   LocalArraySharedPtr<REAL> device_rate_buffer;
@@ -120,6 +123,7 @@ private:
                     //!< any pre-requisite data relating to a
                     //!< derived reaction.
   Sym<REAL> weight_sym;
+  size_t max_buffer_size; //!< max buffer size for data on the reactions object
 };
 
 /**
@@ -263,14 +267,15 @@ struct LinearReactionBase : public AbstractReaction {
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
-   * particle sub group and cell. Stores the total rate for all particles
-   * within a property assigned to each particle (all particles know the
-   * total reaction rate) and stores the rate for each particle within a
+   * particle sub group and cell cell block. Stores the total rate for all
+   * particles within a property assigned to each particle (all particles know
+   * the total reaction rate) and stores the rate for each particle within a
    * buffer.
    * @param particle_sub_group A ParticleSubGroupSharedPtr that contains
    * particles with the relevant species ID out of the full ParticleGroup
-   * @param cell_idx The id of the cell over which to run the principle
-   * ParticleLoop to calculate reaction rates.
+   * @param cell_idx_start The id of the first cell over which to run the
+   * principle ParticleLoop to calculate reaction rates.
+   * @param cell_idx_end The cell id up to which to run the rate loop over
    */
   void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
                      INT cell_idx_start, INT cell_idx_end) override {
@@ -334,8 +339,9 @@ struct LinearReactionBase : public AbstractReaction {
    *
    * @param particle_sub_group ParticleSubGroupSharedPtr that contains
    * particles with the relevant species ID out of the full ParticleGroup
-   * @param cell_idx The id of the cell over which to run the principle
-   * ParticleLoop to calculate reaction rates.
+   * @param cell_idx_start The id of the first cell over which to run the
+   * principle ParticleLoop to determine the effect of reactions.
+   * @param cell_idx_end The cell id up to which to run the product loop over
    * @param dt The current time step size.
    * @param child_group ParticleGroupSharedPtr that contains a particle group
    * into which descendants are placed after generation.
@@ -446,7 +452,9 @@ struct LinearReactionBase : public AbstractReaction {
    *
    * @param particle_sub_group Particle subgroup used to infer the number of
    * particles in the cell
-   * @param cell_idx Index of the cell for which the buffer flush is performed
+   * @param cell_idx_start Index of the first cell for which the buffer flush is
+   * performed
+   * @param cell_idx_end Loop end index - cell up to which the buffer is flushed
    */
   void blockwise_flush_buffer(ParticleSubGroupSharedPtr particle_sub_group,
                               int cell_idx_start, int cell_idx_end) {
@@ -455,16 +463,15 @@ struct LinearReactionBase : public AbstractReaction {
     for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
       npart_block += particle_sub_group->get_npart_cell(cx);
     }
-    constexpr size_t REACTIONS_MAX_BUFFER_SIZE =
-        REACTIONS_MAX_PART_PER_CELL * REACTIONS_CELL_BLOCK_SIZE;
+
     if (device_rate_buffer_size < npart_block) {
-      NESOASSERT(npart_block <= REACTIONS_MAX_BUFFER_SIZE,
+      NESOASSERT(npart_block <= this->get_max_buffer_size(),
                  "Number of particles in cell exceeds the maximum reaction "
                  "buffer size");
-      if ((npart_block * 2) < REACTIONS_MAX_BUFFER_SIZE) {
+      if ((npart_block * 2) < this->get_max_buffer_size()) {
         this->flush_buffer(npart_block * 2);
       } else {
-        this->flush_buffer(REACTIONS_MAX_BUFFER_SIZE);
+        this->flush_buffer(this->get_max_buffer_size());
       }
     } else if (npart_block < (device_rate_buffer_size / 4)) {
       this->flush_buffer((npart_block * 2));
@@ -497,7 +504,9 @@ struct LinearReactionBase : public AbstractReaction {
    *
    * @param particle_sub_group Particle subgroup used to infer the number of
    * particles in the cell
-   * @param cell_idx Index of the cell for which the buffer flush is performed
+   * @param cell_idx_start Index of the first cell for which the buffer flush is
+   * performed
+   * @param cell_idx_end Loop end index - cell up to which the buffer is flushed
    */
   void
   blockwise_flush_pre_req_data(ParticleSubGroupSharedPtr particle_sub_group,
@@ -508,16 +517,14 @@ struct LinearReactionBase : public AbstractReaction {
     for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
       npart_block += particle_sub_group->get_npart_cell(cx);
     }
-    constexpr size_t REACTIONS_MAX_BUFFER_SIZE =
-        REACTIONS_MAX_PART_PER_CELL * REACTIONS_CELL_BLOCK_SIZE;
     if (pre_req_buffer_size < npart_block) {
-      NESOASSERT(npart_block <= REACTIONS_MAX_BUFFER_SIZE,
+      NESOASSERT(npart_block <= this->get_max_buffer_size(),
                  "Number of particles in cell exceeds the maximum reaction "
                  "buffer size");
-      if ((npart_block * 2) < REACTIONS_MAX_BUFFER_SIZE) {
+      if ((npart_block * 2) < this->get_max_buffer_size()) {
         this->flush_pre_req_data(npart_block * 2);
       } else {
-        this->flush_pre_req_data(REACTIONS_MAX_BUFFER_SIZE);
+        this->flush_pre_req_data(this->get_max_buffer_size());
       }
     } else if (npart_block < (pre_req_buffer_size / 4)) {
       this->flush_pre_req_data((npart_block * 2));

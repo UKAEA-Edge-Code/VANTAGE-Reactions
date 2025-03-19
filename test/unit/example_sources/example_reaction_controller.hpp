@@ -30,8 +30,8 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       particle_group->sycl_target,
       Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
       Sym<REAL>(prop_map[default_properties.weight]), ion_species_1.get_id(),
-      std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data, cx_kernel,
-      particle_spec, data_calculator);
+      std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data,
+      cx_kernel, particle_spec, data_calculator);
 
   // Ionisation reactions
   auto ionise_reaction_1 =
@@ -95,6 +95,13 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
                                             // up the total reaction rate buffer
                                             // on particles
   );
+
+  reaction_controller.set_cell_block_size(
+      256); // This is the greedy default value, reduce this if memory issues
+            // are found
+  reaction_controller.set_max_particles_per_cell(
+      16384); // This is the default maximum (average) number of particles per
+              // cell for the use in reaction data buffers, modify as needed
 
   // Now we can add the reaction simply
   reaction_controller.add_reaction(cx_reaction);
