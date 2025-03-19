@@ -18,7 +18,14 @@ namespace Reactions {
 struct MarkingStrategy {
 
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group){};
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group){
+    // This function should never actually be called. If it is called and we do
+    // not have a return value then the calling function will receive an
+    // undefined value. By setting a value we at least know what the returned
+    // value is and can pick one that is detectable. By returning a nullptr the
+    // calling code will hopefully segfault.
+    return nullptr;
+  };
 };
 
 /**
