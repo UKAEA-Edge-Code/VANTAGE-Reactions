@@ -167,15 +167,31 @@ struct MergeTransformationStrategy : TransformationStrategy {
     auto mom_tot = std::vector<REAL>(ndim);
     auto mom_a = std::vector<REAL>(ndim);
     auto mom_b = std::vector<REAL>(ndim);
+    
+    auto cell_dat_reduction_scalars_values = 
+      cell_dat_reduction_scalars->get_all_cells();
+    auto cell_dat_reduction_pos_values = 
+      cell_dat_reduction_pos->get_all_cells();
+    auto cell_dat_reduction_mom_values = 
+      cell_dat_reduction_mom->get_all_cells();
+
+    std::vector<CellData<REAL>> cell_dat_reduction_mom_min_values;
+    std::vector<CellData<REAL>> cell_dat_reduction_mom_max_values;
+    if constexpr (ndim == 3) {
+      cell_dat_reduction_mom_min_values = 
+        cell_dat_reduction_mom_min->get_all_cells();
+      cell_dat_reduction_mom_max_values = 
+        cell_dat_reduction_mom_max->get_all_cells();
+    }
 
     for (int cx = 0; cx < cell_count; cx++) {
 
       // Only perform merging for those cells where there are more than 2
       // particles in the subgroup
       if (target_subgroup_npart_cell[cx] > 2) {
-        auto cell_data_scalars = cell_dat_reduction_scalars->get_cell(cx);
-        auto cell_data_pos = cell_dat_reduction_pos->get_cell(cx);
-        auto cell_data_mom = cell_dat_reduction_mom->get_cell(cx);
+        auto cell_data_scalars = cell_dat_reduction_scalars_values.at(cx);
+        auto cell_data_pos = cell_dat_reduction_pos_values.at(cx);
+        auto cell_data_mom = cell_dat_reduction_mom_values.at(cx);
 
         REAL wt = cell_data_scalars->at(0, 0);
         REAL et = cell_data_scalars->at(1, 0);
@@ -206,8 +222,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
           mom_b[1] -= p_perp * mom_tot[0] / pt;
         }
         if constexpr (ndim == 3) {
-          auto cell_data_mom_min = cell_dat_reduction_mom_min->get_cell(cx);
-          auto cell_data_mom_max = cell_dat_reduction_mom_max->get_cell(cx);
+          auto cell_data_mom_min = cell_dat_reduction_mom_min_values.at(cx);
+          auto cell_data_mom_max = cell_dat_reduction_mom_max_values.at(cx);
 
           // we generate the bounding box in momentum space of the subgroup and
           // set its diagonal
