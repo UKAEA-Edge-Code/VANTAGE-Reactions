@@ -18,7 +18,7 @@ set_property(TARGET Reactions PROPERTY CXX_STANDARD 17)
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
-find_package(hipSYCL REQUIRED)
+find_sycl_if_required()
 
 ############################################################
 # Add directories with source files
@@ -31,9 +31,11 @@ add_subdirectory(src)
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
 if (REACTIONS_ENABLE_TESTS)
   if (REACTIONS_DEVICE_TYPE STREQUAL GPU)
-    set(BUILD_TYPE_COMPILE_FLAGS "-g;-O2")
+    set(BUILD_TYPE_COMPILE_FLAGS "-O0")
+    set(TEST_COVERAGE_FLAGS "")
   else()
-    set(BUILD_TYPE_COMPILE_FLAGS "-g;-O2;--coverage")
+    set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
+    set(TEST_COVERAGE_FLAGS "--coverage")
     link_libraries(gcov)
     set(TEST_LIBRARIES "gcov")
   endif()

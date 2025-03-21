@@ -77,7 +77,7 @@ struct DataCalculator : public AbstractDataCalculator {
    * loops
    */
   void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
-                   ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
+                   ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
                "data calculation objects.");
@@ -113,7 +113,7 @@ struct DataCalculator : public AbstractDataCalculator {
                                          this->data_loop_real_syms[dat_idx])),
                     Access::write(buffer), Access::read(args.get_rng_kernel()));
 
-                loop->execute(cell_idx);
+                loop->execute(cell_idx_start,cell_idx_end);
                 dat_idx++;
                 dat_dim_idx += data_dim;
               }(),
@@ -126,7 +126,7 @@ struct DataCalculator : public AbstractDataCalculator {
    * @brief Getter for the total number of dimensions of the objects in the
    * ReactionData tuple
    */
-  const size_t get_data_size() const {
+  size_t get_data_size() const {
     size_t dat_idx = 0u;
     std::apply(
         [&](auto &&...args) {
@@ -144,7 +144,7 @@ struct DataCalculator : public AbstractDataCalculator {
   /**
    * @brief Getter of the total number of objects in the ReactionData tuple
    */
-  const size_t get_data_tuple_size() const { return std::size(this->data); }
+  size_t get_data_tuple_size() const { return std::size(this->data); }
 
 private:
   std::tuple<DATATYPE...> data;

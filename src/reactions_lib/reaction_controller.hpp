@@ -1,13 +1,7 @@
 #pragma once
-#include "common_markers.hpp"
-#include "common_transformations.hpp"
-#include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
-#include <map>
 #include <memory>
 #include <neso_particles.hpp>
-#include <set>
-#include <vector>
 
 using namespace NESO::Particles;
 
@@ -25,7 +19,8 @@ namespace Reactions {
  * to specify which particles reactions will be applied to
  * @param tot_rate_buffer Symbol of the total reaction rate ParticleDat that
  * will be automatically flushed
- * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer. Defaults to true.
+ * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+ * Defaults to true.
  */
 struct ReactionController {
 
@@ -37,6 +32,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   ReactionController(std::shared_ptr<TransformationWrapper> child_transform,
@@ -49,6 +45,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   ReactionController(std::shared_ptr<TransformationWrapper> parent_transform,
@@ -63,6 +60,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   ReactionController(
@@ -77,14 +75,17 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   /**
    * @brief Function to populate the sub_group_selectors map and
-   * parent_ids, child_ids sets.
+   * parent_ids, child_ids sets, as well as set the buffer sizes used.
    */
   void controller_pre_process() {
     for (int r = 0; r < this->reactions.size(); r++) {
+      this->reactions[r]->set_max_buffer_size(this->max_particles_per_cell *
+                                              this->cell_block_size);
       if (!this->reactions[r]->get_in_states().empty()) {
         auto in_states = this->reactions[r]->get_in_states();
 
@@ -125,6 +126,28 @@ public:
     this->controller_pre_process();
   }
 
+  /**
+   * @brief Set the maximum number of particles per cell (used in determining
+   * the buffer size for reaction data
+   *
+   * @param max_num_parts Maximum number of particles per cell
+   */
+  void set_max_particles_per_cell(size_t max_num_parts) {
+    this->max_particles_per_cell = max_num_parts;
+  }
+
+  /**
+   * @brief Set the number of cells per cell block, determines how many cells
+   * each reaction runs its loops over at a time, and determines the maximum
+   * reaction data buffer size together with the maximum number of particles per
+   * cell (block size times maximum number of particles per cell)
+   *
+   * @param cell_block_size Number of cells to apply reactions to at a time (set
+   * to a lower number in case of memory issues)
+   */
+  void set_cell_block_size(size_t cell_block_size) {
+    this->cell_block_size = cell_block_size;
+  }
   void set_auto_clean_tot_rate_buffer(const bool &auto_clean_setting) {
     this->auto_clean_tot_rate_buffer = auto_clean_setting;
   }
@@ -145,7 +168,7 @@ public:
    * @param dt The current time step size.
    */
   void apply_reactions(ParticleGroupSharedPtr particle_group, double dt) {
-    const int cell_count = particle_group->domain->mesh->get_cell_count();
+    const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
     // Ensure that the total rate buffer is flushed before the reactions are
     // applied
@@ -172,24 +195,25 @@ public:
       }
     }
 
-    auto child_group = std::make_shared<ParticleGroup>(
-        particle_group->domain, particle_group->get_particle_spec(),
-        particle_group->sycl_target);
+    auto child_group = this->particle_group_temporary->get(particle_group);
 
-    for (int i = 0; i < cell_count; i++) {
+    for (int i = 0; i < cell_count; i += this->cell_block_size) {
 
       for (int r = 0; r < this->reactions.size(); r++) {
 
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        this->reactions[r]->run_rate_loop(this->species_groups[in_state], i);
+        this->reactions[r]->run_rate_loop(
+            this->species_groups[in_state], i,
+            std::min(i + this->cell_block_size, cell_count));
       }
 
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
         this->reactions[r]->descendant_product_loop(
-            this->species_groups[in_state], i, dt, child_group);
+            this->species_groups[in_state], i,
+            std::min(i + this->cell_block_size, cell_count), dt, child_group);
       }
 
       for (auto it = this->child_ids.begin(); it != this->child_ids.end();
@@ -198,7 +222,8 @@ public:
           auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
           transform_buffer->add_marking_strategy(
               this->sub_group_selectors[*it]);
-          transform_buffer->transform(child_group, i);
+          transform_buffer->transform(
+              child_group, i, std::min(i + this->cell_block_size, cell_count));
         }
       }
     }
@@ -214,6 +239,7 @@ public:
     if (this->child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
     }
+    this->particle_group_temporary->restore(particle_group, child_group);
   }
 
 private:
@@ -231,5 +257,13 @@ private:
   Sym<REAL> tot_rate_buffer;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
+  size_t cell_block_size = 256;
+  size_t max_particles_per_cell = 16384;
+  std::shared_ptr<ParticleGroupTemporary>  particle_group_temporary;
+  
+  inline void setup_particle_group_temporary(){
+    this->particle_group_temporary = std::make_shared<ParticleGroupTemporary>();
+  }
+
 };
 } // namespace Reactions

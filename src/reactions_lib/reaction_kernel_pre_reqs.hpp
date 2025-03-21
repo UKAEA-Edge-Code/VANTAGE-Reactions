@@ -35,7 +35,7 @@ public:
   /**
    * @brief Getters and setters for name, mass, charge and id of the species.
    */
-  const std::string get_name() const {
+  std::string get_name() const {
     if (this->name) {
       return (*this->name);
     } else {
@@ -44,7 +44,7 @@ public:
     }
   }
 
-  const INT get_id() const {
+  INT get_id() const {
     if (this->id) {
       return (*this->id);
     } else {
@@ -53,7 +53,7 @@ public:
     }
   }
 
-  const REAL get_mass() const {
+  REAL get_mass() const {
     if (this->mass) {
       return (*this->mass);
     } else {
@@ -62,7 +62,7 @@ public:
     }
   }
 
-  const REAL get_charge() const {
+  REAL get_charge() const {
     if (this->charge) {
       return (*this->charge);
     } else {

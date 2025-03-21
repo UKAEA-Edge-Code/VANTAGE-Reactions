@@ -1,9 +1,7 @@
-#pragma once
-#include <array>
-#include <gtest/gtest.h>
-#include <memory>
-#include <neso_particles.hpp>
+#include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include <gtest/gtest.h>
+
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -123,6 +121,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   auto reaction_controller = ReactionController(
       test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+  reaction_controller.set_cell_block_size(2);
 
   REAL test_rate = 5.0;
 

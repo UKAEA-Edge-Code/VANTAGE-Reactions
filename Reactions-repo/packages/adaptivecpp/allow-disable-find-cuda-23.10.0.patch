@@ -1,0 +1,15 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 09ebc6ef..944cac0c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -88,7 +88,9 @@ endif()
+
+ # Check for CUDA/ROCm and clang
+ list(INSERT CMAKE_MODULE_PATH 0 "${PROJECT_SOURCE_DIR}/cmake/")
+-find_package(CUDA QUIET)
++if(NOT DISABLE_FIND_PACKAGE_CUDA)
++    find_package(CUDA QUIET)
++endif()
+ find_package(HIP QUIET HINTS ${ROCM_PATH} ${ROCM_PATH}/lib/cmake)
+ # Check for OpenCL
+ find_package(OpenCL QUIET)

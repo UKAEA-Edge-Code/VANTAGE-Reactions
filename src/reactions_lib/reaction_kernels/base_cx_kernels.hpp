@@ -6,7 +6,6 @@
 #include "../reaction_kernels.hpp"
 #include <vector>
 
-// TODO: docs double-check
 // TODO: consistency - should we really use num_products_per_parent and then no
 // loops?
 
@@ -217,12 +216,11 @@ public:
 };
 
 /**
- * @brief A struct defining data and kernel functions needed for a charge
- * exchange reaction.
+ * @brief Host type for chrarge-exchange kernels
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
- * @tparam ndim_source_momentum Optional number of dimensions for electron
+ * @tparam ndim_source_momentum Optional number of dimensions for 
  * source momentum property (default value of ndim_velocity)
  */
 template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity>
