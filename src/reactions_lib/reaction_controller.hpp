@@ -32,6 +32,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   ReactionController(std::shared_ptr<TransformationWrapper> child_transform,
@@ -44,6 +45,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   ReactionController(std::shared_ptr<TransformationWrapper> parent_transform,
@@ -58,6 +60,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   ReactionController(
@@ -72,6 +75,7 @@ struct ReactionController {
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
+    this->setup_particle_group_temporary();
   }
 
   /**
@@ -191,9 +195,7 @@ public:
       }
     }
 
-    auto child_group = std::make_shared<ParticleGroup>(
-        particle_group->domain, particle_group->get_particle_spec(),
-        particle_group->sycl_target);
+    auto child_group = this->particle_group_temporary->get(particle_group);
 
     for (int i = 0; i < cell_count; i += this->cell_block_size) {
 
@@ -237,6 +239,7 @@ public:
     if (this->child_ids.size() > 0) {
       particle_group->add_particles_local(child_group);
     }
+    this->particle_group_temporary->restore(particle_group, child_group);
   }
 
 private:
@@ -256,5 +259,11 @@ private:
   bool auto_clean_tot_rate_buffer;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
+  std::shared_ptr<ParticleGroupTemporary>  particle_group_temporary;
+  
+  inline void setup_particle_group_temporary(){
+    this->particle_group_temporary = std::make_shared<ParticleGroupTemporary>();
+  }
+
 };
 } // namespace Reactions
