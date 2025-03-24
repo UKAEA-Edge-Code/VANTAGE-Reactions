@@ -196,13 +196,7 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
     NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
                "Attempted to retrieve values for " + data_name +
                    " which is not registered in the CellwiseAccumulator");
-    auto result = std::vector<CellData<T>>();
-
-    for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
-
-      result.push_back(this->values[Sym<T>(data_name)]->get_cell(i));
-    }
-    return result;
+    return this->values[Sym<T>(data_name)]->get_all_cells();
   }
 
   /**
@@ -219,9 +213,7 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
     NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
                "Attempted to retrieve values for " + data_name +
                    " which is not registered in the CellwiseAccumulator");
-    for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
-      this->values[Sym<T>(data_name)]->set_cell(i, cell_data[i]);
-    }
+    this->values[Sym<T>(data_name)]->set_all_cells(cell_data);
   }
 
   /**
@@ -338,27 +330,15 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
         this->values.find(Sym<T>(data_name)) != this->values.end(),
         "Attempted to retrieve values for " + data_name +
             " which is not registered in the WeightedCellwiseAccumulator");
-    auto result = std::vector<CellData<REAL>>();
 
-    for (auto i = 0; i < this->values[Sym<T>(data_name)]->ncells; i++) {
-
-      result.push_back(this->values[Sym<T>(data_name)]->get_cell(i));
-    }
-    return result;
+    return this->values[Sym<T>(data_name)]->get_all_cells();
   }
   /**
    * @brief Extract accumulated weight data in a vector of CellData objects
    *
    */
   std::vector<CellData<REAL>> get_weight_cell_data() {
-
-    auto result = std::vector<CellData<REAL>>();
-
-    for (auto i = 0; i < this->weight_buffer->ncells; i++) {
-
-      result.push_back(this->weight_buffer->get_cell(i));
-    }
-    return result;
+    return this->weight_buffer->get_all_cells();
   }
 
   /**

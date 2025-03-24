@@ -4,7 +4,6 @@
 #include <neso_particles.hpp>
 #include <stdexcept>
 
-// TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
 namespace Reactions {
 
@@ -22,7 +21,13 @@ struct AbstractCrossSection {
    * @param relative_vel Magnitude of relative velocity of target and projectile
    * @return REAL-valued cross-section at requested relative vel magnitude
    */
-  REAL get_value_at(const REAL &relative_vel) const {};
+  REAL get_value_at(const REAL &relative_vel) const {
+    // This function should never actually be called. If it is called and we do
+    // not have a return value then the calling function will receive an
+    // undefined value. By setting a value we at least know what the returned
+    // value is and can pick one that is detectable.
+    return std::numeric_limits<REAL>::lowest();
+  };
 
   /**
    * @brief Get the maximum value of sigma*v_r where sigma is this cross-section
@@ -30,7 +35,13 @@ struct AbstractCrossSection {
    *
    * @return REAL-valued maximum rate
    */
-  REAL get_max_rate_val() const {};
+  REAL get_max_rate_val() const {
+    // This function should never actually be called. If it is called and we do
+    // not have a return value then the calling function will receive an
+    // undefined value. By setting a value we at least know what the returned
+    // value is and can pick one that is detectable.
+    return std::numeric_limits<REAL>::lowest();
+  };
 
   /**
    * @brief Accept-reject function for when this cross-section is used in
