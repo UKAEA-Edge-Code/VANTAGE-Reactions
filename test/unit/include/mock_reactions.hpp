@@ -10,7 +10,7 @@ struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
 
   std::array<REAL, 1>
   calc_data(Access::LoopIndex::Read &index,
-            Access::SymVector::Read<INT> &req_int_props,
+            Access::SymVector::Write<INT> &req_int_props,
             Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
@@ -297,7 +297,7 @@ struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice<> {
 
   std::array<REAL, 1>
   calc_data(Access::LoopIndex::Read &index,
-            Access::SymVector::Read<INT> req_int_props,
+            Access::SymVector::Write<INT> req_int_props,
             Access::SymVector::Read<REAL> req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {

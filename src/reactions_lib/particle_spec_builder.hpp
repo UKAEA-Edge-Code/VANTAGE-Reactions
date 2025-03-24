@@ -1,8 +1,9 @@
 #ifndef PARTICLE_SPEC_BUILDER
 #define PARTICLE_SPEC_BUILDER
 
-#include <neso_particles.hpp>
+#include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
+#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 
@@ -16,11 +17,42 @@ namespace Reactions {
  */
 
 struct ParticleSpecBuilder {
-  ParticleSpecBuilder() = default;
+  ParticleSpecBuilder() = delete;
 
   ParticleSpecBuilder(ParticleSpec particle_spec_) {
     this->add_particle_spec(particle_spec_);
   }
+
+  /**
+   * @brief Recommended constructor, populating the generally required properties in
+   * Reactions
+   *
+   * @param ndim Dimensionality of vector quantities
+   * @param properties_map Optional remapping of the default property names
+   */
+  ParticleSpecBuilder(
+      int ndim,
+      const std::map<int, std::string> &properties_map = default_map) {
+
+    this->add_particle_spec(ParticleSpec(
+        ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
+                               ndim, true),
+        ParticleProp(Sym<INT>(properties_map.at(default_properties.cell_id)), 1,
+                     true)));
+
+    auto int_props = Properties<INT>(
+        std::vector<int>{default_properties.panic, default_properties.id,
+                         default_properties.internal_state});
+    auto real_props_scalar = Properties<REAL>(std::vector<int>{
+        default_properties.weight, default_properties.tot_reaction_rate});
+    auto real_props_vector =
+        Properties<REAL>(std::vector<int>{default_properties.velocity});
+
+    this->add_particle_prop(int_props, 1, false, properties_map);
+    this->add_particle_prop(real_props_scalar, 1, false, properties_map);
+    this->add_particle_prop(real_props_vector, ndim = ndim, false,
+                            properties_map);
+  };
 
   /**
    * @brief Method to add particle properties to member particle_spec.
@@ -32,11 +64,13 @@ struct ParticleSpecBuilder {
    * will apply to all properties from properties_)
    * @param positions Boolean to indicate whether the properties to be added are
    * particle position or cell id or not.
-   * @param properties_map Property map to be used when adding properties into the spec. Defaults to default_map.
+   * @param properties_map Property map to be used when adding properties into
+   * the spec. Defaults to default_map.
    */
   template <typename PROP_TYPE>
-  void add_particle_prop(Properties<PROP_TYPE> properties_, int ndim = 1,
-                         bool positions = false, const std::map<int, std::string> &properties_map = default_map ) {
+  void add_particle_prop(
+      Properties<PROP_TYPE> properties_, int ndim = 1, bool positions = false,
+      const std::map<int, std::string> &properties_map = default_map) {
     std::vector<std::string> simple_prop_names;
     try {
       simple_prop_names = properties_.simple_prop_names(properties_map);

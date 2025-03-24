@@ -26,7 +26,7 @@ struct DummyDataOnDevice :
 
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index, // This is the NESO-Particles index accessor, needed for accessing the particle data
-            const Access::SymVector::Read<INT> &req_int_props, // These are the required integer properties (here unused)
+            const Access::SymVector::Write<INT> &req_int_props, // These are the required integer properties (here unused)
             const Access::SymVector::Read<REAL> &req_real_props, // These are the required real properties - there will be only on
                                                                  // but we will use the general indexing approach
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType

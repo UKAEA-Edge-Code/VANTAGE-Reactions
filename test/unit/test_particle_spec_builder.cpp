@@ -68,7 +68,7 @@ TEST(ParticleSpecBuilder, add_particle_spec) {
 
   auto particle_group_spec = particle_group->get_particle_spec();
 
-  auto test_particle_spec_builder = ParticleSpecBuilder();
+  auto test_particle_spec_builder = ParticleSpecBuilder(2);
 
   test_particle_spec_builder.add_particle_spec(particle_group_spec);
 
@@ -98,11 +98,6 @@ TEST(ParticleSpecBuilder, add_particle_spec) {
   for (auto prop : particle_group_spec.properties_real) {
     EXPECT_EQ(test_particle_spec.contains(prop), true);
   }
-
-  EXPECT_EQ(particle_group_spec.properties_int,
-            test_particle_spec_builder.get_particle_spec().properties_int);
-  EXPECT_EQ(particle_group_spec.properties_real,
-            test_particle_spec_builder.get_particle_spec().properties_real);
 
   particle_group->domain->mesh->free();
 }
