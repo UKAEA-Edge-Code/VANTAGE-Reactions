@@ -106,7 +106,7 @@ struct DataCalculator : public AbstractDataCalculator {
                       }
                     },
                     Access::read(ParticleLoopIndex{}),
-                    Access::read(sym_vector<INT>(
+                    Access::write(sym_vector<INT>(
                         particle_sub_group, this->data_loop_int_syms[dat_idx])),
                     Access::read(
                         sym_vector<REAL>(particle_sub_group,

@@ -350,7 +350,7 @@ TEST(ReactionController, ionisation_reaction) {
   auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
                                                 Sym<REAL>("TOT_REACTION_RATE"));
 
-  auto particle_spec_builder = ParticleSpecBuilder();
+  auto particle_spec_builder = ParticleSpecBuilder(2);
 
   particle_spec_builder.add_particle_spec(particle_group->get_particle_spec());
 
@@ -472,7 +472,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
       0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
       -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
 
-  auto particle_spec_builder = ParticleSpecBuilder();
+  auto particle_spec_builder = ParticleSpecBuilder(2);
 
   auto int_1d_props = Properties<INT>(std::vector<int>{
       default_properties.id, default_properties.internal_state});

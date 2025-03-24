@@ -25,6 +25,7 @@ namespace Reactions {
 struct standard_properties_enum {
 public:
   enum {
+    panic,
     position,
     velocity,
     cell_id,
@@ -80,6 +81,7 @@ public:
 
 private:
   std::map<int, std::string> private_map{
+      {default_properties.panic, "REACTIONS_PANIC_FLAG"},
       {default_properties.position, "POSITION"},
       {default_properties.velocity, "VELOCITY"},
       {default_properties.cell_id, "CELL_ID"},

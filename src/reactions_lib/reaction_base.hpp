@@ -315,7 +315,7 @@ struct LinearReactionBase : public AbstractReaction {
           tot_rate[0] += rate[0];
         },
         Access::read(ParticleLoopIndex{}),
-        Access::read(
+        Access::write(
             sym_vector<INT>(particle_sub_group, this->run_rate_loop_int_syms)),
         Access::read(sym_vector<REAL>(particle_sub_group,
                                       this->run_rate_loop_real_syms)),

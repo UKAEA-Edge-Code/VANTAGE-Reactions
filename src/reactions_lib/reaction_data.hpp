@@ -167,7 +167,7 @@ struct ReactionDataBaseOnDevice {
    */
   std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             typename RNG_TYPE::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
