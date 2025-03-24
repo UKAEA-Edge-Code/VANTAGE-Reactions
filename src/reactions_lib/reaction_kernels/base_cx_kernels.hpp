@@ -76,7 +76,7 @@ struct CXReactionKernelsOnDevice
   }
 
   /**
-   * @brief CX weight kernel - simply sets the product's weight the weight
+   * @brief CX weight kernel - simply sets the product's weight to the weight
    * change due to the reaction
    *
    * @param modified_weight The weight modification needed for calculating

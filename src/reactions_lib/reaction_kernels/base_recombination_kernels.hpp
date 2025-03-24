@@ -26,6 +26,10 @@ namespace BASE_RECOMB_KERNEL {
                                                                     props.weight};
     } // namespace BASE_RECOMB_KERNEL
 
+    /**
+     * struct RecombReactionKernelsOnDevice - SYCL device-compatible kernel for
+     * recombination reactions.
+     */
     template <int ndim_velocity, int ndim_source_momentum,
             bool has_momentum_req_data>
     struct RecombReactionKernelsOnDevice
@@ -33,6 +37,30 @@ namespace BASE_RECOMB_KERNEL {
             BASE_RECOMB_KERNEL::num_products_per_parent> {
     RecombReactionKernelsOnDevice() = default;
 
+    /**
+     * @brief Recombination scattering kernel - assumes that pre_req_data
+     * stores the neutral velocities sampled from the existing marker particle
+     * distribution and sets the product's velocity to those values
+     * (note that the elements of pre_req_data that are relevant in this case 
+     * are all but the 0th which is reserved for storing data used for
+     * calculating the projectile source energy loss).
+     *
+     * @param modified_weight The weight modification needed for calculating
+     * the changes to the background fields.
+     * @param index Read-only accessor to a loop index for a ParticleLoop
+     * inside which descendant_product_loop is called. Access using either
+     * index.get_loop_linear_index(), index.get_local_linear_index(),
+     * index.get_sub_linear_index() as required.
+     * @param descendant_products Write accessor to descendant products
+     * that may need to be operated on
+     * @param req_int_props Vector of symbols for integer-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param req_real_props Vector of symbols for real-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param out_states Array defining the IDs of descendant particles
+     * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+     * @param dt The current time step size.
+     */
     void scattering_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
@@ -47,6 +75,26 @@ namespace BASE_RECOMB_KERNEL {
         }
     }
 
+    /**
+     * @brief Recombination weight kernel - simply sets the product's weight
+     * to the weight change due to the reaction.
+     *
+     * @param modified_weight The weight modification needed for calculating
+     * the changes to the background fields.
+     * @param index Read-only accessor to a loop index for a ParticleLoop
+     * inside which descendant_product_loop is called. Access using either
+     * index.get_loop_linear_index(), index.get_local_linear_index(),
+     * index.get_sub_linear_index() as required.
+     * @param descendant_products Write accessor to descendant products
+     * that may need to be operated on
+     * @param req_int_props Vector of symbols for integer-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param req_real_props Vector of symbols for real-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param out_states Array defining the IDs of descendant particles
+     * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+     * @param dt The current time step size.
+     */
     void weight_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
@@ -59,6 +107,26 @@ namespace BASE_RECOMB_KERNEL {
             modified_weight;
     }
 
+    /**
+     * @brief Recombination transformation kernel - simply sets the 
+     * product's ID to the target ID
+     *
+     * @param modified_weight The weight modification needed for calculating
+     * the changes to the background fields.
+     * @param index Read-only accessor to a loop index for a ParticleLoop
+     * inside which descendant_product_loop is called. Access using either
+     * index.get_loop_linear_index(), index.get_local_linear_index(),
+     * index.get_sub_linear_index() as required.
+     * @param descendant_products Write accessor to descendant products
+     * that may need to be operated on
+     * @param req_int_props Vector of symbols for integer-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param req_real_props Vector of symbols for real-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param out_states Array defining the IDs of descendant particles
+     * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+     * @param dt The current time step size.
+     */
     void transformation_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
@@ -71,6 +139,26 @@ namespace BASE_RECOMB_KERNEL {
             out_states[0];
     }
 
+    /**
+     * @brief Feedback kernel for calculating and applying
+     * background field modifications from the reaction.
+     *
+     * @param modified_weight The weight modification needed for calculating
+     * the changes to the background fields.
+     * @param index Read-only accessor to a loop index for a ParticleLoop
+     * inside which descendant_product_loop is called. Access using either
+     * index.get_loop_linear_index(), index.get_local_linear_index(),
+     * index.get_sub_linear_index() as required.
+     * @param descendant_products Write accessor to descendant products
+     * that may need to be operated on
+     * @param req_int_props Vector of symbols for integer-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param req_real_props Vector of symbols for real-valued properties that
+     * need to be used for operations inside the kernel.
+     * @param out_states Array defining the IDs of descendant particles
+     * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+     * @param dt The current time step size.
+     */
     void feedback_kernel(
         REAL &modified_weight, Access::LoopIndex::Read &index,
         Access::DescendantProducts::Write &descendant_products,
@@ -118,9 +206,31 @@ namespace BASE_RECOMB_KERNEL {
     REAL target_mass, normalised_potential_energy;
     };
 
+/**
+ * @brief Host type for recombination kernels
+ *
+ * @tparam ndim_velocity Optional number of dimensions for the particle
+ * velocity property (default value of 2)
+ * @tparam ndim_source_momentum Optional number of dimensions for source
+ * momentum property (default value of ndim_velocity)
+ * @tparam Optional boolean specifying whether a projectile momentum req_data
+ * is available (default value of false)
+ */
 template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity,
         bool has_momentum_req_data = false>
 struct RecombReactionKernels : public ReactionKernelsBase {
+    /**
+     * @brief Recombination reaction kernel host type constructor
+     *
+     * @param target_species Species object representing the recombination
+     * target
+     * @param projectile_species Species object representing the projectile
+     * involved in the recombination (eg. electron).
+     * @param normalised_potential_energy Used in calculating the projectile
+     * source energy loss
+     * @param properties_map_ A std::map<int, std::string> object to be to be
+     * passed to ReactionKernelsBase.
+     */
     RecombReactionKernels(
         const Species &target_species, const Species &projectile_species,
         const REAL& normalised_potential_energy, 
@@ -202,10 +312,13 @@ struct RecombReactionKernels : public ReactionKernelsBase {
             recomb_reaction_kernels_on_device;
 
     public:
+        /**
+         * @brief Getter for the SYCL device-specific struct.
+         */
         RecombReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
                                     has_momentum_req_data>
         get_on_device_obj() {
             return this->recomb_reaction_kernels_on_device;
         }
 };
-}
+}; // namespace Reactions

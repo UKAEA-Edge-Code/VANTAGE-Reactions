@@ -24,19 +24,11 @@ class Reactions(CMakePackage):
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
         if "+nvcxx" in self.spec:
             args.append("-DNESO_PARTICLES_DEVICE_TYPE=GPU")
-            if "^hipsycl" in self.spec:
-                args.append("-DHIPSYCL_TARGETS=cuda-nvcxx")
-            elif "^adaptivecpp" in self.spec:
-                args.append("-DACPP_TARGETS=cuda-nvcxx")
-            
+            args.append("-DACPP_TARGETS=cuda-nvcxx")            
             args.append("-DREACTIONS_DEVICE_TYPE=GPU")
         elif "~nvcxx" in self.spec:
             args.append("-DNESO_PARTICLES_DEVICE_TYPE=CPU")
-            if "^hipsycl" in self.spec:
-                args.append("-DHIPSYCL_TARGETS=omp")
-            elif "^adaptivecpp" in self.spec:
-                args.append("-DACPP_TARGETS=omp")
-
+            args.append("-DACPP_TARGETS=omp")
             args.append("-DREACTIONS_DEVICE_TYPE=CPU")
 
         return args
