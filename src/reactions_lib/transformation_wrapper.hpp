@@ -262,7 +262,7 @@ struct MarkingFunctionWrapperBase {
     const auto &underlying =
         static_cast<const MarkingFunctionWrapperDerived &>(*this);
 
-    return underlying.template marking_condition(real_vars, int_vars);
+    return underlying.marking_condition(real_vars, int_vars);
   }
 };
 } // namespace Reactions
