@@ -2,9 +2,11 @@ Navigate to the designated home directory for your user account within the rds s
 ```
 cd /home/$USER/rds/rds-ukaea-ap002-mOlK9qn0PlQ/$USER
 ```
+The above command is an example of if you're in the ap002 group, replace the command with whichever would be the most relevant in your case.
+
 Clone spack (the version is important since that's the only one that I can confirm works) and make a temporary directory, that will be used by spack instead of the default pathway that spack tries to use and doesn't have permissions for:
 ```
-git clone -c feature.manyFiles=true -b v0.21.0 https://github.com/spack/spack.git ./.spack
+git clone -c feature.manyFiles=true -b v0.23.0 https://github.com/spack/spack.git ./.spack
 mkdir temp_dir
 ```
 Move `interactive.sh` into this directory. Run the following command to create a symbolic link to an alternative version of git (needed for operation inside a GPU node session):
@@ -22,21 +24,25 @@ Now everytime you log on to the GPU node (from the rds-based home directory), ex
 *********************
 Since this next step might take some time and the interactive session on the GPU node has a timelimit of 1 hour, it's recommended that a new session is initialized before proceeding.
 
-In your rds-based home folder, install gcc-11.3.0:
+In your rds-based home folder, install gcc-14.2.0:
 ```
-spack install gcc@11.3.0%gcc@8.5.0
-spack load gcc@11.3.0
+spack install gcc@14.2.0%gcc@8.5.0
+spack load gcc@14.2.0
 spack compiler find
-spack unload gcc@11.3.0
+spack unload gcc@14.2.0
 ```
-Confirm that gcc-11.3.0 is installed by executing:
+Confirm that gcc-14.2.0 is installed by executing:
 ```
 spack compilers
 ```
 Look for a section that resembles:
 ```
 -- gcc rocky8-x86_64 --------------------------------------------
-gcc@8.5.0  gcc@11.3.0
+gcc@8.5.0  gcc@14.2.0
+```
+Remove the extra gcc compiler with the command:
+```
+spack compiler remove gcc@8.5.0
 ```
 ****************************
 Again probably best to start a new session on the GPU node.
@@ -62,31 +68,30 @@ It is advised to install CPU and GPU variants separately and install the depende
 
 For the CPU variant:
 ```
-spack install -j16 --only-concrete --only dependencies reactions~nvcxx
-spack load neso-particles/neso-cpu-hash hipsycl/hipsycl-cpu-hash openmpi cmake
-spack install -j16 --only-concrete reactions~nvcxx
+spack install --only-concrete --only dependencies reactions~nvcxx
+spack install --only-concrete reactions~nvcxx
 ```
-The `neso-cpu-hash` and `hipsycl-cpu-hash` refers to the hashes of the variants of neso-particles and hipsycl that are configured for CPU usage.
-
 For the GPU variant:
 ```
-spack install -j16 --only-concrete --only dependencies reactions+nvcxx
-spack load neso-particles/neso-gpu-hash hipsycl/hipsycl-gpu-hash openmpi cmake
-spack install -j16 --only-concrete reactions+nvcxx
+spack install --only-concrete --only dependencies reactions+nvcxx
+spack install --only-concrete reactions+nvcxx
 ```
-Similarly the `neso-gpu-hash` and `hipsycl-gpu-hash` refers to the hashes of the variants of neso-particles and hipsycl that are configured for GPU usage.
-
-These hashes can be found by using the `spack find -v -L neso-particles hipsycl`. In the output from the command look for the `+nvcxx` and `~nvcxx` flags to find the relevant hashes.
-
-NOTE that for now every reinstall of the `reactions` package overwrites the `bin` and `lib` directories in the main repo directory.
-
-NOTE when switching between CPU and GPU builds it is necessary to manually delete `bin` and `lib` directories in the main repo directory and depending on which variant is currently installed run either `spack clean reactions~nvcxx` or `spack clean reactions+nvcxx`. After this the normal installation procedure in this section can be followed.
 ***********************
-To test the CPU build, install `reactions~nvcxx` and run from the repo directory:
+For running the unit tests, re-install the `reactions` package with the `+enable_tests` flag added to the `spack install` command. For example for the CPU:
 ```
-OMP_NUM_THREADS=1 mpirun -n 1 bin/unit_tests
+spack install --only-concrete reactions+enable_tests~nvcxx
 ```
-For the GPU build, install `reactions+nvcxx` and run from the repo directory:
+and for the GPU:
 ```
-SYCL_DEVICE_FILTER=GPU mpirun -n 1 bin/unit_tests
+spack install --only-concrete reactions+enable_tests+nvcxx
 ```
+
+To test the CPU build, run from the repo directory:
+```
+OMP_NUM_THREADS=1 mpirun -n 1 build-linux-rocky8-zen3-$CPU_hash/spack-build-$CPU_hash/test/unit/unit_tests
+```
+For the GPU build, run from the repo directory:
+```
+SYCL_DEVICE_FILTER=GPU mpirun -n 1 build-linux-rocky8-zen3-$GPU_hash/spack-build-$GPU_hash/test/unit/unit_tests
+```
+Replace `$CPU_hash` and `$GPU_hash` with values that correspond to the hash that spack assigns to the CPU and GPU builds respectively. These can be found using `spack find -vl reactions` and checking whether `~nvcxx` or `+nvcxx` are present in the installation flags listed in the output.

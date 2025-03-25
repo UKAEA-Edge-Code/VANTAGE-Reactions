@@ -20,7 +20,7 @@ const std::vector<int> required_simple_real_props = {props.weight,
 
 const std::vector<int> required_species_real_props = {
     props.source_density, props.source_energy,
-    props.source_momentum}; // namespace BASE_IONISATION_KERNEL
+    props.source_momentum};
 } // namespace BASE_IONISATION_KERNEL
 
 /**
