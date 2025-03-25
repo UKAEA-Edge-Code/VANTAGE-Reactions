@@ -57,7 +57,8 @@ public:
   virtual void
   descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
                           INT cell_idx_start, INT cell_idx_end, double dt,
-                          ParticleGroupSharedPtr child_group) {}
+                          ParticleGroupSharedPtr child_group,
+                          bool full_weight = false) {}
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
 
@@ -333,10 +334,13 @@ struct LinearReactionBase : public AbstractReaction {
    * @param dt The current time step size.
    * @param child_group ParticleGroupSharedPtr that contains a particle group
    * into which descendants are placed after generation.
+   * @param full_weight If true, will consume the full weight of the particles,
+   * regardless of timestep
    */
   void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
                                INT cell_idx_start, INT cell_idx_end, double dt,
-                               ParticleGroupSharedPtr child_group) override {
+                               ParticleGroupSharedPtr child_group,
+                               bool full_weight = false) override {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
 
@@ -359,12 +363,14 @@ struct LinearReactionBase : public AbstractReaction {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = rate_buffer.at(current_count);
 
-          REAL deltaweight = dt * rate;
-          REAL total_deltaweight = dt * total_reaction_rate.at(0);
+          REAL used_dt =
+              full_weight ? weight.at(0) / total_reaction_rate.at(0) : dt;
+          REAL deltaweight = used_dt * rate;
+          REAL total_deltaweight = used_dt * total_reaction_rate.at(0);
           REAL modified_weight = std::min(
               deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
 
-          REAL modified_dt = dt * modified_weight / deltaweight;
+          REAL modified_dt = used_dt * modified_weight / deltaweight;
           for (int childx = 0; childx < num_products_per_parent; childx++) {
 
             descendant_particle.set_parent(particle_index, childx);

@@ -77,7 +77,8 @@ struct DataCalculator : public AbstractDataCalculator {
    * loops
    */
   void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
-                   ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx_start, INT cell_idx_end) {
+                   ParticleSubGroupSharedPtr particle_sub_group,
+                   INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
                "data calculation objects.");
@@ -113,7 +114,7 @@ struct DataCalculator : public AbstractDataCalculator {
                                          this->data_loop_real_syms[dat_idx])),
                     Access::write(buffer), Access::read(args.get_rng_kernel()));
 
-                loop->execute(cell_idx_start,cell_idx_end);
+                loop->execute(cell_idx_start, cell_idx_end);
                 dat_idx++;
                 dat_dim_idx += data_dim;
               }(),
