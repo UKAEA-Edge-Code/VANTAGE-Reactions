@@ -19,7 +19,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller = ReactionController(
-      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+      test_wrapper);
   REAL test_rate = 5.0;
 
   const INT num_products_per_parent = 1;
@@ -120,7 +120,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
 
   auto reaction_controller = ReactionController(
-      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+      test_wrapper);
   reaction_controller.set_cell_block_size(2);
 
   REAL test_rate = 5.0;
@@ -214,7 +214,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller = ReactionController(
-      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+      test_wrapper);
 
   REAL test_rate = 5.0; // example rate
 
@@ -302,8 +302,7 @@ TEST(ReactionController, parent_transform) {
       std::make_shared<TransformationWrapper>(child_transform);
 
   auto reaction_controller = ReactionController(
-      parent_transform_wrapper, child_transform_wrapper,
-      Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+      parent_transform_wrapper, child_transform_wrapper);
 
   auto particle_spec = particle_group->get_particle_spec();
 
@@ -347,8 +346,7 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
-                                                Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController();
 
   auto particle_spec_builder = ParticleSpecBuilder(2);
 
@@ -426,8 +424,8 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
 
   auto reaction_controller = ReactionController(
       std::vector{accumulator_transform_wrapper, merge_transform_wrapper},
-      std::vector<std::shared_ptr<TransformationWrapper>>{},
-      Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+      std::vector<std::shared_ptr<TransformationWrapper>>{});
+
   reaction_controller.add_reaction(
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           ionise_reaction));
@@ -459,8 +457,8 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
-                                                Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController();
+                                               
 
   // AMJUEL H.2 2.1.5FJ reaction coeffecients
   // b0 -0.317385000000e+02 b1 0.114381800000e+02 b2 -0.383399800000e+01

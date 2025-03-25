@@ -75,25 +75,15 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
               Sym<REAL>(prop_map[default_properties.weight]), 1e-2)},
       merge_transform);
 
+  // TODO: Update this with new interface 
   auto reaction_controller = ReactionController(
       std::vector{
           merge_wrapper,
           remove_wrapper}, // the order matters! this will first merge parents,
                            // then remove any remaining small particles
       std::vector{merge_wrapper,
-                  remove_wrapper}, // this will do the same to the children
+                  remove_wrapper} // this will do the same to the children
                                    // before merging them into the parents
-      Sym<INT>(
-          prop_map[default_properties
-                       .internal_state]), // The controller needs to know which
-                                          // particle property to filter against
-                                          // as the ingoing state
-      Sym<REAL>(
-          prop_map[default_properties
-                       .tot_reaction_rate]) // The controller has the
-                                            // responsibility of this->cleaning
-                                            // up the total reaction rate buffer
-                                            // on particles
   );
 
   reaction_controller.set_cell_block_size(
