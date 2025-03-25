@@ -101,9 +101,10 @@ build_sym_vector(ParticleSpec particle_spec,
 inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
   constexpr REAL two_pi = 2 * M_PI;
 
-  auto magnitude = sqrt(-2 * log(u1));
-  // The compiler should optimise this into a sincos call
-  return std::array<REAL, 2>{magnitude * cos(two_pi * u2),
-                             magnitude * sin(two_pi * u2)};
+  auto magnitude = sqrt(-2 * Kernel::log(u1));
+  REAL valuecos;
+  const REAL valuesin = Kernel::sincos(two_pi * u2, &valuecos);
+  return std::array<REAL, 2>{magnitude * valuecos,
+                             magnitude * valuesin};
 };
 } // namespace Reactions::utils

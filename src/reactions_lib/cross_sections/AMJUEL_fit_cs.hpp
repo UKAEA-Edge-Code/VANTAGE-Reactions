@@ -72,7 +72,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
 
     REAL E = this->mult_const * relative_vel * relative_vel;
 
-    REAL logE = std::log(E);
+    REAL logE = Kernel::log(E);
     if (E >= this->max_E) {
       return this->max_val / relative_vel;
     };
@@ -103,7 +103,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
         sum_E += this->coeffs[i] * std::pow(logE, i);
       }
     }
-    return std::exp(sum_E) * 1e-4 / this->cs_norm;
+    return Kernel::exp(sum_E) * 1e-4 / this->cs_norm;
   };
 
   REAL get_max_rate_val() const { return this->max_val; };
