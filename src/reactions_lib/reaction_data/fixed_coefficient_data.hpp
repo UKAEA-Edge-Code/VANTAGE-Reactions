@@ -1,17 +1,12 @@
 #pragma once
-#include <neso_particles.hpp>
 #include "../reaction_data.hpp"
+#include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 namespace Reactions {
 
-namespace FIXED_COEFFICIENT_DATA {
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {props.weight};
-} // namespace FIXED_COEFFICIENT_DATA
+namespace FIXED_COEFFICIENT_DATA {} // namespace FIXED_COEFFICIENT_DATA
 
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
@@ -59,16 +54,17 @@ public:
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.weight};
+
   FixedCoefficientData(REAL rate_coefficient,
                        std::map<int, std::string> properties_map_ = default_map)
-      : ReactionDataBase(
-            Properties<REAL>(FIXED_COEFFICIENT_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{}),
-            properties_map_),
+      : ReactionDataBase(Properties<REAL>(required_simple_real_props),
+                         properties_map_),
         fixed_coefficient_data_on_device(
             FixedCoefficientDataOnDevice(rate_coefficient)) {
-
-    auto props = FIXED_COEFFICIENT_DATA::props;
 
     this->fixed_coefficient_data_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight,

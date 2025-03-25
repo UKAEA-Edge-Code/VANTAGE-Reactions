@@ -8,16 +8,6 @@
 using namespace NESO::Particles;
 namespace Reactions {
 
-// AMJUEL 1D Fit
-
-namespace AMJUEL_1D_DATA {
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {
-    props.fluid_density, props.fluid_temperature, props.weight};
-} // namespace AMJUEL_1D_DATA
-
 /**
  * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.
@@ -112,6 +102,11 @@ public:
  * ReactionDataBase.
  */
 template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
+    
+constexpr static auto props = default_properties;
+
+constexpr static  std::array<int,3> required_simple_real_props = {
+    props.fluid_density, props.fluid_temperature, props.weight};
 
   AMJUEL1DData(const REAL &evolved_quantity_normalisation_,
                const REAL &density_normalisation_,
@@ -120,14 +115,11 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
                const std::array<REAL, num_coeffs> &coeffs_,
                std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase(
-            Properties<REAL>(AMJUEL_1D_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{}),
+            Properties<REAL>(required_simple_real_props),
             properties_map_),
         amjuel_1d_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
             evolved_quantity_normalisation_, density_normalisation_,
             temperature_normalisation_, time_normalisation_, coeffs_)) {
-
-    auto props = AMJUEL_1D_DATA::props;
 
     this->amjuel_1d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density,

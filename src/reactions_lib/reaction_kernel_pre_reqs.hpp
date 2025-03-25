@@ -117,15 +117,36 @@ template <typename PROP_TYPE> struct Properties {
     this->all_props.insert(this->all_props.end(), this->species_props.begin(),
                            this->species_props.end());
   };
-
-  Properties(std::vector<int> simple_props_) : simple_props(simple_props_) {
-    this->all_props = this->simple_props;
-  };
+  
+  Properties(std::vector<int> simple_props_)
+      : Properties(simple_props_, std::vector<Species>{},
+                   std::vector<int>{}){};
 
   Properties(std::vector<Species> species_, std::vector<int> species_props_)
-      : species(species_), species_props(species_props_) {
-    this->all_props = this->species_props;
+      : Properties(std::vector<int>{}, species_, species_props_){};
+
+  template <size_t N, size_t M>
+  Properties(const std::array<int, N> &simple_props_, // simple_props (including
+                                               // fluid_density for example)
+             std::vector<Species> species_,
+             const std::array<int, M> &species_props_) // species_props
+      : simple_props(
+            std::vector<int>(simple_props_.begin(), simple_props_.end())),
+        species(species_), species_props(std::vector<int>(
+                               species_props_.begin(), species_props_.end())) {
+    this->all_props = this->simple_props;
+    this->all_props.insert(this->all_props.end(), this->species_props.begin(),
+                           this->species_props.end());
   };
+
+  template <size_t N>
+  Properties(const std::array<int, N> &simple_props_)
+      : Properties(simple_props_, std::vector<Species>{},
+                   std::array<int, 0>{}){};
+
+  template <size_t M>
+  Properties(std::vector<Species> species_, const std::array<int, M> &species_props_)
+      : Properties(std::array<int, 0>{}, species_, species_props_){};
 
   /**
    * @brief Function to return a vector of strings containing the names of the

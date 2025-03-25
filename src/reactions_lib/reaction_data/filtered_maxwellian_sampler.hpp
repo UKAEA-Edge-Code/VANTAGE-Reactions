@@ -169,14 +169,8 @@ struct FilteredMaxwellianSampler
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
-            Properties<INT>(std::vector<int>(required_simple_int_props.begin(),
-                                             required_simple_int_props.end()),
-                            std::vector<Species>{}, std::vector<int>()),
-            Properties<REAL>(
-                std::vector<int>(required_simple_real_props.begin(),
-                                 required_simple_real_props.end()),
-                std::vector<Species>{},
-                std::vector<int>()),
+            Properties<INT>(required_simple_int_props),
+            Properties<REAL>(required_simple_real_props),
             properties_map_),
         device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
             norm_ratio, cross_section)) {

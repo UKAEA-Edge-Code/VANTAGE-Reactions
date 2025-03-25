@@ -1,9 +1,9 @@
 #pragma once
-#include <array>
-#include <neso_particles.hpp>
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
+#include <array>
+#include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -13,14 +13,6 @@ namespace Reactions {
 namespace BASE_IONISATION_KERNEL {
 constexpr int num_products_per_parent = 0;
 
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {props.weight,
-                                                     props.velocity};
-
-const std::vector<int> required_species_real_props = {
-    props.source_density, props.source_energy,
-    props.source_momentum};
 } // namespace BASE_IONISATION_KERNEL
 
 /**
@@ -29,9 +21,7 @@ const std::vector<int> required_species_real_props = {
  */
 template <int ndim_velocity, int ndim_source_momentum,
           bool has_momentum_req_data>
-struct IoniseReactionKernelsOnDevice
-    : public ReactionKernelsBaseOnDevice<
-          BASE_IONISATION_KERNEL::num_products_per_parent> {
+struct IoniseReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
   IoniseReactionKernelsOnDevice() = default;
 
   /**
@@ -54,14 +44,13 @@ struct IoniseReactionKernelsOnDevice
    * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
    * @param dt The current time step size.
    */
-  void feedback_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, BASE_IONISATION_KERNEL::num_products_per_parent>
-          &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                       Access::DescendantProducts::Write &descendant_products,
+                       Access::SymVector::Write<INT> &req_int_props,
+                       Access::SymVector::Write<REAL> &req_real_props,
+                       const std::array<int, 0> &out_states,
+                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                       double dt) const {
     std::array<REAL, ndim_velocity> k_V;
     REAL vsquared = 0.0;
 
@@ -127,6 +116,13 @@ template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity,
           bool has_momentum_req_data = false>
 struct IoniseReactionKernels : public ReactionKernelsBase {
 
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 2> required_simple_real_props = {
+      props.weight, props.velocity};
+
+  constexpr static std::array<int, 3> required_species_real_props = {
+      props.source_density, props.source_energy, props.source_momentum};
   /**
    * @brief Ionisation reaction kernel host type constructor
    *
@@ -143,18 +139,16 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
       const Species &projectile_species,
       std::map<int, std::string> properties_map_ = default_map)
       : ReactionKernelsBase(
-            Properties<REAL>(
-                BASE_IONISATION_KERNEL::required_simple_real_props,
-                std::vector<Species>{target_species, electron_species,
-                                     projectile_species},
-                BASE_IONISATION_KERNEL::required_species_real_props),
+            Properties<REAL>(required_simple_real_props,
+                             std::vector<Species>{target_species,
+                                                  electron_species,
+                                                  projectile_species},
+                             required_species_real_props),
             has_momentum_req_data ? 2 : 1, properties_map_) {
     static_assert(
         (ndim_velocity >= ndim_source_momentum),
         "Number of dimension for VELOCITY must be greater than or "
         "equal to number of dimensions for ELECTRON_SOURCE_MOMENTUM.");
-
-    auto props = BASE_IONISATION_KERNEL::props;
 
     this->ionise_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity,

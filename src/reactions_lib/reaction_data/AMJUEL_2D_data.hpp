@@ -1,23 +1,17 @@
 #pragma once
 #include "../particle_properties_map.hpp"
+#include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include <array>
 #include <cmath>
 #include <neso_particles.hpp>
-#include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
 namespace Reactions {
 
 // AMJUEL 2D Fit
 
-namespace AMJUEL_2D_DATA {
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {
-    props.fluid_density, props.fluid_temperature, props.weight};
-} // namespace AMJUEL_2D_DATA
+namespace AMJUEL_2D_DATA {} // namespace AMJUEL_2D_DATA
 
 /**
  * @brief A struct that contains data and calc_data functions that are to be
@@ -75,11 +69,11 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
         std::log(fluid_temperature_dat * this->temperature_normalisation);
-    
+
     std::array<REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs_T; i++) {
-      log_temp_arr[i] = log_temp_arr[i-1] * log_temp;
+      log_temp_arr[i] = log_temp_arr[i - 1] * log_temp;
     }
 
     REAL log_rate = 0.0;
@@ -94,7 +88,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     std::array<REAL, num_coeffs_n> log_n_arr;
     log_n_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs_n; i++) {
-      log_n_arr[i] = log_n_arr[i-1] * log_n;
+      log_n_arr[i] = log_n_arr[i - 1] * log_n;
     }
 
     for (int j = 0; j < num_coeffs_n; j++) {
@@ -139,22 +133,23 @@ public:
 template <int num_coeffs_T, int num_coeffs_n>
 struct AMJUEL2DData : public ReactionDataBase<> {
 
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 3> required_simple_real_props = {
+      props.fluid_density, props.fluid_temperature, props.weight};
+
   AMJUEL2DData(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs_,
       std::map<int, std::string> properties_map_ = default_map)
-      : ReactionDataBase(
-            Properties<REAL>(AMJUEL_2D_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{}),
-            properties_map_),
+      : ReactionDataBase(Properties<REAL>(required_simple_real_props),
+                         properties_map_),
         amjuel_2d_data_on_device(
             AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>(
                 evolved_quantity_normalisation_, density_normalisation_,
                 temperature_normalisation_, time_normalisation_, coeffs_)) {
-
-    auto props = AMJUEL_2D_DATA::props;
 
     this->amjuel_2d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density,
