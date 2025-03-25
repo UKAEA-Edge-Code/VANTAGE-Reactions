@@ -4,7 +4,7 @@
 using namespace NESO::Particles;
 using namespace Reactions;
 
-TEST(Recombination, calc_rate) {
+TEST(Recombination, kernel_test) {
     const int N_total = 1000;
 
     auto particle_group = create_test_particle_group(N_total);
