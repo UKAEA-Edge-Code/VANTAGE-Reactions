@@ -59,7 +59,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
 
-    auto log_temp = std::log(fluid_temperature_dat * this->temperature_normalisation);
+    auto log_temp = Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
 
     std::array<REAL, num_coeffs> log_rate_arr;
     log_rate_arr[0] = 1.0;
@@ -72,7 +72,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
       log_rate += this->coeffs[i] * log_rate_arr[i];
     }
 
-    REAL rate = std::exp(log_rate) * 1.0e-6;
+    REAL rate = Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;

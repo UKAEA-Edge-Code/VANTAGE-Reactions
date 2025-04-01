@@ -68,7 +68,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
-        std::log(fluid_temperature_dat * this->temperature_normalisation);
+        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
 
     std::array<REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;
@@ -81,7 +81,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     // TODO: Add variable Coronal cut-off density
     auto log_n =
         (fluid_density_dat * this->density_normalisation >= 1e14)
-            ? std::log(fluid_density_dat * this->density_normalisation / 1e14)
+            ? Kernel::log(fluid_density_dat * this->density_normalisation / 1e14)
             : 0;
     // TODO: Ensure LTE asymptotic behaviour obeyed
 
@@ -97,7 +97,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       }
     }
 
-    REAL rate = std::exp(log_rate) * 1.0e-6;
+    REAL rate = Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;
