@@ -1,6 +1,7 @@
 #pragma once
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
+#include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
 
@@ -133,9 +134,7 @@ public:
     this->max_particles_per_cell = max_num_parts;
   }
 
-  void set_mode_semi_dsmc(){
-      this->semi_dsmc = true;
-  }
+  void set_mode_semi_dsmc() { this->semi_dsmc = true; }
 
   /**
    * @brief Set the number of cells per cell block, determines how many cells
@@ -230,7 +229,7 @@ public:
             [=](auto index, auto reacted_flag, auto total_reaction_rate,
                 auto kernel) {
               reacted_flag.at(0) =
-                  (1 - std::exp(-total_reaction_rate.at(0) * dt)) >
+                  (1 - Kernel::exp(-total_reaction_rate.at(0) * dt)) >
                           kernel.at(index, 0)
                       ? 1
                       : 0;
@@ -240,6 +239,7 @@ public:
             Access::read(this->tot_rate_buffer),
             Access::read(this->rng_kernel));
 
+        loop->execute(i, std::min(i+this->cell_block_size,cell_count));
         rate_buffer_zeroer->transform(
             particle_group, i, std::min(i + this->cell_block_size, cell_count));
 
@@ -261,12 +261,12 @@ public:
 
         if (this->semi_dsmc) {
 
-          auto filtered_group = this->reacted_marker->make_marker_subgroup(
+          filtered_group = this->reacted_marker->make_marker_subgroup(
               this->species_groups[in_state]);
         }
         this->reactions[r]->descendant_product_loop(
             filtered_group, i, std::min(i + this->cell_block_size, cell_count),
-            dt, child_group,this->semi_dsmc);
+            dt, child_group, this->semi_dsmc);
       }
 
       for (auto it = this->child_ids.begin(); it != this->child_ids.end();
@@ -323,7 +323,7 @@ private:
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
   bool semi_dsmc = false;
-  std::shared_ptr < HostPerParticleBlockRNG<REAL>> rng_kernel;
+  std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
   std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;
