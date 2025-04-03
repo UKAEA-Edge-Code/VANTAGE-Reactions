@@ -205,6 +205,16 @@ public:
               this->sub_group_selectors[in_state]->make_marker_subgroup(
                   std::make_shared<ParticleSubGroup>(particle_group))));
         }
+
+        // TODO: Make mode selection better
+        if (this->semi_dsmc) {
+
+          for (int in_state : in_states) {
+            this->reacted_species_groups.emplace(std::make_pair(
+                in_state, this->reacted_marker->make_marker_subgroup(
+                                  this->species_groups[in_state])));
+          }
+        }
       }
     }
 
@@ -239,7 +249,7 @@ public:
             Access::read(this->tot_rate_buffer),
             Access::read(this->rng_kernel));
 
-        loop->execute(i, std::min(i+this->cell_block_size,cell_count));
+        loop->execute(i, std::min(i + this->cell_block_size, cell_count));
         rate_buffer_zeroer->transform(
             particle_group, i, std::min(i + this->cell_block_size, cell_count));
 
@@ -247,26 +257,26 @@ public:
 
           INT in_state = this->reactions[r]->get_in_states()[0];
 
-          auto filtered_group = this->reacted_marker->make_marker_subgroup(
-              this->species_groups[in_state]);
           this->reactions[r]->run_rate_loop(
-              filtered_group, i,
+              this->reacted_species_groups[in_state], i,
               std::min(i + this->cell_block_size, cell_count));
         }
       }
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        auto filtered_group = this->species_groups[in_state];
-
         if (this->semi_dsmc) {
 
-          filtered_group = this->reacted_marker->make_marker_subgroup(
-              this->species_groups[in_state]);
+          this->reactions[r]->descendant_product_loop(
+              this->reacted_species_groups[in_state], i,
+              std::min(i + this->cell_block_size, cell_count), dt, child_group,
+              this->semi_dsmc);
+        } else {
+          this->reactions[r]->descendant_product_loop(
+              this->species_groups[in_state], i,
+              std::min(i + this->cell_block_size, cell_count), dt, child_group,
+              this->semi_dsmc);
         }
-        this->reactions[r]->descendant_product_loop(
-            filtered_group, i, std::min(i + this->cell_block_size, cell_count),
-            dt, child_group, this->semi_dsmc);
       }
 
       for (auto it = this->child_ids.begin(); it != this->child_ids.end();
@@ -307,6 +317,8 @@ public:
 private:
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, ParticleSubGroupSharedPtr> species_groups;
+  std::map<int, ParticleSubGroupSharedPtr>
+      reacted_species_groups; // Used only for semi-dsmc mode
 
   std::set<int> parent_ids;
   std::set<int> child_ids;

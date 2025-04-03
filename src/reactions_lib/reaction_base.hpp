@@ -395,7 +395,7 @@ struct LinearReactionBase : public AbstractReaction {
           // Use either the above calculated delta weight or a fraction of the
           // initial weight based on how much of the total reaction rate this
           // reaction is responsible
-          REAL modified_weight = std::min(
+          REAL modified_weight = Kernel::min(
               deltaweight, deltaweight * (weight_buffer.at(current_count) /
                                           total_deltaweight));
 
