@@ -24,6 +24,8 @@ namespace Reactions {
  */
 struct ReactionController {
 
+  ReactionController() = default;
+
   ReactionController(Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
                      bool auto_clean_tot_rate_buffer = true)
       : id_sym(id_sym), tot_rate_buffer(tot_rate_buffer),

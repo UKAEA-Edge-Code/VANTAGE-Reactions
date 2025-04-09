@@ -65,6 +65,40 @@ struct AbstractCrossSection {
     return uniform_rand < (value_at * relative_vel / max_rate_val);
   }
 };
+
+/**
+ * @brief Base reaction data object to be used on SYCL devices.
+ */
+ template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
+ struct ReactionDataBaseOnDevice {
+   using RNG_KERNEL_TYPE = RNG_TYPE;
+   ReactionDataBaseOnDevice() = default;
+ 
+   /**
+    * @brief Function to calculate the reaction data.
+    *
+    * @param index Read-only accessor to a loop index for a ParticleLoop
+    * inside which calc_data is called. Access using either
+    * index.get_loop_linear_index(), index.get_local_linear_index(),
+    * index.get_sub_linear_index() as required.
+    * @param req_int_props Vector of symbols for integer-valued properties that
+    * need to be used for the reaction data calculation.
+    * @param req_real_props Vector of symbols for real-valued properties that
+    * need to be used for the reaction data calculation.
+    * @param rng_kernel The random number generator kernel potentially used in
+    * the calculation
+    */
+   std::array<REAL, dim>
+   calc_data(const Access::LoopIndex::Read &index,
+             const Access::SymVector::Read<INT> &req_int_props,
+             const Access::SymVector::Read<REAL> &req_real_props,
+             typename RNG_TYPE::KernelType &rng_kernel) const {
+     return std::array<REAL, dim>{0.0};
+   }
+ 
+   static constexpr size_t get_dim() { return dim; }
+ };
+
 /**
  * @brief Base reaction data object.
  *
@@ -136,43 +170,18 @@ struct ReactionDataBase {
 
   static constexpr size_t get_dim() { return dim; }
 
+private:
+  ReactionDataBaseOnDevice<> reaction_data_base_on_device;
+
+public:
+  ReactionDataBaseOnDevice<> get_on_device_obj() {
+    return this->reaction_data_base_on_device;
+  }
+
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
   std::shared_ptr<RNG_TYPE> rng_kernel;
   std::map<int, std::string> properties_map;
-};
-
-/**
- * @brief Base reaction data object to be used on SYCL devices.
- */
-template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
-struct ReactionDataBaseOnDevice {
-  using RNG_KERNEL_TYPE = RNG_TYPE;
-  ReactionDataBaseOnDevice() = default;
-
-  /**
-   * @brief Function to calculate the reaction data.
-   *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction data calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction data calculation.
-   * @param rng_kernel The random number generator kernel potentially used in
-   * the calculation
-   */
-  std::array<REAL, dim>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Read<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
-            typename RNG_TYPE::KernelType &rng_kernel) const {
-    return std::array<REAL, dim>{0.0};
-  }
-
-  static constexpr size_t get_dim() { return dim; }
 };
 }; // namespace Reactions
