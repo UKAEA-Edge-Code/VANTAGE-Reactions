@@ -12,8 +12,6 @@ namespace Reactions {
 
 // AMJUEL 2D Fit
 
-namespace AMJUEL_2D_DATA_H3 {} // namespace AMJUEL_2D_DATA_H3
-
 /**
  * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
  * against neutral particle energy and ion/plasma temperature
