@@ -1,6 +1,6 @@
 #include "include/mock_particle_group.hpp"
-#include "include/mock_reactions.hpp"
 #include "include/mock_particle_properties.hpp"
+#include "include/mock_reactions.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -31,8 +31,8 @@ TEST(Properties, simple_prop_names) {
       Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
                        std::vector<int>(default_properties.density));
 
-  //TODO: Replace with NESOASSERT tests
-  //EXPECT_THROW(empty_simple_props_obj.simple_prop_names(), std::logic_error);
+  // TODO: Replace with NESOASSERT tests
+  // EXPECT_THROW(empty_simple_props_obj.simple_prop_names(), std::logic_error);
 
   auto int_props_obj = PropertiesTest::int_props;
 
@@ -89,8 +89,8 @@ TEST(Properties, simple_prop_names) {
 
   // Since default_properties.weight will not be a key in the fully
   // custom_full_prop_map
-  //TODO: Replace with NESOASSERT tests
-  //EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
+  // TODO: Replace with NESOASSERT tests
+  // EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
   //                 PropertiesTest::custom_prop_no_weight_map),
   //             std::out_of_range);
 
@@ -110,9 +110,9 @@ TEST(Properties, simple_prop_index) {
       Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
                        std::vector<int>(default_properties.density));
 
-  //TODO: Replace with NESOASSERT tests
-  //EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
-  //              std::logic_error);
+  // TODO: Replace with NESOASSERT tests
+  // EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
+  //               std::logic_error);
 
   auto int_props_obj = PropertiesTest::int_props;
 
@@ -149,8 +149,9 @@ TEST(Properties, species_prop_names) {
   auto empty_species_props_obj =
       Properties<INT>(std::vector<int>{default_properties.internal_state});
 
-  //TODO: Replace with NESOASSERT tests
-  //EXPECT_THROW(empty_species_props_obj.species_prop_names(), std::logic_error);
+  // TODO: Replace with NESOASSERT tests
+  // EXPECT_THROW(empty_species_props_obj.species_prop_names(),
+  // std::logic_error);
 
   auto real_props_obj = PropertiesTest::real_props;
 
@@ -198,10 +199,10 @@ TEST(Properties, species_prop_index) {
   auto empty_species_props_obj =
       Properties<REAL>(std::vector<int>(default_properties.velocity));
 
-  //TODO: Replace with NESOASSERT tests
-  //EXPECT_THROW(empty_species_props_obj.species_prop_index(
-  //                 "ELECTRON", default_properties.density),
-  //             std::logic_error);
+  // TODO: Replace with NESOASSERT tests
+  // EXPECT_THROW(empty_species_props_obj.species_prop_index(
+  //                  "ELECTRON", default_properties.density),
+  //              std::logic_error);
 
   auto real_props_obj = PropertiesTest::real_props;
 
@@ -355,8 +356,7 @@ TEST(Properties, full_use_properties_map) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-          Sym<REAL>("WEIGHT"), 0, std::array<int, 0>{}, amjuel_data,
+          particle_group->sycl_target, 0, std::array<int, 0>{}, amjuel_data,
           TestReactionKernels<0>(test_prop_map), particle_spec);
 
   auto descendant_particles = std::make_shared<ParticleGroup>(

@@ -28,8 +28,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
                          DataCalculator<FixedRateData, FixedRateData>>>(
       particle_group->sycl_target,
-      Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
-      Sym<REAL>(prop_map[default_properties.weight]), ion_species_1.get_id(),
+      ion_species_1.get_id(),
       std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data,
       cx_kernel, particle_spec, data_calculator);
 
@@ -37,15 +36,13 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
   auto ionise_reaction_1 =
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           particle_group->sycl_target,
-          Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
-          Sym<REAL>(prop_map[default_properties.weight]), rate_data, rate_data,
+          rate_data, rate_data,
           ion_species_1, electron_species, particle_group->particle_spec);
 
   auto ionise_reaction_2 =
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           particle_group->sycl_target,
-          Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
-          Sym<REAL>(prop_map[default_properties.weight]), rate_data, rate_data,
+          rate_data, rate_data,
           ion_species_2, electron_species, particle_group->particle_spec);
 
   // We can now initialise a reaction controller and populate it with the above

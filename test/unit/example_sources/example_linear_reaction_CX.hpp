@@ -69,14 +69,14 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
                              >(
           particle_group->sycl_target, // The reaction class needs access to the sycl_target 
                                        // of the group whose subgroups it's to be applied to
-          Sym<REAL>(prop_map[default_properties.tot_reaction_rate]), // The total reaction rate sym 
-          Sym<REAL>(prop_map[default_properties.weight]), // The weight sym 
           projectile_species.get_id(), // Ingoing partice state id 
           std::array<int, 1>{static_cast<int>(target_species.get_id())}, // State IDs of all the products - here just one
           rate_data, // Reaction data used for the rate calculation
           cx_kernel, // Reaction kernel object to be used
           particle_spec, // The reaction also needs to know the ParticleSpec of the group it is going to be applied to
-          data_calculator);
+          data_calculator,
+          prop_map // Map used for getting weight and total rate syms
+          );
 
 
   // The following is normally handled by the ReactionController

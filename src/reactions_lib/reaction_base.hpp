@@ -1,11 +1,11 @@
 #pragma once
 #include "data_calculator.hpp"
+#include "particle_properties_map.hpp"
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
 #include <array>
 #include <cstring>
 #include <neso_particles.hpp>
-#include <stdexcept>
 #include <type_traits>
 
 #include <vector>
@@ -24,21 +24,25 @@ namespace Reactions {
  * process descendants.
  *
  * @param sycl_target Compute device used by the instance.
- * @param total_rate_dat Symbol index for a ParticleDat that's used to track
- * the cumulative weighted reaction rate modification imposed on all of the
- * particles in the ParticleSubGroup passed to run_rate_loop(...).
+ * @param properties_map Optional property remapping. Used to get weight and
+ * rate buffer syms.
  */
 struct AbstractReaction {
   AbstractReaction() = default;
 
-  AbstractReaction(SYCLTargetSharedPtr sycl_target,
-                   const Sym<REAL> total_rate_dat, Sym<REAL> weight_sym)
-      : sycl_target_stored(sycl_target), total_reaction_rate(total_rate_dat),
+  AbstractReaction(
+      SYCLTargetSharedPtr sycl_target,
+      const std::map<int, std::string> &properties_map = default_map)
+      : sycl_target_stored(sycl_target),
+        total_reaction_rate(
+            Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
         device_rate_buffer(
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        weight_sym(weight_sym), max_buffer_size(16384 * 256) {
+        weight_sym(
+            Sym<REAL>(properties_map.at(default_properties.weight))),
+        max_buffer_size(16384 * 256) {
     this->pre_req_data->fill(0.0);
   }
 
@@ -139,11 +143,6 @@ private:
  * prerequisite data (defaults to DataCalculator<>)
  *
  * @param sycl_target Compute device used by the instance.
- * @param total_rate_dat Symbol index for a ParticleDat that's used to track
- * the cumulative weighted reaction rate modification imposed on all of the
- * particles in the ParticleSubGroup passed to run_rate_loop(...).
- * @param weight_sym Symbol index for a ParticleDat that's associated with the
- * weight of a particle.
  * @param in_state Integer specifying the ID of the species on
  * which the derived reaction is acting on.
  * @param out_states Array of integers specifying the species IDs of the
@@ -155,6 +154,8 @@ private:
  * use to construct sym_vectors.
  * @param data_calculator DataCalculator object for filling in the
  * pre_req_data buffer
+ * @param properties_map Optional property remapping. Used to get weight and
+ * rate buffer syms.
  */
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels, typename DataCalc = DataCalculator<>>
@@ -162,18 +163,16 @@ struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = delete;
 
-  LinearReactionBase(SYCLTargetSharedPtr sycl_target,
-                     const Sym<REAL> total_rate_dat, const Sym<REAL> weight_sym,
-                     int in_state,
-                     std::array<int, num_products_per_parent> out_states,
-                     ReactionData reaction_data,
-                     ReactionKernels reaction_kernels,
-                     const ParticleSpec &particle_spec_,
-                     DataCalc data_calculator_)
-      : AbstractReaction(sycl_target, total_rate_dat, weight_sym),
-        in_state(in_state), out_states(out_states),
-        reaction_data(reaction_data), reaction_kernels(reaction_kernels),
-        particle_spec(particle_spec_), data_calculator(data_calculator_) {
+  LinearReactionBase(
+      SYCLTargetSharedPtr sycl_target, int in_state,
+      std::array<int, num_products_per_parent> out_states,
+      ReactionData reaction_data, ReactionKernels reaction_kernels,
+      const ParticleSpec &particle_spec_, DataCalc data_calculator_,
+      const std::map<int, std::string> &properties_map = default_map)
+      : AbstractReaction(sycl_target, properties_map), in_state(in_state),
+        out_states(out_states), reaction_data(reaction_data),
+        reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
+        data_calculator(data_calculator_) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and
@@ -228,7 +227,7 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
-   * @brief Constructor with explicit DataCalculator
+   * @brief Constructor with no explicit DataCalculator
    *
    * @tparam num_products_per_parent The number of products produced per parent
    * by the derived linear reaction.
@@ -237,11 +236,6 @@ struct LinearReactionBase : public AbstractReaction {
    * argument
    *
    * @param sycl_target Compute device used by the instance.
-   * @param total_rate_dat Symbol index for a ParticleDat that's used to track
-   * the cumulative weighted reaction rate modification imposed on all of the
-   * particles in the ParticleSubGroup passed to run_rate_loop(...).
-   * @param weight_sym Symbol index for a ParticleDat that's associated with the
-   * weight of a particle.
    * @param in_state Integer specifying the ID of the species on
    * which the derived reaction is acting on.
    * @param out_states Array of integers specifying the species IDs of the
@@ -251,17 +245,18 @@ struct LinearReactionBase : public AbstractReaction {
    * descendant_product_loop.
    * @param particle_spec_ ParticleSpec object containing particle properties to
    * use to construct sym_vectors.
+   * @param properties_map Optional property remapping. Used to get weight and
+   * rate buffer syms.
    */
-  LinearReactionBase(SYCLTargetSharedPtr sycl_target,
-                     const Sym<REAL> total_rate_dat, const Sym<REAL> weight_sym,
-                     int in_state,
-                     std::array<int, num_products_per_parent> out_states,
-                     ReactionData reaction_data,
-                     ReactionKernels reaction_kernels,
-                     const ParticleSpec &particle_spec_)
-      : LinearReactionBase(sycl_target, total_rate_dat, weight_sym, in_state,
-                           out_states, reaction_data, reaction_kernels,
-                           particle_spec_, DataCalc()) {}
+  LinearReactionBase(
+      SYCLTargetSharedPtr sycl_target, int in_state,
+      std::array<int, num_products_per_parent> out_states,
+      ReactionData reaction_data, ReactionKernels reaction_kernels,
+      const ParticleSpec &particle_spec_,
+      const std::map<int, std::string> &properties_map = default_map)
+      : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
+                           reaction_kernels, particle_spec_, DataCalc(),
+                           properties_map) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given

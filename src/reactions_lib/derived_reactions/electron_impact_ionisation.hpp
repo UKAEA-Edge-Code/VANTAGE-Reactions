@@ -1,9 +1,9 @@
 #pragma once
 #include "../data_calculator.hpp"
-#include <neso_particles.hpp>
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels/base_ionisation_kernels.hpp"
+#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 namespace Reactions {
@@ -29,9 +29,6 @@ struct ElectronImpactIonisation
    *
    * @param sycl_target_ SYCL target pointer used to interface with
    * NESO-Particles routines
-   * @param total_reaction_rate Sym<REAL> associated with the total reaction
-   * rate ParticleDat
-   * @param weight_sym Sym<REAL> associated with the weight ParticleDat
    * @param rate_data ReactionData object used to calculate the ionisation rate
    * @param energy_rate_data ReactionData object used to calculate the electron
    * energy loss rate
@@ -44,18 +41,18 @@ struct ElectronImpactIonisation
    * kernels. Defaults to the default_map object
    */
   ElectronImpactIonisation(
-      SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate,
-      Sym<REAL> weight_sym, RateData rate_data, EnergyRateData energy_rate_data,
-      Species target_species, Species electron_species,
-      const ParticleSpec &particle_spec,
-      std::map<int, std::string> properties_map = default_map)
+      SYCLTargetSharedPtr sycl_target_, RateData rate_data,
+      EnergyRateData energy_rate_data, Species target_species,
+      Species electron_species, const ParticleSpec &particle_spec,
+      const std::map<int, std::string> &properties_map = default_map)
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
-            sycl_target_, total_reaction_rate, weight_sym,
-            target_species.get_id(), std::array<int, 0>{}, rate_data,
+            sycl_target_, target_species.get_id(), std::array<int, 0>{},
+            rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species, properties_map),
             particle_spec,
-            DataCalculator<EnergyRateData>(particle_spec, energy_rate_data)) {}
+            DataCalculator<EnergyRateData>(particle_spec, energy_rate_data),
+            properties_map) {}
 };
 }; // namespace Reactions
