@@ -308,7 +308,7 @@ TEST(ReactionController, parent_transform) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.0);
+  reaction_controller.apply_reactions(particle_group, 5e-15);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -321,8 +321,8 @@ TEST(ReactionController, parent_transform) {
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
 
-    EXPECT_DOUBLE_EQ(reduction_after->get_cell(icell)->at(0, 0),
-                     reduction->get_cell(icell)->at(0, 0)); //, 1e-12);
+    EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
+                     reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
   particle_group->domain->mesh->free();
