@@ -61,10 +61,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
   // threshold
 
   auto merge_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>(prop_map[default_properties.position]),
-          Sym<REAL>(prop_map[default_properties.weight]),
-          Sym<REAL>(prop_map[default_properties.velocity]));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto merge_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{

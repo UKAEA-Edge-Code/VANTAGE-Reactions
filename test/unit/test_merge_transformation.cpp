@@ -89,8 +89,7 @@ TEST(MergeTransformationStrategy, transform_2D) {
   auto particle_group = create_test_particle_group_merging(N_total, 2);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = MergeTransformationStrategy<2>(
-      Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+  auto test_merger = MergeTransformationStrategy<2>();
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -158,8 +157,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
   auto particle_group = create_test_particle_group_merging(N_total, 3);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = MergeTransformationStrategy<3>(
-      Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+  auto test_merger = MergeTransformationStrategy<3>();
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 

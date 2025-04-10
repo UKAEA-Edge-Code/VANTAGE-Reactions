@@ -13,8 +13,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto child_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller = ReactionController(test_wrapper);
@@ -111,8 +110,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto child_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
 
@@ -203,8 +201,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto child_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller = ReactionController(test_wrapper);
@@ -280,8 +277,7 @@ TEST(ReactionController, parent_transform) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto parent_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto parent_transform_wrapper =
       std::make_shared<TransformationWrapper>(parent_transform);
@@ -404,8 +400,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
       std::dynamic_pointer_cast<TransformationStrategy>(accumulator_transform));
 
   auto merge_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto merge_transform_wrapper =
       std::make_shared<TransformationWrapper>(merge_transform);

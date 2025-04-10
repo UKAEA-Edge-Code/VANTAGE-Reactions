@@ -2,6 +2,7 @@
 #define MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
+#include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -38,12 +39,11 @@ namespace Reactions {
 template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
-  MergeTransformationStrategy() = delete;
-
-  MergeTransformationStrategy(const Sym<REAL> &position,
-                              const Sym<REAL> &weight,
-                              const Sym<REAL> &momentum)
-      : position(position), weight(weight), momentum(momentum),
+  MergeTransformationStrategy(
+      const std::map<int, std::string> &properties_map = default_map)
+      : position(Sym<REAL>(properties_map.at(default_properties.position))),
+        weight(Sym<REAL>(properties_map.at(default_properties.weight))),
+        momentum(Sym<REAL>(properties_map.at(default_properties.velocity))),
         min_npart_marker(MinimumNPartInCellMarker(3)) {
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
@@ -167,21 +167,21 @@ struct MergeTransformationStrategy : TransformationStrategy {
     auto mom_tot = std::vector<REAL>(ndim);
     auto mom_a = std::vector<REAL>(ndim);
     auto mom_b = std::vector<REAL>(ndim);
-    
-    auto cell_dat_reduction_scalars_values = 
-      cell_dat_reduction_scalars->get_all_cells();
-    auto cell_dat_reduction_pos_values = 
-      cell_dat_reduction_pos->get_all_cells();
-    auto cell_dat_reduction_mom_values = 
-      cell_dat_reduction_mom->get_all_cells();
+
+    auto cell_dat_reduction_scalars_values =
+        cell_dat_reduction_scalars->get_all_cells();
+    auto cell_dat_reduction_pos_values =
+        cell_dat_reduction_pos->get_all_cells();
+    auto cell_dat_reduction_mom_values =
+        cell_dat_reduction_mom->get_all_cells();
 
     std::vector<CellData<REAL>> cell_dat_reduction_mom_min_values;
     std::vector<CellData<REAL>> cell_dat_reduction_mom_max_values;
     if constexpr (ndim == 3) {
-      cell_dat_reduction_mom_min_values = 
-        cell_dat_reduction_mom_min->get_all_cells();
-      cell_dat_reduction_mom_max_values = 
-        cell_dat_reduction_mom_max->get_all_cells();
+      cell_dat_reduction_mom_min_values =
+          cell_dat_reduction_mom_min->get_all_cells();
+      cell_dat_reduction_mom_max_values =
+          cell_dat_reduction_mom_max->get_all_cells();
     }
 
     for (int cx = 0; cx < cell_count; cx++) {
