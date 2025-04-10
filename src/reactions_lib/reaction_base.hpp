@@ -191,13 +191,11 @@ struct LinearReactionBase : public AbstractReaction {
     static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "ReactionKernelsBase...");
-    if (this->data_calculator.get_data_size() !=
-        this->reaction_kernels.get_pre_ndims()) {
-      throw std::logic_error(
-          "The number of ReactionData-derived objects in DataCalculator "
-          "does not match the required number of dimensions for the "
-          "provided ReactionKernels object.");
-    }
+    NESOASSERT(this->data_calculator.get_data_size() ==
+                   this->reaction_kernels.get_pre_ndims(),
+               "The number of ReactionData-derived objects in DataCalculator "
+               "does not match the required number of dimensions for the "
+               "provided ReactionKernels object.");
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
@@ -290,18 +288,13 @@ struct LinearReactionBase : public AbstractReaction {
                                        cell_idx_end);
     auto device_rate_buffer = this->get_device_rate_buffer();
 
-    try {
-      // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
-      // have a sycl_target member
-      if (particle_sub_group->get_particle_group()->sycl_target !=
-          sycl_target_stored) {
-        throw;
-      }
-    } catch (...) {
-      std::cout << "sycl_target assigned to particle_group is not the same as "
-                   "the sycl_target passed to Reaction object..."
-                << std::endl;
-    }
+    // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
+    // have a sycl_target member
+    NESOASSERT(particle_sub_group->get_particle_group()->sycl_target ==
+                   sycl_target_stored,
+               "sycl_target assigned to particle_group is not the same as "
+               "the sycl_target passed to Reaction object...");
+
     constexpr auto data_dim = reaction_data_buffer.get_dim();
 
     auto loop = particle_loop(
@@ -356,18 +349,12 @@ struct LinearReactionBase : public AbstractReaction {
     auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
 
     std::array<int, num_products_per_parent> out_states_arr = this->out_states;
-    try {
-      // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
-      // have a sycl_target member
-      if (particle_sub_group->get_particle_group()->sycl_target !=
-          sycl_target_stored) {
-        throw;
-      }
-    } catch (...) {
-      std::cout << "sycl_target assigned to particle_group is not the same as "
-                   "the sycl_target passed to Reaction object..."
-                << std::endl;
-    }
+    // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
+    // have a sycl_target member
+    NESOASSERT(particle_sub_group->get_particle_group()->sycl_target ==
+                   sycl_target_stored,
+               "sycl_target assigned to particle_group is not the same as "
+               "the sycl_target passed to Reaction object...");
 
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,

@@ -24,8 +24,8 @@ struct ParticleSpecBuilder {
   }
 
   /**
-   * @brief Recommended constructor, populating the generally required properties in
-   * Reactions
+   * @brief Recommended constructor, populating the generally required
+   * properties in Reactions
    *
    * @param ndim Dimensionality of vector quantities
    * @param properties_map Optional remapping of the default property names
@@ -36,7 +36,7 @@ struct ParticleSpecBuilder {
 
     this->add_particle_spec(ParticleSpec(
         ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
-                               ndim, true),
+                     ndim, true),
         ParticleProp(Sym<INT>(properties_map.at(default_properties.cell_id)), 1,
                      true)));
 
@@ -71,19 +71,9 @@ struct ParticleSpecBuilder {
   void add_particle_prop(
       Properties<PROP_TYPE> properties_, int ndim = 1, bool positions = false,
       const std::map<int, std::string> &properties_map = default_map) {
-    std::vector<std::string> simple_prop_names;
-    try {
-      simple_prop_names = properties_.simple_prop_names(properties_map);
-    } catch (std::logic_error) {
-      simple_prop_names = {};
-    }
+    auto simple_prop_names = properties_.simple_prop_names(properties_map);
 
-    std::vector<std::string> species_prop_names;
-    try {
-      species_prop_names = properties_.species_prop_names(properties_map);
-    } catch (std::logic_error) {
-      species_prop_names = {};
-    }
+    auto species_prop_names = properties_.species_prop_names(properties_map);
 
     for (auto prop_name : simple_prop_names) {
       auto particle_prop =
