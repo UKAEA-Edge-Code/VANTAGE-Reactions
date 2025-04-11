@@ -311,6 +311,8 @@ public:
   }
 
   std::shared_ptr<HostPerParticleBlockRNG<REAL>> get_rng_kernel() {
+    NESOASSERT(this->rng_kernel != nullptr, 
+        "RNG kernel is nullptr, was set_rng_kernel called?");
     return this->rng_kernel;
   }
 
