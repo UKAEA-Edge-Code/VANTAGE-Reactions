@@ -40,8 +40,7 @@ struct AbstractReaction {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        weight_sym(
-            Sym<REAL>(properties_map.at(default_properties.weight))),
+        weight_sym(Sym<REAL>(properties_map.at(default_properties.weight))),
         max_buffer_size(16384 * 256) {
     this->pre_req_data->fill(0.0);
   }
@@ -301,19 +300,28 @@ struct LinearReactionBase : public AbstractReaction {
 
     constexpr auto data_dim = reaction_data_buffer.get_dim();
 
-    auto loop = particle_loop(
-        "calc_data_loop", particle_sub_group,
-        [=](auto particle_index, auto req_int_props, auto req_real_props,
-            auto tot_rate, auto buffer, auto weight, auto weight_buffer,
-            auto kernel) {
+    auto weight_loop = particle_loop(
+        "store_weights_loop", particle_sub_group,
+        [=](auto particle_index, auto weight, auto weight_buffer) {
           INT current_count = particle_index.get_loop_linear_index();
-          std::array<REAL, data_dim> rate = reaction_data_on_device.calc_data(
-              particle_index, req_int_props, req_real_props, kernel);
-          buffer[current_count] = rate[0];
           weight_buffer[current_count] =
               weight[0]; // store the particle weight before the application of
                          // any kernels in case we need to know the total weight
                          // of the particle before any reactions are applied
+        },
+        Access::read(ParticleLoopIndex{}), Access::read(this->get_weight_sym()),
+        Access::write(device_weight_buffer));
+
+    weight_loop->execute(cell_idx_start, cell_idx_end);
+
+    auto rate_loop = particle_loop(
+        "calc_data_loop", particle_sub_group,
+        [=](auto particle_index, auto req_int_props, auto req_real_props,
+            auto tot_rate, auto buffer, auto kernel) {
+          INT current_count = particle_index.get_loop_linear_index();
+          std::array<REAL, data_dim> rate = reaction_data_on_device.calc_data(
+              particle_index, req_int_props, req_real_props, kernel);
+          buffer[current_count] = rate[0];
           tot_rate[0] += rate[0];
         },
         Access::read(ParticleLoopIndex{}),
@@ -322,11 +330,10 @@ struct LinearReactionBase : public AbstractReaction {
         Access::read(sym_vector<REAL>(particle_sub_group,
                                       this->run_rate_loop_real_syms)),
         Access::write(this->get_total_reaction_rate()),
-        Access::write(device_rate_buffer), Access::read(this->get_weight_sym()),
-        Access::write(device_weight_buffer),
+        Access::write(device_rate_buffer),
         Access::read(this->reaction_data.get_rng_kernel()));
 
-    loop->execute(cell_idx_start, cell_idx_end);
+    rate_loop->execute(cell_idx_start, cell_idx_end);
 
     return;
   }
