@@ -2,7 +2,6 @@
 #include "include/mock_reactions.hpp"
 #include <gtest/gtest.h>
 
-
 using namespace NESO::Particles;
 using namespace Reactions;
 
@@ -14,12 +13,10 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto child_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
-  auto reaction_controller = ReactionController(
-      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController(test_wrapper);
   REAL test_rate = 5.0;
 
   const INT num_products_per_parent = 1;
@@ -27,8 +24,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_rate, 0,
+      particle_group->sycl_target, test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -114,30 +110,26 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto child_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
 
-  auto reaction_controller = ReactionController(
-      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController(test_wrapper);
   reaction_controller.set_cell_block_size(2);
 
   REAL test_rate = 5.0;
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction1 = TestReaction<0>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_rate, 0, std::array<int, 0>{}, particle_spec);
+  auto test_reaction1 = TestReaction<0>(particle_group->sycl_target, test_rate,
+                                        0, std::array<int, 0>{}, particle_spec);
 
   const INT num_products_per_parent = 2;
 
   test_rate = 10.0;
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_rate, 0,
+      particle_group->sycl_target, test_rate, 0,
       std::array<int, num_products_per_parent>{1, 2}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -209,12 +201,10 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto child_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
-  auto reaction_controller = ReactionController(
-      test_wrapper, Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController(test_wrapper);
 
   REAL test_rate = 5.0; // example rate
 
@@ -223,15 +213,13 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   auto particle_spec = particle_group->get_particle_spec();
 
   auto test_reaction1 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_rate, 0,
+      particle_group->sycl_target, test_rate, 0,
       std::array<int, num_products_per_parent>{1}, particle_spec);
 
   test_rate = 10.0; // example rate
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_rate, 2,
+      particle_group->sycl_target, test_rate, 2,
       std::array<int, num_products_per_parent>{3}, particle_spec);
 
   reaction_controller.add_reaction(
@@ -289,8 +277,7 @@ TEST(ReactionController, parent_transform) {
   auto cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto parent_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto parent_transform_wrapper =
       std::make_shared<TransformationWrapper>(parent_transform);
@@ -301,15 +288,13 @@ TEST(ReactionController, parent_transform) {
   auto child_transform_wrapper =
       std::make_shared<TransformationWrapper>(child_transform);
 
-  auto reaction_controller = ReactionController(
-      parent_transform_wrapper, child_transform_wrapper,
-      Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller =
+      ReactionController(parent_transform_wrapper, child_transform_wrapper);
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto test_reaction = TestReaction<0>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), 1, 0, std::array<int, 0>{}, particle_spec);
+  auto test_reaction = TestReaction<0>(particle_group->sycl_target, 1, 0,
+                                       std::array<int, 0>{}, particle_spec);
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));
@@ -347,10 +332,9 @@ TEST(ReactionController, ionisation_reaction) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
-                                                Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController();
 
-  auto particle_spec_builder = ParticleSpecBuilder();
+  auto particle_spec_builder = ParticleSpecBuilder(2);
 
   particle_spec_builder.add_particle_spec(particle_group->get_particle_spec());
 
@@ -360,8 +344,7 @@ TEST(ReactionController, ionisation_reaction) {
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_data, test_data, target_species,
+      particle_group->sycl_target, test_data, test_data, target_species,
       electron_species, particle_spec);
 
   reaction_controller.add_reaction(
@@ -407,8 +390,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-      Sym<REAL>("WEIGHT"), test_data, test_data, target_species,
+      particle_group->sycl_target, test_data, test_data, target_species,
       electron_species, particle_spec);
 
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
@@ -418,16 +400,15 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
       std::dynamic_pointer_cast<TransformationStrategy>(accumulator_transform));
 
   auto merge_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto merge_transform_wrapper =
       std::make_shared<TransformationWrapper>(merge_transform);
 
   auto reaction_controller = ReactionController(
       std::vector{accumulator_transform_wrapper, merge_transform_wrapper},
-      std::vector<std::shared_ptr<TransformationWrapper>>{},
-      Sym<INT>("INTERNAL_STATE"), Sym<REAL>("TOT_REACTION_RATE"));
+      std::vector<std::shared_ptr<TransformationWrapper>>{});
+
   reaction_controller.add_reaction(
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           ionise_reaction));
@@ -459,8 +440,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto reaction_controller = ReactionController(Sym<INT>("INTERNAL_STATE"),
-                                                Sym<REAL>("TOT_REACTION_RATE"));
+  auto reaction_controller = ReactionController();
 
   // AMJUEL H.2 2.1.5FJ reaction coeffecients
   // b0 -0.317385000000e+02 b1 0.114381800000e+02 b2 -0.383399800000e+01
@@ -472,7 +452,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
       0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
       -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
 
-  auto particle_spec_builder = ParticleSpecBuilder();
+  auto particle_spec_builder = ParticleSpecBuilder(2);
 
   auto int_1d_props = Properties<INT>(std::vector<int>{
       default_properties.id, default_properties.internal_state});
@@ -514,8 +494,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto test_data = AMJUEL1DData<9>(1.0, 1.0, 1.0, 1.0, b_coeffs);
   auto ionise_reaction =
       ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>(
-          particle_group->sycl_target, Sym<REAL>("TOT_REACTION_RATE"),
-          Sym<REAL>("WEIGHT"), test_data, fixed_rate, target_species,
+          particle_group->sycl_target, test_data, fixed_rate, target_species,
           electron_species, particle_spec);
 
   reaction_controller.add_reaction(

@@ -1,21 +1,12 @@
 #pragma once
 #include "../cross_sections/constant_rate_cs.hpp"
 #include "../particle_properties_map.hpp"
-#include <array>
+#include <iostream>
 #include <neso_particles.hpp>
-#include "../utils.hpp"
 #include <vector>
 
 using namespace NESO::Particles;
 namespace Reactions {
-
-namespace FILTERED_MAXWALLIAN_SAMPLER {
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {
-    props.fluid_temperature, props.fluid_flow_speed, props.velocity};
-} // namespace FILTERED_MAXWALLIAN_SAMPLER
 
 /**
  * @brief A struct that contains data and calc_data functions that are to be
@@ -54,7 +45,7 @@ struct FilteredMaxwellianOnDevice
    */
   std::array<REAL, ndim>
   calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
     auto fluid_temperature_dat =
@@ -63,6 +54,9 @@ struct FilteredMaxwellianOnDevice
     bool accepted = false;
 
     std::array<REAL, ndim> sampled_vels;
+    for (int i = 0; i < ndim; i++) {
+      sampled_vels[i] = 0;
+    };
     // Sampling an even number of random numbers
     constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
 
@@ -78,16 +72,28 @@ struct FilteredMaxwellianOnDevice
     }
     int sample_counter = 0;
     bool is_kernel_valid = true;
+    REAL rand1 = 0;
+    REAL rand2 = 0;
     do {
 
       // Get the unit variance zero mean normal variates
       for (int i = 0; i < num_req_samples; i += 2) {
 
-        auto current_samples = utils::box_muller_transform(
-            kernel.at(index, i, &is_kernel_valid), kernel.at(index, i + 1, &is_kernel_valid));
+        rand1 = kernel.at(index, i, &is_kernel_valid);
+        rand2 = kernel.at(index, i + 1, &is_kernel_valid);
+        if (!is_kernel_valid) {
+          break;
+        }
+
+        auto current_samples = utils::box_muller_transform(rand1, rand2);
         total_samples[i] = current_samples[0];
         total_samples[i + 1] = current_samples[1];
       };
+      if (!is_kernel_valid) {
+        req_int_props.at(this->panic_ind, index, 0) += 1;
+
+        break;
+      }
       // Calculate the relative velocity magnitude by rescaling the sampled
       // normal variables
       REAL relative_vel_sq = 0;
@@ -103,25 +109,23 @@ struct FilteredMaxwellianOnDevice
       REAL value_at = this->cross_section.get_value_at(relative_vel);
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 
-      accepted = this->cross_section.accept_reject(
-          relative_vel, kernel.at(index, num_req_samples, &is_kernel_valid), value_at,
-          max_rate_val);
+      rand1 = kernel.at(index, num_req_samples, &is_kernel_valid);
       if (!is_kernel_valid) {
+        req_int_props.at(this->panic_ind, index, 0) += 1;
+
         break;
       }
+      accepted = this->cross_section.accept_reject(relative_vel, rand1,
+                                                   value_at, max_rate_val);
 
       sample_counter++;
-    } while(!accepted);
-  
-    if (!accepted) {
-      throw std::runtime_error("Cannot find acceptable velocity samples given the cross_section provided!");
-    }
+    } while (!accepted);
 
     return sampled_vels;
   }
 
 public:
-  int fluid_temperature_ind, fluid_flow_speed_ind, velocity_ind;
+  int fluid_temperature_ind, fluid_flow_speed_ind, velocity_ind, panic_ind;
   REAL norm_ratio;
   CROSS_SECTION cross_section;
 };
@@ -152,14 +156,21 @@ template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
     : public ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>> {
 
+  constexpr static auto props = default_properties;
+
+  constexpr static auto required_simple_real_props = std::array<int, 3>{
+      props.fluid_temperature, props.fluid_flow_speed, props.velocity};
+
+  constexpr static auto required_simple_int_props =
+      std::array<int, 1>{props.panic};
+
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
-            Properties<REAL>(
-                FILTERED_MAXWALLIAN_SAMPLER::required_simple_real_props,
-                std::vector<Species>{}, std::vector<int>{}),
+            Properties<INT>(required_simple_int_props),
+            Properties<REAL>(required_simple_real_props),
             properties_map_),
         device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
             norm_ratio, cross_section)) {
@@ -167,7 +178,6 @@ struct FilteredMaxwellianSampler
     static_assert(std::is_base_of_v<AbstractCrossSection, CROSS_SECTION>,
                   "Template parameter CROSS_SECITON is not derived from "
                   "AbstractCrossSection...");
-    auto props = FILTERED_MAXWALLIAN_SAMPLER::props;
 
     this->device_obj.fluid_flow_speed_ind =
         this->required_real_props.simple_prop_index(props.fluid_flow_speed,
@@ -175,6 +185,8 @@ struct FilteredMaxwellianSampler
     this->device_obj.fluid_temperature_ind =
         this->required_real_props.simple_prop_index(props.fluid_temperature,
                                                     this->properties_map);
+    this->device_obj.panic_ind = this->required_int_props.simple_prop_index(
+        props.panic, this->properties_map);
     this->device_obj.velocity_ind = this->required_real_props.simple_prop_index(
         props.velocity, this->properties_map);
 
@@ -182,7 +194,8 @@ struct FilteredMaxwellianSampler
   }
 
   /**
-   * @brief Overloaded constructor which sets default values for the cross_section.
+   * @brief Overloaded constructor which sets default values for the
+   * cross_section.
    */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,

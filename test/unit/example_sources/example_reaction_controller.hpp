@@ -28,8 +28,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
                          DataCalculator<FixedRateData, FixedRateData>>>(
       particle_group->sycl_target,
-      Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
-      Sym<REAL>(prop_map[default_properties.weight]), ion_species_1.get_id(),
+      ion_species_1.get_id(),
       std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data,
       cx_kernel, particle_spec, data_calculator);
 
@@ -37,15 +36,13 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
   auto ionise_reaction_1 =
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           particle_group->sycl_target,
-          Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
-          Sym<REAL>(prop_map[default_properties.weight]), rate_data, rate_data,
+          rate_data, rate_data,
           ion_species_1, electron_species, particle_group->particle_spec);
 
   auto ionise_reaction_2 =
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           particle_group->sycl_target,
-          Sym<REAL>(prop_map[default_properties.tot_reaction_rate]),
-          Sym<REAL>(prop_map[default_properties.weight]), rate_data, rate_data,
+          rate_data, rate_data,
           ion_species_2, electron_species, particle_group->particle_spec);
 
   // We can now initialise a reaction controller and populate it with the above
@@ -64,10 +61,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
   // threshold
 
   auto merge_transform =
-      make_transformation_strategy<MergeTransformationStrategy<2>>(
-          Sym<REAL>(prop_map[default_properties.position]),
-          Sym<REAL>(prop_map[default_properties.weight]),
-          Sym<REAL>(prop_map[default_properties.velocity]));
+      make_transformation_strategy<MergeTransformationStrategy<2>>();
 
   auto merge_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -75,25 +69,15 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
               Sym<REAL>(prop_map[default_properties.weight]), 1e-2)},
       merge_transform);
 
+  // TODO: Update this with new interface 
   auto reaction_controller = ReactionController(
       std::vector{
           merge_wrapper,
           remove_wrapper}, // the order matters! this will first merge parents,
                            // then remove any remaining small particles
       std::vector{merge_wrapper,
-                  remove_wrapper}, // this will do the same to the children
+                  remove_wrapper} // this will do the same to the children
                                    // before merging them into the parents
-      Sym<INT>(
-          prop_map[default_properties
-                       .internal_state]), // The controller needs to know which
-                                          // particle property to filter against
-                                          // as the ingoing state
-      Sym<REAL>(
-          prop_map[default_properties
-                       .tot_reaction_rate]) // The controller has the
-                                            // responsibility of this->cleaning
-                                            // up the total reaction rate buffer
-                                            // on particles
   );
 
   reaction_controller.set_cell_block_size(

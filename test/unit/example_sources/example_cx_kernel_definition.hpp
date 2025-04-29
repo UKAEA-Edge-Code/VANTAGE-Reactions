@@ -1,25 +1,3 @@
-namespace EXAMPLE_CX_KERNEL {
-
-// We use the default enums
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {props.weight,
-                                                     props.velocity};
-
-// The CX kernels will need to contribute to the projectile and target species sources
-const std::vector<int> required_species_real_props = {
-    props.source_density, props.source_energy,
-    props.source_momentum}; 
-
-// We are setting the internal state of the produced particle so need it
-const std::vector<int> required_descendant_simple_int_props = {
-    props.internal_state};
-
-// We need the descendant particle velocity and weight access for the scattering and weight kernels
-const std::vector<int> required_descendant_simple_real_props = {props.velocity,
-                                                                props.weight};
-} 
-
 template <int ndim_velocity>
 struct ExampleCXReactionKernelsOnDevice
     : public ReactionKernelsBaseOnDevice<
@@ -79,7 +57,7 @@ struct ExampleCXReactionKernelsOnDevice
                   Access::DescendantProducts::Write &descendant_products,
                   Access::SymVector::Write<INT> &req_int_props,
                   Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, BASE_CX_KERNEL::num_products_per_parent>
+                  const std::array<int, 1>
                       &out_states,
                   Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
@@ -138,18 +116,34 @@ public:
 template <int ndim_velocity = 2>
 struct ExampleCXReactionKernels : public ReactionKernelsBase {
 
+    // We use the default enums
+    constexpr static auto props = default_properties;
+
+    constexpr static std::array<int,2> required_simple_real_props = {props.weight,
+                                                         props.velocity};
+
+    // The CX kernels will need to contribute to the projectile and target species sources
+    constexpr static std::array<int,3> required_species_real_props = {
+        props.source_density, props.source_energy,
+        props.source_momentum}; 
+
+    // We are setting the internal state of the produced particle so need it
+    constexpr static std::array<int,1> required_descendant_simple_int_props = {
+        props.internal_state};
+
+    // We need the descendant particle velocity and weight access for the scattering and weight kernels
+    constexpr static std::array<int,2> required_descendant_simple_real_props = {props.velocity,
+                                                                    props.weight};
   ExampleCXReactionKernels(const Species &target_species, // The target (ion) species
                     const Species &projectile_species, // The projectile (neutral particle/parent) species
                     std::map<int, std::string> properties_map = default_map // We allow for remaping
                     )
       : ReactionKernelsBase(
             Properties<REAL>( // The Properties container object for the required properties on the parent
-                EXAMPLE_CX_KERNEL::required_simple_real_props,
+                required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
-                EXAMPLE_CX_KERNEL::required_species_real_props),
+                required_species_real_props),
             ndim_velocity, properties_map) {
-
-    auto props = EXAMPLE_CX_KERNEL::props;
 
     // Here we set all of the required indices for the various properties on device
     this->cx_reaction_kernels_on_device.velocity_ind =
@@ -196,10 +190,10 @@ struct ExampleCXReactionKernels : public ReactionKernelsBase {
 
     // These set the descendant particle properties
     this->set_required_descendant_int_props(
-        Properties<INT>(EXAMPLE_CX_KERNEL::required_descendant_simple_int_props));
+        Properties<INT>(required_descendant_simple_int_props));
 
     this->set_required_descendant_real_props(Properties<REAL>(
-        EXAMPLE_CX_KERNEL::required_descendant_simple_real_props));
+       required_descendant_simple_real_props));
 
     // Here we set the descendant particle indices based on the above properties
     this->cx_reaction_kernels_on_device.descendant_internal_state_ind =

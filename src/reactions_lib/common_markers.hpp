@@ -1,5 +1,6 @@
 #ifndef COMMON_MARKERS_H
 #define COMMON_MARKERS_H
+#include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include <neso_particles.hpp>
 
@@ -187,6 +188,43 @@ public:
 private:
   INT min_npart;
 };
+
+/**
+ * @brief Marking strategy that selects only those particles with a panic flag >
+ * 0
+ *
+ */
+struct PanickedParticleMarker : MarkingStrategy {
+
+public:
+  PanickedParticleMarker() = delete;
+
+  PanickedParticleMarker(
+      const std::map<int, std::string> &properties_map = Reactions::default_map)
+      : panic_sym(
+            Sym<INT>(properties_map.at(Reactions::default_properties.panic))){};
+
+  ParticleSubGroupSharedPtr
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+
+    auto marker_subgroup = std::make_shared<ParticleSubGroup>(
+        particle_group, [=](auto panic) { return panic[0] > 0; },
+        Access::read(this->panic_sym));
+    return marker_subgroup;
+  };
+
+private:
+  Sym<INT> panic_sym;
+};
+
+inline bool panicked(
+    ParticleSubGroupSharedPtr particle_group,
+    const std::map<int, std::string> &properties_map = Reactions::default_map) {
+
+  auto marker = PanickedParticleMarker(properties_map);
+
+  return marker.make_marker_subgroup(particle_group)->get_npart_local();
+}
 
 } // namespace Reactions
 #endif

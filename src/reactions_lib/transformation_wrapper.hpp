@@ -251,7 +251,7 @@ struct MarkingFunctionWrapperBase {
    * @param real_vars Read-only accessor to a list of real-valued ParticleDats.
    * Use real_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
    * ParticleDat in the list
-   * @param int_vars  Read-only accessor to a list of integer-valued
+   * @param int_vars  Accessor to a list of integer-valued
    * ParticleDats. Use int_vars.at(v_idx,c_idx) to access the c_idx-th component
    * of v_idx-th ParticleDat in the list
    * @return bool The return value of the marking_condition function on the
@@ -262,7 +262,7 @@ struct MarkingFunctionWrapperBase {
     const auto &underlying =
         static_cast<const MarkingFunctionWrapperDerived &>(*this);
 
-    return underlying.template marking_condition(real_vars, int_vars);
+    return underlying.marking_condition(real_vars, int_vars);
   }
 };
 } // namespace Reactions

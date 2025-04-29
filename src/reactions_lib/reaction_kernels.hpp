@@ -46,23 +46,11 @@ struct ReactionKernelsBase {
         properties_map(properties_map_) {}
 
   std::vector<std::string> get_required_int_props() {
-    std::vector<std::string> prop_names;
-    try {
-      prop_names =
-          this->required_int_props.get_prop_names(this->properties_map);
-    } catch (std::logic_error) {
-    }
-    return prop_names;
+    return this->required_int_props.get_prop_names(this->properties_map);
   }
 
   std::vector<std::string> get_required_real_props() {
-    std::vector<std::string> prop_names;
-    try {
-      prop_names =
-          this->required_real_props.get_prop_names(this->properties_map);
-    } catch (std::logic_error) {
-    }
-    return prop_names;
+    return this->required_real_props.get_prop_names(this->properties_map);
   }
 
   const Properties<INT> &get_required_descendant_int_props() {
@@ -262,14 +250,13 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void
-  weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                Access::DescendantProducts::Write &descendant_products,
-                Access::SymVector::Write<INT> &req_int_props,
-                Access::SymVector::Write<REAL> &req_real_props,
-                const std::array<int, num_products_per_parent> &out_states,
-                Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                double dt) const {
+  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                     Access::DescendantProducts::Write &descendant_products,
+                     Access::SymVector::Write<INT> &req_int_props,
+                     Access::SymVector::Write<REAL> &req_real_props,
+                     const std::array<int, num_products_per_parent> &out_states,
+                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     double dt) const {
     return;
   }
 };

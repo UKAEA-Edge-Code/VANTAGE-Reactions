@@ -60,8 +60,8 @@ struct AbstractCrossSection {
    * this function.)
    * @return true if relative_vel value is accepted, false otherwise
    */
-  bool accept_reject(REAL relative_vel, REAL uniform_rand,
-                             REAL value_at, REAL max_rate_val) const {
+  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at,
+                     REAL max_rate_val) const {
     return uniform_rand < (value_at * relative_vel / max_rate_val);
   }
 };
@@ -109,23 +109,11 @@ struct ReactionDataBase {
    * either INT or REAL-based properties.
    */
   std::vector<std::string> get_required_int_props() {
-    std::vector<std::string> prop_names;
-    try {
-      prop_names =
-          this->required_int_props.get_prop_names(this->properties_map);
-    } catch (std::logic_error) {
-    }
-    return prop_names;
+    return this->required_int_props.get_prop_names(this->properties_map);
   }
 
   std::vector<std::string> get_required_real_props() {
-    std::vector<std::string> prop_names;
-    try {
-      prop_names =
-          this->required_real_props.get_prop_names(this->properties_map);
-    } catch (std::logic_error) {
-    }
-    return prop_names;
+    return this->required_real_props.get_prop_names(this->properties_map);
   }
 
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
@@ -167,7 +155,7 @@ struct ReactionDataBaseOnDevice {
    */
   std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             typename RNG_TYPE::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};

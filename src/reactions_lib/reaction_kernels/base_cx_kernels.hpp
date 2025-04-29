@@ -1,43 +1,20 @@
 #pragma once
-#include <array>
-#include <neso_particles.hpp>
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
+#include <array>
+#include <neso_particles.hpp>
 #include <vector>
-
-// TODO: consistency - should we really use num_products_per_parent and then no
-// loops?
 
 using namespace NESO::Particles;
 namespace Reactions {
-
-namespace BASE_CX_KERNEL {
-constexpr int num_products_per_parent = 1;
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {props.weight,
-                                                     props.velocity};
-
-const std::vector<int> required_species_real_props = {
-    props.source_density, props.source_energy,
-    props.source_momentum}; // namespace BASE_CX_KERNEL
-
-const std::vector<int> required_descendant_simple_int_props = {
-    props.internal_state};
-const std::vector<int> required_descendant_simple_real_props = {props.velocity,
-                                                                props.weight};
-} // namespace BASE_CX_KERNEL
 
 /**
  * struct CXReactionKernelsOnDevice - SYCL device-compatible kernel for
  * charge exchange reactions.
  */
 template <int ndim_velocity, int ndim_source_momentum>
-struct CXReactionKernelsOnDevice
-    : public ReactionKernelsBaseOnDevice<
-          BASE_CX_KERNEL::num_products_per_parent> {
+struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   CXReactionKernelsOnDevice() = default;
 
   /**
@@ -61,14 +38,13 @@ struct CXReactionKernelsOnDevice
    * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
    * @param dt The current time step size.
    */
-  void scattering_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, BASE_CX_KERNEL::num_products_per_parent>
-          &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+  void scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                         Access::DescendantProducts::Write &descendant_products,
+                         Access::SymVector::Write<INT> &req_int_props,
+                         Access::SymVector::Write<REAL> &req_real_props,
+                         const std::array<int, 1> &out_states,
+                         Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                         double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
       descendant_products.at_real(index, 0, descendant_velocity_ind, dimx) =
           pre_req_data.at(index.get_loop_linear_index(), dimx);
@@ -95,15 +71,13 @@ struct CXReactionKernelsOnDevice
    * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
    * @param dt The current time step size.
    */
-  void
-  weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                Access::DescendantProducts::Write &descendant_products,
-                Access::SymVector::Write<INT> &req_int_props,
-                Access::SymVector::Write<REAL> &req_real_props,
-                const std::array<int, BASE_CX_KERNEL::num_products_per_parent>
-                    &out_states,
-                Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                double dt) const {
+  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                     Access::DescendantProducts::Write &descendant_products,
+                     Access::SymVector::Write<INT> &req_int_props,
+                     Access::SymVector::Write<REAL> &req_real_props,
+                     const std::array<int, 1> &out_states,
+                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     double dt) const {
     descendant_products.at_real(index, 0, descendant_weight_ind, 0) =
         modified_weight;
   }
@@ -128,14 +102,14 @@ struct CXReactionKernelsOnDevice
    * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
    * @param dt The current time step size.
    */
-  void transformation_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, BASE_CX_KERNEL::num_products_per_parent>
-          &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+  void
+  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                        Access::DescendantProducts::Write &descendant_products,
+                        Access::SymVector::Write<INT> &req_int_props,
+                        Access::SymVector::Write<REAL> &req_real_props,
+                        const std::array<int, 1> &out_states,
+                        Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                        double dt) const {
     descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
         out_states[0];
   }
@@ -160,15 +134,13 @@ struct CXReactionKernelsOnDevice
    * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
    * @param dt The current time step size.
    */
-  void
-  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                  Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Write<INT> &req_int_props,
-                  Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, BASE_CX_KERNEL::num_products_per_parent>
-                      &out_states,
-                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                  double dt) const {
+  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                       Access::DescendantProducts::Write &descendant_products,
+                       Access::SymVector::Write<INT> &req_int_props,
+                       Access::SymVector::Write<REAL> &req_real_props,
+                       const std::array<int, 1> &out_states,
+                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                       double dt) const {
 
     std::array<REAL, ndim_velocity> k_V, k_Vi;
     REAL vsquared = 0.0;
@@ -220,12 +192,25 @@ public:
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
- * @tparam ndim_source_momentum Optional number of dimensions for 
+ * @tparam ndim_source_momentum Optional number of dimensions for
  * source momentum property (default value of ndim_velocity)
  */
 template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity>
 struct CXReactionKernels : public ReactionKernelsBase {
 
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 2> required_simple_real_props = {
+      props.weight, props.velocity};
+
+  constexpr static std::array<int, 3> required_species_real_props = {
+      props.source_density, props.source_energy,
+      props.source_momentum}; // namespace BASE_CX_KERNEL
+
+  constexpr static std::array<int, 1> required_descendant_simple_int_props = {
+      props.internal_state};
+  constexpr static std::array<int, 2> required_descendant_simple_real_props = {
+      props.velocity, props.weight};
   /**
    * @brief Charge exchange reaction kernel host type constructor
    *
@@ -241,16 +226,14 @@ struct CXReactionKernels : public ReactionKernelsBase {
                     std::map<int, std::string> properties_map_ = default_map)
       : ReactionKernelsBase(
             Properties<REAL>(
-                BASE_CX_KERNEL::required_simple_real_props,
+                required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
-                BASE_CX_KERNEL::required_species_real_props),
+                required_species_real_props),
             ndim_velocity, properties_map_) {
 
     static_assert((ndim_velocity >= ndim_source_momentum),
                   "Number of dimension for VELOCITY must be greater than or "
                   "equal to number of dimensions for SOURCE_MOMENTUM.");
-
-    auto props = BASE_CX_KERNEL::props;
 
     this->cx_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity,
@@ -295,10 +278,10 @@ struct CXReactionKernels : public ReactionKernelsBase {
         projectile_species.get_mass();
 
     this->set_required_descendant_int_props(
-        Properties<INT>(BASE_CX_KERNEL::required_descendant_simple_int_props));
+        Properties<INT>(required_descendant_simple_int_props));
 
-    this->set_required_descendant_real_props(Properties<REAL>(
-        BASE_CX_KERNEL::required_descendant_simple_real_props));
+    this->set_required_descendant_real_props(
+        Properties<REAL>(required_descendant_simple_real_props));
 
     this->cx_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
@@ -310,8 +293,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
         this->required_descendant_real_props.simple_prop_index(
             props.weight, this->properties_map);
 
-    this->set_descendant_matrix_spec<ndim_velocity,
-                                     BASE_CX_KERNEL::num_products_per_parent>();
+    this->set_descendant_matrix_spec<ndim_velocity, 1>();
   };
 
 private:

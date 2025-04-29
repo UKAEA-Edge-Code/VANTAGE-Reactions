@@ -1,4 +1,5 @@
 #pragma once
+#include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include <memory>
 #include <neso_particles.hpp>
@@ -15,46 +16,23 @@ namespace Reactions {
  * particles are to be handled
  * @param child_transform TransformationWrapper(s) informing how descendant
  * products are to be handled
- * @param id_sym Symbol index of the integer ParticleDat that will be used
- * to specify which particles reactions will be applied to
- * @param tot_rate_buffer Symbol of the total reaction rate ParticleDat that
- * will be automatically flushed
  * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
  * Defaults to true.
+ * @param properties_map Optional remapping of default properties (panic flag,
+ * internal_state, and total rate)
  */
 struct ReactionController {
 
-  ReactionController(Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
-                     bool auto_clean_tot_rate_buffer = true)
-      : id_sym(id_sym), tot_rate_buffer(tot_rate_buffer),
-        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
-    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
-        std::vector<std::string>{tot_rate_buffer.name});
-    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
-        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
-    this->setup_particle_group_temporary();
-  }
-
-  ReactionController(std::shared_ptr<TransformationWrapper> child_transform,
-                     Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
-                     bool auto_clean_tot_rate_buffer = true)
-      : child_transform(std::vector{child_transform}), id_sym(id_sym),
-        tot_rate_buffer(tot_rate_buffer),
-        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
-    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
-        std::vector<std::string>{tot_rate_buffer.name});
-    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
-        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
-    this->setup_particle_group_temporary();
-  }
-
-  ReactionController(std::shared_ptr<TransformationWrapper> parent_transform,
-                     std::shared_ptr<TransformationWrapper> child_transform,
-                     Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
-                     bool auto_clean_tot_rate_buffer = true)
-      : parent_transform(std::vector{parent_transform}),
-        child_transform(std::vector{child_transform}), id_sym(id_sym),
-        tot_rate_buffer(tot_rate_buffer),
+  ReactionController(
+      std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
+      std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
+      bool auto_clean_tot_rate_buffer = true,
+      const std::map<int, std::string> &properties_map = default_map)
+      : parent_transform(parent_transform), child_transform(child_transform),
+        id_sym(Sym<INT>(properties_map.at(default_properties.internal_state))),
+        tot_rate_buffer(
+            Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
+        panic_flag(Sym<INT>(properties_map.at(default_properties.panic))),
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{tot_rate_buffer.name});
@@ -64,19 +42,30 @@ struct ReactionController {
   }
 
   ReactionController(
-      std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
-      std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
-      Sym<INT> id_sym, Sym<REAL> tot_rate_buffer,
-      bool auto_clean_tot_rate_buffer = true)
-      : parent_transform(parent_transform), child_transform(child_transform),
-        id_sym(id_sym), tot_rate_buffer(tot_rate_buffer),
-        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
-    auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
-        std::vector<std::string>{tot_rate_buffer.name});
-    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
-        std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
-    this->setup_particle_group_temporary();
-  }
+      bool auto_clean_tot_rate_buffer = true,
+      const std::map<int, std::string> &properties_map = default_map)
+      : ReactionController(
+            std::vector<std::shared_ptr<TransformationWrapper>>{},
+            std::vector<std::shared_ptr<TransformationWrapper>>{},
+            auto_clean_tot_rate_buffer, properties_map){};
+
+  ReactionController(
+      std::shared_ptr<TransformationWrapper> child_transform,
+      bool auto_clean_tot_rate_buffer = true,
+      const std::map<int, std::string> &properties_map = default_map)
+      : ReactionController(
+            std::vector<std::shared_ptr<TransformationWrapper>>{},
+            std::vector{child_transform}, auto_clean_tot_rate_buffer,
+            properties_map){};
+
+  ReactionController(
+      std::shared_ptr<TransformationWrapper> parent_transform,
+      std::shared_ptr<TransformationWrapper> child_transform,
+      bool auto_clean_tot_rate_buffer = true,
+      const std::map<int, std::string> &properties_map = default_map)
+      : ReactionController(std::vector{parent_transform},
+                           std::vector{child_transform},
+                           auto_clean_tot_rate_buffer, properties_map){};
 
   /**
    * @brief Function to populate the sub_group_selectors map and
@@ -176,6 +165,16 @@ public:
       this->rate_buffer_zeroer->transform(particle_group);
     }
 
+    NESOASSERT(particle_group->contains_dat(this->id_sym, 1),
+               "ParticleGroup passed to controller does not contain expected "
+               "ID dat, or the dat has wrong dimensionality");
+    NESOASSERT(particle_group->contains_dat(this->tot_rate_buffer, 1),
+               "ParticleGroup passed to controller does not contain expected "
+               "total rate dat, or the dat has wrong dimensionality");
+    NESOASSERT(particle_group->contains_dat(this->panic_flag, 1),
+               "ParticleGroup passed to controller does not contain expected "
+               "panic flag dat, or the dat has wrong dimensionality");
+
     NESOASSERT(this->reactions.size() > 0,
                "ReactionController.apply_reactions(...) cannot be called "
                "without adding at "
@@ -254,16 +253,16 @@ private:
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
   Sym<INT> id_sym;
+  Sym<INT> panic_flag;
   Sym<REAL> tot_rate_buffer;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
-  std::shared_ptr<ParticleGroupTemporary>  particle_group_temporary;
-  
-  inline void setup_particle_group_temporary(){
+  std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;
+
+  inline void setup_particle_group_temporary() {
     this->particle_group_temporary = std::make_shared<ParticleGroupTemporary>();
   }
-
 };
 } // namespace Reactions

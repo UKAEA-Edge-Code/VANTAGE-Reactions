@@ -30,9 +30,6 @@ struct Recombination
    *
    * @param sycl_target_ SYCL target pointer used to interface with
    * NESO-Particles routines
-   * @param total_reaction_rate Sym<REAL> associated with the total reaction
-   * rate ParticleDat
-   * @param weight_sym Sym<REAL> associated with the weight ParticleDat
    * @param rate_data ReactionData object used to calculate the recombination
    * rate
    * @param data_calc_obj DataCalculator that will calculate electron source
@@ -52,20 +49,18 @@ struct Recombination
    * @param properties_map Optional property map to be used with the
    * recombination kernels. Defaults to the default_map object
    */
-  Recombination(SYCLTargetSharedPtr sycl_target_, Sym<REAL> total_reaction_rate,
-                Sym<REAL> weight_sym, RateData rate_data,
+  Recombination(SYCLTargetSharedPtr sycl_target_, RateData rate_data,
                 DataCalcType data_calc_obj, Species marker_species,
                 Species electron_species, Species neutral_species,
                 const ParticleSpec &particle_spec,
                 const REAL &normalised_potential_energy,
-                std::map<int, std::string> properties_map = default_map)
+                const std::map<int, std::string> &properties_map = default_map)
       : LinearReactionBase<1, RateData, RecombReactionKernels<>, DataCalcType>(
-            sycl_target_, total_reaction_rate, weight_sym,
-            marker_species.get_id(),
+            sycl_target_, marker_species.get_id(),
             std::array<int, 1>{static_cast<int>(neutral_species.get_id())},
             rate_data,
             RecombReactionKernels<>(marker_species, electron_species,
                                     normalised_potential_energy),
-            particle_spec, data_calc_obj) {}
+            particle_spec, data_calc_obj, properties_map) {}
 };
 }; // namespace Reactions

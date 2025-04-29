@@ -1,10 +1,10 @@
 #pragma once
 #include "../particle_properties_map.hpp"
+#include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include <array>
 #include <cmath>
 #include <neso_particles.hpp>
-#include "../reaction_data.hpp"
 #include <vector>
 
 using namespace NESO::Particles;
@@ -12,14 +12,7 @@ namespace Reactions {
 
 // AMJUEL 2D Fit
 
-namespace AMJUEL_2D_DATA_H3 {
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {
-    props.fluid_density, props.fluid_temperature, props.fluid_flow_speed,
-    props.weight, props.velocity};
-} // namespace AMJUEL_2D_DATA_H3
+namespace AMJUEL_2D_DATA_H3 {} // namespace AMJUEL_2D_DATA_H3
 
 /**
  * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
@@ -47,7 +40,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const REAL &velocity_normalisation_, const REAL &mass_amu_,
       const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_)
-      : mult_const(density_normalisation_ * time_normalisation_/
+      : mult_const(density_normalisation_ * time_normalisation_ /
                    evolved_quantity_normalisation_),
         temperature_normalisation(temperature_normalisation_),
         en_mult_const(std::pow(velocity_normalisation_, 2) * mass_amu_ *
@@ -71,7 +64,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
@@ -80,7 +73,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
-        std::log(fluid_temperature_dat * this->temperature_normalisation);
+        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
 
     if (log_temp < 0) {
       return std::array<REAL, 1>{0.0};
@@ -88,25 +81,27 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
 
     REAL E = 0;
     for (int i = 0; i < dim; i++) {
-      REAL rel_v = req_real_props.at(this->fluid_flow_speed_ind, index, i) - 
-        req_real_props.at(this->velocity_ind, index, i);
+      REAL rel_v = req_real_props.at(this->fluid_flow_speed_ind, index, i) -
+                   req_real_props.at(this->velocity_ind, index, i);
       E += rel_v * rel_v;
     }
     E *= en_mult_const;
-    if (E < 0.1) { E = 0.1; }
+    if (E < 0.1) {
+      E = 0.1;
+    }
 
-    REAL log_E = std::log(E);
+    REAL log_E = Kernel::log(E);
 
     std::array<REAL, num_coeffs_E> log_E_m_arr;
     log_E_m_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs_E; i++) {
-      log_E_m_arr[i] = log_E_m_arr[i-1] * log_E;
+      log_E_m_arr[i] = log_E_m_arr[i - 1] * log_E;
     }
 
     std::array<REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs_T; i++) {
-      log_temp_arr[i] = log_temp_arr[i-1] * log_temp;
+      log_temp_arr[i] = log_temp_arr[i - 1] * log_temp;
     }
 
     REAL log_rate = 0.0;
@@ -116,7 +111,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
       }
     }
 
-    REAL rate = std::exp(log_rate) * 1.0e-6;
+    REAL rate = Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;
@@ -156,6 +151,12 @@ public:
 template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim = 2>
 struct AMJUEL2DDataH3 : public ReactionDataBase<> {
 
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 5> required_simple_real_props = {
+      props.fluid_density, props.fluid_temperature, props.fluid_flow_speed,
+      props.weight, props.velocity};
+
   AMJUEL2DDataH3(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
@@ -164,16 +165,13 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
       const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_,
       std::map<int, std::string> properties_map_ = default_map)
       : ReactionDataBase(
-            Properties<REAL>(AMJUEL_2D_DATA_H3::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{}),
+            Properties<REAL>(required_simple_real_props),
             properties_map_),
         amjuel_2d_data_on_device(
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
                 evolved_quantity_normalisation_, density_normalisation_,
                 temperature_normalisation_, time_normalisation_,
                 velocity_normalisation_, mass_amu_, coeffs_)) {
-
-    auto props = AMJUEL_2D_DATA_H3::props;
 
     this->amjuel_2d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density,
