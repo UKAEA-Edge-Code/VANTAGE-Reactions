@@ -1,6 +1,7 @@
 #pragma once
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
+#include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
 
@@ -33,12 +34,20 @@ struct ReactionController {
         tot_rate_buffer(
             Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
         panic_flag(Sym<INT>(properties_map.at(default_properties.panic))),
+        reacted_flag(
+            Sym<INT>(properties_map.at(default_properties.reacted_flag))),
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
     this->setup_particle_group_temporary();
+    this->reacted_marker =
+        make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
+            this->reacted_flag, 1);
+    auto rng_lambda = [&]() -> REAL { return 0; };
+    this->rng_kernel =
+        std::make_shared<HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
   }
 
   ReactionController(
@@ -125,6 +134,8 @@ public:
     this->max_particles_per_cell = max_num_parts;
   }
 
+  void set_mode_semi_dsmc() { this->semi_dsmc = true; }
+
   /**
    * @brief Set the number of cells per cell block, determines how many cells
    * each reaction runs its loops over at a time, and determines the maximum
@@ -175,6 +186,9 @@ public:
                "ParticleGroup passed to controller does not contain expected "
                "panic flag dat, or the dat has wrong dimensionality");
 
+    NESOASSERT(particle_group->contains_dat(this->reacted_flag, 1),
+               "ParticleGroup passed to controller does not contain expected "
+               "reacted flag dat, or the dat has wrong dimensionality");
     NESOASSERT(this->reactions.size() > 0,
                "ReactionController.apply_reactions(...) cannot be called "
                "without adding at "
@@ -190,6 +204,16 @@ public:
               in_state,
               this->sub_group_selectors[in_state]->make_marker_subgroup(
                   std::make_shared<ParticleSubGroup>(particle_group))));
+        }
+
+        // TODO: Make mode selection better
+        if (this->semi_dsmc) {
+
+          for (int in_state : in_states) {
+            this->reacted_species_groups.emplace(std::make_pair(
+                in_state, this->reacted_marker->make_marker_subgroup(
+                                  this->species_groups[in_state])));
+          }
         }
       }
     }
@@ -207,12 +231,52 @@ public:
             std::min(i + this->cell_block_size, cell_count));
       }
 
+      if (this->semi_dsmc) {
+
+        // marking loop
+        auto loop = particle_loop(
+            "reacted_loop", particle_group,
+            [=](auto index, auto reacted_flag, auto total_reaction_rate,
+                auto kernel) {
+              reacted_flag.at(0) =
+                  (1 - Kernel::exp(-total_reaction_rate.at(0) * dt)) >
+                          kernel.at(index, 0)
+                      ? 1
+                      : 0;
+            },
+            Access::read(ParticleLoopIndex{}),
+            Access::write(this->reacted_flag),
+            Access::read(this->tot_rate_buffer),
+            Access::read(this->rng_kernel));
+
+        loop->execute(i, std::min(i + this->cell_block_size, cell_count));
+        rate_buffer_zeroer->transform(
+            particle_group, i, std::min(i + this->cell_block_size, cell_count));
+
+        for (int r = 0; r < this->reactions.size(); r++) {
+
+          INT in_state = this->reactions[r]->get_in_states()[0];
+
+          this->reactions[r]->run_rate_loop(
+              this->reacted_species_groups[in_state], i,
+              std::min(i + this->cell_block_size, cell_count));
+        }
+      }
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        this->reactions[r]->descendant_product_loop(
-            this->species_groups[in_state], i,
-            std::min(i + this->cell_block_size, cell_count), dt, child_group);
+        if (this->semi_dsmc) {
+
+          this->reactions[r]->descendant_product_loop(
+              this->reacted_species_groups[in_state], i,
+              std::min(i + this->cell_block_size, cell_count), dt, child_group,
+              this->semi_dsmc);
+        } else {
+          this->reactions[r]->descendant_product_loop(
+              this->species_groups[in_state], i,
+              std::min(i + this->cell_block_size, cell_count), dt, child_group,
+              this->semi_dsmc);
+        }
       }
 
       for (auto it = this->child_ids.begin(); it != this->child_ids.end();
@@ -241,9 +305,22 @@ public:
     this->particle_group_temporary->restore(particle_group, child_group);
   }
 
+  void
+  set_rng_kernel(std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel) {
+    this->rng_kernel = rng_kernel;
+  }
+
+  std::shared_ptr<HostPerParticleBlockRNG<REAL>> get_rng_kernel() {
+    NESOASSERT(this->rng_kernel != nullptr, 
+        "RNG kernel is nullptr, was set_rng_kernel called?");
+    return this->rng_kernel;
+  }
+
 private:
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, ParticleSubGroupSharedPtr> species_groups;
+  std::map<int, ParticleSubGroupSharedPtr>
+      reacted_species_groups; // Used only for semi-dsmc mode
 
   std::set<int> parent_ids;
   std::set<int> child_ids;
@@ -252,11 +329,15 @@ private:
   std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
+  std::shared_ptr<MarkingStrategy> reacted_marker;
   Sym<INT> id_sym;
   Sym<INT> panic_flag;
+  Sym<INT> reacted_flag;
   Sym<REAL> tot_rate_buffer;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
+  bool semi_dsmc = false;
+  std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
   std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;

@@ -11,8 +11,6 @@ namespace Reactions {
 
 // AMJUEL 2D Fit
 
-namespace AMJUEL_2D_DATA {} // namespace AMJUEL_2D_DATA
-
 /**
  * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.

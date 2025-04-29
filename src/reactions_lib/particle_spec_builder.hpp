@@ -42,7 +42,7 @@ struct ParticleSpecBuilder {
 
     auto int_props = Properties<INT>(
         std::vector<int>{default_properties.panic, default_properties.id,
-                         default_properties.internal_state});
+                         default_properties.internal_state,default_properties.reacted_flag});
     auto real_props_scalar = Properties<REAL>(std::vector<int>{
         default_properties.weight, default_properties.tot_reaction_rate});
     auto real_props_vector =

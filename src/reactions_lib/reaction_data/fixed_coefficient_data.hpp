@@ -6,8 +6,6 @@
 using namespace NESO::Particles;
 namespace Reactions {
 
-namespace FIXED_COEFFICIENT_DATA {} // namespace FIXED_COEFFICIENT_DATA
-
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 

@@ -40,8 +40,7 @@ struct AbstractReaction {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        weight_sym(
-            Sym<REAL>(properties_map.at(default_properties.weight))),
+        weight_sym(Sym<REAL>(properties_map.at(default_properties.weight))),
         max_buffer_size(16384 * 256) {
     this->pre_req_data->fill(0.0);
   }
@@ -57,13 +56,15 @@ public:
   virtual void
   descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
                           INT cell_idx_start, INT cell_idx_end, double dt,
-                          ParticleGroupSharedPtr child_group) {}
+                          ParticleGroupSharedPtr child_group,
+                          bool full_weight = false) {}
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
 
   virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
 
   virtual void flush_buffer(size_t buffer_size) {}
+  virtual void flush_weight_buffer(size_t buffer_size) {}
 
   virtual void flush_pre_req_data() {}
 
@@ -91,13 +92,20 @@ protected:
   const Sym<REAL> &get_total_reaction_rate() { return total_reaction_rate; }
 
   void set_total_reaction_rate(const Sym<REAL> &total_reaction_rate_) {
-    total_reaction_rate = total_reaction_rate_;
+    this->total_reaction_rate = total_reaction_rate_;
   }
 
   const LocalArraySharedPtr<REAL> &get_device_rate_buffer() {
-    return device_rate_buffer;
+    return this->device_rate_buffer;
   }
 
+  const LocalArraySharedPtr<REAL> &get_device_weight_buffer() {
+    return this->device_weight_buffer;
+  }
+  void
+  set_device_weight_buffer(LocalArraySharedPtr<REAL> &device_weight_buffer) {
+    this->device_weight_buffer = device_weight_buffer;
+  }
   const size_t &get_device_rate_buffer_size() {
     return this->device_rate_buffer->size;
   }
@@ -121,6 +129,7 @@ protected:
 private:
   Sym<REAL> total_reaction_rate;
   LocalArraySharedPtr<REAL> device_rate_buffer;
+  LocalArraySharedPtr<REAL> device_weight_buffer;
   SYCLTargetSharedPtr sycl_target_stored;
   NDLocalArraySharedPtr<REAL, 2>
       pre_req_data; //!< Real-valued local matrix for storing
@@ -279,9 +288,8 @@ struct LinearReactionBase : public AbstractReaction {
     auto sycl_target_stored = this->get_sycl_target();
     this->blockwise_flush_buffer(particle_sub_group, cell_idx_start,
                                  cell_idx_end);
-    this->blockwise_flush_pre_req_data(particle_sub_group, cell_idx_start,
-                                       cell_idx_end);
     auto device_rate_buffer = this->get_device_rate_buffer();
+    auto device_weight_buffer = this->get_device_weight_buffer();
 
     // The ->get_particle_group() is temporary since ParticleSubGroup doesn't
     // have a sycl_target member
@@ -292,7 +300,21 @@ struct LinearReactionBase : public AbstractReaction {
 
     constexpr auto data_dim = reaction_data_buffer.get_dim();
 
-    auto loop = particle_loop(
+    auto weight_loop = particle_loop(
+        "store_weights_loop", particle_sub_group,
+        [=](auto particle_index, auto weight, auto weight_buffer) {
+          INT current_count = particle_index.get_loop_linear_index();
+          weight_buffer[current_count] =
+              weight[0]; // store the particle weight before the application of
+                         // any kernels in case we need to know the total weight
+                         // of the particle before any reactions are applied
+        },
+        Access::read(ParticleLoopIndex{}), Access::read(this->get_weight_sym()),
+        Access::write(device_weight_buffer));
+
+    weight_loop->execute(cell_idx_start, cell_idx_end);
+
+    auto rate_loop = particle_loop(
         "calc_data_loop", particle_sub_group,
         [=](auto particle_index, auto req_int_props, auto req_real_props,
             auto tot_rate, auto buffer, auto kernel) {
@@ -311,11 +333,8 @@ struct LinearReactionBase : public AbstractReaction {
         Access::write(device_rate_buffer),
         Access::read(this->reaction_data.get_rng_kernel()));
 
-    loop->execute(cell_idx_start, cell_idx_end);
+    rate_loop->execute(cell_idx_start, cell_idx_end);
 
-    this->data_calculator.fill_buffer(this->get_pre_req_data(),
-                                      particle_sub_group, cell_idx_start,
-                                      cell_idx_end);
     return;
   }
 
@@ -333,12 +352,16 @@ struct LinearReactionBase : public AbstractReaction {
    * @param dt The current time step size.
    * @param child_group ParticleGroupSharedPtr that contains a particle group
    * into which descendants are placed after generation.
+   * @param full_weight If true, will consume the full weight of the particles,
+   * regardless of timestep
    */
   void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
                                INT cell_idx_start, INT cell_idx_end, double dt,
-                               ParticleGroupSharedPtr child_group) override {
+                               ParticleGroupSharedPtr child_group,
+                               bool full_weight = false) override {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
+    auto device_weight_buffer = this->get_device_weight_buffer();
 
     auto reaction_kernel_buffer = this->reaction_kernels;
     auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
@@ -350,21 +373,40 @@ struct LinearReactionBase : public AbstractReaction {
                    sycl_target_stored,
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");
+    this->blockwise_flush_pre_req_data(particle_sub_group, cell_idx_start,
+                                       cell_idx_end);
 
+    this->data_calculator.fill_buffer(this->get_pre_req_data(),
+                                      particle_sub_group, cell_idx_start,
+                                      cell_idx_end);
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,
         [=](auto descendant_particle, auto particle_index, auto req_int_props,
             auto req_real_props, auto rate_buffer, auto pre_req_data,
-            auto weight, auto total_reaction_rate) {
+            auto weight_buffer, auto total_reaction_rate) {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = rate_buffer.at(current_count);
 
-          REAL deltaweight = dt * rate;
-          REAL total_deltaweight = dt * total_reaction_rate.at(0);
-          REAL modified_weight = std::min(
-              deltaweight, deltaweight * (weight.at(0) / total_deltaweight));
+          // If the entire weight is used need to know the weight before any
+          // reactions are applied
+          REAL used_dt = full_weight ? weight_buffer.at(current_count) /
+                                           total_reaction_rate.at(0)
+                                     : dt;
+          REAL deltaweight =
+              used_dt * rate; // weight participating in this reaction
+          REAL total_deltaweight =
+              used_dt *
+              total_reaction_rate.at(0); // Total weight participating in all
+                                         // reactions (before rescaling_
 
-          REAL modified_dt = dt * modified_weight / deltaweight;
+          // Use either the above calculated delta weight or a fraction of the
+          // initial weight based on how much of the total reaction rate this
+          // reaction is responsible
+          REAL modified_weight = Kernel::min(
+              deltaweight, deltaweight * (weight_buffer.at(current_count) /
+                                          total_deltaweight));
+
+          REAL modified_dt = used_dt * modified_weight / deltaweight;
           for (int childx = 0; childx < num_products_per_parent; childx++) {
 
             descendant_particle.set_parent(particle_index, childx);
@@ -398,7 +440,7 @@ struct LinearReactionBase : public AbstractReaction {
                                  this->descendant_product_loop_real_syms)),
         Access::read(device_rate_buffer),
         Access::read(this->get_pre_req_data()),
-        Access::read(this->get_weight_sym()),
+        Access::read(device_weight_buffer),
         Access::write(this->get_total_reaction_rate()));
 
     INT npart_block = 0;
@@ -429,8 +471,19 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
-   * @brief Flushes the rate buffer blockwise, allocating extra memory if
-   * necessary.
+   * @brief Creates an empty weight buffer of a specified size
+   *
+   * @param buffer_size Size of the empty buffer that needs to be created and
+   * stored.
+   */
+  void flush_weight_buffer(size_t buffer_size) override {
+    auto empty_device_buffer = std::make_shared<LocalArray<REAL>>(
+        AbstractReaction::get_sycl_target(), buffer_size, 0);
+    AbstractReaction::set_device_weight_buffer(empty_device_buffer);
+  }
+  /**
+   * @brief Flushes the rate and weight buffers blockwise, allocating extra
+   * memory if necessary.
    *
    * @param particle_sub_group Particle subgroup used to infer the number of
    * particles in the cell
@@ -452,11 +505,14 @@ struct LinearReactionBase : public AbstractReaction {
                  "buffer size");
       if ((npart_block * 2) < this->get_max_buffer_size()) {
         this->flush_buffer(npart_block * 2);
+        this->flush_weight_buffer(npart_block * 2);
       } else {
         this->flush_buffer(this->get_max_buffer_size());
+        this->flush_weight_buffer(this->get_max_buffer_size());
       }
     } else if (npart_block < (device_rate_buffer_size / 4)) {
       this->flush_buffer((npart_block * 2));
+      this->flush_weight_buffer((npart_block * 2));
     }
   }
 
