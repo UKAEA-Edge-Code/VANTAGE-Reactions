@@ -69,7 +69,6 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
               Sym<REAL>(prop_map[default_properties.weight]), 1e-2)},
       merge_transform);
 
-  // TODO: Update this with new interface 
   auto reaction_controller = ReactionController(
       std::vector{
           merge_wrapper,
