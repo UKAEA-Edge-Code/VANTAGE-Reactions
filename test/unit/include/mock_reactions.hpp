@@ -382,3 +382,24 @@ struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
             sycl_target_, in_states_, std::array<int, 0>{},
             TestReactionVarData(), TestReactionVarKernels(), particle_spec) {}
 };
+
+// TODO: Add corresponding kernel for ephemeral dat test
+struct TestEphemeralVarData : public ReactionDataBase<> {
+
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.weight};
+
+  constexpr static std::array<int, 1> required_simple_real_props_ephemeral = {
+      props.velocity};
+
+  TestEphemeralVarData(std::map<int, std::string> properties_map = default_map)
+      : ReactionDataBase(Properties<INT>(),
+                         Properties<REAL>(required_simple_real_props),
+                         Properties<INT>(),
+                         Properties<REAL>(required_simple_real_props_ephemeral),
+                         properties_map) {}
+
+  // TODO: Add device type for later tests
+};
