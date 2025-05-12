@@ -29,7 +29,6 @@ add_subdirectory(src)
 # Set the build type environment variable
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
-option(ENABLE_TEST_ASSERT "Enable tests of fail states." OFF)
 if (REACTIONS_ENABLE_TESTS)
   if (REACTIONS_DEVICE_TYPE STREQUAL GPU)
     set(BUILD_TYPE_COMPILE_FLAGS "-O0")

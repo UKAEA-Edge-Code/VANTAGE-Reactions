@@ -6,13 +6,15 @@ spack:
   # add package specs to the `specs` list
   specs:
 
-  - nec_reactions.reactions~nvcxx~enable_tests~enable_test_asserts ^nec_reactions.neso-particles~nvcxx~build_tests ^openblas ^nec_reactions.adaptivecpp ^hdf5
-  - nec_reactions.reactions~nvcxx+enable_tests~enable_test_asserts ^nec_reactions.neso-particles~nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp ^hdf5
-  - nec_reactions.reactions~nvcxx+enable_tests+enable_test_asserts ^nec_reactions.neso-particles~nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp ^hdf5
+  - nec_reactions.reactions~nvcxx~enable_tests ^nec_reactions.neso-particles~nvcxx~build_tests
+    ^openblas ^nec_reactions.adaptivecpp ^hdf5
+  - nec_reactions.reactions~nvcxx+enable_tests ^nec_reactions.neso-particles~nvcxx+build_tests
+    ^openblas ^nec_reactions.adaptivecpp ^hdf5
 
-  - nec_reactions.reactions+nvcxx~enable_tests~enable_test_asserts ^nec_reactions.neso-particles+nvcxx~build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
-  - nec_reactions.reactions+nvcxx+enable_tests~enable_test_asserts ^nec_reactions.neso-particles+nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
-  - nec_reactions.reactions+nvcxx+enable_tests+enable_test_asserts ^nec_reactions.neso-particles+nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx~enable_tests ^nec_reactions.neso-particles+nvcxx~build_tests
+    ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx+enable_tests ^nec_reactions.neso-particles+nvcxx+build_tests
+    ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
 
 
   view: false

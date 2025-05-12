@@ -303,9 +303,9 @@ TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
               particle_group->get_particle_spec()) {}
   };
 
-#ifdef TEST_ASSERT
-  EXPECT_THROW((TestDataCalcNdimReaction(particle_group)), std::logic_error);
-#endif
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW((TestDataCalcNdimReaction(particle_group)), std::logic_error);
+  }
 
   particle_group->domain->mesh->free();
 }

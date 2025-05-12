@@ -7,15 +7,15 @@ using namespace Reactions;
 TEST(Species, getters) {
     auto test_species = Species();
 
-#ifdef TEST_ASSERT
-    EXPECT_THROW(test_species.get_name(), std::logic_error);
-  
-    EXPECT_THROW(test_species.get_id(), std::logic_error);
-  
-    EXPECT_THROW(test_species.get_mass(), std::logic_error);
-  
-    EXPECT_THROW(test_species.get_charge(), std::logic_error);
-#endif
+    if (std::getenv("TEST_NESOASSERT") != nullptr) {
+        EXPECT_THROW(test_species.get_name(), std::logic_error);
+    
+        EXPECT_THROW(test_species.get_id(), std::logic_error);
+    
+        EXPECT_THROW(test_species.get_mass(), std::logic_error);
+    
+        EXPECT_THROW(test_species.get_charge(), std::logic_error);
+    }
   
     std::string test_species_name = "H";
     test_species.set_name(test_species_name);

@@ -88,11 +88,11 @@ TEST(Properties, simple_prop_names) {
 
   // Since default_properties.weight will not be a key in the fully
   // custom_full_prop_map
-#ifdef TEST_ASSERT
-  EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
-                  PropertiesTest::custom_prop_no_weight_map),
-              std::logic_error);
-#endif
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
+                    PropertiesTest::custom_prop_no_weight_map),
+                std::logic_error);
+  }
 
   auto custom_full_simple_props_obj = Properties<REAL>(
       std::vector<int>{PropertiesTest::custom_props.test_custom_prop1,
@@ -110,10 +110,10 @@ TEST(Properties, simple_prop_index) {
       Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
                        std::vector<int>(default_properties.density));
 
-#ifdef TEST_ASSERT
-  EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
-                std::logic_error);
-#endif
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
+                  std::logic_error);
+  }
 
   auto int_props_obj = PropertiesTest::int_props;
 
@@ -198,11 +198,11 @@ TEST(Properties, species_prop_index) {
   auto empty_species_props_obj =
       Properties<REAL>(std::vector<int>(default_properties.velocity));
 
-#ifdef TEST_ASSERT
+if (std::getenv("TEST_NESOASSERT") != nullptr) {
   EXPECT_THROW(empty_species_props_obj.species_prop_index(
                    "ELECTRON", default_properties.density),
                std::logic_error);
-#endif
+}
 
   auto real_props_obj = PropertiesTest::real_props;
 
