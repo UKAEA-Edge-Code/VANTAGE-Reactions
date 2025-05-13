@@ -161,7 +161,7 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
       const REAL &temperature_normalisation_, const REAL &time_normalisation_,
       const REAL &velocity_normalisation_, const REAL &mass_amu_,
       const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_,
-      std::map<int, std::string> properties_map_ = default_map)
+      std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(
             Properties<REAL>(required_simple_real_props),
             properties_map_),

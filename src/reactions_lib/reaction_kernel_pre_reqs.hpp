@@ -148,7 +148,7 @@ template <typename PROP_TYPE> struct Properties {
    * @return simple_prop_names
    */
   std::vector<std::string> simple_prop_names(
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
 
     std::vector<std::string> simple_prop_names_vec;
     for (auto req_prop : this->simple_props) {
@@ -177,7 +177,7 @@ template <typename PROP_TYPE> struct Properties {
    */
   int simple_prop_index(
       int prop,
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
       if (req_prop == prop) {
@@ -201,7 +201,7 @@ template <typename PROP_TYPE> struct Properties {
    * @return species_prop_names
    */
   std::vector<std::string> species_prop_names(
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
     std::vector<std::string> species_real_prop_names_vec;
 
     for (auto i_species : this->species) {
@@ -230,7 +230,7 @@ template <typename PROP_TYPE> struct Properties {
    */
   int species_prop_index(
       std::string species_name, int prop,
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
       if (req_prop == prop) {
@@ -273,7 +273,7 @@ template <typename PROP_TYPE> struct Properties {
    * recovering the property names.
    */
   const std::vector<std::string> get_prop_names(
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
     std::vector<std::string> simple_prop_names;
     std::vector<std::string> species_props_names;
 

@@ -223,7 +223,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
    */
   CXReactionKernels(const Species &target_species,
                     const Species &projectile_species,
-                    std::map<int, std::string> properties_map_ = default_map)
+                    std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionKernelsBase(
             Properties<REAL>(
                 required_simple_real_props,

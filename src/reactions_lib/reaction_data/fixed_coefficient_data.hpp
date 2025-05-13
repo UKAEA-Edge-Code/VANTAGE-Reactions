@@ -58,7 +58,7 @@ struct FixedCoefficientData : public ReactionDataBase<> {
       props.weight};
 
   FixedCoefficientData(REAL rate_coefficient,
-                       std::map<int, std::string> properties_map_ = default_map)
+                       std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(Properties<REAL>(required_simple_real_props),
                          properties_map_),
         fixed_coefficient_data_on_device(

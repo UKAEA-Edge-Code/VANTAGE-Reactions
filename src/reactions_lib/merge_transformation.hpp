@@ -40,7 +40,7 @@ template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
   MergeTransformationStrategy(
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : position(Sym<REAL>(properties_map.at(default_properties.position))),
         weight(Sym<REAL>(properties_map.at(default_properties.weight))),
         momentum(Sym<REAL>(properties_map.at(default_properties.velocity))),

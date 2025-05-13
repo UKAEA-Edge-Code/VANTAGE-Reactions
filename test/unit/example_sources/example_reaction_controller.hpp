@@ -2,7 +2,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto prop_map = default_map;
+  auto prop_map = get_default_map();
 
   // We shall generate a CX and two ionisation reactions quickly, in order to
   // populate the controller with some reactions

@@ -1,6 +1,6 @@
 inline void electron_impact_ion_example(ParticleGroupSharedPtr particle_group) {
 
-  auto used_map = default_map;
+  auto used_map = get_default_map();
 
   auto electron_species = Species("ELECTRON", // name
                                   5.5e-4,        // electron mass in amu

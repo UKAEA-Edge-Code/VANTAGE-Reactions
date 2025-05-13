@@ -82,7 +82,7 @@ struct ReactionDataBase {
   using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBase(Properties<INT> required_int_props,
                    Properties<REAL> required_real_props,
-                   std::map<int, std::string> properties_map_ = default_map)
+                   std::map<int, std::string> properties_map_ = get_default_map())
       : required_int_props(required_int_props),
         required_real_props(required_real_props),
         properties_map(properties_map_) {
@@ -90,17 +90,17 @@ struct ReactionDataBase {
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
-  ReactionDataBase(std::map<int, std::string> properties_map_ = default_map)
+  ReactionDataBase(std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
                          properties_map_) {}
 
   ReactionDataBase(Properties<INT> required_int_props,
-                   std::map<int, std::string> properties_map_ = default_map)
+                   std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(required_int_props, Properties<REAL>(),
                          properties_map_) {}
 
   ReactionDataBase(Properties<REAL> required_real_props,
-                   std::map<int, std::string> properties_map_ = default_map)
+                   std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(Properties<INT>(), required_real_props,
                          properties_map_) {}
 

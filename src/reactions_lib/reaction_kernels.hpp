@@ -23,24 +23,24 @@ namespace Reactions {
  * get_required_int_props(...)).
  */
 struct ReactionKernelsBase {
-  ReactionKernelsBase(std::map<int, std::string> properties_map_ = default_map)
+  ReactionKernelsBase(std::map<int, std::string> properties_map_ = get_default_map())
       : properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ = default_map)
+                      std::map<int, std::string> properties_map_ = get_default_map())
       : required_int_props(required_int_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ = default_map)
+                      std::map<int, std::string> properties_map_ = get_default_map())
       : required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props,
                       Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ = default_map)
+                      std::map<int, std::string> properties_map_ = get_default_map())
       : required_int_props(required_int_props),
         required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
         properties_map(properties_map_) {}

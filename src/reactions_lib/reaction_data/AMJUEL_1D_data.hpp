@@ -113,7 +113,7 @@ constexpr static  std::array<int,3> required_simple_real_props = {
                const REAL &temperature_normalisation_,
                const REAL &time_normalisation_,
                const std::array<REAL, num_coeffs> &coeffs_,
-               std::map<int, std::string> properties_map_ = default_map)
+               std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(
             Properties<REAL>(required_simple_real_props),
             properties_map_),

@@ -1,6 +1,9 @@
 #pragma once
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
+#include "common_transformations.hpp"
+#include "common_markers.hpp"
+#include "reaction_base.hpp"
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
@@ -28,7 +31,7 @@ struct ReactionController {
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
       bool auto_clean_tot_rate_buffer = true,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : parent_transform(parent_transform), child_transform(child_transform),
         id_sym(Sym<INT>(properties_map.at(default_properties.internal_state))),
         tot_rate_buffer(
@@ -52,7 +55,7 @@ struct ReactionController {
 
   ReactionController(
       bool auto_clean_tot_rate_buffer = true,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector<std::shared_ptr<TransformationWrapper>>{},
@@ -61,7 +64,7 @@ struct ReactionController {
   ReactionController(
       std::shared_ptr<TransformationWrapper> child_transform,
       bool auto_clean_tot_rate_buffer = true,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector{child_transform}, auto_clean_tot_rate_buffer,
@@ -71,7 +74,7 @@ struct ReactionController {
       std::shared_ptr<TransformationWrapper> parent_transform,
       std::shared_ptr<TransformationWrapper> child_transform,
       bool auto_clean_tot_rate_buffer = true,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(std::vector{parent_transform},
                            std::vector{child_transform},
                            auto_clean_tot_rate_buffer, properties_map){};

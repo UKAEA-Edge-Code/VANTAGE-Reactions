@@ -32,7 +32,7 @@ struct ParticleSpecBuilder {
    */
   ParticleSpecBuilder(
       int ndim,
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
 
     this->add_particle_spec(ParticleSpec(
         ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
@@ -70,7 +70,7 @@ struct ParticleSpecBuilder {
   template <typename PROP_TYPE>
   void add_particle_prop(
       Properties<PROP_TYPE> properties_, int ndim = 1, bool positions = false,
-      const std::map<int, std::string> &properties_map = default_map) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
     auto simple_prop_names = properties_.simple_prop_names(properties_map);
 
     auto species_prop_names = properties_.species_prop_names(properties_map);

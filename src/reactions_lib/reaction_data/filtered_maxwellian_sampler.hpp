@@ -167,7 +167,7 @@ struct FilteredMaxwellianSampler
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map_ = default_map)
+      std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props),

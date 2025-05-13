@@ -32,7 +32,7 @@ struct AbstractReaction {
 
   AbstractReaction(
       SYCLTargetSharedPtr sycl_target,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : sycl_target_stored(sycl_target),
         total_reaction_rate(
             Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
@@ -177,7 +177,7 @@ struct LinearReactionBase : public AbstractReaction {
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
       const ParticleSpec &particle_spec_, DataCalc data_calculator_,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
@@ -262,7 +262,7 @@ struct LinearReactionBase : public AbstractReaction {
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
       const ParticleSpec &particle_spec_,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
                            reaction_kernels, particle_spec_, DataCalc(),
                            properties_map) {}

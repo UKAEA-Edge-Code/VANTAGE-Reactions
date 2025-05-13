@@ -49,7 +49,7 @@ struct DummyData :
                    > {
 
   DummyData(REAL rate_coefficient,
-                       std::map<int, std::string> properties_map = default_map // Here we allow for property remapping 
+                       std::map<int, std::string> properties_map = get_default_map() // Here we allow for property remapping 
                        )
       : ReactionDataBase(
             Properties<REAL>(DUMMY_DATA::required_simple_real_props, // This is where the required data enums go in

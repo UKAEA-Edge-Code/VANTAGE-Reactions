@@ -41,7 +41,7 @@ namespace PropertiesTest {
     std::map<int, std::string> get_map() { return this->private_map; }
   
   private:
-    std::map<int, std::string> private_map = default_map;
+    std::map<int, std::string> private_map = get_default_map();
   };
   
   inline auto custom_prop_map =
@@ -57,7 +57,7 @@ namespace PropertiesTest {
     std::map<int, std::string> get_map() { return this->private_map; }
   
   private:
-    std::map<int, std::string> private_map = default_map;
+    std::map<int, std::string> private_map = get_default_map();
   };
   
   inline auto custom_prop_no_weight_map =
