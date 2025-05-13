@@ -13,44 +13,102 @@ namespace Reactions {
  * regarding the required INT-based properties for the reaction kernel.
  * @param required_real_props Properties<REAL> object containing information
  * regarding the required REAL-based properties for the reaction kernel.
+ * @param required_int_props_ephemeral Properties<INT> object containing
+ * information regarding the required INT-based ephemeral properties for the
+ * reaction kernel.
+ * @param required_real_props_ephemeral Properties<REAL> object containing
+ * information regarding the required REAL-based properties for the reaction
+ * kernel.
  * @param pre_req_ndims Integer defining the number of dimensions required by a
  * reaction kernel (this in turn matches the number of ReactionData-derived
  * objects that must be passed to the constructor of a DataCalculator object
  * when this kernel and the DataCalculator object are passed to a
  * LinearReactionBase-derived object constructor).
- * @param properties_map_ A std::map<int, std::string> object to be used when
+ * @param properties_map A std::map<int, std::string> object to be used when
  * retrieving property names (in get_required_real_props(...) and
  * get_required_int_props(...)).
  */
 struct ReactionKernelsBase {
-  ReactionKernelsBase(std::map<int, std::string> properties_map_ = default_map)
-      : properties_map(properties_map_) {}
+
+  ReactionKernelsBase(Properties<INT> required_int_props,
+                      Properties<REAL> required_real_props,
+                      Properties<INT> required_int_props_ephemeral,
+                      Properties<REAL> required_real_props_ephemeral,
+                      INT pre_req_ndims = 0,
+                      std::map<int, std::string> properties_map = default_map)
+      : required_int_props(required_int_props),
+        required_real_props(required_real_props),
+        required_int_props_ephemeral(required_int_props_ephemeral),
+        required_real_props_ephemeral(required_real_props_ephemeral),
+        pre_req_ndims(pre_req_ndims), properties_map(properties_map) {}
+
+  ReactionKernelsBase(std::map<int, std::string> properties_map = default_map)
+      : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
+                            Properties<INT>(), Properties<REAL>(), 0,
+                            properties_map) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ = default_map)
-      : required_int_props(required_int_props), pre_req_ndims(pre_req_ndims),
-        properties_map(properties_map_) {}
+                      std::map<int, std::string> properties_map = default_map)
+      : ReactionKernelsBase(required_int_props, Properties<REAL>(),
+                            Properties<INT>(), Properties<REAL>(),
+                            pre_req_ndims, properties_map) {}
 
   ReactionKernelsBase(Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ = default_map)
-      : required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
-        properties_map(properties_map_) {}
+                      std::map<int, std::string> properties_map = default_map)
+      : ReactionKernelsBase(Properties<INT>(), required_real_props,
+                            Properties<INT>(), Properties<REAL>(),
+                            pre_req_ndims, properties_map) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props,
                       Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map_ = default_map)
-      : required_int_props(required_int_props),
-        required_real_props(required_real_props), pre_req_ndims(pre_req_ndims),
-        properties_map(properties_map_) {}
+                      std::map<int, std::string> properties_map = default_map)
+      : ReactionKernelsBase(required_int_props, required_real_props,
+                            Properties<INT>(), Properties<REAL>(),
+                            pre_req_ndims, properties_map) {}
 
+  /**
+   * @brief Return all required integer property names, including ephemeral
+   * properties
+   *
+   */
   std::vector<std::string> get_required_int_props() {
-    return this->required_int_props.get_prop_names(this->properties_map);
+    auto names = this->required_int_props.get_prop_names(this->properties_map);
+    auto ephemeral_names =
+        this->required_int_props_ephemeral.get_prop_names(this->properties_map);
+    names.insert(names.end(), ephemeral_names.begin(), ephemeral_names.end());
+    return names;
   }
 
+  /**
+   * @brief Return all required real property names, including ephemeral
+   * properties
+   *
+   */
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.get_prop_names(this->properties_map);
+    auto names = this->required_real_props.get_prop_names(this->properties_map);
+    auto ephemeral_names = this->required_real_props_ephemeral.get_prop_names(
+        this->properties_map);
+    names.insert(names.end(), ephemeral_names.begin(), ephemeral_names.end());
+    return names;
+  }
+
+  /**
+   * @brief Return names of required ephemeral integer properties
+   *
+   */
+  std::vector<std::string> get_required_int_props_ephemeral() {
+    return this->required_int_props_ephemeral.get_prop_names(
+        this->properties_map);
+  }
+  /**
+   * @brief Return names of required ephemeral real properties
+   *
+   */
+  std::vector<std::string> get_required_real_props_ephemeral() {
+    return this->required_real_props_ephemeral.get_prop_names(
+        this->properties_map);
   }
 
   const Properties<INT> &get_required_descendant_int_props() {
@@ -116,6 +174,9 @@ protected:
 
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
+
+  Properties<INT> required_int_props_ephemeral;
+  Properties<REAL> required_real_props_ephemeral;
 
   Properties<INT> required_descendant_int_props;
   Properties<REAL> required_descendant_real_props;
