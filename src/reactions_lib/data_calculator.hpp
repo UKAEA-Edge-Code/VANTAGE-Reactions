@@ -1,5 +1,4 @@
 #pragma once
-#include "../neso_test_assert.hpp"
 #include "reaction_data.hpp"
 #include "utils.hpp"
 #include <neso_particles.hpp>

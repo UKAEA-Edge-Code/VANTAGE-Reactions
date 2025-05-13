@@ -1,5 +1,4 @@
 #pragma once
-#include "../neso_test_assert.hpp"
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include <iostream>

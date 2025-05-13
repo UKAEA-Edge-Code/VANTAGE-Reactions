@@ -1,6 +1,5 @@
 #ifndef TRANSFORM_WRAPPER_H
 #define TRANSFORM_WRAPPER_H
-#include "../neso_test_assert.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>

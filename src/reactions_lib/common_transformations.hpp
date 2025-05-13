@@ -1,6 +1,5 @@
 #ifndef COMMON_TRANSFORMATIONS_H
 #define COMMON_TRANSFORMATIONS_H
-#include "../neso_test_assert.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include "transformation_wrapper.hpp"
