@@ -9,16 +9,18 @@ spack:
   - nec_reactions.reactions~nvcxx~enable_tests ^nec_reactions.neso-particles~nvcxx~build_tests ^openblas ^nec_reactions.adaptivecpp ^hdf5
   - nec_reactions.reactions~nvcxx+enable_tests ^nec_reactions.neso-particles~nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp ^hdf5
 
-  - nec_reactions.reactions+nvcxx~enable_tests ^nec_reactions.neso-particles+nvcxx~build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
-  - nec_reactions.reactions+nvcxx+enable_tests ^nec_reactions.neso-particles+nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx~omp_llvm ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx~enable_tests ^nec_reactions.neso-particles+nvcxx~build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx+enable_tests ^nec_reactions.neso-particles+nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp+nvcxx ^hdf5 ^cuda@12.2.1
 
+  - nec_reactions.reactions+nvcxx~enable_tests ^nec_reactions.neso-particles+nvcxx~build_tests ^openblas ^nec_reactions.adaptivecpp+cuda+omp_llvm ^hdf5 ^cuda@12.2.1
+  - nec_reactions.reactions+nvcxx+enable_tests ^nec_reactions.neso-particles+nvcxx+build_tests ^openblas ^nec_reactions.adaptivecpp+cuda+omp_llvm ^hdf5 ^cuda@12.2.1
 
   view: false
   packages:
     all:
-      compiler: [gcc]
+      compiler: [clang, gcc]
   concretizer:
-    unify: when_possible
+    unify: false
   repos:
   - ./Reactions-repo
   - ./NESO-Spack

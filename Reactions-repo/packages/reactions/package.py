@@ -19,6 +19,8 @@ class Reactions(CMakePackage):
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
 
+    conflicts("+nvcxx", when="%oneapi", msg="Nvidia compilation can only be used with gcc or clang compilers.")
+
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
