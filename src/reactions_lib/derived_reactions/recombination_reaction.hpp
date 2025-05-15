@@ -41,8 +41,6 @@ struct Recombination
    * @param electron_species Species object corresponding to the electrons
    * @param neutral_species Species object representing the neutrals that will
    * be generated
-   * @param particle_spec ParticleSpec associated with the particle group this
-   * reaction should act on
    * @param normalised_potential_energy Used in calculating the electron source
    * energy loss, the rate of which is given by the first data_calc_obj element
    * + the potential energy x rate
@@ -52,7 +50,6 @@ struct Recombination
   Recombination(SYCLTargetSharedPtr sycl_target_, RateData rate_data,
                 DataCalcType data_calc_obj, Species marker_species,
                 Species electron_species, Species neutral_species,
-                const ParticleSpec &particle_spec,
                 const REAL &normalised_potential_energy,
                 const std::map<int, std::string> &properties_map = default_map)
       : LinearReactionBase<1, RateData, RecombReactionKernels<>, DataCalcType>(
@@ -61,6 +58,6 @@ struct Recombination
             rate_data,
             RecombReactionKernels<>(marker_species, electron_species,
                                     normalised_potential_energy),
-            particle_spec, data_calc_obj, properties_map) {}
+            data_calc_obj, properties_map) {}
 };
 }; // namespace Reactions

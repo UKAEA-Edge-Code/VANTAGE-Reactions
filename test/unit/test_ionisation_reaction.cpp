@@ -10,15 +10,13 @@ TEST(IoniseReaction, calc_rate) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_data = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0);
   target_species.set_id(0);
   auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
       particle_group->sycl_target, test_data, test_data, target_species,
-      electron_species, particle_spec);
+      electron_species);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 

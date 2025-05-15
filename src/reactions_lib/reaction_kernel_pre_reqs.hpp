@@ -76,7 +76,7 @@ private:
 };
 
 inline bool operator==(const Species &lhs, const Species &rhs) {
-    return lhs.get_name() == rhs.get_name() && lhs.get_id() == rhs.get_id();
+  return lhs.get_name() == rhs.get_name() && lhs.get_id() == rhs.get_id();
 }
 
 /**
@@ -187,8 +187,8 @@ template <typename PROP_TYPE> struct Properties {
         new_species.push_back(other_species);
       }
     }
-    return Properties<PROP_TYPE>(
-        new_simple_props, new_species, new_species_props);
+    return Properties<PROP_TYPE>(new_simple_props, new_species,
+                                 new_species_props);
   }
 
   /**

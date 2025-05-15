@@ -22,11 +22,9 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   const INT num_products_per_parent = 1;
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_reaction = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0,
-      std::array<int, num_products_per_parent>{1}, particle_spec);
+      std::array<int, num_products_per_parent>{1});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));
@@ -120,10 +118,8 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   REAL test_rate = 5.0;
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_reaction1 = TestReaction<0>(particle_group->sycl_target, test_rate,
-                                        0, std::array<int, 0>{}, particle_spec);
+                                        0, std::array<int, 0>{});
 
   const INT num_products_per_parent = 2;
 
@@ -131,7 +127,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0,
-      std::array<int, num_products_per_parent>{1, 2}, particle_spec);
+      std::array<int, num_products_per_parent>{1, 2});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction1));
@@ -211,17 +207,15 @@ TEST(ReactionController, multi_reaction_multi_apply) {
 
   const INT num_products_per_parent = 1;
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_reaction1 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0,
-      std::array<int, num_products_per_parent>{1}, particle_spec);
+      std::array<int, num_products_per_parent>{1});
 
   test_rate = 10.0; // example rate
 
   auto test_reaction2 = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 2,
-      std::array<int, num_products_per_parent>{3}, particle_spec);
+      std::array<int, num_products_per_parent>{3});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction1));
@@ -292,10 +286,8 @@ TEST(ReactionController, parent_transform) {
   auto reaction_controller =
       ReactionController(parent_transform_wrapper, child_transform_wrapper);
 
-  auto particle_spec = particle_group->get_particle_spec();
-
-  auto test_reaction = TestReaction<0>(particle_group->sycl_target, 1, 0,
-                                       std::array<int, 0>{}, particle_spec);
+  auto test_reaction =
+      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));
@@ -322,7 +314,7 @@ TEST(ReactionController, parent_transform) {
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
 
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
-                     reduction->get_cell(icell)->at(0, 0), 1e-12);
+                reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -339,14 +331,12 @@ TEST(ReactionController, ionisation_reaction) {
 
   particle_spec_builder.add_particle_spec(particle_group->get_particle_spec());
 
-  auto particle_spec = particle_spec_builder.get_particle_spec();
-
   auto test_data = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
       particle_group->sycl_target, test_data, test_data, target_species,
-      electron_species, particle_spec);
+      electron_species);
 
   reaction_controller.add_reaction(
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
@@ -385,14 +375,12 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_data = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
   auto ionise_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
       particle_group->sycl_target, test_data, test_data, target_species,
-      electron_species, particle_spec);
+      electron_species);
 
   auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY"});
@@ -487,8 +475,6 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   particle_spec_builder.add_particle_prop<REAL>(real_2d_positional_props, 2,
                                                 true);
 
-  auto particle_spec = particle_spec_builder.get_particle_spec();
-
   auto fixed_rate = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
   auto target_species = Species("ION", 1.0, 1.0, 0);
@@ -496,7 +482,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto ionise_reaction =
       ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>(
           particle_group->sycl_target, test_data, fixed_rate, target_species,
-          electron_species, particle_spec);
+          electron_species);
 
   reaction_controller.add_reaction(
       std::make_shared<
@@ -567,19 +553,17 @@ TEST(ReactionController, semi_dsmc_test) {
   auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
   reaction_controller.set_rng_kernel(rng_kernel);
 
-  auto particle_spec = particle_group->particle_spec;
-
   auto test_reaction_1 = std::make_shared<
       LinearReactionBase<1, FixedCoefficientData, TestReactionKernels<1>>>(
       particle_group->sycl_target, 0, std::array<int, 1>{1},
-      FixedCoefficientData(1.0), TestReactionKernels<1>(), particle_spec);
+      FixedCoefficientData(1.0), TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_1);
 
   auto test_reaction_2 = std::make_shared<
       LinearReactionBase<1, FixedCoefficientData, TestReactionKernels<1>>>(
       particle_group->sycl_target, 0, std::array<int, 1>{2},
-      FixedCoefficientData(3.0), TestReactionKernels<1>(), particle_spec);
+      FixedCoefficientData(3.0), TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_2);
 

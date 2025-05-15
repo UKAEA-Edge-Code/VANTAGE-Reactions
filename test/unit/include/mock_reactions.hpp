@@ -276,12 +276,11 @@ struct TestReaction
   TestReaction() = default;
 
   TestReaction(SYCLTargetSharedPtr sycl_target_, REAL rate_, int in_states_,
-               const std::array<int, num_products_per_parent> out_states_,
-               const ParticleSpec &particle_spec)
+               const std::array<int, num_products_per_parent> out_states_)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
             sycl_target_, in_states_, out_states_, TestReactionData(rate_),
-            TestReactionKernels<num_products_per_parent>(), particle_spec) {}
+            TestReactionKernels<num_products_per_parent>()) {}
 };
 
 namespace TEST_REACTION_VAR_DATA {
@@ -376,11 +375,10 @@ public:
 struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {
 
-  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_, int in_states_,
-                      const ParticleSpec &particle_spec)
+  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_, int in_states_)
       : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
             sycl_target_, in_states_, std::array<int, 0>{},
-            TestReactionVarData(), TestReactionVarKernels(), particle_spec) {}
+            TestReactionVarData(), TestReactionVarKernels()) {}
 };
 
 struct TestEphemeralVarDataOnDevice : public ReactionDataBaseOnDevice<> {

@@ -9,6 +9,8 @@ TEST(Recombination, kernel_test) {
 
   auto particle_group = create_test_particle_group(N_total);
 
+  auto particle_spec = particle_group->particle_spec;
+
   particle_loop(
       particle_group, [=](auto internal_state) { internal_state.at(0) = -1; },
       Access::write(Sym<INT>("INTERNAL_STATE")))
@@ -16,23 +18,22 @@ TEST(Recombination, kernel_test) {
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
   auto marker_species = Species("ION", 1.0, 0.0, -1);
   auto neutral_species = Species("ION", 1.0, 0.0, 0);
 
   auto test_data = FixedRateData(1.0);
   auto test_data_2 = FixedRateData(2.0);
 
-  auto test_data_calc = DataCalculator<decltype(test_data), decltype(test_data),
-                                       decltype(test_data_2)>(
-      particle_spec, test_data, test_data, test_data_2);
+  auto test_data_calc =
+      DataCalculator<decltype(test_data), decltype(test_data),
+                     decltype(test_data_2)>(test_data, test_data, test_data_2);
 
   auto test_normalised_potential_energy = 13.6;
 
   auto test_reaction =
       Recombination<decltype(test_data), decltype(test_data_calc)>(
           particle_group->sycl_target, test_data, test_data_calc,
-          marker_species, Species("ELECTRON"), neutral_species, particle_spec,
+          marker_species, Species("ELECTRON"), neutral_species,
           test_normalised_potential_energy);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

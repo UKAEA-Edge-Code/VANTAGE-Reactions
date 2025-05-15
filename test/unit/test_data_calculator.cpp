@@ -11,17 +11,14 @@ TEST(DataCalculator, custom_sources) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_reaction =
       LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
                          DataCalculator<TestReactionData, TestReactionData>>(
 
           particle_group->sycl_target, 0, std::array<int, 0>{},
           TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
-          particle_spec,
           DataCalculator<TestReactionData, TestReactionData>(
-              particle_spec, TestReactionData(3.0), TestReactionData(4.0)));
+              TestReactionData(3.0), TestReactionData(4.0)));
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -57,8 +54,6 @@ TEST(DataCalculator, mixed_multi_dim) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto energy_dat_0 = FixedRateData(0.1);
   auto energy_dat_1 = FixedRateData(1.5);
 
@@ -73,7 +68,7 @@ TEST(DataCalculator, mixed_multi_dim) {
   // (1D, 2D, 1D) order of ReactionData dimensions
   auto data_calc_obj = DataCalculator<decltype(energy_dat_0), decltype(vel_dat),
                                       decltype(energy_dat_1)>(
-      particle_spec, energy_dat_0, vel_dat, energy_dat_1);
+      energy_dat_0, vel_dat, energy_dat_1);
 
   auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
       particle_group->sycl_target, 0, data_calc_obj.get_data_size());
