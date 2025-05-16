@@ -5,8 +5,8 @@ Installation
 Pre-requisites
 ==============
 
-* gcc 11.3.0+: Tested up to 13.3.0
-* spack v0.21.0+: Tested up to v0.23.0
+* gcc 11.3.0+: Tested up to 14.2.0
+* spack v0.21.0+: Tested up to v0.23.1
 
 Spack environment setup
 =======================
@@ -14,7 +14,7 @@ Spack environment setup
 To start with, it's necessary to clone spack:
 ::
 
-    git clone -c feature.manyFiles=true -b v0.23.0 https://github.com/spack/spack.git $HOME/.spack
+    git clone -c feature.manyFiles=true -b v0.23.1 https://github.com/spack/spack.git $HOME/.spack
 
 It can also be useful to create a temporary directory in your home directory in case there are any permission issues (eg. ``mkdir $HOME/temp_dir``).
 Set the environment variables and run the spack environment setup:
@@ -110,6 +110,13 @@ The CPU specific command to run the unit tests is:
 
     OMP_NUM_THREADS=1 mpirun -n 1 {build_dir}/test/unit/unit_tests
 
+Certain tests have additional checks to ensure that invalid inputs/states throw errors.
+Ordinarily, if a check using NESOASSERT fails, the executable aborts via MPI which makes testing failure cases difficult.
+To ensure that invalid/failure states are tested, run the unit tests with the command:
+::
+
+    TEST_NESOASSERT=ON OMP_NUM_THREADS=1 mpirun -n 1 {build_dir}/test/unit/unit_tests
+
 Run unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -117,3 +124,8 @@ The GPU specific command to run the unit tests is:
 ::
 
     SYCL_DEVICE_FILTER=GPU mpirun -n 1 {build_dir}/test/unit/unit_tests
+
+Similarly, to enable testing of failure states on GPU:
+::
+
+    TEST_NESOASSERT=ON SYCL_DEVICE_FILTER=GPU mpirun -n 1 {build_dir}/test/unit/unit_tests

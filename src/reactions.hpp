@@ -1,5 +1,6 @@
 #pragma once
 
+#include "neso_test_assert.hpp"
 #include "reactions_lib/common_markers.hpp"
 #include "reactions_lib/common_transformations.hpp"
 #include "reactions_lib/data_calculator.hpp"

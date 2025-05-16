@@ -1,5 +1,6 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include <cmath>
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -174,4 +175,32 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   }
 
   particle_group->domain->mesh->free();
+}
+
+TEST(ReactionData, EphemeralPropertiesReactionData) {
+
+  auto test_data = TestEphemeralVarData();
+
+  auto expected_prop_names =
+      std::vector<std::string>{get_default_map().at(default_properties.weight),
+                               get_default_map().at(default_properties.velocity)};
+
+  auto test_prop_names = test_data.get_required_real_props();
+
+  ASSERT_EQ(expected_prop_names.size(), test_prop_names.size());
+  for (int i = 0; i < test_prop_names.size(); i++) {
+    EXPECT_EQ(expected_prop_names[i], test_prop_names[i]);
+  }
+
+  auto expected_prop_names_ephemeral = 
+      std::vector<std::string>{get_default_map().at(default_properties.velocity)};
+
+  auto test_prop_names_ephemeral =
+      test_data.get_required_real_props_ephemeral();
+
+  ASSERT_EQ(expected_prop_names_ephemeral.size(),
+            test_prop_names_ephemeral.size());
+  for (int i = 0; i < test_prop_names_ephemeral.size(); i++) {
+    EXPECT_EQ(expected_prop_names_ephemeral[i], test_prop_names_ephemeral[i]);
+  }
 }

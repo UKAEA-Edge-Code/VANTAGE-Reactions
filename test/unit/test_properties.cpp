@@ -31,8 +31,7 @@ TEST(Properties, simple_prop_names) {
       Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
                        std::vector<int>(default_properties.density));
 
-  // TODO: Replace with NESOASSERT tests
-  // EXPECT_THROW(empty_simple_props_obj.simple_prop_names(), std::logic_error);
+  ASSERT_EQ(empty_simple_props_obj.simple_prop_names(), std::vector<std::string>());
 
   auto int_props_obj = PropertiesTest::int_props;
 
@@ -89,10 +88,11 @@ TEST(Properties, simple_prop_names) {
 
   // Since default_properties.weight will not be a key in the fully
   // custom_full_prop_map
-  // TODO: Replace with NESOASSERT tests
-  // EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
-  //                 PropertiesTest::custom_prop_no_weight_map),
-  //             std::out_of_range);
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
+                    PropertiesTest::custom_prop_no_weight_map),
+                std::logic_error);
+  }
 
   auto custom_full_simple_props_obj = Properties<REAL>(
       std::vector<int>{PropertiesTest::custom_props.test_custom_prop1,
@@ -110,9 +110,10 @@ TEST(Properties, simple_prop_index) {
       Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
                        std::vector<int>(default_properties.density));
 
-  // TODO: Replace with NESOASSERT tests
-  // EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
-  //               std::logic_error);
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
+                  std::logic_error);
+  }
 
   auto int_props_obj = PropertiesTest::int_props;
 
@@ -149,9 +150,7 @@ TEST(Properties, species_prop_names) {
   auto empty_species_props_obj =
       Properties<INT>(std::vector<int>{default_properties.internal_state});
 
-  // TODO: Replace with NESOASSERT tests
-  // EXPECT_THROW(empty_species_props_obj.species_prop_names(),
-  // std::logic_error);
+  ASSERT_EQ(empty_species_props_obj.species_prop_names(), std::vector<std::string>());
 
   auto real_props_obj = PropertiesTest::real_props;
 
@@ -199,10 +198,11 @@ TEST(Properties, species_prop_index) {
   auto empty_species_props_obj =
       Properties<REAL>(std::vector<int>(default_properties.velocity));
 
-  // TODO: Replace with NESOASSERT tests
-  // EXPECT_THROW(empty_species_props_obj.species_prop_index(
-  //                  "ELECTRON", default_properties.density),
-  //              std::logic_error);
+if (std::getenv("TEST_NESOASSERT") != nullptr) {
+  EXPECT_THROW(empty_species_props_obj.species_prop_index(
+                   "ELECTRON", default_properties.density),
+               std::logic_error);
+}
 
   auto real_props_obj = PropertiesTest::real_props;
 

@@ -72,8 +72,14 @@ struct AbstractCrossSection {
  * regarding the required INT-based properties for the reaction data.
  * @param required_real_props Properties<REAL> object containing information
  * regarding the required REAL-based properties for the reaction data.
- * @param properties_map_ A std::map<int, std::string> object to be used when
- * retrieving property names (in get_required_real_props(...) and
+ * @param required_int_props_ephemeral Properties<INT> object containing
+ * information regarding the required INT-based ephemeral properties for the
+ * reaction data.
+ * @param required_real_props_ephemeral Properties<REAL> object containing
+ * information regarding the required REAL-based ephemeral properties for the
+ * reaction data.
+ * @param properties_map A std::map<int, std::string> object to be used when
+ * retrieven property names, i.e. remapping default property names
  * get_required_int_props(...)).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
@@ -82,38 +88,82 @@ struct ReactionDataBase {
   using RNG_KERNEL_TYPE = RNG_TYPE;
   ReactionDataBase(Properties<INT> required_int_props,
                    Properties<REAL> required_real_props,
+                   Properties<INT> required_int_props_ephemeral,
+                   Properties<REAL> required_real_props_ephemeral,
                    std::map<int, std::string> properties_map_ = get_default_map())
       : required_int_props(required_int_props),
         required_real_props(required_real_props),
-        properties_map(properties_map_) {
+        required_int_props_ephemeral(required_int_props_ephemeral),
+        required_real_props_ephemeral(required_real_props_ephemeral),
+        properties_map(properties_map) {
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
   ReactionDataBase(std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
-                         properties_map_) {}
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
 
   ReactionDataBase(Properties<INT> required_int_props,
                    std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(required_int_props, Properties<REAL>(),
-                         properties_map_) {}
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
 
   ReactionDataBase(Properties<REAL> required_real_props,
                    std::map<int, std::string> properties_map_ = get_default_map())
       : ReactionDataBase(Properties<INT>(), required_real_props,
-                         properties_map_) {}
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
 
+  ReactionDataBase(Properties<INT> required_int_props,
+                   Properties<REAL> required_real_props,
+                   std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase(required_int_props, required_real_props,
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
   /**
-   * Getters for the vector of std::string objects that represent the names of
-   * either INT or REAL-based properties.
+   * @brief Return all required integer property names, including ephemeral
+   * properties
+   *
    */
   std::vector<std::string> get_required_int_props() {
-    return this->required_int_props.get_prop_names(this->properties_map);
+    auto names = this->required_int_props.get_prop_names(this->properties_map);
+    auto ephemeral_names =
+        this->required_int_props_ephemeral.get_prop_names(this->properties_map);
+    names.insert(names.end(), ephemeral_names.begin(), ephemeral_names.end());
+    return names;
   }
 
+  /**
+   * @brief Return all required real property names, including ephemeral
+   * properties
+   *
+   */
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.get_prop_names(this->properties_map);
+    auto names = this->required_real_props.get_prop_names(this->properties_map);
+    auto ephemeral_names = this->required_real_props_ephemeral.get_prop_names(
+        this->properties_map);
+    names.insert(names.end(), ephemeral_names.begin(), ephemeral_names.end());
+    return names;
+  }
+
+  /**
+   * @brief Return names of required ephemeral integer properties
+   *
+   */
+  std::vector<std::string> get_required_int_props_ephemeral() {
+    return this->required_int_props_ephemeral.get_prop_names(
+        this->properties_map);
+  }
+  /**
+   * @brief Return names of required ephemeral real properties
+   *
+   */
+  std::vector<std::string> get_required_real_props_ephemeral() {
+    return this->required_real_props_ephemeral.get_prop_names(
+        this->properties_map);
   }
 
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
@@ -127,6 +177,8 @@ struct ReactionDataBase {
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
+  Properties<INT> required_int_props_ephemeral;
+  Properties<REAL> required_real_props_ephemeral;
   std::shared_ptr<RNG_TYPE> rng_kernel;
   std::map<int, std::string> properties_map;
 };
