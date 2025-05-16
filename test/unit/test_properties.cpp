@@ -1,6 +1,8 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_particle_properties.hpp"
 #include "include/mock_reactions.hpp"
+#include "reactions_lib/particle_properties_map.hpp"
+#include "reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -31,7 +33,8 @@ TEST(Properties, simple_prop_names) {
       Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
                        std::vector<int>(default_properties.density));
 
-  ASSERT_EQ(empty_simple_props_obj.simple_prop_names(), std::vector<std::string>());
+  ASSERT_EQ(empty_simple_props_obj.simple_prop_names(),
+            std::vector<std::string>());
 
   auto int_props_obj = PropertiesTest::int_props;
 
@@ -90,8 +93,8 @@ TEST(Properties, simple_prop_names) {
   // custom_full_prop_map
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     EXPECT_THROW(custom_simple_props_obj.simple_prop_names(
-                    PropertiesTest::custom_prop_no_weight_map),
-                std::logic_error);
+                     PropertiesTest::custom_prop_no_weight_map),
+                 std::logic_error);
   }
 
   auto custom_full_simple_props_obj = Properties<REAL>(
@@ -111,8 +114,9 @@ TEST(Properties, simple_prop_index) {
                        std::vector<int>(default_properties.density));
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
-    EXPECT_THROW(empty_simple_props_obj.simple_prop_index(default_properties.id),
-                  std::logic_error);
+    EXPECT_THROW(
+        empty_simple_props_obj.simple_prop_index(default_properties.id),
+        std::logic_error);
   }
 
   auto int_props_obj = PropertiesTest::int_props;
@@ -150,7 +154,8 @@ TEST(Properties, species_prop_names) {
   auto empty_species_props_obj =
       Properties<INT>(std::vector<int>{default_properties.internal_state});
 
-  ASSERT_EQ(empty_species_props_obj.species_prop_names(), std::vector<std::string>());
+  ASSERT_EQ(empty_species_props_obj.species_prop_names(),
+            std::vector<std::string>());
 
   auto real_props_obj = PropertiesTest::real_props;
 
@@ -198,11 +203,11 @@ TEST(Properties, species_prop_index) {
   auto empty_species_props_obj =
       Properties<REAL>(std::vector<int>(default_properties.velocity));
 
-if (std::getenv("TEST_NESOASSERT") != nullptr) {
-  EXPECT_THROW(empty_species_props_obj.species_prop_index(
-                   "ELECTRON", default_properties.density),
-               std::logic_error);
-}
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(empty_species_props_obj.species_prop_index(
+                     "ELECTRON", default_properties.density),
+                 std::logic_error);
+  }
 
   auto real_props_obj = PropertiesTest::real_props;
 
@@ -276,6 +281,78 @@ TEST(Properties, properties_getters) {
                        default_properties.source_momentum};
 
   auto returned_all_props = default_props_obj.get_props();
+
+  EXPECT_EQ(expected_all_props.size(), returned_all_props.size());
+  for (int i = 0; i < expected_all_props.size(); i++) {
+    EXPECT_EQ(expected_all_props[i], returned_all_props[i]);
+  }
+}
+
+// Testing merge_with for Properties struct
+TEST(Properties, merge_with) {
+
+  auto simple_props1 = std::vector<int>{
+      default_properties.position, default_properties.velocity,
+      default_properties.tot_reaction_rate, default_properties.weight};
+
+  auto species1 = std::vector<Species>{Species("ELECTRON")};
+
+  auto species_props1 = std::vector<int>{default_properties.temperature,
+                                         default_properties.density};
+
+  auto properties1 = Properties<REAL>(simple_props1, species1, species_props1);
+
+  auto simple_props2 = std::vector<int>{default_properties.position,
+                                        default_properties.fluid_density};
+
+  auto species2 = std::vector<Species>{Species("ION"), Species("ELECTRON")};
+
+  auto species_props2 = std::vector<int>{default_properties.density,
+                                         default_properties.source_density};
+
+  auto properties2 = Properties<REAL>(simple_props2, species2, species_props2);
+
+  auto merge_props = properties1.merge_with(properties2);
+
+  auto expected_simple_props = std::vector<int>{
+      default_properties.position, default_properties.velocity,
+      default_properties.tot_reaction_rate, default_properties.weight,
+      default_properties.fluid_density};
+
+  auto expected_species =
+      std::vector<Species>{Species("ELECTRON"), Species("ION")};
+
+  auto expected_species_props = std::vector<int>{
+      default_properties.temperature, default_properties.density,
+      default_properties.source_density};
+
+  auto returned_simple_props = merge_props.get_simple_props();
+  auto returned_species = merge_props.get_species();
+  auto returned_species_props = merge_props.get_species_props();
+
+  EXPECT_EQ(expected_simple_props.size(), returned_simple_props.size());
+  for (int i = 0; i < returned_simple_props.size(); i++) {
+    EXPECT_EQ(expected_simple_props[i], returned_simple_props[i]);
+  }
+
+  EXPECT_EQ(expected_species.size(), returned_species.size());
+  for (int i = 0; i < returned_species.size(); i++) {
+    EXPECT_STREQ(expected_species[i].get_name().c_str(),
+                 returned_species[i].get_name().c_str());
+  }
+
+  EXPECT_EQ(expected_species_props.size(), returned_species_props.size());
+  for (int i = 0; i < returned_species_props.size(); i++) {
+    EXPECT_EQ(expected_species_props[i], returned_species_props[i]);
+  }
+
+  auto expected_all_props = std::vector<int>{
+      default_properties.position,          default_properties.velocity,
+      default_properties.tot_reaction_rate, default_properties.weight,
+      default_properties.fluid_density,     default_properties.temperature,
+      default_properties.density,           default_properties.source_density};
+
+  auto returned_all_props = merge_props.get_props();
 
   EXPECT_EQ(expected_all_props.size(), returned_all_props.size());
   for (int i = 0; i < expected_all_props.size(); i++) {

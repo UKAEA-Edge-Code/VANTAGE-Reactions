@@ -42,6 +42,13 @@ public:
     return (this->name.value());
   }
 
+  /**
+   * @brief Return true if this species has an id associated to it
+   *
+   * @return True it this species ahs an id associated to it
+   */
+  bool has_id() const { return this->id.has_value(); }
+
   INT get_id() const {
     NESOASSERT(this->id.has_value(),
                "The member variable: Species.id has not been assigned");
@@ -75,8 +82,15 @@ private:
   std::optional<REAL> charge;
 };
 
+//TODO: Make this more robust 
 inline bool operator==(const Species &lhs, const Species &rhs) {
-  return lhs.get_name() == rhs.get_name() && lhs.get_id() == rhs.get_id();
+
+  if (lhs.has_id() && rhs.has_id()) {
+
+    return lhs.get_name() == rhs.get_name() && lhs.get_id() == rhs.get_id();
+  }
+
+  return lhs.get_name() == rhs.get_name() && lhs.has_id() == rhs.has_id();
 }
 
 /**
