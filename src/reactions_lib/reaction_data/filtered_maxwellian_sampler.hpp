@@ -148,7 +148,7 @@ public:
  * sampling
  * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
  * set as the rng_kernel in ReactionDataBase.
- * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * @param properties_map A std::map<int, std::string> object to be passed to
  * ReactionDataBase
  *
  */
@@ -167,11 +167,11 @@ struct FilteredMaxwellianSampler
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map_ = get_default_map())
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props),
-            properties_map_),
+            properties_map),
         device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
             norm_ratio, cross_section)) {
 

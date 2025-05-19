@@ -24,14 +24,6 @@ class Reactions(CMakePackage):
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
-        if "+nvcxx" in self.spec:
-            args.append("-DNESO_PARTICLES_DEVICE_TYPE=GPU")
-            args.append("-DACPP_TARGETS=cuda-nvcxx")
-            args.append("-DREACTIONS_DEVICE_TYPE=GPU")
-        elif "~nvcxx" in self.spec:
-            args.append("-DNESO_PARTICLES_DEVICE_TYPE=CPU")
-            args.append("-DACPP_TARGETS=omp")
-            args.append("-DREACTIONS_DEVICE_TYPE=CPU")
 
         return args
 

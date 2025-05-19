@@ -218,18 +218,18 @@ struct CXReactionKernels : public ReactionKernelsBase {
    * target - the ingoing ion and outgoing neutral
    * @param projectile_species Species object representing the projectile
    * species - the outgoing ion and ingoing neutral
-   * @param properties_map_ A std::map<int, std::string> object to be to be
+   * @param properties_map A std::map<int, std::string> object to be to be
    * passed to ReactionKernelsBase.
    */
   CXReactionKernels(const Species &target_species,
                     const Species &projectile_species,
-                    std::map<int, std::string> properties_map_ = get_default_map())
+                    std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
             Properties<REAL>(
                 required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
                 required_species_real_props),
-            ndim_velocity, properties_map_) {
+            ndim_velocity, properties_map) {
 
     static_assert((ndim_velocity >= ndim_source_momentum),
                   "Number of dimension for VELOCITY must be greater than or "

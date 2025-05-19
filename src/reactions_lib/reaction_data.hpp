@@ -90,7 +90,7 @@ struct ReactionDataBase {
                    Properties<REAL> required_real_props,
                    Properties<INT> required_int_props_ephemeral,
                    Properties<REAL> required_real_props_ephemeral,
-                   std::map<int, std::string> properties_map_ = get_default_map())
+                   std::map<int, std::string> properties_map = get_default_map())
       : required_int_props(required_int_props),
         required_real_props(required_real_props),
         required_int_props_ephemeral(required_int_props_ephemeral),
@@ -100,19 +100,19 @@ struct ReactionDataBase {
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
-  ReactionDataBase(std::map<int, std::string> properties_map_ = get_default_map())
+  ReactionDataBase(std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
 
   ReactionDataBase(Properties<INT> required_int_props,
-                   std::map<int, std::string> properties_map_ = get_default_map())
+                   std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(required_int_props, Properties<REAL>(),
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
 
   ReactionDataBase(Properties<REAL> required_real_props,
-                   std::map<int, std::string> properties_map_ = get_default_map())
+                   std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(), required_real_props,
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}

@@ -1,4 +1,7 @@
 packages:
+  cuda:
+    require: 
+      - "@12.4.1"
   openmpi:
       externals:
       - spec: openmpi@4.1.1~cuda~cxx~cxx_exceptions~java~memchecker+pmi+static~wrapper-rpath
