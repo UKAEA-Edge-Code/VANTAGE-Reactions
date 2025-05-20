@@ -180,8 +180,9 @@ public:
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
    */
-  void apply_reactions(ParticleGroupSharedPtr particle_group, double dt,
-                       ControllerMode controller_mode = standard_mode) {
+  void apply_reactions(
+      ParticleGroupSharedPtr particle_group, double dt,
+      ControllerMode controller_mode = ControllerMode::standard_mode) {
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
     // Ensure that the total rate buffer is flushed before the reactions are
@@ -213,7 +214,7 @@ public:
 
     switch (controller_mode) {
 
-    case semi_dsmc_mode:
+    case ControllerMode::semi_dsmc_mode:
       use_full_weight = true;
 
       break;
@@ -235,7 +236,7 @@ public:
 
         switch (controller_mode) {
 
-        case semi_dsmc_mode: {
+        case ControllerMode::semi_dsmc_mode: {
 
           for (int in_state : in_states) {
             this->reacted_species_groups.emplace(std::make_pair(
@@ -271,7 +272,7 @@ public:
 
       switch (controller_mode) {
 
-      case semi_dsmc_mode: {
+      case ControllerMode::semi_dsmc_mode: {
 
         // marking loop
         auto loop = particle_loop(

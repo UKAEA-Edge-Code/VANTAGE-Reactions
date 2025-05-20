@@ -1,5 +1,6 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -582,7 +583,7 @@ TEST(ReactionController, semi_dsmc_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0, semi_dsmc_mode);
+  reaction_controller.apply_reactions(particle_group, 1.0, ControllerMode::semi_dsmc_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
