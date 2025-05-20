@@ -9,10 +9,18 @@ using namespace NESO::Particles;
 
 namespace Reactions {
 
-enum ControllerMode {
+/**
+ * @brief Enum class containing possible modes for the ReactionController
+ */
+enum class ControllerMode {
 
-  standard_mode,
-  semi_dsmc_mode
+  standard_mode, /**< Standard mode, where every reaction is applied on part of
+                    the ingoing particle's weight, with some weight potentially
+                    not participating in any reaction*/
+  semi_dsmc_mode /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
+                    method, where MC is used to get which particles go through a
+                    reaction, and then all possible reactions are applied to
+                    those particles, consuming them completely. */
 
 };
 
