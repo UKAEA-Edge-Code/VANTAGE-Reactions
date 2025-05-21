@@ -43,9 +43,9 @@ public:
   }
 
   /**
-   * @brief Return true if this species has an id associated to it
+   * @brief Return true if this species has an id associated with it
    *
-   * @return True it this species has an id associated to it
+   * @return True if this species has an id associated with it
    */
   bool has_id() const { return this->id.has_value(); }
 
