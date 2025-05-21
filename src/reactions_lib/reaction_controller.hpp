@@ -10,6 +10,21 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
+ * @brief Enum class containing possible modes for the ReactionController
+ */
+enum class ControllerMode {
+
+  standard_mode, /**< Standard mode, where every reaction is applied on part of
+                    the ingoing particle's weight, with some weight potentially
+                    not participating in any reaction*/
+  semi_dsmc_mode /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
+                    method, where MC is used to get which particles go through a
+                    reaction, and then all possible reactions are applied to
+                    those particles, consuming them completely. */
+
+};
+
+/**
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given ParticleGroup.
  *
@@ -134,8 +149,6 @@ public:
     this->max_particles_per_cell = max_num_parts;
   }
 
-  void set_mode_semi_dsmc() { this->semi_dsmc = true; }
-
   /**
    * @brief Set the number of cells per cell block, determines how many cells
    * each reaction runs its loops over at a time, and determines the maximum
@@ -167,7 +180,9 @@ public:
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
    */
-  void apply_reactions(ParticleGroupSharedPtr particle_group, double dt) {
+  void apply_reactions(
+      ParticleGroupSharedPtr particle_group, double dt,
+      ControllerMode controller_mode = ControllerMode::standard_mode) {
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
     // Ensure that the total rate buffer is flushed before the reactions are
@@ -195,6 +210,19 @@ public:
                "least one reaction to the ReactionController object (via "
                "ReactionController.add_reaction(...)).");
 
+    bool use_full_weight = false;
+
+    switch (controller_mode) {
+
+    case ControllerMode::semi_dsmc_mode:
+      use_full_weight = true;
+
+      break;
+
+    default:
+      break;
+    }
+
     for (int r = 0; r < this->reactions.size(); r++) {
       if (!this->reactions[r]->get_in_states().empty()) {
         auto in_states = this->reactions[r]->get_in_states();
@@ -206,14 +234,25 @@ public:
                   std::make_shared<ParticleSubGroup>(particle_group))));
         }
 
-        // TODO: Make mode selection better
-        if (this->semi_dsmc) {
+        switch (controller_mode) {
+
+        case ControllerMode::semi_dsmc_mode: {
 
           for (int in_state : in_states) {
             this->reacted_species_groups.emplace(std::make_pair(
                 in_state, this->reacted_marker->make_marker_subgroup(
-                                  this->species_groups[in_state])));
+                              this->species_groups[in_state])));
           }
+          break;
+        }
+
+        default: {
+          for (int in_state : in_states) {
+            this->reacted_species_groups.emplace(
+                std::make_pair(in_state, this->species_groups[in_state]));
+          }
+          break;
+        }
         }
       }
     }
@@ -231,7 +270,9 @@ public:
             std::min(i + this->cell_block_size, cell_count));
       }
 
-      if (this->semi_dsmc) {
+      switch (controller_mode) {
+
+      case ControllerMode::semi_dsmc_mode: {
 
         // marking loop
         auto loop = particle_loop(
@@ -261,22 +302,22 @@ public:
               this->reacted_species_groups[in_state], i,
               std::min(i + this->cell_block_size, cell_count));
         }
+
+        break;
       }
+
+      default: {
+        break;
+      }
+      }
+
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        if (this->semi_dsmc) {
-
-          this->reactions[r]->descendant_product_loop(
-              this->reacted_species_groups[in_state], i,
-              std::min(i + this->cell_block_size, cell_count), dt, child_group,
-              this->semi_dsmc);
-        } else {
-          this->reactions[r]->descendant_product_loop(
-              this->species_groups[in_state], i,
-              std::min(i + this->cell_block_size, cell_count), dt, child_group,
-              this->semi_dsmc);
-        }
+        this->reactions[r]->descendant_product_loop(
+            this->reacted_species_groups[in_state], i,
+            std::min(i + this->cell_block_size, cell_count), dt, child_group,
+            use_full_weight);
       }
 
       for (auto it = this->child_ids.begin(); it != this->child_ids.end();
@@ -311,16 +352,15 @@ public:
   }
 
   std::shared_ptr<HostPerParticleBlockRNG<REAL>> get_rng_kernel() {
-    NESOASSERT(this->rng_kernel != nullptr, 
-        "RNG kernel is nullptr, was set_rng_kernel called?");
+    NESOASSERT(this->rng_kernel != nullptr,
+               "RNG kernel is nullptr, was set_rng_kernel called?");
     return this->rng_kernel;
   }
 
 private:
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, ParticleSubGroupSharedPtr>
-      reacted_species_groups; // Used only for semi-dsmc mode
+  std::map<int, ParticleSubGroupSharedPtr> reacted_species_groups;
 
   std::set<int> parent_ids;
   std::set<int> child_ids;
@@ -336,7 +376,6 @@ private:
   Sym<REAL> tot_rate_buffer;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
-  bool semi_dsmc = false;
   std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;

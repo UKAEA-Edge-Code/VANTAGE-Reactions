@@ -1,5 +1,6 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -322,7 +323,7 @@ TEST(ReactionController, parent_transform) {
     EXPECT_EQ(particle_group->get_npart_cell(icell), 2);
 
     EXPECT_NEAR(reduction_after->get_cell(icell)->at(0, 0),
-                     reduction->get_cell(icell)->at(0, 0), 1e-12);
+                reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
   particle_group->domain->mesh->free();
@@ -553,8 +554,6 @@ TEST(ReactionController, semi_dsmc_test) {
       std::vector<std::shared_ptr<TransformationWrapper>>{test_removal_wrapper},
       std::vector<std::shared_ptr<TransformationWrapper>>{});
 
-  reaction_controller.set_mode_semi_dsmc();
-
   auto loop = particle_loop(
       "set_weights", particle_group,
       [=](auto id, auto weight) { weight[0] = id[0] % 2 ? 1.0 : 0.5; },
@@ -584,7 +583,7 @@ TEST(ReactionController, semi_dsmc_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0);
+  reaction_controller.apply_reactions(particle_group, 1.0, ControllerMode::semi_dsmc_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
