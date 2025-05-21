@@ -159,8 +159,6 @@ private:
  * @param reaction_data ReactionData object to be used in run_rate_loop.
  * @param reaction_kernels ReactionKernels object to be used in
  * descendant_product_loop.
- * @param particle_spec_ ParticleSpec object containing particle properties to
- * use to construct sym_vectors.
  * @param data_calculator DataCalculator object for filling in the
  * pre_req_data buffer
  * @param properties_map Optional property remapping. Used to get weight and
@@ -176,12 +174,11 @@ struct LinearReactionBase : public AbstractReaction {
       SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const ParticleSpec &particle_spec_, DataCalc data_calculator_,
+      DataCalc data_calculator_,
       const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), particle_spec(particle_spec_),
-        data_calculator(data_calculator_) {
+        reaction_kernels(reaction_kernels), data_calculator(data_calculator_) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and
@@ -209,16 +206,16 @@ struct LinearReactionBase : public AbstractReaction {
     auto reaction_kernel_buffer = this->reaction_kernels;
 
     run_rate_loop_int_syms = utils::build_sym_vector<INT>(
-        this->particle_spec, reaction_data_buffer.get_required_int_props());
+        reaction_data_buffer.get_required_int_props());
 
     run_rate_loop_real_syms = utils::build_sym_vector<REAL>(
-        this->particle_spec, reaction_data_buffer.get_required_real_props());
+        reaction_data_buffer.get_required_real_props());
 
     descendant_product_loop_int_syms = utils::build_sym_vector<INT>(
-        this->particle_spec, reaction_kernel_buffer.get_required_int_props());
+        reaction_kernel_buffer.get_required_int_props());
 
     descendant_product_loop_real_syms = utils::build_sym_vector<REAL>(
-        this->particle_spec, reaction_kernel_buffer.get_required_real_props());
+        reaction_kernel_buffer.get_required_real_props());
 
     auto descendant_matrix_spec =
         reaction_kernel_buffer.get_descendant_matrix_spec();
@@ -252,8 +249,6 @@ struct LinearReactionBase : public AbstractReaction {
    * @param reaction_data ReactionData object to be used in run_rate_loop.
    * @param reaction_kernels ReactionKernels object to be used in
    * descendant_product_loop.
-   * @param particle_spec_ ParticleSpec object containing particle properties to
-   * use to construct sym_vectors.
    * @param properties_map Optional property remapping. Used to get weight and
    * rate buffer syms.
    */
@@ -261,11 +256,9 @@ struct LinearReactionBase : public AbstractReaction {
       SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const ParticleSpec &particle_spec_,
       const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
-                           reaction_kernels, particle_spec_, DataCalc(),
-                           properties_map) {}
+                           reaction_kernels, DataCalc(), properties_map) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -281,7 +274,6 @@ struct LinearReactionBase : public AbstractReaction {
    */
   void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
                      INT cell_idx_start, INT cell_idx_end) override {
-
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
@@ -305,9 +297,10 @@ struct LinearReactionBase : public AbstractReaction {
         [=](auto particle_index, auto weight, auto weight_buffer) {
           INT current_count = particle_index.get_loop_linear_index();
           weight_buffer[current_count] =
-              weight[0]; // store the particle weight before the application of
-                         // any kernels in case we need to know the total weight
-                         // of the particle before any reactions are applied
+              weight[0]; // store the particle weight before the application
+                         // of any kernels in case we need to know the total
+                         // weight of the particle before any reactions are
+                         // applied
         },
         Access::read(ParticleLoopIndex{}), Access::read(this->get_weight_sym()),
         Access::write(device_weight_buffer));
@@ -599,7 +592,6 @@ private:
   std::vector<Sym<INT>> descendant_product_loop_int_syms;
   std::vector<Sym<REAL>> descendant_product_loop_real_syms;
 
-  ParticleSpec particle_spec;
   DataCalc data_calculator;
 };
 } // namespace Reactions

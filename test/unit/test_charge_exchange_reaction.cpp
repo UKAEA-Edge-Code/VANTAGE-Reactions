@@ -11,7 +11,6 @@ TEST(ChargeExchange, simple_beam_exchange) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
 
@@ -21,9 +20,8 @@ TEST(ChargeExchange, simple_beam_exchange) {
           particle_group->sycl_target, 0, std::array<int, 1>{1},
           FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
-          particle_spec,
-          DataCalculator<FixedRateData, FixedRateData>(
-              particle_spec, FixedRateData(-1.0), FixedRateData(1.0)));
+          DataCalculator<FixedRateData, FixedRateData>(FixedRateData(-1.0),
+                                                       FixedRateData(1.0)));
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   auto descendant_particles = std::make_shared<ParticleGroup>(
@@ -93,7 +91,6 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
 
@@ -106,9 +103,8 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
           particle_group->sycl_target, 0, std::array<int, 1>{1},
           FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
-          particle_spec,
           DataCalculator<FilteredMaxwellianSampler<2>>(
-              particle_spec, FilteredMaxwellianSampler<2>(2.0, rng_kernel)));
+              FilteredMaxwellianSampler<2>(2.0, rng_kernel)));
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   auto descendant_particles = std::make_shared<ParticleGroup>(
@@ -186,7 +182,6 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
   auto particle_group = create_test_particle_group<3>(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
 
@@ -201,9 +196,8 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
           particle_group->sycl_target, 0, std::array<int, 1>{1},
           FixedRateData(1.0),
           CXReactionKernels<3>(target_species, projectile_species),
-          particle_spec,
           DataCalculator<FilteredMaxwellianSampler<3>>(
-              particle_spec, FilteredMaxwellianSampler<3>(2.0, rng_kernel)));
+              FilteredMaxwellianSampler<3>(2.0, rng_kernel)));
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   auto descendant_particles = std::make_shared<ParticleGroup>(
