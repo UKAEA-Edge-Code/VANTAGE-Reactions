@@ -276,12 +276,11 @@ struct TestReaction
   TestReaction() = default;
 
   TestReaction(SYCLTargetSharedPtr sycl_target_, REAL rate_, int in_states_,
-               const std::array<int, num_products_per_parent> out_states_,
-               const ParticleSpec &particle_spec)
+               const std::array<int, num_products_per_parent> out_states_)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
             sycl_target_, in_states_, out_states_, TestReactionData(rate_),
-            TestReactionKernels<num_products_per_parent>(), particle_spec) {}
+            TestReactionKernels<num_products_per_parent>()) {}
 };
 
 namespace TEST_REACTION_VAR_DATA {
@@ -376,13 +375,30 @@ public:
 struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {
 
-  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_, int in_states_,
-                      const ParticleSpec &particle_spec)
+  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_, int in_states_)
       : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
             sycl_target_, in_states_, std::array<int, 0>{},
-            TestReactionVarData(), TestReactionVarKernels(), particle_spec) {}
+            TestReactionVarData(), TestReactionVarKernels()) {}
 };
 
+struct TestEphemeralVarDataOnDevice : public ReactionDataBaseOnDevice<> {
+  TestEphemeralVarDataOnDevice() = default;
+
+  std::array<REAL, 1>
+  calc_data(Access::LoopIndex::Read &index,
+            Access::SymVector::Write<INT> req_int_props,
+            Access::SymVector::Read<REAL> req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
+
+    return std::array<REAL, 1>{
+        req_real_props.at_ephemeral(point_ind, index, 0) *
+        req_real_props.at_ephemeral(normal_ind, index, 0)};
+  }
+
+public:
+  int normal_ind, point_ind;
+};
 // TODO: Add corresponding kernel for ephemeral dat test
 struct TestEphemeralVarData : public ReactionDataBase<> {
 
@@ -391,15 +407,30 @@ struct TestEphemeralVarData : public ReactionDataBase<> {
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.weight};
 
-  constexpr static std::array<int, 1> required_simple_real_props_ephemeral = {
-      props.velocity};
+  constexpr static std::array<int, 2> required_simple_real_props_ephemeral = {
+      props.boundary_intersection_point, props.boundary_intersection_normal};
 
   TestEphemeralVarData(std::map<int, std::string> properties_map = default_map)
       : ReactionDataBase(Properties<INT>(),
                          Properties<REAL>(required_simple_real_props),
                          Properties<INT>(),
                          Properties<REAL>(required_simple_real_props_ephemeral),
-                         properties_map) {}
+                         properties_map) {
 
-  // TODO: Add device type for later tests
+    this->test_reaction_var_data_on_device.point_ind =
+        this->required_real_props.simple_prop_index(
+            props.boundary_intersection_point);
+
+    this->test_reaction_var_data_on_device.normal_ind =
+        this->required_real_props.simple_prop_index(
+            props.boundary_intersection_normal);
+  }
+
+private:
+  TestEphemeralVarDataOnDevice test_reaction_var_data_on_device;
+
+public:
+  TestEphemeralVarDataOnDevice get_on_device_obj() {
+    return this->test_reaction_var_data_on_device;
+  }
 };

@@ -17,7 +17,6 @@ inline void electron_impact_ion_example(ParticleGroupSharedPtr particle_group) {
       test_data, // Energy rate data
       target_species, // Ionisation target species
       electron_species, // Electron species object (projectile) 
-      particle_group->particle_spec, // Particle spec needed in the construction of reaction data
       used_map // Weight and total reaction rate remapping - here the default map
       );
   return;

@@ -17,11 +17,8 @@ TEST(LinearReactionBase, calc_rate) {
 
   const INT num_products_per_parent = 0;
 
-  auto particle_spec = particle_group->get_particle_spec();
-
   auto test_reaction = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, test_rate, 0, std::array<int, 0>{},
-      particle_spec);
+      particle_group->sycl_target, test_rate, 0, std::array<int, 0>{});
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -51,15 +48,11 @@ TEST(LinearReactionBase, calc_var_rate) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto particle_spec = particle_group->get_particle_spec();
-
-  auto test_reaction =
-      TestReactionVarRate(particle_group->sycl_target, 0, particle_spec);
+  auto test_reaction = TestReactionVarRate(particle_group->sycl_target, 0);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   for (int i = 0; i < cell_count; i++) {
-
     test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
     test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
 
@@ -98,13 +91,11 @@ TEST(LinearReactionBase, split_group_single_reaction) {
 
   particle_group->add_particles_local(particle_group_2);
 
-  auto particle_spec = particle_group->get_particle_spec();
+  auto test_reaction1 =
+      TestReaction<0>(particle_group->sycl_target, 1, 2, std::array<int, 0>{});
 
-  auto test_reaction1 = TestReaction<0>(particle_group->sycl_target, 1, 2,
-                                        std::array<int, 0>{}, particle_spec);
-
-  auto test_reaction2 = TestReaction<1>(particle_group->sycl_target, 2, 3,
-                                        std::array<int, 1>{4}, particle_spec);
+  auto test_reaction2 =
+      TestReaction<1>(particle_group->sycl_target, 2, 3, std::array<int, 1>{4});
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions = {
       std::make_shared<TestReaction<0>>(test_reaction1),
@@ -174,18 +165,16 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
   auto particle_sub_group = sub_group_selector->make_marker_subgroup(
       std::make_shared<ParticleSubGroup>(particle_group));
 
-  auto particle_spec = particle_group->get_particle_spec();
+  auto test_reaction1 =
+      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
 
-  auto test_reaction1 = TestReaction<0>(particle_group->sycl_target, 1, 0,
-                                        std::array<int, 0>{}, particle_spec);
-
-  auto test_reaction2 = TestReaction<0>(particle_group->sycl_target, 1, 0,
-                                        std::array<int, 0>{}, particle_spec);
+  auto test_reaction2 =
+      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
 
   const INT num_products_per_parent = 1;
 
   auto test_reaction3 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, 2, 0, std::array<int, 1>{1}, particle_spec);
+      particle_group->sycl_target, 2, 0, std::array<int, 1>{1});
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions{};
   reactions.push_back(std::make_shared<TestReaction<0>>(test_reaction1));
@@ -250,9 +239,7 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
               IoniseReactionKernels<2>(Species("ION", 1.0, 1.0, 0),
                                        Species("ELECTRON"),
                                        Species("ELECTRON")),
-              particle_group->get_particle_spec(),
-              DataCalculator<FixedRateData>(particle_group->get_particle_spec(),
-                                            FixedRateData(1))) {}
+              DataCalculator<FixedRateData>(FixedRateData(1))) {}
 
     const LocalArraySharedPtr<REAL> &get_device_rate_buffer_derived() {
       return this->get_device_rate_buffer();
@@ -299,8 +286,8 @@ TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
               particle_group->sycl_target, 0, std::array<int, 0>{},
               FixedRateData(1),
               IoniseReactionKernels<>(Species("ION", 1.0, 1.0, 0),
-                                      Species("ELECTRON"), Species("ELECTRON")),
-              particle_group->get_particle_spec()) {}
+                                      Species("ELECTRON"),
+                                      Species("ELECTRON"))) {}
   };
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {

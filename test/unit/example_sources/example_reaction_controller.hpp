@@ -19,7 +19,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
   auto vy_beam_data = FixedRateData(-1.0);
 
   auto data_calculator = DataCalculator<FixedRateData, FixedRateData>(
-      particle_spec, vx_beam_data, vy_beam_data);
+       vx_beam_data, vy_beam_data);
 
   auto cx_kernel = CXReactionKernels<2>(ion_species_1, ion_species_2, prop_map);
 
@@ -30,20 +30,20 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       particle_group->sycl_target,
       ion_species_1.get_id(),
       std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data,
-      cx_kernel, particle_spec, data_calculator);
+      cx_kernel, data_calculator);
 
   // Ionisation reactions
   auto ionise_reaction_1 =
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           particle_group->sycl_target,
           rate_data, rate_data,
-          ion_species_1, electron_species, particle_group->particle_spec);
+          ion_species_1, electron_species);
 
   auto ionise_reaction_2 =
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           particle_group->sycl_target,
           rate_data, rate_data,
-          ion_species_2, electron_species, particle_group->particle_spec);
+          ion_species_2, electron_species);
 
   // We can now initialise a reaction controller and populate it with the above
   // reactions We start off by creating transformations for the children and

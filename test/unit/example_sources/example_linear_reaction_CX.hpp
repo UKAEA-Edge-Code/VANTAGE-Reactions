@@ -46,8 +46,7 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
   auto vy_beam_data = FixedRateData(-1.0);
 
   // DataCalculators are templated against their contents, so in this case 
-  auto data_calculator = DataCalculator<FixedRateData,FixedRateData>(particle_spec, // DataCalculator must know the particle group spec
-                                                                     vx_beam_data,
+  auto data_calculator = DataCalculator<FixedRateData,FixedRateData>(vx_beam_data,
                                                                      vy_beam_data);
 
   // Finally, the CXReactionKernels class only requires the dimensionality of the velocity space, 
@@ -73,7 +72,6 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
           std::array<int, 1>{static_cast<int>(target_species.get_id())}, // State IDs of all the products - here just one
           rate_data, // Reaction data used for the rate calculation
           cx_kernel, // Reaction kernel object to be used
-          particle_spec, // The reaction also needs to know the ParticleSpec of the group it is going to be applied to
           data_calculator,
           prop_map // Map used for getting weight and total rate syms
           );

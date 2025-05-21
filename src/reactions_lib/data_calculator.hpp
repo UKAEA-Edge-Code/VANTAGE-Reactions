@@ -25,15 +25,8 @@ struct AbstractDataCalculator {};
 template <typename... DATATYPE>
 struct DataCalculator : public AbstractDataCalculator {
 
-  DataCalculator() {
-    static_assert(
-        sizeof...(DATATYPE) == 0,
-        "particle_spec is required to be passed for this constructor if "
-        "non-zero number of ReactionData objects are being passed as well.");
-  };
-
-  DataCalculator(ParticleSpec particle_spec, DATATYPE... data)
-      : particle_spec(particle_spec), data(std::make_tuple(data...)) {
+  DataCalculator(DATATYPE... data)
+      :  data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
     (
@@ -54,11 +47,11 @@ struct DataCalculator : public AbstractDataCalculator {
           (
               [&] {
                 this->data_loop_int_syms.push_back(utils::build_sym_vector<INT>(
-                    this->particle_spec, args.get_required_int_props()));
+                    args.get_required_int_props()));
 
                 this->data_loop_real_syms.push_back(
                     utils::build_sym_vector<REAL>(
-                        this->particle_spec, args.get_required_real_props()));
+                        args.get_required_real_props()));
                 dat_idx++;
               }(),
               ...);
@@ -151,6 +144,5 @@ private:
   std::tuple<DATATYPE...> data;
   std::vector<std::vector<Sym<INT>>> data_loop_int_syms;
   std::vector<std::vector<Sym<REAL>>> data_loop_real_syms;
-  ParticleSpec particle_spec;
 };
 } // namespace Reactions

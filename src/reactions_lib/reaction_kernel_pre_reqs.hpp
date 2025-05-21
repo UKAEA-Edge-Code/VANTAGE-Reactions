@@ -42,6 +42,13 @@ public:
     return (this->name.value());
   }
 
+  /**
+   * @brief Return true if this species has an id associated with it
+   *
+   * @return True if this species has an id associated with it
+   */
+  bool has_id() const { return this->id.has_value(); }
+
   INT get_id() const {
     NESOASSERT(this->id.has_value(),
                "The member variable: Species.id has not been assigned");
@@ -74,6 +81,17 @@ private:
   std::optional<REAL> mass;
   std::optional<REAL> charge;
 };
+
+//TODO: Make this more robust 
+inline bool operator==(const Species &lhs, const Species &rhs) {
+
+  if (lhs.has_id() && rhs.has_id()) {
+
+    return lhs.get_name() == rhs.get_name() && lhs.get_id() == rhs.get_id();
+  }
+
+  return lhs.get_name() == rhs.get_name() && lhs.has_id() == rhs.has_id();
+}
 
 /**
  * @brief Struct for defining the Properties that a ReactionData or
@@ -137,6 +155,55 @@ template <typename PROP_TYPE> struct Properties {
   Properties(std::vector<Species> species_,
              const std::array<int, M> &species_props_)
       : Properties(std::array<int, 0>{}, species_, species_props_){};
+
+  /**
+   * @brief Merge with another property, taking care of duplicates. The
+   * properties of this object are inserted first.
+   *
+   * @param other The Properties object to merge with
+   */
+  Properties<PROP_TYPE> merge_with(Properties<PROP_TYPE> other) {
+
+    auto new_simple_props = this->simple_props;
+
+    for (auto other_prop : other.simple_props) {
+
+      auto it = std::find(new_simple_props.begin(), new_simple_props.end(),
+                          other_prop);
+
+      if (it == new_simple_props.end()) {
+
+        new_simple_props.push_back(other_prop);
+      }
+    }
+
+    auto new_species_props = this->species_props;
+
+    for (auto other_prop : other.species_props) {
+
+      auto it = std::find(new_species_props.begin(), new_species_props.end(),
+                          other_prop);
+
+      if (it == new_species_props.end()) {
+
+        new_species_props.push_back(other_prop);
+      }
+    }
+
+    auto new_species = this->species;
+
+    for (auto other_species : other.species) {
+      auto it =
+          std::find(new_species.begin(), new_species.end(), other_species);
+
+      if (it == new_species.end()) {
+
+        new_species.push_back(other_species);
+      }
+    }
+    return Properties<PROP_TYPE>(new_simple_props, new_species,
+                                 new_species_props);
+  }
 
   /**
    * @brief Function to return a vector of strings containing the names of the

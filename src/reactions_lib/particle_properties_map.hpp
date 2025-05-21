@@ -1,9 +1,10 @@
 #pragma once
 #include <map>
 #include <neso_particles.hpp>
-#include <stdexcept>
 #include <string>
 #include <utility>
+
+using namespace NESO::Particles;
 
 namespace Reactions {
 
@@ -34,6 +35,9 @@ public:
     tot_reaction_rate,
     weight,
     internal_state,
+    boundary_intersection_point,
+    boundary_intersection_normal,
+    boundary_intersection_metadata,
     temperature,
     density,
     flow_speed,
@@ -58,7 +62,8 @@ struct properties_map {
   /**
    * @brief properties_map constructor
    *
-   * @param custom_map User-provided custom map to replace the default private_map.
+   * @param custom_map User-provided custom map to replace the default
+   * private_map.
    */
   properties_map(std::map<int, std::string> custom_map)
       : private_map(custom_map) {
@@ -91,6 +96,12 @@ private:
       {default_properties.tot_reaction_rate, "TOT_REACTION_RATE"},
       {default_properties.weight, "WEIGHT"},
       {default_properties.internal_state, "INTERNAL_STATE"},
+      {default_properties.boundary_intersection_point,
+       BoundaryInteractionSpecification::intersection_point.name},
+      {default_properties.boundary_intersection_normal,
+       BoundaryInteractionSpecification::intersection_normal.name},
+      {default_properties.boundary_intersection_metadata,
+       BoundaryInteractionSpecification::intersection_metadata.name},
       {default_properties.temperature, "TEMPERATURE"},
       {default_properties.density, "DENSITY"},
       {default_properties.flow_speed, "FLOW_SPEED"},
