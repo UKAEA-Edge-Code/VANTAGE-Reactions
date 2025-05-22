@@ -5,6 +5,8 @@ Reactions and their components
 What reactions (the abstraction) are
 ====================================
 
+As noted in the :ref:`Introduction`, we use reactions abstraction to represent the various physical collisional and reactive processes. Here we expand on those ideas and show the components of reactions as well as some examples.
+
 We refer to reactions as any process that involves one or more ingoing particles (physical or otherwise) interacting with other particles in the simulation or fields (stored as ParticleDats), as well as one or more of the following:
 
 #. The production of new particles in the simulation (with their own velocities, weights, and various internal states)
@@ -19,7 +21,7 @@ In the abstract, a reaction is fully defined by:
 
 We make a distinction between linear and non-linear reactions in the particle sense. A linear reaction is any reaction where only one of the reactants is represented as a particle.
 There are no constraints on the number of reaction products in linear reactions. In contrast, a non-linear reaction is a reaction where two or more reactants are represented as particles in the simulation.
-An example of a non-linear reaction would be an elastic collision between two neutrals of the same species. There exist linearisation techniques for some of these reactions, so the initial focus of the framework is linear reactions.
+An example of a non-linear reaction would be an elastic collision between two neutrals of the same species. There exist linearisation techniques for some of these reactions, so the initial focus of the library is linear reactions.
 
 Linear Reaction structure
 =========================
@@ -29,11 +31,15 @@ The main components of reactions are the reaction data and reaction kernel objec
 * Reaction data - calculate the per particle data required for the application of the reaction. This could be reaction rates, values randomly sampled from some distributions, etc. 
 * Reaction kernels - define the properties of the products of the reaction (velocities, weights, internal states), as well as the feedback on fields and the parent particle 
 
+TODO:[ADD FIGURE WITH EXAMPLE REACTION]
+
 The key idea behind this separation of concern is the ability to separate the data and the physics, and allow the combination of different data calculation methods and different reaction physics. For example, the physics of an ionisation reaction is the same regardless of the reaction rate or the energy cost of the reaction, and the goal of flexibility in Reactions has lead to the data+kernel design. 
 
 The implementation of reactions, as well as reaction kernels will be covered in the developer guide, as it involves considerations of SYCL host and device types, as well as NESO-Particles :class:`ParticleLoop` constructs. 
 
 Both data and kernels, in executing their responsibilities, access particle data, and use the property map system.
+
+TODO:[ADD SIMPLIFIED UML DIAGRAM HERE]
 
 Reaction data and kernels are invoked in the two main :class:`ParticleLoop`-containing methods in the linear reaction class, with the idea that data is calculated first, storing anything needed for the application of the kernels or for the global management of reaction application. Both loops are assumed to be invoked cell-wise, which allows for the reuse of various buffers.
 
@@ -228,7 +234,7 @@ where we convert to the centre-of-mass energy. The coefficients :math:`a_n` can 
 Reaction kernel types
 =====================
 
-Reactions offers several built-in reaction kernels. These are presented in the following format:
+VANTAGE-Reactions offers several built-in reaction kernels. These are presented in the following format:
 
 #. Overview - general description, number of products, required :class:`DataCalculator` total dimensionality, etc. 
 #. Required properties - the required properties from the default properties enum (as for reaction data) - here split into parent and descendant
@@ -281,17 +287,48 @@ Base charge-exchange kernels
 #. Feedback kernel: The total weight participating in the reaction is removed from the parent particle. The energy and momentum sources are computed from the participating particles' velocities (the parent and the sample ion)
 #. Example: See the above example on putting together a linear reaction for an example of a CX kernel being constructed and used
 
+Base recombination kernels
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Overview: These kernels allow for implementing recombination using pseudo-particles (also referred to as markers). The self-consistent calculation of the rates used by the kernels is left to the users, as it depends on the mesh properties (i.e. the mapping of ion densities to the marker weights). Like the ionisation kernels, assumes that the first value calculated by the :class:`DataCalculator` is the electron energy loss rate (not including the potential energy). Similarly to the CX kernel above, this kernel assumes pre-sampled ion velocities set by a :class:`DataCalculator` (after the energy loss rate). Recombination produces a single product, and **does not** modify the weights of the parents/marker particles. **NOTE**: Energy and momentum source normalisation are the same here as in the previous two kernels.
+#. Required properties:
+
+   * Parent: Simple props: weight; Species props: source_density, source_energy, source_momentum
+
+   * Descendant: Simple props: weight, velocitym internal_state; Species props: N/A
+#. Scattering kernel: Sets the product velocities to the pre-calculated velocities from the :class:`DataCalculator` (excluding the first entry) 
+#. Weight kernel:  The product gets the full weight that participated in the reaction
+#. Transformation kernel:  The products internal_state is set to the correct species ID
+#. Feedback kernel: Weight is **not** removed from the parent, but the particle sources is updated as if it were. The energy and momentum source of the target species (the ions) are computed from the sampled velocities. The projectile species (electron) momentum source is assumed to be negligible, while the energy cost is calculated using the energy loss rate :math:`K_E` and the normalised (to :math:`m_0 v_0^2`) ionisation potential energy :math:`\epsilon_i` as :math:`- K_E  \Delta t - \epsilon_i \Delta w`, where the timestep and weight participating in reaction are set self-consistently. 
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_recombination_kernels.hpp
+   :language: cpp
+   :caption: Example of constructing recombination reaction kernels
+
 Pre-built reactions
 ===================
 
-Reactions offers pre-built reaction classes that bundle commonly used options together. It should be noted that these can be completely reproduced by users from the base reaction class and data and kernels.
+VANTAGE-Reactions offers pre-built reaction classes that bundle commonly used options together. It should be noted that these can be completely reproduced by users from the base reaction class and data and kernels.
 
 Electron-impact ionisation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Given that the most commonly treated class of ionisation reactions is electron-impact ionisation, Reactions offers a streamlined way of constructing electron-impact ionisation reactions. See below for an example of such a reaction. 
+Given that the most commonly treated class of ionisation reactions is electron-impact ionisation, the library offers a streamlined way of constructing electron-impact ionisation reactions. See below for an example of such a reaction. 
 
 
 .. literalinclude:: ../example_sources/example_electron_impact_ion.hpp
    :language: cpp
    :caption: Example of contructing the built-in electron-impact ionisation reaction
+
+Recombination  
+~~~~~~~~~~~~~
+
+Like electron-impact ionisation, a recombination reaction can be constructed directly without using :class:`LinearReactionBase`:
+
+.. literalinclude:: ../example_sources/example_recombination_reaction.hpp
+   :language: cpp
+   :caption: Example of contructing the built-in electron-impact ionisation reaction
+
+**NOTE**: To properly use recombination, especially with built-in AMJUEAL reaction data, care must be taken that the marker weights are updated in a way consistent with the background ion densities.
+
