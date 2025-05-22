@@ -1,0 +1,34 @@
+# This is a Spack Environment file.
+#
+# It describes the set of packages to be installed when developing
+# NESO, along with configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - matrix:
+    - [
+      nec_reactions.reactions ^adaptivecpp compilationflow=omp-library-only ^hdf5,
+      nec_reactions.reactions+nvcxx ^adaptivecpp compilationflow=cuda-llvm ^hdf5 ^cuda
+    ]
+    - [~enable_tests ^neso-particles~build_tests, +enable_tests ^neso-particles~build_tests]
+    - ['%clang']
+
+  - gdb%clang
+
+  view: false
+  packages:
+    all:
+      compiler: [clang]
+  concretizer:
+    unify: false
+  repos:
+  - ${PWD}/Reactions-repo
+  - ${PWD}/NESO-Spack
+  - $spack/var/spack/repos/builtin
+  develop:
+    reactions:
+      path: ${PWD}
+      spec: reactions@working
+    neso-particles:
+      path: ${PWD}/neso-particles
+      spec: neso-particles@working

@@ -1,0 +1,10 @@
+packages:
+  all:
+    providers:
+      mpi: [mpich]
+  mpich:
+    require:
+      - "~fortran"
+  cuda:
+    require: 
+      - "@12.2.1"
