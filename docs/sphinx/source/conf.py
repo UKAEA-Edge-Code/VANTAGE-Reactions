@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Reactions'
+project = 'VANTAGE-Reactions'
 copyright = '2024, UKAEA'
 author = 'Stefan Mijin, Sanket Gadgil'
 

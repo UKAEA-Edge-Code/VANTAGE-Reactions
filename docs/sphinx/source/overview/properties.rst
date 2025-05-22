@@ -5,22 +5,27 @@ Particle property utilities
 Properties, Species, and their usage
 ====================================
 
-In order to offer tools for the standardisation of particle properties, Reactions defines several utilities. For the reaction abstraction to work, it requires knowledge of the various 
+In order to offer tools for the standardisation of particle properties, VANTAGE-Reactions defines several utilities. For the reaction abstraction to work, it requires knowledge of the various 
 required properties of the particles. Some of these are relatively simple, and can be passed as :class:`Sym` objects to the various constructors. However, some reactions might require access to 
 multiple different properties, e.g. particle velocities, weights, multiple different fields, and so on. This means that a standardised way of tracking the names and indexing of various properties 
-is very helpful. Unfortunately, due to SYCL requirements (device-copyability, etc.), we are unable to use standard maps directly on device. To work around this, Reactions utilises a combination of 
+is very helpful. Unfortunately, due to SYCL requirements (device-copyability, etc.), we are unable to use standard maps directly on device. To work around this, the library utilises a combination of 
 a centralised (extensible) enum struct, and a mapping from the enums to the various particle property names. 
 
 Default property enums and maps are supplied with the library, but users can extend/modify one or both. Built-in reaction data and kernels use some or all of the :class:`standard_properties_enum` entries.
 These are:
 
-#. positions
+#. reacted_flag
+#. panic
+#. position
 #. velocity 
 #. cell_id
 #. id 
 #. tot_reaction_rate
 #. weight
 #. internal_state
+#. boundary_intersection_point
+#. boundary_intersection_normal
+#. boundary_intersection_metadata
 #. temperature
 #. density 
 #. flow_speed 
@@ -39,6 +44,8 @@ If a user-defined reaction extension requires more properties than the above, th
 
 The above enum entries get mapped to strings used to construct :class:`Sym` objects. The default map is:
 
+* reacted_flag - "PARTICLE_REACTED_FLAG"
+* panic - "REACTIONS_PANIC_FLAG"
 * position - "POSITION"
 * velocity - "VELOCITY"
 * cell_id - "CELL_ID"
@@ -46,6 +53,9 @@ The above enum entries get mapped to strings used to construct :class:`Sym` obje
 * tot_reaction_rate - "TOT_REACTION_RATE"
 * weight - "WEIGHT"
 * internal_state - "INTERNAL_STATE"
+* boundary_intersection_point - defined by NESO-Particles :class:`BoundaryInteractionSpecification::intersection_point`
+* boundary_intersection_normal - defined by NESO-Particles :class:`BoundaryInteractionSpecification::intersection_normal`
+* boundary_intersection_metadata - defined by NESO-Particles :class:`BoundaryInteractionSpecification::intersection_metadata`
 * temperature - "TEMPERATURE"
 * density - "DENSITY"
 * flow_speed - "FLOW_SPEED"
@@ -68,7 +78,7 @@ and the user can use that object with, for example, both "ELECTRON_TEMPERATURE" 
 Species and the Properties container
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Reactions offers a simple :class:`Species` class to encapsulate species data. It specifies the species name, and optionally the species mass, charge, and integer ID associated with it. Together with the :class:Properties` class, species can be used to bundle required properties for use in reaction abstractions, as well as in incremental construction of NESO-Particles :class:`ParticleSpec` objects, see below. 
+VANTAGE-Reactions offers a simple :class:`Species` class to encapsulate species data. It specifies the species name, and optionally the species mass, charge, and integer ID associated with it. Together with the :class:Properties` class, species can be used to bundle required properties for use in reaction abstractions, as well as in incremental construction of NESO-Particles :class:`ParticleSpec` objects, see below. 
 
 A :class:Properties` container can have simple properties (directly translated to :class:`Sym` names) and species properties, which are combined with species name to get the NESO-Particles :class:`Sym` names.
 :class:Properties` containers use the property enums and maps as defined above. This allows for flexibility when defining required properties and their mapping to data stored on particles.
@@ -82,8 +92,25 @@ ParticleSpecBuilder
 
 The :class:Properties` container class can be used to build up :class:`ParticleSpec` objects using the :class:`ParticleSpecBuilder` class. It allows for mixing :class:`ParticleSpec` objects and :class:Properties` objects to construct a final :class:`ParticleSpec`. 
 
-
 .. literalinclude:: ../example_sources/example_spec_builder.hpp
    :language: cpp
    :caption: Constructing a particle spec using the builder
+
+When constructed using the recommended constructor, the following properties are added by default:
+
+* position
+* cell_id 
+* velocity 
+* panic
+* id 
+* internal_state
+* reacted_flag 
+* weight
+* tot_reaction_rate
+
+
+The panic flag
+~~~~~~~~~~~~~~
+
+Since capturing exceptions on all SYCL devices is not feasible, the library includes the panic flag, and operations which can fail will populate the panic property on the particles. To check the number of panicked particles in a subgroup :code:`particle_subgroup`, use :code:`panicked(particle_subgroup)`. In case the panic flag has been remapped, make sure you pass the used map to :code:`panicked` as the second argument. 
 
