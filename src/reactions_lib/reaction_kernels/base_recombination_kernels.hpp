@@ -10,10 +10,6 @@ using namespace NESO::Particles;
 
 namespace Reactions {
 
-namespace BASE_RECOMB_KERNEL {
-constexpr int num_products_per_parent = 1;
-
-} // namespace BASE_RECOMB_KERNEL
 
 /**
  * struct RecombReactionKernelsOnDevice - SYCL device-compatible kernel for
