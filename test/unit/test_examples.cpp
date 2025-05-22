@@ -27,6 +27,8 @@ using namespace Reactions;
 #include "./example_sources/example_reaction_controller.hpp"
 #include "./example_sources/example_new_reaction_data.hpp"
 #include "./example_sources/example_cx_kernel_definition.hpp"
+#include "./example_sources/example_recombination_kernels.hpp"
+#include "./example_sources/example_recombination_reaction.hpp"
 
 TEST(Examples, all){
 
@@ -54,6 +56,8 @@ TEST(Examples, all){
   ionisation_kernels_example();
   electron_impact_ion_example(particle_group);
   reaction_controller_example(particle_group);
+  recombination_kernels_example();
+  recombination_reaction_example(particle_group);
 
   particle_group->domain->mesh->free();
 }
