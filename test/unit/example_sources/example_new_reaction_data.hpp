@@ -1,16 +1,3 @@
-// Namespace containing required properties
-namespace DUMMY_DATA {
-
-    const auto props = default_properties; // Here we use the default properties enum, 
-                                           // but it could be any user-extended enum
-
-    // Here we only specify a single simple real prop
-    // This can be done for int props, as well as for species props
-    //
-    // See below for how this is used
-    const std::vector<int> required_simple_real_props = {props.weight}; 
-} 
-
 // This is the on-device type 
 //
 // The function calc_data must be callable from a NESO-Particles 
@@ -44,22 +31,26 @@ public:
 };
 
 // This is the host type
-struct DummyData :
-    public ReactionDataBase<1 // The data dimensionality here again
-                   > {
+struct DummyData :public ReactionDataBase<1 // The data dimensionality here again
+                  > {
+
+  constexpr static auto props = default_properties;
+
+  // Here we only specify a single simple real prop
+  // This can be done for int props, as well as for species props
+  //
+  // See below for how this is used
+  constexpr static std::array<int,1> required_simple_real_props = {props.weight};
 
   DummyData(REAL rate_coefficient,
                        std::map<int, std::string> properties_map = get_default_map() // Here we allow for property remapping 
                        )
       : ReactionDataBase(
-            Properties<REAL>(DUMMY_DATA::required_simple_real_props, // This is where the required data enums go in
-                             std::vector<Species>{}, std::vector<int>{}), // Here no Species required properties
+            Properties<REAL>(required_simple_real_props), // This is where the required data enums go in
             properties_map),
         device_object(
             DummyDataOnDevice(rate_coefficient) // Here we call the device object constructor
             ) {
-
-    auto props = DUMMY_DATA::props; // The used property enum
 
     // Here we set the weight index by calling the Properties simple_prop_index() method
     //
