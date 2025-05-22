@@ -1,6 +1,21 @@
 inline void spec_builder_example() {
 
-  // A spec builder can be initialised with an existing spec
+  // The recommended way of initialising a ParticleSpecBuilder 
+  // is by using the following constructor, which will 
+  // make sure that the properties present satisfy requirements in the 
+  // library 
+  
+  auto particle_spec_builder_default = ParticleSpecBuilder(2 // the dimensionality of the default 
+                                                             // position and velocity props 
+                                                          ); // A map (see below) can additionally i
+                                                             // be passed here to remap
+                                                             // some of the default property Syms
+
+  // Alternatively, if full control is required 
+  // a spec builder can be initialised with an existing spec,
+  // which will not add any of the default properties.
+  // The user is responsible then for ensuring that
+  // all required properties are available when requested.
   auto basic_spec = ParticleSpec{ParticleProp(Sym<REAL>("POSITION"), 2, true),
                                  ParticleProp(Sym<INT>("CELL_ID"), 1, true)};
   auto particle_spec_builder = ParticleSpecBuilder(basic_spec);
