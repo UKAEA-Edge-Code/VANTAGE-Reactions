@@ -39,6 +39,7 @@ GCC
 For ``gcc``, a pre-existing installation higher than version 11.3.0 should work without issue. If there is no compatible version available then it's necessary to install one through spack.
 For this a version of ``gcc`` needs to be present that is older than the version that you wish to install. To install the new compiler, first run:
 ::
+
     spack compiler find
 
 This should let ``spack`` find the pre-existing compiler. If for example, ``gcc-11.3.0`` needs to be installed with a pre-existing ``gcc-9.4.0``, the command to install the new compiler would be:
@@ -52,7 +53,10 @@ Run the following command:
 
     spack find --paths gcc
 
-Note the paths listed for the ``gcc`` command (for convenience the path could be set to an environment variable).
+Note the paths listed for the ``gcc`` command (for convenience the path could be set to an environment variable) and run:
+::
+
+    spack compiler find ${gcc_compiler_install_path}
 
 From here the ``Standard Installation`` should be followed.
 
@@ -70,7 +74,10 @@ Run the following command:
 
     spack find --paths llvm
 
-Note the paths listed for the ``llvm`` command (for convenience the path could be set to an environment variable).
+Note the paths listed for the ``llvm`` command (for convenience the path could be set to an environment variable) and run:
+::
+
+    spack compiler find ${clang_compiler_install_path}
 
 From here the ``Standard Installation`` should be followed.
 
@@ -90,7 +97,9 @@ Next activate the spack environment (the details of the config are in ``spack.ya
     spack env activate -p -d .
 
 You can exit the spack environment using the (``spack env deactivate`` command).
-*NOTE: All commands following this must be executed inside this environment.*
+
+**NOTE: All commands following this must be executed inside this environment.**
+
 GCC
 ~~~
 To add a manually installed ``gcc``, run:
@@ -118,6 +127,8 @@ Concretize the current specs to be installed:
 
 , where ``{system-scope}`` is either ``general`` or ``CSD3_GPU_node`` depending on which system type ``Reactions`` is being installed on. The ``{compiler}`` is either ``gcc`` or ``clang`` depending on user choice.
 
+Install
+~~~~~~~
 For a standard install (CPU-only, no tests) run the commands:
 ::
 
