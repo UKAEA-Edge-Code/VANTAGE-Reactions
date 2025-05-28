@@ -1,7 +1,7 @@
 packages:
   all:
+    require:
+      - "%gcc"
     providers:
       mpi: [mpich, openmpi]
-  cuda:
-    require: 
-      - "@12.2.1"
+

@@ -7,18 +7,16 @@ spack:
   specs:
   - matrix:
     - [
-      nec_reactions.reactions ^adaptivecpp compilationflow=omp-library-only ^hdf5,
-      nec_reactions.reactions+nvcxx ^adaptivecpp compilationflow=cuda-llvm ^hdf5 ^cuda
-    ]
-    - [~enable_tests ^neso-particles~build_tests, +enable_tests ^neso-particles~build_tests]
-    - ['%clang']
-
-  - gdb%clang
+      nec_reactions.reactions ^nec_reactions.adaptivecpp sycl-device=CPU ^hdf5, nec_reactions.reactions+nvcxx
+        ^nec_reactions.adaptivecpp sycl-device=NVGPU ^hdf5 ^cuda@12.2.1
+      ]
+    - [
+      ~enable_tests ^neso-particles~build_tests,
+      +enable_tests ^neso-particles~build_tests,
+      +enable_tests ^neso-particles+build_tests
+      ]
 
   view: false
-  packages:
-    all:
-      compiler: [clang]
   concretizer:
     unify: false
   repos:

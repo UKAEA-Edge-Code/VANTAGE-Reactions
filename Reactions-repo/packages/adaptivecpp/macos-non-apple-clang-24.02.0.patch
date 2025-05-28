@@ -1,0 +1,19 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6832ccaf..f96f7b49 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -338,8 +338,12 @@ else()
+ endif()
+ 
+ if(APPLE)
+-  set(DEFAULT_OMP_FLAG "-Xclang -fopenmp")
+-  
++  if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
++    set(DEFAULT_OMP_FLAG "-Xclang -fopenmp")
++  else()
++    set(DEFAULT_OMP_FLAG "-fopenmp")
++  endif()
++
+   if(Boost_FIBER_LIBRARY_DEBUG)
+     set(DEFAULT_BOOST_LIBRARIES "${Boost_CONTEXT_LIBRARY_DEBUG} ${Boost_FIBER_LIBRARY_DEBUG} -Wl,-rpath ${Boost_LIBRARY_DIR}")
+   else()

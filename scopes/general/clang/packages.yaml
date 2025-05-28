@@ -1,10 +1,16 @@
 packages:
-  all:
-    providers:
-      mpi: [mpich]
+  llvm:
+    require:
+      - "@18"
+    externals:
+    - spec: llvm@18
+      prefix: $LLVM_INSTALL_DIR
   mpich:
     require:
       - "~fortran"
-  cuda:
-    require: 
-      - "@12.2.1"
+  all:
+    require:
+      - "%clang"
+    providers:
+      mpi: [mpich]
+
