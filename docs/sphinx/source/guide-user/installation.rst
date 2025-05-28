@@ -6,6 +6,7 @@ Pre-requisites
 ==============
 
 * gcc 11.3.0+: Tested up to 14.2.0
+* clang 18.1.8: Tested only for this version
 * spack v0.21.0+: Tested up to v0.23.1
 
 Spack environment setup
@@ -29,10 +30,49 @@ For convenience these commands can be placed at the end of ``.bashrc``. The last
 
     spack compiler find
 
-Spack can operate with multiple installations of gcc but will choose the default one that the system has aliased to ``gcc``. To see all the compilers that spack found use the command ``spack compilers``. If a specific version is desired then the ``spack compiler remove {compiler}`` command (with ``{compiler}`` replaced with the compiler that is to be removed) can be used to reduce the number of compilers down to the specified one. For example:
+Spack can operate with multiple installations of ``gcc`` but will choose the default one that the system has aliased to ``gcc``. To see all the compilers that spack found use the command ``spack compilers``.
+
+Compiler setup
+==============
+GCC
+~~~
+For ``gcc``, a pre-existing installation higher than version 11.3.0 should work without issue. If there is no compatible version available then it's necessary to install one through spack.
+For this a version of ``gcc`` needs to be present that is older than the version that you wish to install. To install the new compiler, first run:
+::
+    spack compiler find
+
+This should let ``spack`` find the pre-existing compiler. If for example, ``gcc-11.3.0`` needs to be installed with a pre-existing ``gcc-9.4.0``, the command to install the new compiler would be:
 ::
 
-    spack compiler remove gcc@11.4.0
+    spack install gcc@11.3.0%gcc@9.4.0
+
+Now it's necessary to remove all the compilers listed in ``spack compilers``, the reasoning for this is that the newly installed compiler will be tied to the ``Reactions`` installation rather than using it system-wide. 
+Run the following command:
+::
+
+    spack find --paths gcc
+
+Note the paths listed for the ``gcc`` command (for convenience the path could be set to an environment variable).
+
+From here the ``Standard Installation`` should be followed.
+
+Clang
+~~~~~
+For ``clang``, a pre-existing installation (ie. one installed with the OS) may not have the full ``llvm`` installation. Additionally, the version may not be ``18.1.8`` which is the only one that's validated for ``Reactions``. For compatibility it's recommended to install ``llvm@18.1.8`` manually using a pre-existing ``gcc`` compiler (ensuring that it's listed in ``spack compilers``), for example:
+::
+
+    spack install llvm@18.1.8%gcc@9.4.0
+
+
+Again remove existing compilers from ``spack compilers`` using ``spack compiler remove {compiler}`` where ``{compiler}`` is the compiler that needs to be removed.
+Run the following command:
+::
+
+    spack find --paths llvm
+
+Note the paths listed for the ``llvm`` command (for convenience the path could be set to an environment variable).
+
+From here the ``Standard Installation`` should be followed.
 
 Standard Installation
 =====================
@@ -40,30 +80,50 @@ Standard Installation
 Clone the repo:
 ::
 
-    git clone git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/NEC_Reactions
+    git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/NEC_Reactions
     cd $HOME/NEC_Reactions
-    git submodule update --init
 
-Feel free to replace ``NEC_Reactions`` with a directory name of your choice.
+Feel free to replace ``$HOME/NEC_Reactions`` with a directory name of your choice.
 Next activate the spack environment (the details of the config are in ``spack.yaml``):
 ::
 
     spack env activate -p -d .
 
 You can exit the spack environment using the (``spack env deactivate`` command).
+*NOTE: All commands following this must be executed inside this environment.*
+GCC
+~~~
+To add a manually installed ``gcc``, run:
+::
+
+    spack external find -p {gcc_compiler_install_path} gcc
+
+, where ``{gcc_compiler_install_path}`` is the path from the ``spack find --paths gcc`` command.
+Note this will modify the ``spack.yaml`` file, if you wish to keep this file identical to the repo, move the entry in the newly added ``packages`` section from ``spack.yaml`` into ``scopes/{system-scope}/gcc/packages.yaml``.
+
+Clang
+~~~~~
+To add a manually installed ``clang``, run:
+::
+
+    spack external find -p {clang_compiler_install_path} llvm
+
+, where ``{clang_compiler_install_path}`` is the path from the ``spack find --paths llvm`` command.
+Note this will modify the ``spack.yaml`` file, if you wish to keep this file identical to the repo, move the entry in the newly added ``packages`` section from ``spack.yaml`` into ``scopes/{system-scope}/clang/packages.yaml``.
+
 Concretize the current specs to be installed:
 ::
 
-    spack -C ./scopes/general concretize -f -U
+    spack -C ./scopes/{system-scope}/{compiler} concretize -f -U
+
+, where ``{system-scope}`` is either ``general`` or ``CSD3_GPU_node`` depending on which system type ``Reactions`` is being installed on. The ``{compiler}`` is either ``gcc`` or ``clang`` depending on user choice.
 
 For a standard install (CPU-only, no tests) run the commands:
 ::
 
-    spack install --only-concrete --only dependencies neso-particles~nvcxx~build_tests
-    spack install --only-concrete --only dependencies reactions~nvcxx~enable_tests
     spack install --only-concrete reactions~nvcxx~enable_tests
 
-Note if there is a compiler error when running the last two commands then add ``-j1`` after ``spack install`` and try again.
+Note if there is a compiler error when running the command then add ``-j1`` after ``spack install`` and try again.
 
 CUDA installation (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,8 +131,6 @@ CUDA installation (Optional)
 For a NVIDIA-GPU specific installation, if not already done then repeat the steps for cloning the repo, activating the environment and concretizing the specs. For the installation:
 ::
 
-    spack install --only-concrete --only dependencies neso-particles+nvcxx~build_tests
-    spack install --only-concrete --only dependencies reactions+nvcxx~enable_tests
     spack install --only-concrete reactions+nvcxx~enable_tests
 
 Unit tests (Optional)
@@ -80,7 +138,7 @@ Unit tests (Optional)
 
 Building the unit-tests is mostly the same as a standard installation with some install options changed. The compilation will produce a ``unit_tests`` executable in the ``test/unit`` directory inside the build directory created by spack during installation.
 
-Note that for running the tests, it might be necessary to load the relevant MPI package that spack has installed. It's possible to identify this by using ``spack find mpich`` or ``spack find openmpi`` and subsequently loading the relevant package (if both are present feel free to choose either) with ``spack load`` before running the unit tests.
+Note that for running the tests, it might be necessary to load the relevant MPI package that spack has installed. It's possible to identify this by using ``spack find mpich`` or ``spack find openmpi`` and subsequently loading the relevant package (if both are present feel free to choose either) with ``spack load`` before running the unit tests. This is only necessary if not running on CSD3 (or any other cluster with an externally defined openmpi).
 
 Build unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -88,9 +146,12 @@ Build unit-tests (CPU)
 For the CPU specific version:
 ::
 
-    spack install --only-concrete --only dependencies neso-particles~nvcxx+build_tests
-    spack install --only-concrete --only dependencies reactions~nvcxx+enable_tests
-    spack install --only-concrete reactions~nvcxx+enable_tests
+    spack install --only-concrete reactions~nvcxx+enable_tests ^neso-particles~build_tests
+
+This will build the unit tests for ``Reactions`` but not for ``neso-particles``. To build the ``neso-particles`` tests as well, run:
+::
+
+    spack install --only-concrete reactions~nvcxx+enable_tests ^neso-particles+build_tests
 
 Build unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -98,9 +159,12 @@ Build unit-tests (GPU)
 For the GPU specific version:
 ::
 
-    spack install --only-concrete --only dependencies neso-particles+nvcxx+build_tests
-    spack install --only-concrete --only dependencies reactions+nvcxx+enable_tests
-    spack install --only-concrete reactions+nvcxx+enable_tests
+    spack install --only-concrete reactions+nvcxx+enable_tests ^neso-particles~build_tests
+
+This will build the unit tests for ``Reactions`` but not for ``neso-particles``. To build the ``neso-particles`` tests as well, run:
+::
+
+    spack install --only-concrete reactions+nvcxx+enable_tests ^neso-particles+build_tests
 
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~

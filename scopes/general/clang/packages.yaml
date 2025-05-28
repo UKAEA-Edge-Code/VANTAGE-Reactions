@@ -2,9 +2,6 @@ packages:
   llvm:
     require:
       - "@18"
-    externals:
-    - spec: llvm@18
-      prefix: $LLVM_INSTALL_DIR
   mpich:
     require:
       - "~fortran"
