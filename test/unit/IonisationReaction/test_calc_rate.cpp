@@ -1,4 +1,4 @@
-#include "include/mock_particle_group.hpp"
+#include "../include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -9,6 +9,8 @@ TEST(IoniseReaction, calc_rate) {
 
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto particle_spec = particle_group->get_particle_spec();
 
   auto test_data = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");

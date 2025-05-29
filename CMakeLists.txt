@@ -39,7 +39,7 @@ if (REACTIONS_ENABLE_TESTS)
     link_libraries(gcov)
     set(TEST_LIBRARIES "gcov")
   endif()
-  enable_testing()
+  message("Building tests...")
   add_subdirectory(test)
 endif()
 

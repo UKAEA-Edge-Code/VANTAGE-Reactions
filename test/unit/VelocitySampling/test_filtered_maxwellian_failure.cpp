@@ -1,4 +1,4 @@
-#include "include/mock_particle_group.hpp"
+#include "../include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -40,18 +40,18 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
 
   auto particle_group = create_test_particle_group(1000);
 
-  auto req_int_props_ =
-      utils::build_sym_vector<INT>(sampler.get_required_int_props());
+  auto req_int_props_ = utils::build_sym_vector<INT>(
+      sampler.get_required_int_props());
 
-  auto req_real_props_ =
-      utils::build_sym_vector<REAL>(sampler.get_required_real_props());
+  auto req_real_props_ = utils::build_sym_vector<REAL>(
+      sampler.get_required_real_props());
 
   particle_loop(
       "vel_sampling_fail_loop", particle_group,
       [=](auto particle_index, auto req_int_props, auto req_real_props,
           auto kernel) {
-        auto test = sampler_on_device.calc_data(particle_index, req_int_props,
-                                                req_real_props, kernel);
+        auto test = sampler_on_device.calc_data(
+          particle_index, req_int_props, req_real_props, kernel);
       },
       Access::read(ParticleLoopIndex{}),
       Access::write(sym_vector<INT>(particle_group, req_int_props_)),
