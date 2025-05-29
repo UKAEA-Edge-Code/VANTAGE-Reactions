@@ -1,6 +1,7 @@
 from spack import *
 import os
 import shutil
+import glob
 
 
 class Reactions(CMakePackage):
@@ -35,4 +36,23 @@ class Reactions(CMakePackage):
 
         return args
 
+    @run_after("install")
+    def clean(self):
+        test_bin_dir = os.path.join(self.stage.source_path, "tests_binaries")
 
+        try:
+            os.mkdir(test_bin_dir)
+        except FileExistsError:
+            pass
+
+        build_bin_dir = os.path.join(self.prefix, "bin")
+        stage_build_dir = os.path.join(self.stage.path, "*")
+
+        shutil.copytree(build_bin_dir, test_bin_dir, dirs_exist_ok=True)
+
+        for item_path in glob.glob(stage_build_dir):
+            if os.path.isdir(item_path):
+                print(item_path)
+                shutil.rmtree(item_path)
+            elif os.path.isfile(item_path):
+                continue
