@@ -1,7 +1,7 @@
 inline void recombination_reaction_example(ParticleGroupSharedPtr particle_group) {
 
   // In case we would like to remap the used Syms
-  auto used_map = default_map;
+  auto used_map = get_default_map();
 
   auto electron_species = Species("ELECTRON", 
                                   5.5e-4,    
