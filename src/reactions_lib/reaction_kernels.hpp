@@ -39,8 +39,10 @@ struct ReactionKernelsBase {
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims = 0,
       std::map<int, std::string> properties_map = get_default_map())
-      : required_int_props(required_int_props),
-        required_real_props(required_real_props),
+      : required_int_props(
+            required_int_props.merge_with(required_int_props_ephemeral)),
+        required_real_props(
+            required_real_props.merge_with(required_real_props_ephemeral)),
         required_int_props_ephemeral(required_int_props_ephemeral),
         required_real_props_ephemeral(required_real_props_ephemeral),
         pre_req_ndims(pre_req_ndims) {
