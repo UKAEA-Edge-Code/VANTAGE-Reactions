@@ -20,10 +20,13 @@ enum class ControllerMode {
   standard_mode, /**< Standard mode, where every reaction is applied on part of
                     the ingoing particle's weight, with some weight potentially
                     not participating in any reaction*/
-  semi_dsmc_mode /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
+  semi_dsmc_mode, /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
                     method, where MC is used to get which particles go through a
                     reaction, and then all possible reactions are applied to
                     those particles, consuming them completely. */
+  surface_mode /**< Surface reaction mode, where every reaction is applied to
+                 all particles in the passed subgroup, with 100% of the
+                 weight of each particle participating */
 
 };
 
@@ -218,6 +221,11 @@ public:
     switch (controller_mode) {
 
     case ControllerMode::semi_dsmc_mode:
+      use_full_weight = true;
+
+      break;
+
+    case ControllerMode::surface_mode:
       use_full_weight = true;
 
       break;
