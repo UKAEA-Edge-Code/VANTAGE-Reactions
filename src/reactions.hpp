@@ -28,6 +28,7 @@
 #include "reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"
 #include "reactions_lib/reaction_kernels/base_recombination_kernels.hpp"
+#include "reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 
 #include "reactions_lib/derived_reactions/electron_impact_ionisation.hpp"
 #include "reactions_lib/derived_reactions/recombination_reaction.hpp"
