@@ -83,7 +83,7 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 2> required_simple_real_props = {
       props.weight, props.velocity};
 
-  constexpr static std::array<int, 2> required_simple_real_props_ephemeral = {
+  constexpr static std::array<int, 1> required_simple_real_props_ephemeral = {
       props.boundary_intersection_normal};
   /**
    * @brief Specular reflection host type constructor

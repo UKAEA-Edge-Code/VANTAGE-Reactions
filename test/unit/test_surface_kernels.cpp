@@ -17,10 +17,12 @@ TEST(SurfaceKernels, SpecularReflection) {
 
   auto test_data = FixedRateData(1.0);
 
+  auto test_kernels = SpecularReflectionKernels<2>();
+
   auto test_reaction =
       LinearReactionBase<0, FixedRateData, SpecularReflectionKernels<2>>(
           particle_group->sycl_target, 0, std::array<int, 0>{}, test_data,
-          SpecularReflectionKernels<2>());
+          test_kernels);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
