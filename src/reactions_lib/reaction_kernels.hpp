@@ -150,11 +150,7 @@ struct ReactionKernelsBase {
    *
    */
   std::vector<std::string> get_required_int_props() {
-    auto names = this->required_int_props.get_prop_names(this->properties_map);
-    auto ephemeral_names =
-        this->required_int_props_ephemeral.get_prop_names(this->properties_map);
-    names.insert(names.end(), ephemeral_names.begin(), ephemeral_names.end());
-    return names;
+    return this->required_int_props.get_prop_names(this->properties_map);
   }
 
   /**
@@ -163,11 +159,7 @@ struct ReactionKernelsBase {
    *
    */
   std::vector<std::string> get_required_real_props() {
-    auto names = this->required_real_props.get_prop_names(this->properties_map);
-    auto ephemeral_names = this->required_real_props_ephemeral.get_prop_names(
-        this->properties_map);
-    names.insert(names.end(), ephemeral_names.begin(), ephemeral_names.end());
-    return names;
+    return this->required_real_props.get_prop_names(this->properties_map);
   }
 
   /**
