@@ -20,7 +20,7 @@ spack:
           ]
         - [
           "%gcc@11.3.0:",  # if a gcc-11.3.0+ is not available comment out this option
-          "%clang@18"  # if clang-18 is not available comment out this option
+          "%clang@18.1:"  # if clang-18.1.8 is not available comment out this option
           ]
 
   view: false
