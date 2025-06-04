@@ -5,19 +5,31 @@
 spack:
   # add package specs to the `specs` list
   specs:
-  - matrix:
-    - [nec_reactions.reactions ^nec_reactions.adaptivecpp sycl-device=CPU ^hdf5, nec_reactions.reactions+nvcxx
-        ^nec_reactions.adaptivecpp sycl-device=NVGPU ^hdf5 ^cuda@12.2.1]
-    - [~enable_tests ^neso-particles~build_tests, +enable_tests ^neso-particles~build_tests,
-      +enable_tests ^neso-particles+build_tests]
+    - matrix:
+        - [nec_reactions.reactions ^hdf5]
+        - [
+            ~enable_tests ^neso-particles~build_tests,
+            +enable_tests ^neso-particles~build_tests,
+            +enable_tests ^neso-particles+build_tests,
+          ]
+        - [
+            ^neso.adaptivecpp compilationflow=omplibraryonly,
+            ^neso.adaptivecpp compilationflow=ompaccelerated,
+            ^neso.adaptivecpp compilationflow=cudallvm ^cuda@12.2.1,
+            ^neso.adaptivecpp compilationflow=cudanvcxx ^cuda@12.2.1,
+          ]
+        - [
+          "%gcc@11.3.0:",  # if a gcc-11.3.0+ is not available comment out this option
+          "%clang@18"  # if clang-18 is not available comment out this option
+          ]
 
   view: false
   concretizer:
     unify: false
   repos:
-  - ${PWD}/Reactions-repo
-  - ${PWD}/NESO-Spack
-  - $spack/var/spack/repos/builtin
+    - ${PWD}/Reactions-repo
+    - ${PWD}/NESO-Spack
+    - $spack/var/spack/repos/builtin
   develop:
     reactions:
       path: ${PWD}

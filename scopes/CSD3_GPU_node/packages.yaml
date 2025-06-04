@@ -10,9 +10,6 @@ packages:
   adaptivecpp:
     require:
       - spec: "cuda_arch=80"
-        when: "sycl-device=NVGPU"
   all:
-    require:
-      - "%clang"
     providers:
       mpi: [openmpi]

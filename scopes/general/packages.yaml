@@ -6,8 +6,6 @@ packages:
     require:
       - "~fortran"
   all:
-    require:
-      - "%clang"
     providers:
       mpi: [mpich]
 
