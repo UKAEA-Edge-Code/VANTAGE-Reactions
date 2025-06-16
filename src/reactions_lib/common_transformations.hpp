@@ -101,7 +101,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
     auto comp_nums = std::make_shared<LocalArray<INT>>(
         target_subgroup->get_particle_group()->sycl_target, num_comps_vec);
 
-    auto k_len = size(this->dats);
+    auto k_len = std::size(this->dats);
     auto loop = particle_loop(
         "zeroer_loop", target_subgroup,
         [=](auto vars, auto comp_nums) {
@@ -143,7 +143,7 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
       this->dats.push_back(Sym<T>(name));
     }
 
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
           this->dats[i],
           std::make_shared<CellDatConst<T>>(
@@ -160,7 +160,7 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * accumulated
    */
   void transform(ParticleSubGroupSharedPtr target_subgroup) override {
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
         Kernel::plus<T> op{};
         reduce_dat_components_cellwise(target_subgroup, this->dats.at(i),
                                        this->values.at(this->dats.at(i)), op);
@@ -257,7 +257,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
     this->comp_nums = std::make_shared<LocalArray<INT>>(
         template_group->sycl_target, num_comps_vec);
 
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
           this->dats[i], std::make_shared<CellDatConst<REAL>>(
                              template_group->sycl_target,
@@ -279,7 +279,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    */
   void transform(ParticleSubGroupSharedPtr target_subgroup) override {
 
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
 
       auto loop = particle_loop(
           "weighted_accumulator_loop", target_subgroup,
