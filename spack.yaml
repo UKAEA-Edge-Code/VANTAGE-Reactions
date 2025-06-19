@@ -18,6 +18,7 @@ spack:
             ^neso.adaptivecpp compilationflow=cudallvm ^cuda@12.2.1,
             ^neso.adaptivecpp compilationflow=cudanvcxx ^cuda@12.2.1,
           ]
+        - [ ^nec_reactions.googletest ]
         - [
           "%gcc@11.3.0:",  # if a gcc-11.3.0+ is not available comment out this option
           "%clang@18.1:"  # if clang-18.1.8 is not available comment out this option
