@@ -21,6 +21,7 @@ packages:
         when: "compilationflow=cudallvm"
   googletest:
     require:
+      - spec: "+csd3"
       - spec: "%gcc"
         when: "^adaptivecpp%gcc"
       - spec: "%clang"
