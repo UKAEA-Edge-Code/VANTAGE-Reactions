@@ -1,7 +1,7 @@
 inline void ionisation_kernels_example() {
 
   // In case we would like to remap the used Syms
-  auto used_map = default_map;
+  auto used_map = get_default_map();
 
   auto electron_species = Species("ELECTRON", // name
                                   5.5e-4,        // electron mass in amu

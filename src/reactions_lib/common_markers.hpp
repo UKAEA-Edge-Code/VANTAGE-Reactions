@@ -200,7 +200,7 @@ public:
   PanickedParticleMarker() = delete;
 
   PanickedParticleMarker(
-      const std::map<int, std::string> &properties_map = Reactions::default_map)
+      const std::map<int, std::string> &properties_map = Reactions::get_default_map())
       : panic_sym(
             Sym<INT>(properties_map.at(Reactions::default_properties.panic))){};
 
@@ -219,7 +219,7 @@ private:
 
 inline bool panicked(
     ParticleSubGroupSharedPtr particle_group,
-    const std::map<int, std::string> &properties_map = Reactions::default_map) {
+    const std::map<int, std::string> &properties_map = Reactions::get_default_map()) {
 
   auto marker = PanickedParticleMarker(properties_map);
 

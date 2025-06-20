@@ -51,7 +51,7 @@ struct Recombination
                 DataCalcType data_calc_obj, Species marker_species,
                 Species electron_species, Species neutral_species,
                 const REAL &normalised_potential_energy,
-                const std::map<int, std::string> &properties_map = default_map)
+                const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<1, RateData, RecombReactionKernels<>, DataCalcType>(
             sycl_target_, marker_species.get_id(),
             std::array<int, 1>{static_cast<int>(neutral_species.get_id())},

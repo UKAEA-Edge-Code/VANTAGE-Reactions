@@ -22,7 +22,7 @@ inline void spec_builder_example() {
   particle_spec_builder.add_particle_prop(int_props);
 
   // We can also remap enum properties as we add them using property maps
-  auto new_map = default_map;
+  auto new_map = get_default_map();
   new_map[props.weight] = "w";
   particle_spec_builder.add_particle_prop(
       scalar_real_props, // The added properties

@@ -179,9 +179,9 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
   auto test_data = TestEphemeralVarData();
 
   auto expected_prop_names = std::vector<std::string>{
-      default_map.at(default_properties.weight),
-      default_map.at(default_properties.boundary_intersection_point),
-      default_map.at(default_properties.boundary_intersection_normal)};
+      get_default_map().at(default_properties.weight),
+      get_default_map().at(default_properties.boundary_intersection_point),
+      get_default_map().at(default_properties.boundary_intersection_normal)};
 
   auto test_prop_names = test_data.get_required_real_props();
 
@@ -191,8 +191,8 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
   }
 
   auto expected_prop_names_ephemeral = std::vector<std::string>{
-      default_map.at(default_properties.boundary_intersection_point),
-      default_map.at(default_properties.boundary_intersection_normal)};
+      get_default_map().at(default_properties.boundary_intersection_point),
+      get_default_map().at(default_properties.boundary_intersection_normal)};
 
   auto test_prop_names_ephemeral =
       test_data.get_required_real_props_ephemeral();

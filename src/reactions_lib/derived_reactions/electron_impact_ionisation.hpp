@@ -42,7 +42,7 @@ struct ElectronImpactIonisation
       SYCLTargetSharedPtr sycl_target_, RateData rate_data,
       EnergyRateData energy_rate_data, Species target_species,
       Species electron_species,
-      const std::map<int, std::string> &properties_map = default_map)
+      const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
             sycl_target_, target_species.get_id(), std::array<int, 0>{},

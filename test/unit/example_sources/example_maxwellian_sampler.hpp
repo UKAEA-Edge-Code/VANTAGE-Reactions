@@ -1,7 +1,7 @@
 inline void maxwellian_sampler_example() {
 
   // In case we wish to remap the fluid_temperature, fluid_flow_speed, or velocity
-  auto used_map = default_map;
+  auto used_map = get_default_map();
   
   // Default cross-section object - results in sampling from an unfiltered drifting Maxwellian
   auto default_cs = ConstantRateCrossSection(1.0);

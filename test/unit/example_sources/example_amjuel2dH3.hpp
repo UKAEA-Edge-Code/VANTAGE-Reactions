@@ -1,7 +1,7 @@
 inline void amjuel_2d_H3_example() {
 
   // In case we wish to remap the default weight, fluid_temperature, fluid_density, fluid_flow_speed, or particle velocity
-  auto used_map = default_map;
+  auto used_map = get_default_map();
 
   // alpha coefficients (the inner array size is the number of neutral energy coefficients, the outer is temperature)
   auto coeffs = std::array<std::array<REAL, 2>, 2>{std::array<REAL, 2>{1.0, 0.02},
