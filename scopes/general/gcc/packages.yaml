@@ -1,7 +1,0 @@
-packages:
-  all:
-    require:
-      - "%gcc"
-    providers:
-      mpi: [mpich, openmpi]
-
