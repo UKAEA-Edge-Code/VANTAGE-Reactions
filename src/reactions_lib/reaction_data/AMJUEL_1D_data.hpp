@@ -98,7 +98,7 @@ public:
  * @param time_normalisation Time normalisation in seconds
  * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
  * reaction rate calculation.
- * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * @param properties_map A std::map<int, std::string> object to be passed to
  * ReactionDataBase.
  */
 template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
@@ -113,10 +113,10 @@ constexpr static  std::array<int,3> required_simple_real_props = {
                const REAL &temperature_normalisation_,
                const REAL &time_normalisation_,
                const std::array<REAL, num_coeffs> &coeffs_,
-               std::map<int, std::string> properties_map_ = default_map)
+               std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(
             Properties<REAL>(required_simple_real_props),
-            properties_map_),
+            properties_map),
         amjuel_1d_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
             evolved_quantity_normalisation_, density_normalisation_,
             temperature_normalisation_, time_normalisation_, coeffs_)) {

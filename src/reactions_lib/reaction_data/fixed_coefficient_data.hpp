@@ -47,7 +47,7 @@ public:
  *
  * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
  * and the particle weight)
- * @param properties_map_ A std::map<int, std::string> object to be passed to
+ * @param properties_map A std::map<int, std::string> object to be passed to
  * ReactionDataBase
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
@@ -58,9 +58,9 @@ struct FixedCoefficientData : public ReactionDataBase<> {
       props.weight};
 
   FixedCoefficientData(REAL rate_coefficient,
-                       std::map<int, std::string> properties_map_ = default_map)
+                       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<REAL>(required_simple_real_props),
-                         properties_map_),
+                         properties_map),
         fixed_coefficient_data_on_device(
             FixedCoefficientDataOnDevice(rate_coefficient)) {
 

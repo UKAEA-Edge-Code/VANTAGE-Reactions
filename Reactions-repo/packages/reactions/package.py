@@ -19,17 +19,19 @@ class Reactions(CMakePackage):
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
 
+    conflicts("+nvcxx", when="%oneapi", msg="Nvidia compilation can only be used with gcc or clang compilers.")
+
+    # requires(
+    #     "%gcc", "%clang",
+    #     policy="one_of",
+    #     msg="Reactions builds with only gcc or clang."
+    # )
+
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
-        if "+nvcxx" in self.spec:
-            args.append("-DNESO_PARTICLES_DEVICE_TYPE=GPU")
-            args.append("-DACPP_TARGETS=cuda-nvcxx")
-            args.append("-DREACTIONS_DEVICE_TYPE=GPU")
-        elif "~nvcxx" in self.spec:
-            args.append("-DNESO_PARTICLES_DEVICE_TYPE=CPU")
-            args.append("-DACPP_TARGETS=omp")
-            args.append("-DREACTIONS_DEVICE_TYPE=CPU")
+        # if "+nvcxx" in self.spec:
+        #     args.append("-DREACTIONS_DEVICE_TYPE=GPU")
 
         return args
 

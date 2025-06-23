@@ -116,10 +116,10 @@ public:
 
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
-  TestReactionKernels(std::map<int, std::string> properties_map_ = default_map)
+  TestReactionKernels(std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
             Properties<REAL>(TEST_REACTION_KERNEL::required_simple_real_props),
-            0, properties_map_) {
+            0, properties_map) {
     auto props = TEST_REACTION_KERNEL::props;
 
     this->test_reaction_kernels_on_device.velocity_ind =
@@ -410,7 +410,7 @@ struct TestEphemeralVarData : public ReactionDataBase<> {
   constexpr static std::array<int, 2> required_simple_real_props_ephemeral = {
       props.boundary_intersection_point, props.boundary_intersection_normal};
 
-  TestEphemeralVarData(std::map<int, std::string> properties_map = default_map)
+  TestEphemeralVarData(std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(),
                          Properties<REAL>(required_simple_real_props),
                          Properties<INT>(),

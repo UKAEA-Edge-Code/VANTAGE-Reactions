@@ -35,27 +35,27 @@ struct ReactionKernelsBase {
                       Properties<INT> required_int_props_ephemeral,
                       Properties<REAL> required_real_props_ephemeral,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = default_map)
+                      std::map<int, std::string> properties_map = get_default_map())
       : required_int_props(required_int_props),
         required_real_props(required_real_props),
         required_int_props_ephemeral(required_int_props_ephemeral),
         required_real_props_ephemeral(required_real_props_ephemeral),
         pre_req_ndims(pre_req_ndims), properties_map(properties_map) {}
 
-  ReactionKernelsBase(std::map<int, std::string> properties_map = default_map)
+  ReactionKernelsBase(std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
                             Properties<INT>(), Properties<REAL>(), 0,
                             properties_map) {}
 
   ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = default_map)
+                      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(required_int_props, Properties<REAL>(),
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}
 
   ReactionKernelsBase(Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = default_map)
+                      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(Properties<INT>(), required_real_props,
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}
@@ -63,7 +63,7 @@ struct ReactionKernelsBase {
   ReactionKernelsBase(Properties<INT> required_int_props,
                       Properties<REAL> required_real_props,
                       INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = default_map)
+                      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(required_int_props, required_real_props,
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}

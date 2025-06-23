@@ -225,19 +225,19 @@ struct RecombReactionKernels : public ReactionKernelsBase {
    * involved in the recombination (eg. electron).
    * @param normalised_potential_energy Used in calculating the projectile
    * source energy loss
-   * @param properties_map_ A std::map<int, std::string> object to be to be
+   * @param properties_map A std::map<int, std::string> object to be to be
    * passed to ReactionKernelsBase.
    */
   RecombReactionKernels(
       const Species &target_species, const Species &projectile_species,
       const REAL &normalised_potential_energy,
-      std::map<int, std::string> properties_map_ = default_map)
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
             Properties<REAL>(
                 required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
                 required_species_real_props),
-            ndim_velocity + 1, properties_map_) {
+            ndim_velocity + 1, properties_map) {
     static_assert((ndim_velocity >= ndim_source_momentum),
                   "Number of dimension for VELOCITY must be greater than or "
                   "equal to number of dimensions for SOURCE_MOMENTUM.");

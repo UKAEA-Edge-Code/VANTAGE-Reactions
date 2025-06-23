@@ -40,7 +40,7 @@ TEST(Properties, simple_prop_names) {
 
   std::vector<std::string> simple_int_props = {};
   for (auto prop : int_props_obj.get_simple_props()) {
-    simple_int_props.push_back(default_map.at(prop));
+    simple_int_props.push_back(get_default_map().at(prop));
   }
   auto int_prop_names = int_props_obj.simple_prop_names();
 
@@ -78,7 +78,7 @@ TEST(Properties, simple_prop_names) {
 
   std::vector<std::string> simple_real_props = {};
   for (auto prop : real_props) {
-    simple_real_props.push_back(default_map.at(prop));
+    simple_real_props.push_back(get_default_map().at(prop));
   }
 
   auto real_prop_names = real_props_obj.simple_prop_names();
@@ -166,7 +166,7 @@ TEST(Properties, species_prop_names) {
 
   std::vector<std::string> species_real_props = {};
   for (auto prop : real_props) {
-    species_real_props.push_back(default_map.at(prop));
+    species_real_props.push_back(get_default_map().at(prop));
   }
 
   auto real_prop_names = real_props_obj.species_prop_names();
@@ -417,7 +417,7 @@ TEST(Properties, full_use_properties_map) {
   particle_group->remove_particle_dat(Sym<REAL>("FLUID_DENSITY"));
   particle_group->remove_particle_dat(Sym<REAL>("FLUID_TEMPERATURE"));
 
-  auto test_prop_map = default_map;
+  auto test_prop_map = get_default_map();
   test_prop_map[default_properties.fluid_density] = "TEST_PROP1";
   test_prop_map[default_properties.fluid_temperature] = "TEST_PROP2";
 

@@ -113,5 +113,8 @@ private:
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
-const auto default_map = properties_map().get_map();
+// const auto default_map = properties_map().get_map();
+inline auto get_default_map() {
+  return properties_map().get_map();
+}
 }; // namespace Reactions

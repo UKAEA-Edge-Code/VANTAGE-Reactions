@@ -14,7 +14,7 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
   // We use the following marking strategy, but avoid hardcoding the internal
   // state ID by using the default map
 
-  auto prop_map = default_map;
+  auto prop_map = get_default_map();
 
   auto mark_id_zero =
       make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
