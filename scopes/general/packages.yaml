@@ -1,0 +1,28 @@
+packages:
+  llvm:
+    require:
+      - "@18"
+  adaptivecpp:
+    require:
+      - spec: "cuda_arch=80"
+    conflict:
+      - spec: "%gcc"
+        when: "compilationflow=ompaccelerated"
+      - spec: "%clang"
+        when: "compilationflow=omplibraryonly"
+      - spec: "%clang"
+        when: "compilationflow=cudanvcxx"
+      - spec: "%gcc"
+        when: "compilationflow=cudallvm"
+  googletest:
+    require:
+      - spec: "~csd3"
+      - spec: "%gcc"
+        when: "^adaptivecpp%gcc"
+      - spec: "%clang"
+        when: "^adaptivecpp%clang"
+  all:
+    providers:
+      mpi: [mpich]
+      sycl: [adaptivecpp]
+
