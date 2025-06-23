@@ -101,7 +101,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
     auto comp_nums = std::make_shared<LocalArray<INT>>(
         target_subgroup->get_particle_group()->sycl_target, num_comps_vec);
 
-    auto k_len = size(this->dats);
+    auto k_len = std::size(this->dats);
     auto loop = particle_loop(
         "zeroer_loop", target_subgroup,
         [=](auto vars, auto comp_nums) {
@@ -142,22 +142,14 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
               " not in passed template particle group in CellwiseAccumulator");
       this->dats.push_back(Sym<T>(name));
     }
-    std::vector<INT> num_comps_vec;
-    for (auto &dat : dats) {
-      auto particle_dat = template_group->get_dat(dat);
 
-      num_comps_vec.push_back(particle_dat->ncomp);
-    }
-
-    this->comp_nums = std::make_shared<LocalArray<INT>>(
-        template_group->sycl_target, num_comps_vec);
-
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
-          this->dats[i], std::make_shared<CellDatConst<T>>(
-                             template_group->sycl_target,
-                             template_group->domain->mesh->get_cell_count(),
-                             num_comps_vec[i], 1)));
+          this->dats[i],
+          std::make_shared<CellDatConst<T>>(
+              template_group->sycl_target,
+              template_group->domain->mesh->get_cell_count(),
+              template_group->get_dat(this->dats[i])->ncomp, 1)));
     }
   }
   /**
@@ -168,20 +160,10 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * accumulated
    */
   void transform(ParticleSubGroupSharedPtr target_subgroup) override {
-
-    for (auto i = 0; i < size(this->dats); i++) {
-
-      auto loop = particle_loop(
-          "accumulator_loop", target_subgroup,
-          [=](auto var, auto comp_nums, auto buffer) {
-            for (auto j = 0; j < comp_nums.at(i); j++) {
-              buffer.fetch_add(j, 0, var[j]);
-            }
-          },
-          Access::read(this->dats[i]), Access::read(this->comp_nums),
-          Access::add(this->values[this->dats[i]]));
-
-      loop->execute();
+    for (auto i = 0; i < std::size(this->dats); i++) {
+        Kernel::plus<T> op{};
+        reduce_dat_components_cellwise(target_subgroup, this->dats.at(i),
+                                       this->values.at(this->dats.at(i)), op);
     }
   }
 
@@ -242,7 +224,6 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
 private:
   std::vector<Sym<T>> dats;
   std::map<Sym<T>, std::shared_ptr<CellDatConst<T>>> values;
-  std::shared_ptr<LocalArray<INT>> comp_nums;
 };
 
 /**
@@ -276,7 +257,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
     this->comp_nums = std::make_shared<LocalArray<INT>>(
         template_group->sycl_target, num_comps_vec);
 
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
           this->dats[i], std::make_shared<CellDatConst<REAL>>(
                              template_group->sycl_target,
@@ -298,7 +279,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    */
   void transform(ParticleSubGroupSharedPtr target_subgroup) override {
 
-    for (auto i = 0; i < size(this->dats); i++) {
+    for (auto i = 0; i < std::size(this->dats); i++) {
 
       auto loop = particle_loop(
           "weighted_accumulator_loop", target_subgroup,
