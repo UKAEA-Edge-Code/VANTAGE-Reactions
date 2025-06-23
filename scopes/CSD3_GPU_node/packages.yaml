@@ -1,0 +1,32 @@
+packages:
+  llvm:
+    require:
+      - "@18"
+  openmpi:
+    externals:
+    - spec: openmpi@4.1.1~cuda~cxx~cxx_exceptions~java~memchecker+pmi+static~wrapper-rpath
+          fabrics=ucx schedulers=slurm
+      prefix: /usr/local/software/spack/spack-rhel8-20210927/opt/spack/linux-centos8-zen2/gcc-9.4.0/openmpi-4.1.1-epagguvqfrwuokz2ftiyzbxibae5afnn
+  adaptivecpp:
+    require:
+      - spec: "cuda_arch=80"
+    conflict:
+      - spec: "%gcc"
+        when: "compilationflow=ompaccelerated"
+      - spec: "%clang"
+        when: "compilationflow=omplibraryonly"
+      - spec: "%clang"
+        when: "compilationflow=cudanvcxx"
+      - spec: "%gcc"
+        when: "compilationflow=cudallvm"
+  googletest:
+    require:
+      - spec: "+csd3"
+      - spec: "%gcc"
+        when: "^adaptivecpp%gcc"
+      - spec: "%clang"
+        when: "^adaptivecpp%clang"
+  all:
+    providers:
+      sycl: [adaptivecpp]
+      mpi: [openmpi]
