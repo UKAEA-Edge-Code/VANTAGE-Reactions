@@ -114,8 +114,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
               GA_mom.combine(i, 0, W[0] * P[i]);
               GA_s.combine(1, 0, W[0] * P[i] * P[i]);
 
-              GA_mom_min.fetch_min(i, 0, P[i]);
-              GA_mom_max.fetch_max(i, 0, P[i]);
+              GA_mom_min.combine(i, 0, P[i]);
+              GA_mom_max.combine(i, 0, P[i]);
             }
           },
           Access::read(this->position), Access::read(this->weight),
@@ -123,8 +123,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
           Access::reduce(cell_dat_reduction_scalars, Kernel::plus<REAL>()),
           Access::reduce(cell_dat_reduction_pos, Kernel::plus<REAL>()),
           Access::reduce(cell_dat_reduction_mom, Kernel::plus<REAL>()),
-          Access::min(cell_dat_reduction_mom_min),
-          Access::max(cell_dat_reduction_mom_max));
+          Access::reduce(cell_dat_reduction_mom_min, Kernel::minimum<REAL>()),
+          Access::reduce(cell_dat_reduction_mom_max, Kernel::maximum<REAL>()));
 
       reduction_loop->execute();
     }
