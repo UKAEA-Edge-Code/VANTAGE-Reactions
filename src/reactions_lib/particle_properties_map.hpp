@@ -13,17 +13,17 @@ namespace Reactions {
 
 /*! This can be extended by deriving from this struct and defining a public enum
  * member with the first element being the value of the last element in
- * standard_properties_enum+1. For example:
-  struct custom_properties_enum : standard_properties_enum {
+ * StandardPropertiesEnum+1. For example:
+  struct CustomPropertiesEnum : StandardPropertiesEnum {
     public:
       enum {
-        custom_prop_1 = standard_properties_enum::fluid_flow_speed+1,
+        custom_prop_1 = StandardPropertiesEnum::fluid_flow_speed+1,
         custom_prop_2,
         custom_prop_3
       };
   };
   Further chaining would work on the same principle.*/
-struct standard_properties_enum {
+struct StandardPropertiesEnum {
 public:
   enum {
     reacted_flag,
@@ -50,14 +50,14 @@ public:
   };
 };
 
-const auto default_properties = standard_properties_enum();
+const auto default_properties = StandardPropertiesEnum();
 
 /*! A struct containing a map to reference strings associated with properties in
  * ParticleSpec via integer indices defined in an enumerator from a struct in
  * ParticlePropertiesIndices. */
-struct properties_map {
+struct PropertiesMap {
 
-  properties_map() = default;
+  PropertiesMap() = default;
 
   /**
    * @brief properties_map constructor
@@ -65,7 +65,7 @@ struct properties_map {
    * @param custom_map User-provided custom map to replace the default
    * private_map.
    */
-  properties_map(std::map<int, std::string> custom_map)
+  PropertiesMap(std::map<int, std::string> custom_map)
       : private_map(custom_map) {
     // replace default_properties.fluid_flow_speed with the last enum in
     // standard_properties_enum if any changes are made to it.
@@ -113,8 +113,7 @@ private:
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
-// const auto default_map = properties_map().get_map();
 inline auto get_default_map() {
-  return properties_map().get_map();
+  return PropertiesMap().get_map();
 }
 }; // namespace Reactions

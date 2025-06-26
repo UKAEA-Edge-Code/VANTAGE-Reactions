@@ -22,7 +22,7 @@ namespace PropertiesTest {
           default_properties.flow_speed, default_properties.source_energy,
           default_properties.source_density, default_properties.source_momentum});
   
-  struct custom_properties_enum : standard_properties_enum {
+  struct CustomPropertiesEnum : StandardPropertiesEnum {
   public:
     enum {
       test_custom_prop1 = default_properties.fluid_flow_speed + 1,
@@ -30,7 +30,7 @@ namespace PropertiesTest {
     };
   };
   
-  inline auto custom_props = custom_properties_enum();
+  inline auto custom_props = CustomPropertiesEnum();
   
   struct custom_prop_map_struct {
     custom_prop_map_struct() {
@@ -45,7 +45,7 @@ namespace PropertiesTest {
   };
   
   inline auto custom_prop_map =
-      properties_map(custom_prop_map_struct().get_map()).get_map();
+      PropertiesMap(custom_prop_map_struct().get_map()).get_map();
   
   struct custom_prop_map_no_weight_struct {
     custom_prop_map_no_weight_struct() {
@@ -61,6 +61,6 @@ namespace PropertiesTest {
   };
   
   inline auto custom_prop_no_weight_map =
-      properties_map(custom_prop_map_no_weight_struct().get_map()).get_map();
+      PropertiesMap(custom_prop_map_no_weight_struct().get_map()).get_map();
   
 } // namespace PropertiesTest
