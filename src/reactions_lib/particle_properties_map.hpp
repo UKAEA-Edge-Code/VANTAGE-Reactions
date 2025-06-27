@@ -116,4 +116,22 @@ private:
 inline auto get_default_map() {
   return PropertiesMap().get_map();
 }
+
+inline bool map_subset_check(std::map<int, std::string> custom_map) {
+  auto default_map = get_default_map();
+  auto default_map_size = default_map.size();
+  auto custom_map_size = custom_map.size();
+
+  if (custom_map_size < default_map_size) {
+    return false;
+  }
+
+  for (auto it = default_map.begin(); it != default_map.end(); it++) {
+    if (custom_map.find(it->first) == custom_map.end()) {
+      return false;
+    }
+  }
+
+  return true;
+};
 }; // namespace Reactions

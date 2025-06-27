@@ -201,8 +201,15 @@ public:
 
   PanickedParticleMarker(
       const std::map<int, std::string> &properties_map = Reactions::get_default_map())
-      : panic_sym(
-            Sym<INT>(properties_map.at(Reactions::default_properties.panic))){};
+        {
+          NESOWARN(
+            map_subset_check(properties_map),
+            "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+            There may be inconsitencies with indexing of properties."
+          );
+
+          this->panic_sym = Sym<INT>(properties_map.at(Reactions::default_properties.panic));
+        };
 
   ParticleSubGroupSharedPtr
   make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
