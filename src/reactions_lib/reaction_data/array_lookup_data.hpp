@@ -77,7 +77,7 @@ public:
 };
 
 /**
- * @brief Hos reaction data returning an array based on lookup table for
+ * @brief Host reaction data returning an array based on lookup table for
  * integer-valued key
  *
  * @tparam N The size of the REAL-valued array stored in the lookup table
