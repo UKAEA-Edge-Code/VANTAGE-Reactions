@@ -72,14 +72,13 @@ private:
   struct ComparisonMarkerSingleDevice
       : MarkingFunctionWrapperBase<ComparisonMarkerSingleDevice> {
 
-    ComparisonMarkerSingleDevice()
-        : comparison_val(0), comparison_component(0),
-          comparison_wrapper(T<U>()) {}
-
     ComparisonMarkerSingleDevice(U comparison_value, INT comparison_component)
         : comparison_val(comparison_value),
           comparison_component(comparison_component),
           comparison_wrapper(T<U>()) {}
+
+    ComparisonMarkerSingleDevice() : 
+      ComparisonMarkerSingleDevice(0, 0) {}
 
     bool marking_condition(Access::SymVector::Read<REAL> &real_vars,
                            Access::SymVector::Read<INT> &int_vars) const {
@@ -112,43 +111,61 @@ private:
 public:
   ComparisonMarkerSingle() = delete;
 
-  ComparisonMarkerSingle(const Sym<REAL> comparison_var)
-      : MarkingStrategyBase<ComparisonMarkerSingle<U, T>>(
-            std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()),
-        device_wrapper(ComparisonMarkerSingleDevice()) {}
+  ComparisonMarkerSingle(
+    const Sym<INT> comparison_var,
+    const INT comparison_value,
+    const INT comparison_component
+  ) : MarkingStrategyBase<ComparisonMarkerSingle<INT, T>>(
+      std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}
+    )
+  {
+    if (std::isnan(comparison_value)) {
+      this->device_wrapper = ComparisonMarkerSingleDevice();
+    }
+    else {
+      if (std::isnan(comparison_component)) {
+        this->device_wrapper = ComparisonMarkerSingleDevice(comparison_value, 0);
+      }
+      else {
+        this->device_wrapper = ComparisonMarkerSingleDevice(comparison_value, comparison_component);
+      }
+    }
 
-  ComparisonMarkerSingle(const Sym<INT> comparison_var)
-      : MarkingStrategyBase<ComparisonMarkerSingle<U, T>>(
-            std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}),
-        device_wrapper(ComparisonMarkerSingleDevice()) {}
+  };
 
-  ComparisonMarkerSingle(const Sym<REAL> comparison_var,
-                         const REAL comparison_value)
-      : MarkingStrategyBase<ComparisonMarkerSingle<U, T>>(
-            std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()),
-        device_wrapper(ComparisonMarkerSingleDevice(comparison_value, 0)) {}
+  ComparisonMarkerSingle(
+    const Sym<REAL> comparison_var,
+    const REAL comparison_value,
+    const INT comparison_component
+  ) : MarkingStrategyBase<ComparisonMarkerSingle<REAL, T>>(
+      std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()
+    )
+  {
+    if (std::isnan(comparison_value)) {
+      this->device_wrapper = ComparisonMarkerSingleDevice();
+    }
+    else {
+      if (std::isnan(comparison_component)) {
+        this->device_wrapper = ComparisonMarkerSingleDevice(comparison_value, 0);
+      }
+      else {
+        this->device_wrapper = ComparisonMarkerSingleDevice(comparison_value, comparison_component);
+      }
+    }
 
-  ComparisonMarkerSingle(const Sym<INT> comparison_var,
-                         const INT comparison_value)
-      : MarkingStrategyBase<ComparisonMarkerSingle<U, T>>(
-            std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}),
-        device_wrapper(ComparisonMarkerSingleDevice(comparison_value, 0)) {}
+  };
+  
+  ComparisonMarkerSingle(const Sym<REAL> comparison_var) : 
+    ComparisonMarkerSingle(comparison_var, std::numeric_limits<REAL>().quiet_NaN(), std::numeric_limits<INT>().quiet_NaN()) {}
 
-  ComparisonMarkerSingle(const Sym<REAL> comparison_var,
-                         const REAL comparison_value,
-                         const INT comparison_component)
-      : MarkingStrategyBase<ComparisonMarkerSingle<U, T>>(
-            std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()),
-        device_wrapper(ComparisonMarkerSingleDevice(comparison_value,
-                                                    comparison_component)) {}
+  ComparisonMarkerSingle(const Sym<INT> comparison_var) : 
+    ComparisonMarkerSingle(comparison_var, std::numeric_limits<INT>().quiet_NaN(), std::numeric_limits<INT>().quiet_NaN()) {}
 
-  ComparisonMarkerSingle(const Sym<INT> comparison_var,
-                         const INT comparison_value,
-                         const INT comparison_component)
-      : MarkingStrategyBase<ComparisonMarkerSingle<U, T>>(
-            std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}),
-        device_wrapper(ComparisonMarkerSingleDevice(comparison_value,
-                                                    comparison_component)) {}
+  ComparisonMarkerSingle(const Sym<REAL> comparison_var, const REAL comparison_value) : 
+    ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
+
+  ComparisonMarkerSingle(const Sym<INT> comparison_var, const INT comparison_value) :
+    ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
 
 protected:
   ComparisonMarkerSingleDevice get_device_data() const {
