@@ -96,8 +96,16 @@ struct ReactionDataBase {
         required_real_props(
             required_real_props.merge_with(required_real_props_ephemeral)),
         required_int_props_ephemeral(required_int_props_ephemeral),
-        required_real_props_ephemeral(required_real_props_ephemeral),
-        properties_map(properties_map) {
+        required_real_props_ephemeral(required_real_props_ephemeral) {
+    
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+       There may be inconsitencies with indexing of properties."
+    );
+
+    this->properties_map = properties_map;
+
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }

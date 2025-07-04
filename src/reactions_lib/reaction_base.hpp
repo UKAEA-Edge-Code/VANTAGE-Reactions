@@ -34,14 +34,21 @@ struct AbstractReaction {
       SYCLTargetSharedPtr sycl_target,
       const std::map<int, std::string> &properties_map = get_default_map())
       : sycl_target_stored(sycl_target),
-        total_reaction_rate(
-            Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
         device_rate_buffer(
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        weight_sym(Sym<REAL>(properties_map.at(default_properties.weight))),
         max_buffer_size(16384 * 256) {
+    
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
+    this->total_reaction_rate = Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
+
     this->pre_req_data->fill(0.0);
   }
 
