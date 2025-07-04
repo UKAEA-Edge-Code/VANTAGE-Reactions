@@ -83,17 +83,18 @@ struct MergeTransformationStrategy : TransformationStrategy {
       auto reduction_loop = particle_loop(
           "merge_reduction_loop", target_subgroup,
           [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom) {
-            GA_s.fetch_add(0, 0, W[0]);
+            GA_s.combine(0, 0, W[0]);
             for (int i = 0; i < ndim; i++) {
-              GA_pos.fetch_add(i, 0, W[0] * X[i]);
-              GA_mom.fetch_add(i, 0, W[0] * P[i]);
-              GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
+              GA_pos.combine(i, 0, W[0] * X[i]);
+              GA_mom.combine(i, 0, W[0] * P[i]);
+              GA_s.combine(1, 0, W[0] * P[i] * P[i]);
             }
           },
           Access::read(this->position), Access::read(this->weight),
-          Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
-          Access::add(cell_dat_reduction_pos),
-          Access::add(cell_dat_reduction_mom));
+          Access::read(this->momentum),
+          Access::reduce(cell_dat_reduction_scalars, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_pos, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_mom, Kernel::plus<REAL>()));
 
       reduction_loop->execute();
     }
@@ -107,22 +108,23 @@ struct MergeTransformationStrategy : TransformationStrategy {
           "merge_reduction_loop_3D", target_subgroup,
           [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom,
               auto GA_mom_min, auto GA_mom_max) {
-            GA_s.fetch_add(0, 0, W[0]);
+            GA_s.combine(0, 0, W[0]);
             for (int i = 0; i < ndim; i++) {
-              GA_pos.fetch_add(i, 0, W[0] * X[i]);
-              GA_mom.fetch_add(i, 0, W[0] * P[i]);
-              GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
+              GA_pos.combine(i, 0, W[0] * X[i]);
+              GA_mom.combine(i, 0, W[0] * P[i]);
+              GA_s.combine(1, 0, W[0] * P[i] * P[i]);
 
-              GA_mom_min.fetch_min(i, 0, P[i]);
-              GA_mom_max.fetch_max(i, 0, P[i]);
+              GA_mom_min.combine(i, 0, P[i]);
+              GA_mom_max.combine(i, 0, P[i]);
             }
           },
           Access::read(this->position), Access::read(this->weight),
-          Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
-          Access::add(cell_dat_reduction_pos),
-          Access::add(cell_dat_reduction_mom),
-          Access::min(cell_dat_reduction_mom_min),
-          Access::max(cell_dat_reduction_mom_max));
+          Access::read(this->momentum),
+          Access::reduce(cell_dat_reduction_scalars, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_pos, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_mom, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_mom_min, Kernel::minimum<REAL>()),
+          Access::reduce(cell_dat_reduction_mom_max, Kernel::maximum<REAL>()));
 
       reduction_loop->execute();
     }

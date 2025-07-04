@@ -286,14 +286,14 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
           [=](auto var, auto comp_nums, auto buffer, auto weight,
               auto weight_buffer) {
             for (auto j = 0; j < comp_nums.at(i); j++) {
-              buffer.fetch_add(j, 0, var[j] * weight[0]);
+              buffer.combine(j, 0, var[j] * weight[0]);
             }
-            weight_buffer.fetch_add(0, 0, weight[0]);
+            weight_buffer.combine(0, 0, weight[0]);
           },
           Access::read(this->dats[i]), Access::read(this->comp_nums),
-          Access::add(this->values[this->dats[i]]),
+          Access::reduce(this->values[this->dats[i]], Kernel::plus<REAL>()),
           Access::read(Sym<REAL>(this->weight_sym_name)),
-          Access::add(this->weight_buffer));
+          Access::reduce(this->weight_buffer, Kernel::plus<REAL>()));
 
       loop->execute();
     }
