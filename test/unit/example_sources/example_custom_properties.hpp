@@ -1,4 +1,4 @@
-struct custom_properties_enum : standard_properties_enum {
+struct CustomPropertiesEnum : StandardPropertiesEnum {
 public:
   enum {
     test_custom_prop1 = default_properties.fluid_flow_speed + 1,

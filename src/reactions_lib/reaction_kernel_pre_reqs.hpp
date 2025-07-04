@@ -217,6 +217,12 @@ template <typename PROP_TYPE> struct Properties {
   std::vector<std::string> simple_prop_names(
       const std::map<int, std::string> &properties_map = get_default_map()) {
 
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
     std::vector<std::string> simple_prop_names_vec;
     for (auto req_prop : this->simple_props) {
       std::string error_msg =
@@ -245,6 +251,13 @@ template <typename PROP_TYPE> struct Properties {
   int simple_prop_index(
       int prop,
       const std::map<int, std::string> &properties_map = get_default_map()) {
+    
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
       if (req_prop == prop) {
@@ -269,6 +282,13 @@ template <typename PROP_TYPE> struct Properties {
    */
   std::vector<std::string> species_prop_names(
       const std::map<int, std::string> &properties_map = get_default_map()) {
+    
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+    
     std::vector<std::string> species_real_prop_names_vec;
 
     for (auto i_species : this->species) {
@@ -298,6 +318,13 @@ template <typename PROP_TYPE> struct Properties {
   int species_prop_index(
       std::string species_name, int prop,
       const std::map<int, std::string> &properties_map = get_default_map()) {
+    
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
       if (req_prop == prop) {

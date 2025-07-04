@@ -41,10 +41,18 @@ struct MergeTransformationStrategy : TransformationStrategy {
 
   MergeTransformationStrategy(
       const std::map<int, std::string> &properties_map = get_default_map())
-      : position(Sym<REAL>(properties_map.at(default_properties.position))),
-        weight(Sym<REAL>(properties_map.at(default_properties.weight))),
-        momentum(Sym<REAL>(properties_map.at(default_properties.velocity))),
-        min_npart_marker(MinimumNPartInCellMarker(3)) {
+      : min_npart_marker(MinimumNPartInCellMarker(3)) {
+
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
+    this->position = Sym<REAL>(properties_map.at(default_properties.position));
+    this->weight = Sym<REAL>(properties_map.at(default_properties.weight));
+    this->momentum = Sym<REAL>(properties_map.at(default_properties.velocity));
+
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
   };
