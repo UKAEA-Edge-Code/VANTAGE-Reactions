@@ -48,13 +48,19 @@ struct ReactionController {
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
       : parent_transform(parent_transform), child_transform(child_transform),
-        id_sym(Sym<INT>(properties_map.at(default_properties.internal_state))),
-        tot_rate_buffer(
-            Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
-        panic_flag(Sym<INT>(properties_map.at(default_properties.panic))),
-        reacted_flag(
-            Sym<INT>(properties_map.at(default_properties.reacted_flag))),
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
+
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
+    this->id_sym = Sym<INT>(properties_map.at(default_properties.internal_state));
+    this->tot_rate_buffer = Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    this->panic_flag = Sym<INT>(properties_map.at(default_properties.panic));
+    this->reacted_flag = Sym<INT>(properties_map.at(default_properties.reacted_flag));
+    
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(

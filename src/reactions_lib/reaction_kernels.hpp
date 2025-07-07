@@ -40,7 +40,15 @@ struct ReactionKernelsBase {
         required_real_props(required_real_props),
         required_int_props_ephemeral(required_int_props_ephemeral),
         required_real_props_ephemeral(required_real_props_ephemeral),
-        pre_req_ndims(pre_req_ndims), properties_map(properties_map) {}
+        pre_req_ndims(pre_req_ndims) {
+          NESOWARN(
+            map_subset_check(properties_map),
+            "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+            There may be inconsitencies with indexing of properties."
+          );
+
+          this->properties_map = properties_map;
+        }
 
   ReactionKernelsBase(std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),

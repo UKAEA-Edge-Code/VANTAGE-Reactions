@@ -70,8 +70,8 @@ if($ENV{SINGLE_TEST_NAME} STREQUAL "ALL")
 
     target_link_libraries(${EXECUTABLE} PRIVATE Reactions NESO-Particles::NESO-Particles GTest::gtest)
     target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
-    target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS} ${TEST_COVERAGE_FLAGS})
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${TEST_COVERAGE_FLAGS}")
+    target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
     
     add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${TEST_MAIN} ${TEST_LIST})
     gtest_add_tests(TARGET ${EXECUTABLE} SOURCES ${TEST_MAIN})

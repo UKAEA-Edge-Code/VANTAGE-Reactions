@@ -34,6 +34,12 @@ struct ParticleSpecBuilder {
       int ndim,
       const std::map<int, std::string> &properties_map = get_default_map()) {
 
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+
     this->add_particle_spec(ParticleSpec(
         ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
                      ndim, true),
@@ -71,6 +77,13 @@ struct ParticleSpecBuilder {
   void add_particle_prop(
       Properties<PROP_TYPE> properties_, int ndim = 1, bool positions = false,
       const std::map<int, std::string> &properties_map = get_default_map()) {
+    
+    NESOWARN(
+      map_subset_check(properties_map),
+      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties."
+    );
+    
     auto simple_prop_names = properties_.simple_prop_names(properties_map);
 
     auto species_prop_names = properties_.species_prop_names(properties_map);
