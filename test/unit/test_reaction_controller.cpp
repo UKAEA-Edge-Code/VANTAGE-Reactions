@@ -3,6 +3,7 @@
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 
 using namespace NESO::Particles;
 using namespace Reactions;
@@ -144,7 +145,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply_reactions(particle_sub_group(particle_group), 0.1);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -567,7 +568,8 @@ TEST(ReactionController, semi_dsmc_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0, ControllerMode::semi_dsmc_mode);
+  reaction_controller.apply_reactions(particle_group, 1.0,
+                                      ControllerMode::semi_dsmc_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
@@ -605,7 +607,6 @@ TEST(ReactionController, semi_dsmc_test) {
   particle_group->domain->mesh->free();
 }
 
-
 TEST(ReactionController, surface_mode_test) {
   const int N_total = 1600;
 
@@ -635,7 +636,8 @@ TEST(ReactionController, surface_mode_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0, ControllerMode::surface_mode);
+  reaction_controller.apply_reactions(particle_group, 1.0,
+                                      ControllerMode::surface_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
