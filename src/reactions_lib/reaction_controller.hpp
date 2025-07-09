@@ -1,14 +1,17 @@
 #pragma once
-#include "particle_properties_map.hpp"
-#include "transformation_wrapper.hpp"
-#include "common_transformations.hpp"
 #include "common_markers.hpp"
+#include "common_transformations.hpp"
+#include "particle_properties_map.hpp"
 #include "reaction_base.hpp"
+#include "transformation_wrapper.hpp"
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 
 using namespace NESO::Particles;
+
+// TODO: update docs with new filtering and transformation options
 
 namespace Reactions {
 
@@ -17,16 +20,16 @@ namespace Reactions {
  */
 enum class ControllerMode {
 
-  standard_mode, /**< Standard mode, where every reaction is applied on part of
-                    the ingoing particle's weight, with some weight potentially
-                    not participating in any reaction*/
+  standard_mode,  /**< Standard mode, where every reaction is applied on part of
+                     the ingoing particle's weight, with some weight potentially
+                     not participating in any reaction*/
   semi_dsmc_mode, /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
                     method, where MC is used to get which particles go through a
                     reaction, and then all possible reactions are applied to
                     those particles, consuming them completely. */
-  surface_mode /**< Surface reaction mode, where every reaction is applied to
-                 all particles in the passed subgroup, with 100% of the
-                 weight of each particle participating */
+  surface_mode    /**< Surface reaction mode, where every reaction is applied to
+                    all particles in the passed subgroup, with 100% of the
+                    weight of each particle participating */
 
 };
 
@@ -48,6 +51,9 @@ struct ReactionController {
   ReactionController(
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
+      std::vector<std::shared_ptr<MarkingStrategy>> pre_apply_filters = {},
+      std::vector<std::shared_ptr<TransformationStrategy>>
+          pre_kernel_transforms = {},
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
       : parent_transform(parent_transform), child_transform(child_transform),
@@ -57,10 +63,13 @@ struct ReactionController {
         panic_flag(Sym<INT>(properties_map.at(default_properties.panic))),
         reacted_flag(
             Sym<INT>(properties_map.at(default_properties.reacted_flag))),
-        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
+        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer),
+        pre_apply_filters(pre_apply_filters),
+        pre_kernel_transforms(pre_kernel_transforms) {
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+        pre_apply_filters,
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
     this->setup_particle_group_temporary();
     this->reacted_marker =
@@ -72,30 +81,42 @@ struct ReactionController {
   }
 
   ReactionController(
+      std::vector<std::shared_ptr<MarkingStrategy>> pre_apply_filters = {},
+      std::vector<std::shared_ptr<TransformationStrategy>>
+          pre_kernel_transforms = {},
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector<std::shared_ptr<TransformationWrapper>>{},
+            pre_apply_filters, pre_kernel_transforms,
             auto_clean_tot_rate_buffer, properties_map){};
 
   ReactionController(
       std::shared_ptr<TransformationWrapper> child_transform,
+      std::vector<std::shared_ptr<MarkingStrategy>> pre_apply_filters = {},
+      std::vector<std::shared_ptr<TransformationStrategy>>
+          pre_kernel_transforms = {},
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
-            std::vector{child_transform}, auto_clean_tot_rate_buffer,
+            std::vector{child_transform}, pre_apply_filters,
+            pre_kernel_transforms, auto_clean_tot_rate_buffer,
             properties_map){};
 
   ReactionController(
       std::shared_ptr<TransformationWrapper> parent_transform,
       std::shared_ptr<TransformationWrapper> child_transform,
+      std::vector<std::shared_ptr<MarkingStrategy>> pre_apply_filters = {},
+      std::vector<std::shared_ptr<TransformationStrategy>>
+          pre_kernel_transforms = {},
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(std::vector{parent_transform},
-                           std::vector{child_transform},
-                           auto_clean_tot_rate_buffer, properties_map){};
+                           std::vector{child_transform}, pre_apply_filters,
+                           pre_kernel_transforms, auto_clean_tot_rate_buffer,
+                           properties_map){};
 
   /**
    * @brief Function to populate the sub_group_selectors map and
@@ -234,6 +255,13 @@ public:
       break;
     }
 
+    ParticleSubGroupSharedPtr filtered_subgroup =
+        particle_sub_group(particle_group);
+
+    for (auto &filter : this->pre_apply_filters) {
+      filtered_subgroup = filter->make_marker_subgroup(filtered_subgroup);
+    }
+
     for (int r = 0; r < this->reactions.size(); r++) {
       if (!this->reactions[r]->get_in_states().empty()) {
         auto in_states = this->reactions[r]->get_in_states();
@@ -242,7 +270,7 @@ public:
           this->species_groups.emplace(std::make_pair(
               in_state,
               this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  std::make_shared<ParticleSubGroup>(particle_group))));
+                  filtered_subgroup)));
         }
 
         switch (controller_mode) {
@@ -270,6 +298,19 @@ public:
 
     auto child_group = this->particle_group_temporary->get(particle_group);
 
+    // Apply any pre kernel transformation
+    for (auto &strat : this->pre_kernel_transforms) {
+
+      for (int r = 0; r < this->reactions.size(); r++) {
+        if (!this->reactions[r]->get_in_states().empty()) {
+          auto in_states = this->reactions[r]->get_in_states();
+
+          for (int in_state : in_states) {
+            strat->transform(this->species_groups[in_state]);
+          }
+        }
+      }
+    }
     for (int i = 0; i < cell_count; i += this->cell_block_size) {
 
       for (int r = 0; r < this->reactions.size(); r++) {
@@ -302,8 +343,6 @@ public:
             Access::read(this->rng_kernel));
 
         loop->execute(i, std::min(i + this->cell_block_size, cell_count));
-        rate_buffer_zeroer->transform(
-            particle_group, i, std::min(i + this->cell_block_size, cell_count));
 
         for (int r = 0; r < this->reactions.size(); r++) {
 
@@ -321,7 +360,57 @@ public:
         break;
       }
       }
+    }
 
+    switch (controller_mode) {
+
+    case ControllerMode::semi_dsmc_mode: {
+
+      // re-apply any pre kernel transformation
+      for (auto &strat : this->pre_kernel_transforms) {
+
+        for (int r = 0; r < this->reactions.size(); r++) {
+          if (!this->reactions[r]->get_in_states().empty()) {
+            auto in_states = this->reactions[r]->get_in_states();
+
+            for (int in_state : in_states) {
+              strat->transform(this->reacted_species_groups[in_state]);
+            }
+          }
+        }
+      }
+
+      break;
+    }
+
+    default: {
+      break;
+    }
+    }
+    for (int i = 0; i < cell_count; i += this->cell_block_size) {
+      switch (controller_mode) {
+
+      case ControllerMode::semi_dsmc_mode: {
+
+        //Re-calculate rates
+        rate_buffer_zeroer->transform(
+            particle_group, i, std::min(i + this->cell_block_size, cell_count));
+        for (int r = 0; r < this->reactions.size(); r++) {
+
+          INT in_state = this->reactions[r]->get_in_states()[0];
+
+          this->reactions[r]->run_rate_loop(
+              this->reacted_species_groups[in_state], i,
+              std::min(i + this->cell_block_size, cell_count));
+        }
+
+        break;
+      }
+
+      default: {
+        break;
+      }
+      }
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
@@ -348,6 +437,10 @@ public:
       for (auto tr : this->parent_transform) {
         auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
         transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
+        // Make sure parent transforms are applied only to the filtered group
+        for (auto &strat : this->pre_apply_filters) {
+          transform_buffer->add_marking_strategy(strat);
+        }
         transform_buffer->transform(particle_group);
       }
     }
@@ -379,6 +472,8 @@ private:
   std::vector<std::shared_ptr<AbstractReaction>> reactions;
   std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
+  std::vector<std::shared_ptr<MarkingStrategy>> pre_apply_filters;
+  std::vector<std::shared_ptr<TransformationStrategy>> pre_kernel_transforms;
 
   std::shared_ptr<MarkingStrategy> reacted_marker;
   Sym<INT> id_sym;
