@@ -7,7 +7,6 @@
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 
 using namespace NESO::Particles;
 
@@ -392,7 +391,7 @@ public:
 
       case ControllerMode::semi_dsmc_mode: {
 
-        //Re-calculate rates
+        // Re-calculate rates
         rate_buffer_zeroer->transform(
             particle_group, i, std::min(i + this->cell_block_size, cell_count));
         for (int r = 0; r < this->reactions.size(); r++) {
