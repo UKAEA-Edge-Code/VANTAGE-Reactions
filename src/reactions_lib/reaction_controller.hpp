@@ -7,7 +7,6 @@
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/particle_group.hpp>
 
 using namespace NESO::Particles;
 
