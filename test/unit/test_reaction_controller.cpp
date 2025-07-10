@@ -3,6 +3,7 @@
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
@@ -144,7 +145,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply(particle_group, 0.1);
+  reaction_controller.apply(particle_sub_group(particle_group), 0.1);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
