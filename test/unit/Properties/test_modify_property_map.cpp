@@ -5,7 +5,7 @@ using namespace NESO::Particles;
 using namespace Reactions;
 
 TEST(Properties, modify_property_map) {
-  auto test_map_obj = properties_map(PropertiesTest::custom_prop_map);
+  auto test_map_obj = PropertiesMap(PropertiesTest::custom_prop_map);
   test_map_obj.at(PropertiesTest::custom_props.test_custom_prop2) =
       "TEST_PROP3";
   auto test_map = test_map_obj.get_map();

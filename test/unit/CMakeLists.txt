@@ -46,7 +46,7 @@ foreach(TEST_DIR ${TEST_DIRS})
     set(TEST_LIST ${TEST_LIST} ${src_unit})
     set(TEST_SOURCES ${TEST_MAIN} ${src_unit})
 
-    if($ENV{SINGLE_TEST_NAME} STREQUAL ${TEST_NAME})
+    if($ENV{SINGLE_TEST_NAME} STREQUAL ${TEST_NAME} OR $ENV{SINGLE_TEST_NAME} STREQUAL "FULL") 
         message("Building ${TEST_NAME}...")
 
         add_executable(${TEST_NAME} ${TEST_SOURCES})
@@ -64,7 +64,7 @@ foreach(TEST_DIR ${TEST_DIRS})
     unset(src_unit)
 endforeach()
 
-if($ENV{SINGLE_TEST_NAME} STREQUAL "ALL")
+if($ENV{SINGLE_TEST_NAME} STREQUAL "ALL" OR $ENV{SINGLE_TEST_NAME} STREQUAL "FULL")
     message("Building all tests...")
     add_executable(${EXECUTABLE} ${TEST_MAIN} ${TEST_LIST})
 
