@@ -54,16 +54,18 @@ struct ReactionController {
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
+      There may be inconsitencies with indexing of properties.");
 
-    this->id_sym = Sym<INT>(properties_map.at(default_properties.internal_state));
-    this->tot_rate_buffer = Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    this->id_sym =
+        Sym<INT>(properties_map.at(default_properties.internal_state));
+    this->tot_rate_buffer =
+        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->panic_flag = Sym<INT>(properties_map.at(default_properties.panic));
-    this->reacted_flag = Sym<INT>(properties_map.at(default_properties.reacted_flag));
-    
+    this->reacted_flag =
+        Sym<INT>(properties_map.at(default_properties.reacted_flag));
+
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
@@ -257,10 +259,18 @@ public:
         auto in_states = this->reactions[r]->get_in_states();
 
         for (int in_state : in_states) {
-          this->species_groups.emplace(std::make_pair(
-              in_state,
-              this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  particle_sub_group(target))));
+
+          if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+            this->species_groups.emplace(std::make_pair(
+                in_state,
+                this->sub_group_selectors[in_state]->make_marker_subgroup(
+                    particle_sub_group(target))));
+          } else {
+
+            this->species_groups[in_state] =
+                this->sub_group_selectors[in_state]->make_marker_subgroup(
+                    particle_sub_group(target));
+          }
         }
 
         switch (controller_mode) {
@@ -268,17 +278,29 @@ public:
         case ControllerMode::semi_dsmc_mode: {
 
           for (int in_state : in_states) {
-            this->reacted_species_groups.emplace(std::make_pair(
-                in_state, this->reacted_marker->make_marker_subgroup(
-                              this->species_groups[in_state])));
+            if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+              this->reacted_species_groups.emplace(std::make_pair(
+                  in_state, this->reacted_marker->make_marker_subgroup(
+                                this->species_groups[in_state])));
+            } else {
+
+              this->reacted_species_groups[in_state] =
+                  this->reacted_marker->make_marker_subgroup(
+                      this->species_groups[in_state]);
+            }
           }
           break;
         }
 
         default: {
           for (int in_state : in_states) {
-            this->reacted_species_groups.emplace(
-                std::make_pair(in_state, this->species_groups[in_state]));
+            if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+              this->reacted_species_groups.emplace(
+                  std::make_pair(in_state, this->species_groups[in_state]));
+            } else {
+              this->reacted_species_groups[in_state] =
+                  this->species_groups[in_state];
+            }
           }
           break;
         }
