@@ -27,6 +27,10 @@ spack:
   view: false
   concretizer:
     unify: false
+  packages:
+    python:
+      require:
+        - spec: "@3.8:"
   repos:
     - ${PWD}/Reactions-repo
     - ${PWD}/NESO-Spack
