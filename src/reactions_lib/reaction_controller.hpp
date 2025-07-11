@@ -313,10 +313,18 @@ public:
         auto in_states = this->reactions[r]->get_in_states();
 
         for (int in_state : in_states) {
-          this->species_groups.emplace(std::make_pair(
-              in_state,
-              this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  particle_sub_group(target))));
+
+          if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+            this->species_groups.emplace(std::make_pair(
+                in_state,
+                this->sub_group_selectors[in_state]->make_marker_subgroup(
+                    particle_sub_group(target))));
+          } else {
+
+            this->species_groups[in_state] =
+                this->sub_group_selectors[in_state]->make_marker_subgroup(
+                    particle_sub_group(target));
+          }
         }
 
         switch (controller_mode) {
@@ -324,17 +332,29 @@ public:
         case ControllerMode::semi_dsmc_mode: {
 
           for (int in_state : in_states) {
-            this->reacted_species_groups.emplace(std::make_pair(
-                in_state, this->reacted_marker->make_marker_subgroup(
-                              this->species_groups[in_state])));
+            if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+              this->reacted_species_groups.emplace(std::make_pair(
+                  in_state, this->reacted_marker->make_marker_subgroup(
+                                this->species_groups[in_state])));
+            } else {
+
+              this->reacted_species_groups[in_state] =
+                  this->reacted_marker->make_marker_subgroup(
+                      this->species_groups[in_state]);
+            }
           }
           break;
         }
 
         default: {
           for (int in_state : in_states) {
-            this->reacted_species_groups.emplace(
-                std::make_pair(in_state, this->species_groups[in_state]));
+            if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+              this->reacted_species_groups.emplace(
+                  std::make_pair(in_state, this->species_groups[in_state]));
+            } else {
+              this->reacted_species_groups[in_state] =
+                  this->species_groups[in_state];
+            }
           }
           break;
         }
