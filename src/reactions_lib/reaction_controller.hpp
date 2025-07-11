@@ -8,9 +8,6 @@
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/particle_group.hpp>
-#include <neso_particles/particle_sub_group/particle_sub_group_base.hpp>
-#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 
