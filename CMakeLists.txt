@@ -30,9 +30,7 @@ add_subdirectory(src)
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
 if (REACTIONS_ENABLE_TESTS)
-  # set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
-  # set(BUILD_TYPE_COMPILE_FLAGS "-O0")
-  set(BUILD_TYPE_COMPILE_FLAGS "-O2")
+  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
   add_subdirectory(test)
 endif()
 
