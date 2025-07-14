@@ -179,6 +179,12 @@ TEST(ReactionController, multi_reaction_multiple_products) {
                 reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0), 1e-12);
   }
 
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+
+    auto particle_group_2 = create_test_particle_group(N_total);
+    EXPECT_THROW(reaction_controller.apply_reactions(particle_group_2, 0.1),
+                 std::logic_error);
+  }
   particle_group->domain->mesh->free();
 }
 

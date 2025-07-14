@@ -8,6 +8,9 @@
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/particle_group.hpp>
+#include <neso_particles/particle_sub_group/particle_sub_group_base.hpp>
+#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 
@@ -263,6 +266,13 @@ public:
       particle_group = get_particle_group(target);
     }
 
+    if (this->reference_particle_group == nullptr) {
+      this->reference_particle_group = particle_group;
+    }
+
+    NESOASSERT(particle_group == this->reference_particle_group,
+               "Particle group passed to apply_reactions is not the same as "
+               "recorded reference group.");
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
     // Ensure that the total rate buffer is flushed before the reactions are
@@ -466,6 +476,7 @@ private:
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, ParticleSubGroupSharedPtr> species_groups;
   std::map<int, ParticleSubGroupSharedPtr> reacted_species_groups;
+  ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::set<int> parent_ids;
   std::set<int> child_ids;
