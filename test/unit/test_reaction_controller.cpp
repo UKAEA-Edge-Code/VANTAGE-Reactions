@@ -179,6 +179,12 @@ TEST(ReactionController, multi_reaction_multiple_products) {
                 reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0), 1e-12);
   }
 
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+
+    auto particle_group_2 = create_test_particle_group(N_total);
+    EXPECT_THROW(reaction_controller.apply_reactions(particle_group_2, 0.1),
+                 std::logic_error);
+  }
   particle_group->domain->mesh->free();
 }
 
@@ -568,7 +574,8 @@ TEST(ReactionController, semi_dsmc_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0, ControllerMode::semi_dsmc_mode);
+  reaction_controller.apply_reactions(particle_group, 1.0,
+                                      ControllerMode::semi_dsmc_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
@@ -606,7 +613,6 @@ TEST(ReactionController, semi_dsmc_test) {
   particle_group->domain->mesh->free();
 }
 
-
 TEST(ReactionController, surface_mode_test) {
   const int N_total = 1600;
 
@@ -636,7 +642,8 @@ TEST(ReactionController, surface_mode_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0, ControllerMode::surface_mode);
+  reaction_controller.apply_reactions(particle_group, 1.0,
+                                      ControllerMode::surface_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
