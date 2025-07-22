@@ -3,22 +3,20 @@ name: CI-Workflow
 on:
   workflow_dispatch:
   pull_request:
-  push:
-    paths:
-      - src/**
-      - test/**
-      - docs/**
     branches:
       - main
       - dev
+      - dev-surface-reactions
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   tests:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Fix up git URLs
-        run: echo -e '[url "https://github.com/"]\n  insteadOf = "ssh://git@github.com/"' >> ~/.gitconfig
       - name: Checkout
         uses: actions/checkout@v4
         with:
