@@ -12,3 +12,5 @@ RUN spack external find --path /usr/lib/llvm-18 llvm
 RUN spack external find python
 RUN spack external find cmake
 RUN spack external find mpich
+
+ENTRYPOINT ["/bin/bash"]

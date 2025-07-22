@@ -1,0 +1,53 @@
+name: CI-Workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    paths:
+      - src/**
+      - test/**
+      - docs/**
+    branches:
+      - main
+      - dev
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Fix up git URLs
+        run: echo -e '[url "https://github.com/"]\n  insteadOf = "ssh://git@github.com/"' >> ~/.gitconfig
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build docker images
+        run: |
+          docker build -t ci_image -f .devcontainer/Dockerfile .
+      - name: unit-tests
+        run: |
+          docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
+
+  # docs:
+  #   runs-on: ubuntu-24.04
+  #   needs: tests
+
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #     - name: Build
+  #       run: |
+  #         sudo apt install doxygen
+  #         mkdir builddoc && cd builddoc
+  #         cmake ..
+  #         make doc
+  #         mv public/html ../public
+  #         cd ..
+  #     - name: Archive generated documentation
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: documentation
+  #         path: |
+  #           ./public
