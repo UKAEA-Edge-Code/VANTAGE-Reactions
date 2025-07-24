@@ -5,8 +5,7 @@ on:
   pull_request:
     branches:
       - main
-      - dev
-      - dev-surface-reactions
+      - dev*
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
