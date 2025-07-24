@@ -28,3 +28,4 @@ spack:
       providers:
         mpi: [mpich]
         sycl: [adaptivecpp]
+
