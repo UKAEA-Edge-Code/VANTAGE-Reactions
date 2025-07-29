@@ -8,10 +8,10 @@ namespace Reactions {
 /**
  * @brief SYCL device-compatible ReactionData class returning a fixed rate
  *
- * @param rate_ REAL-valued rate to be used in reaction rate calculation.
+ * @param rate REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
-  FixedRateDataOnDevice(const REAL &rate_) : rate(rate_){};
+  FixedRateDataOnDevice(const REAL &rate) : rate(rate){};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction
@@ -43,13 +43,16 @@ private:
 
 /**
  * @brief A struct defining the data needed for a fixed rate reaction.
- *
- * @param rate_ REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedRateData : public ReactionDataBase<> {
 
-  FixedRateData(const REAL &rate_)
-      : fixed_rate_data_on_device(FixedRateDataOnDevice(rate_)) {}
+  /**
+   * @brief Constructor for FixedRateData.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
+  FixedRateData(const REAL &rate)
+      : fixed_rate_data_on_device(FixedRateDataOnDevice(rate)) {}
 
 private:
   FixedRateDataOnDevice fixed_rate_data_on_device;

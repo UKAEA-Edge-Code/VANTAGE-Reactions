@@ -72,11 +72,22 @@ private:
   struct ComparisonMarkerSingleDevice
       : MarkingFunctionWrapperBase<ComparisonMarkerSingleDevice> {
 
+    /**
+     * @brief Constructor for ComparisonMarkerSingleDevice.
+     *
+     * @param comparison_value Value to compare the ParticleDat
+     * @param comparison_component Component of the ParticleDat to compare
+     */
     ComparisonMarkerSingleDevice(U comparison_value, INT comparison_component)
         : comparison_val(comparison_value),
           comparison_component(comparison_component),
           comparison_wrapper(T<U>()) {}
 
+    /**
+     * \overload
+     * @brief Overloaded constructor for ComparisonMarkerSingleDevice that sets both
+     * arguments to 0.
+     */
     ComparisonMarkerSingleDevice() : 
       ComparisonMarkerSingleDevice(0, 0) {}
 
@@ -99,9 +110,9 @@ private:
     }
 
   private:
-    U comparison_val; //!< Value to compare the real-valued ParticleDat passed
+    U comparison_val; //!< Value to compare the ParticleDat passed
                       //!< to marking_condition against using <
-    INT comparison_component; //!< Component of the passed real-valued
+    INT comparison_component; //!< Component of the passed
                               //!< ParticleDat to compare
     T<U> comparison_wrapper;  //!< Comparison function wrapper (see
                               //!< ComparisonMarkerSingle description for
@@ -111,6 +122,13 @@ private:
 public:
   ComparisonMarkerSingle() = delete;
 
+  /**
+   * @brief Constructor for ComparisonMarkerSingle (INT-version).
+   *
+   * @param comparison_var Sym<INT> specifying the comparison property
+   * @param comparison_value Value to compare the INT-valued ParticleDat
+   * @param comparison_component Component of the INT-valued ParticleDat to compare
+   */
   ComparisonMarkerSingle(
     const Sym<INT> comparison_var,
     const INT comparison_value,
@@ -133,6 +151,14 @@ public:
 
   };
 
+  /**
+   * \overload
+   * @brief Overloaded constructor for ComparisonMarkerSingle (REAL-version).
+   *
+   * @param comparison_var Sym<REAL> specifying the comparison property.
+   * @param comparison_value Value to compare the REAL-valued ParticleDat.
+   * @param comparison_component Component of the REAL-valued ParticleDat to compare.
+   */
   ComparisonMarkerSingle(
     const Sym<REAL> comparison_var,
     const REAL comparison_value,
@@ -155,15 +181,41 @@ public:
 
   };
   
+  /**
+   * \overload
+   * @brief Overloaded constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_value and comparison_component to default values (NaN).
+   *
+   * @param comparison_var Sym<REAL> specifying the comparison property.
+   */
   ComparisonMarkerSingle(const Sym<REAL> comparison_var) : 
     ComparisonMarkerSingle(comparison_var, std::numeric_limits<REAL>().quiet_NaN(), std::numeric_limits<INT>().quiet_NaN()) {}
 
+  /**
+   * \overload
+   * @brief Overloaded constructor for ComparisonMarkerSingle (INT-version) that sets comparison_value and comparison_component to default values (NaN).
+   *
+   * @param comparison_var Sym<INT> specifying the comparison property.
+   */
   ComparisonMarkerSingle(const Sym<INT> comparison_var) : 
     ComparisonMarkerSingle(comparison_var, std::numeric_limits<INT>().quiet_NaN(), std::numeric_limits<INT>().quiet_NaN()) {}
 
+  /**
+   * \overload
+   * @brief Overloaded constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_component to a default value (NaN).
+   *
+   * @param comparison_var Sym<REAL> specifying the comparison property.
+   * @param comparison_value Value to compare the REAL-valued ParticleDat.
+   */
   ComparisonMarkerSingle(const Sym<REAL> comparison_var, const REAL comparison_value) : 
     ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
 
+  /**
+   * \overload
+   * @brief Overloaded constructor for ComparisonMarkerSingle (INT-version) that sets comparison_component to a default value (NaN).
+   *
+   * @param comparison_var Sym<INT> specifying the comparison property.
+   * @param comparison_value Value to compare the INT-valued ParticleDat.
+   */
   ComparisonMarkerSingle(const Sym<INT> comparison_var, const INT comparison_value) :
     ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
 
@@ -187,6 +239,11 @@ struct MinimumNPartInCellMarker : MarkingStrategy {
 public:
   MinimumNPartInCellMarker() = delete;
 
+  /**
+   * @brief Constructor for MinimumNPartInCellMarker.
+   *
+   * @param min_npart Minimum number of particles in a cell.
+   */
   MinimumNPartInCellMarker(INT min_npart) : min_npart(min_npart){};
 
   ParticleSubGroupSharedPtr
@@ -216,6 +273,11 @@ struct PanickedParticleMarker : MarkingStrategy {
 public:
   PanickedParticleMarker() = delete;
 
+  /**
+   * @brief Constructor for PanickedParticleMarker.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used to retrieve the Sym for the Panic property.
+   */
   PanickedParticleMarker(
       const std::map<int, std::string> &properties_map = Reactions::get_default_map())
         {

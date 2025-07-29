@@ -16,8 +16,15 @@ constexpr int num_products_per_parent = 0;
 } // namespace BASE_IONISATION_KERNEL
 
 /**
- * struct IoniseReactionKernelsOnDevice - SYCL device-compatible kernel for
+ * @brief A struct that contains SYCL device-compatible kernels for
  * ionisation reactions.
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle velocity
+ * property.
+ * @tparam ndim_source_momentum The number of dimensions for electron
+ * source momentum property.
+ * @tparam has_momentum_req_data The boolean specifying whether a
+ * projectile momentum req_data is available.
  */
 template <int ndim_velocity, int ndim_source_momentum,
           bool has_momentum_req_data>
@@ -124,7 +131,7 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 3> required_species_real_props = {
       props.source_density, props.source_energy, props.source_momentum};
   /**
-   * @brief Ionisation reaction kernel host type constructor
+   * @brief Constructor for IonisationReactionKernels.
    *
    * @param target_species Species object representing the ionisation target
    * (and the corresponding ion field!)

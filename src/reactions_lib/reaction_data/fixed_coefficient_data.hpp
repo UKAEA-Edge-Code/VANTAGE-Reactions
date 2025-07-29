@@ -6,6 +6,12 @@
 using namespace NESO::Particles;
 namespace Reactions {
 
+/**
+ * @brief A struct that contains data and calc_data functions that are to be
+ * stored on and used on a SYCL device.
+ *
+ * @param rate REAL-valued rate to be used in reaction rate calculation.
+ */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 
@@ -44,11 +50,6 @@ public:
  * @brief A struct defining the data needed for a fixed rate coefficient
  * reaction. The reaction rate is calculated as
  * rate_coefficient*particle_weight.
- *
- * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
- * and the particle weight)
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
@@ -57,6 +58,14 @@ struct FixedCoefficientData : public ReactionDataBase<> {
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.weight};
 
+  /**
+   * @brief Constructor for FixedCoefficientData.
+   *
+   * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
+   * and the particle weight)
+   * @param properties_map A std::map<int, std::string> object to be passed to
+   * ReactionDataBase
+   */
   FixedCoefficientData(REAL rate_coefficient,
                        std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<REAL>(required_simple_real_props),

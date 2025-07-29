@@ -41,8 +41,20 @@ struct SimpleRemovalTransformationStrategy : TransformationStrategy {
  */
 struct CompositeTransform : TransformationStrategy {
 
+  /**
+   * @brief Default constructor for CompositeTransform.
+   */
   CompositeTransform() = default;
 
+  /**
+   * \overload
+   * @brief Overloaded constructor for CompositeTransform that allows for initializing
+   * the member variable components.
+   *
+   * @param components A vector of TransformationStrategy shared pointers. These define
+   * the transfrormations that are to be applied when calling the transform member
+   * function.
+   */
   CompositeTransform(
       std::vector<std::shared_ptr<TransformationStrategy>> components)
       : components(components) {}
@@ -72,11 +84,19 @@ private:
 };
 /**
  * @brief Transformation strategy that zeroes out a set of particle dats
+ *
+ * @tparam T REAL or INT 
  */
 template <typename T> struct ParticleDatZeroer : TransformationStrategy {
 
   ParticleDatZeroer() = delete;
 
+  /**
+   * @brief Constructor for ParticleDatZeroer.
+   *
+   * @param dat_names A vector of strings specifying the names of the dats
+   * to be zeroed.
+   */
   ParticleDatZeroer(std::vector<std::string> dat_names) {
 
     for (auto name : dat_names) {
@@ -127,11 +147,21 @@ private:
 /**
  * @brief Transfomation strategy that accumulates values of certain particle
  * dats and provides access to the cell-wise accumulated data
+ *
+ * @tparam T REAL or INT
  */
 template <typename T> struct CellwiseAccumulator : TransformationStrategy {
 
   CellwiseAccumulator() = delete;
 
+  /**
+   * @brief Constructor for CellwiseAccumulator.
+   *
+   * @param template_group A template particle group used to provide the CellDatConsts for
+   * the dats specified by dat_names.
+   * @param dat_names A vector of strings specifying the names of the dats
+   * to be accumulated cell-wise.
+   */
   CellwiseAccumulator(ParticleGroupSharedPtr template_group,
                       std::vector<std::string> dat_names) {
 
@@ -229,12 +259,23 @@ private:
 /**
  * @brief Accumulates a set of particle dats cell-wise, while weighing them with
  * a particle dat (should be dim 1). Also accumulates the weight separately.
+ *
+ * @tparam T REAL or INT
  */
 template <typename T>
 struct WeightedCellwiseAccumulator : TransformationStrategy {
 
   WeightedCellwiseAccumulator() = delete;
 
+  /**
+   * @brief Constructor for WeightedCellwiseAccumulator.
+   *
+   * @param template_group A template particle group used to provide the CellDatConsts for
+   * the dats specified by dat_names.
+   * @param dat_names A vector of strings specifying the names of the dats
+   * to be accumulated cell-wise.
+   * @param weight_sym_name Name of the sym associated with the weight property.
+   */
   WeightedCellwiseAccumulator(ParticleGroupSharedPtr template_group,
                               std::vector<std::string> dat_names,
                               std::string weight_sym_name)

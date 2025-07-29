@@ -30,18 +30,21 @@ enum class ControllerMode {
 /**
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given ParticleGroup.
- *
- * @param parent_transform TransformationWrapper(s) informing how parent
- * particles are to be handled
- * @param child_transform TransformationWrapper(s) informing how descendant
- * products are to be handled
- * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
- * Defaults to true.
- * @param properties_map Optional remapping of default properties (panic flag,
- * internal_state, and total rate)
  */
 struct ReactionController {
 
+  /**
+   * @brief Constructor for ReactionController.
+   *
+   * @param parent_transform Vector of TransformationWrappers informing how parent
+   * particles are to be handled
+   * @param child_transform Vector of TransformationWrappers informing how descendant
+   * products are to be handled
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+   * Defaults to true.
+   * @param properties_map Optional remapping of default properties (panic flag,
+   * internal_state, and total rate)
+   */
   ReactionController(
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
@@ -74,6 +77,15 @@ struct ReactionController {
         std::make_shared<HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
   }
 
+  /**
+   * \overload
+   * @brief Constructor for ReactionController with no parent and child transformation strategies.
+   *
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+   * Defaults to true.
+   * @param properties_map Optional remapping of default properties (panic flag,
+   * internal_state, and total rate)
+   */
   ReactionController(
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
@@ -82,6 +94,17 @@ struct ReactionController {
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             auto_clean_tot_rate_buffer, properties_map){};
 
+  /**
+   * \overload
+   * @brief Constructor for ReactionController with no parent transformation strategies.
+   *
+   * @param child_transform A TransformationWrapper informing how descendant
+   * products are to be handled
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+   * Defaults to true.
+   * @param properties_map Optional remapping of default properties (panic flag,
+   * internal_state, and total rate)
+   */
   ReactionController(
       std::shared_ptr<TransformationWrapper> child_transform,
       bool auto_clean_tot_rate_buffer = true,
@@ -91,6 +114,19 @@ struct ReactionController {
             std::vector{child_transform}, auto_clean_tot_rate_buffer,
             properties_map){};
 
+  /**
+   * \overload
+   * @brief Constructor for ReactionController.
+   *
+   * @param parent_transform A TransformationWrapper informing how parent
+   * particles are to be handled
+   * @param child_transform A TransformationWrapper informing how descendant
+   * products are to be handled
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+   * Defaults to true.
+   * @param properties_map Optional remapping of default properties (panic flag,
+   * internal_state, and total rate)
+   */
   ReactionController(
       std::shared_ptr<TransformationWrapper> parent_transform,
       std::shared_ptr<TransformationWrapper> child_transform,

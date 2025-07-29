@@ -9,7 +9,7 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
- * struct ElectronImpactIonisation - Reaction representing electron impact
+ * @brief A struct defining a reaction representing electron impact
  * ionisation, allowing for separate rate and energy rate calculation
  *
  * @tparam RateData ReactionData template parameter used for the rate
@@ -25,7 +25,7 @@ struct ElectronImpactIonisation
                                 DataCalculator<EnergyRateData>> {
 
   /**
-   * @brief Electron impact ionisation reaction construction
+   * @brief Constructor for ElectronImpactIonisation.
    *
    * @param sycl_target_ SYCL target pointer used to interface with
    * NESO-Particles routines

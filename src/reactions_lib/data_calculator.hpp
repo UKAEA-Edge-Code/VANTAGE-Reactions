@@ -11,20 +11,25 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
- * struct AbstractDataCalculator - Dummy struct to derive DataCalculator from
+ * @brief A dummy struct to derive DataCalculator from
  * for the purposes of type-checking of DataCalculator (when it's passed as a
  * typename template parameter - see LinearReactionBase)
  */
 struct AbstractDataCalculator {};
 
 /**
- * struct DataCalculator - Static container class for ReactionData objects
+ * @brief A static container class for ReactionData objects
  *
  * @tparam DATATYPE ReactionData types
  */
 template <typename... DATATYPE>
 struct DataCalculator : public AbstractDataCalculator {
 
+  /**
+   * @brief Constructor for DataCalculator.
+   *
+   * @param data List of ReactionData objects (as multiple arguments).
+   */
   DataCalculator(DATATYPE... data)
       :  data(std::make_tuple(data...)) {
 

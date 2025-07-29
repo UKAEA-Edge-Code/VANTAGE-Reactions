@@ -8,8 +8,10 @@ using namespace NESO::Particles;
 
 namespace Reactions {
 
-/*! A struct containing an enum with labels consisting of the variable names in
- * standard_properties*/
+/** 
+ * @brief A struct containing an enum with labels consisting of the variable names in
+ * standard_properties
+ */
 
 /*! This can be extended by deriving from this struct and defining a public enum
  * member with the first element being the value of the last element in
@@ -52,15 +54,17 @@ public:
 
 const auto default_properties = StandardPropertiesEnum();
 
-/*! A struct containing a map to reference strings associated with properties in
+/**
+ * @brief A struct containing a map to reference strings associated with properties in
  * ParticleSpec via integer indices defined in an enumerator from a struct in
- * ParticlePropertiesIndices. */
+ * ParticlePropertiesIndices. 
+ */
 struct PropertiesMap {
 
   PropertiesMap() = default;
 
   /**
-   * @brief properties_map constructor
+   * @brief Constructor for PropertiesMap.
    *
    * @param custom_map User-provided custom map to replace the default
    * private_map.

@@ -120,13 +120,6 @@ public:
  * for 2D AMJUEL reaction rate calculation.
  * @tparam num_coeffs_n The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
- * AMJUEL reaction rate calculation.
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase
  */
 template <int num_coeffs_T, int num_coeffs_n>
 struct AMJUEL2DData : public ReactionDataBase<> {
@@ -136,6 +129,17 @@ struct AMJUEL2DData : public ReactionDataBase<> {
   constexpr static std::array<int, 3> required_simple_real_props = {
       props.fluid_density, props.fluid_temperature, props.weight};
 
+  /**
+   * @brief Constructor for AMJUEL2DData.
+   *
+   * @param density_normalisation Density normalisation constant in m^{-3}
+   * @param temperature_normalisation Temperature normalisation in eV
+   * @param time_normalisation Time normalisation in seconds
+   * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
+   * AMJUEL reaction rate calculation.
+   * @param properties_map A std::map<int, std::string> object to be passed to
+   * ReactionDataBase
+   */
   AMJUEL2DData(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,

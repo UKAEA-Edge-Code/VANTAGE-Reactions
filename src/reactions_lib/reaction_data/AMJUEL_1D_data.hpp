@@ -92,28 +92,32 @@ public:
  *
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
  * rate calculation.
- * @param evolved_quantity_normalisation Normalisation of the evolved quantity (the one evolved with this rate)
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
- * reaction rate calculation.
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase.
  */
 template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
     
-constexpr static auto props = default_properties;
+  constexpr static auto props = default_properties;
 
-constexpr static  std::array<int,3> required_simple_real_props = {
-    props.fluid_density, props.fluid_temperature, props.weight};
+  constexpr static  std::array<int,3> required_simple_real_props = {
+      props.fluid_density, props.fluid_temperature, props.weight};
 
+  /**
+  * @brief Constructor for AMJUEL1DData
+  *
+  * @param evolved_quantity_normalisation Normalisation of the evolved quantity (the one evolved with this rate)
+  * @param density_normalisation Density normalisation constant in m^{-3}
+  * @param temperature_normalisation Temperature normalisation in eV
+  * @param time_normalisation Time normalisation in seconds
+  * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
+  * reaction rate calculation.
+  * @param properties_map A std::map<int, std::string> object to be passed to
+  * ReactionDataBase.
+  */
   AMJUEL1DData(const REAL &evolved_quantity_normalisation_,
-               const REAL &density_normalisation_,
-               const REAL &temperature_normalisation_,
-               const REAL &time_normalisation_,
-               const std::array<REAL, num_coeffs> &coeffs_,
-               std::map<int, std::string> properties_map = get_default_map())
+                const REAL &density_normalisation_,
+                const REAL &temperature_normalisation_,
+                const REAL &time_normalisation_,
+                const std::array<REAL, num_coeffs> &coeffs_,
+                std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(
             Properties<REAL>(required_simple_real_props),
             properties_map),
@@ -137,10 +141,9 @@ private:
 
 public:
   /**
-   * @brief Getter for the SYCL device-specific
-   * struct.
-   */
-
+  * @brief Getter for the SYCL device-specific
+  * struct.
+  */
   AMJUEL1DDataOnDevice<num_coeffs> get_on_device_obj() {
     return this->amjuel_1d_data_on_device;
   }

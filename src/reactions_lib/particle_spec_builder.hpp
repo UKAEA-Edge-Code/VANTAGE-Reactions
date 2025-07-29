@@ -11,19 +11,23 @@ namespace Reactions {
 /**
  * @brief Helper struct to build custom particle specs based on user provided
  * particle properties (or if necessary extend existing particle specs.)
- *
- * @param particle_spec_ ParticleSpec that is to be extended (optional pass via
- * a non-default constructor for ParticleSpecBuilder).
  */
 
 struct ParticleSpecBuilder {
   ParticleSpecBuilder() = delete;
 
+  /**
+   * @brief Constructor for ParticleSpecBuilder.
+   *
+   * @param particle_spec_ ParticleSpec that is to be extended (optional pass via
+   * a non-recommended constructor for ParticleSpecBuilder).
+   */
   ParticleSpecBuilder(ParticleSpec particle_spec_) {
     this->add_particle_spec(particle_spec_);
   }
 
   /**
+   * \overload
    * @brief Recommended constructor, populating the generally required
    * properties in Reactions
    *

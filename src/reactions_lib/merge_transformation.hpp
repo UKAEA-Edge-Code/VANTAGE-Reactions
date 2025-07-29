@@ -34,11 +34,16 @@ namespace Reactions {
  * real quantities. This means that those values will be lost, so this algorithm
  * should be called only AFTER they are no longer needed.
  *
- * @tparam ndim dimesion parameter - 2 and 3 supported
+ * @tparam ndim dimension parameter - 2 and 3 supported
  */
 template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
+  /**
+   * @brief Constructor for MergeTransformationStrategy.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used to retreive the syms for the position, weight and velocity properties.
+   */
   MergeTransformationStrategy(
       const std::map<int, std::string> &properties_map = get_default_map())
       : min_npart_marker(MinimumNPartInCellMarker(3)) {

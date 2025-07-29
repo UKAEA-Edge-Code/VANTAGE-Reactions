@@ -13,24 +13,48 @@ namespace Reactions {
 /**
  * @brief Species struct to hold a limited description of a species that may be
  * used in reactions.
- *
- * @param name String defining the name of the species.
- * @param mass REAL value of the mass of the species (in atomic units).
- * @param charge REAL value of the charge of the species (in atomic units).
- * @param id INT value that corresponds to the ID of the species.
  */
 struct Species {
   Species() = default;
 
-  Species(std::string name_) : name(name_){};
-
-  Species(std::string name_, REAL mass_) : name(name_), mass(mass_){};
-
-  Species(std::string name_, REAL mass_, REAL charge_)
-      : name(name_), mass(mass_), charge(charge_){};
-
+  /**
+   * @brief Constructor for Species.
+   *
+   * @param name String defining the name of the species.
+   * @param mass REAL value of the mass of the species (in atomic units).
+   * @param charge REAL value of the charge of the species (in atomic units).
+   * @param id INT value that corresponds to the ID of the species.
+   */
   Species(std::string name_, REAL mass_, REAL charge_, INT id_)
       : name(name_), mass(mass_), charge(charge_), id(id_){};
+
+  /**
+   * \overload
+   * @brief Constructor for Species that only sets name.
+   *
+   * @param name String defining the name of the species.
+   */
+  Species(std::string name_) : name(name_){};
+
+  /**
+   * \overload
+   * @brief Constructor for Species that only sets name and mass.
+   *
+   * @param name String defining the name of the species.
+   * @param mass REAL value of the mass of the species (in atomic units).
+   */
+  Species(std::string name_, REAL mass_) : name(name_), mass(mass_){};
+
+  /**
+   * \overload
+   * @brief Constructor for Species that only sets name, mass and charge.
+   *
+   * @param name String defining the name of the species.
+   * @param mass REAL value of the mass of the species (in atomic units).
+   * @param charge REAL value of the charge of the species (in atomic units).
+   */
+  Species(std::string name_, REAL mass_, REAL charge_)
+      : name(name_), mass(mass_), charge(charge_){};
 
 public:
   /**
@@ -99,21 +123,24 @@ inline bool operator==(const Species &lhs, const Species &rhs) {
  *
  * @tparam PROP_TYPE Property type of the properties to be stored in this struct
  * (either INT or REAL).
- *
- * @param simple_props_ An integer vector defining the required simple
- * properties (either particle or field properties that don't depend on
- * species). The values in the vector will be enums from the
- * ParticlePropertiesIndices namespace.
- * @param species_ A vector of Species structs that contain the species(plural)
- * that the species_props_ need to be combined with in order to produce
- * the correct property names.
- * @param species_props_ An integer vector defining the required
- * species properties that are to be combined with species_ to produce property
- * names.
  */
 template <typename PROP_TYPE> struct Properties {
   Properties() = default;
 
+  /**
+   * @brief Constructor for Properties.
+   *
+   * @param simple_props_ An integer vector defining the required simple
+   * properties (either particle or field properties that don't depend on
+   * species). The values in the vector will be enums from the
+   * ParticlePropertiesIndices namespace.
+   * @param species_ A vector of Species structs that contain the species(plural)
+   * that the species_props_ need to be combined with in order to produce
+   * the correct property names.
+   * @param species_props_ An integer vector defining the required
+   * species properties that are to be combined with species_ to produce property
+   * names.
+   */
   Properties(std::vector<int> simple_props_, // simple_props (including
                                              // fluid_density for example)
              std::vector<Species> species_,
@@ -125,12 +152,50 @@ template <typename PROP_TYPE> struct Properties {
                            this->species_props.end());
   };
 
+  /**
+   * \overload
+   * @brief Constructor for Properties that only sets the simple props.
+   *
+   * @param simple_props_ An integer vector defining the required simple
+   * properties (either particle or field properties that don't depend on
+   * species). The values in the vector will be enums from the
+   * ParticlePropertiesIndices namespace. 
+   */
   Properties(std::vector<int> simple_props_)
       : Properties(simple_props_, std::vector<Species>{}, std::vector<int>{}){};
 
+  /**
+   * \overload
+   * @brief Constructor for Properties that only sets Species props.
+   *
+   * @param species_ A vector of Species structs that contain the species(plural)
+   * that the species_props_ need to be combined with in order to produce
+   * the correct property names.
+   * @param species_props_ An integer vector defining the required
+   * species properties that are to be combined with species_ to produce property
+   * names.
+   */
   Properties(std::vector<Species> species_, std::vector<int> species_props_)
       : Properties(std::vector<int>{}, species_, species_props_){};
 
+  /**
+   * \overload
+   * @brief Constructor for Properties that uses std::arrays instead of std::vectors for the props.
+   *
+   * @tparam N Size of simple props array.
+   * @tparam M Size of species props array.
+   *
+   * @param simple_props_ An integer array defining the required simple
+   * properties (either particle or field properties that don't depend on
+   * species). The values in the array will be enums from the
+   * ParticlePropertiesIndices namespace.
+   * @param species_ A vector of Species structs that contain the species(plural)
+   * that the species_props_ need to be combined with in order to produce
+   * the correct property names.
+   * @param species_props_ An integer array defining the required
+   * species properties that are to be combined with species_ to produce property
+   * names.
+   */
   template <size_t N, size_t M>
   Properties(
       const std::array<int, N> &simple_props_, // simple_props (including
@@ -146,11 +211,35 @@ template <typename PROP_TYPE> struct Properties {
                            this->species_props.end());
   };
 
+  /**
+   * \overload
+   * @brief Constructor for Properties that only sets the simple props using std::array.
+   *
+   * @tparam N Size of simple props array.
+   *
+   * @param simple_props_ An integer array defining the required simple
+   * properties (either particle or field properties that don't depend on
+   * species). The values in the array will be enums from the
+   * ParticlePropertiesIndices namespace. 
+   */
   template <size_t N>
   Properties(const std::array<int, N> &simple_props_)
       : Properties(simple_props_, std::vector<Species>{},
                    std::array<int, 0>{}){};
 
+  /**
+   * \overload
+   * @brief Constructor for Properties that only sets Species props using std::array.
+   *
+   * @tparam M Size of species props array.
+   *
+   * @param species_ A vector of Species structs that contain the species(plural)
+   * that the species_props_ need to be combined with in order to produce
+   * the correct property names.
+   * @param species_props_ An integer array defining the required
+   * species properties that are to be combined with species_ to produce property
+   * names.
+   */
   template <size_t M>
   Properties(std::vector<Species> species_,
              const std::array<int, M> &species_props_)

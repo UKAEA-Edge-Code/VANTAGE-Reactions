@@ -1,6 +1,7 @@
 #pragma once
 #include "../cross_sections/constant_rate_cs.hpp"
 #include "../particle_properties_map.hpp"
+#include "../utils.hpp"
 #include <iostream>
 #include <neso_particles.hpp>
 #include <vector>
@@ -85,7 +86,7 @@ struct FilteredMaxwellianOnDevice
           break;
         }
 
-        auto current_samples = utils::box_muller_transform(rand1, rand2);
+        auto current_samples = Reactions::utils::box_muller_transform(rand1, rand2);
         total_samples[i] = current_samples[0];
         total_samples[i + 1] = current_samples[1];
       };
@@ -141,16 +142,6 @@ public:
  * fields
  * @tparam CROSS_SECTION The typename corresponding to the cross-section class
  * used
- * @param norm_ratio The ratio of the temperature and kinetic energy
- * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
- * and v are the temperature and velocity normalisation constants
- * @param cross_section Cross section object to be used in the rejection method
- * sampling
- * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
- * set as the rng_kernel in ReactionDataBase.
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase
- *
  */
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
@@ -164,6 +155,19 @@ struct FilteredMaxwellianSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
+  /**
+   * @brief Constructor for FilteredMaxwellianSampler.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param cross_section Cross section object to be used in the rejection method
+   * sampling
+   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
+   * set as the rng_kernel in ReactionDataBase.
+   * @param properties_map A std::map<int, std::string> object to be passed to
+   * ReactionDataBase
+   */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
@@ -194,6 +198,7 @@ struct FilteredMaxwellianSampler
   }
 
   /**
+   * \overload
    * @brief Overloaded constructor which sets default values for the
    * cross_section.
    */

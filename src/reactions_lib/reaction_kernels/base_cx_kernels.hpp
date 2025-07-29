@@ -10,8 +10,13 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
- * struct CXReactionKernelsOnDevice - SYCL device-compatible kernel for
+ * @brief A struct that contains the SYCL device-compatible kernels for
  * charge exchange reactions.
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle velocity
+ * property.
+ * @tparam ndim_source_momentum The number of dimensions for
+ * source momentum property.
  */
 template <int ndim_velocity, int ndim_source_momentum>
 struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
@@ -212,7 +217,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
       props.velocity, props.weight};
   /**
-   * @brief Charge exchange reaction kernel host type constructor
+   * @brief Constructor for CXReactionKernels.
    *
    * @param target_species Species object representing the charge exchange
    * target - the ingoing ion and outgoing neutral

@@ -6,7 +6,7 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
- * struct AMJUELFitCrossSection - General H.1 AMJUEL cross section fit, with
+ * @brief A struct that defines a general H.1 AMJUEL cross section fit, with
  * left and right asymptotic treatment. Assumes monotonically decreasing
  * cross-sections, and takes as the maximum value the evaluated rate at
  * some maximum lab frame impact energy.
@@ -22,8 +22,7 @@ template <size_t num_coeffs, size_t num_l_coeffs, size_t num_r_coeffs>
 struct AMJUELFitCrossSection : public AbstractCrossSection {
 
   /**
-   * @brief General H.1 AMJUEL cross section fit, with optional left and right
-   * asymptotic fits.
+   * @brief Constructor for AMJUELFitCrossSection.
    *
    * @param vel_norm Velocity normalisation in m/s
    * @param cs_norm Cross-section normalisation in m^2

@@ -8,7 +8,11 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
- * struct Recombination - Reaction representing recombination
+ * @brief A struct defining a reaction representing recombination. 
+ * Takes in a marker species, which represents the ions,
+ * and produces products based on their weights,
+ * without reducing them. The user is responsible for setting the weight of
+ * the marker species in a way that reproduces the sources they want.
  *
  * @tparam RateData ReactionData template parameter used for the rate
  * calculation
@@ -23,10 +27,7 @@ struct Recombination
                                 DataCalcType> {
 
   /**
-   * @brief Electron impact recombination reaction. Takes in a marker species,
-   * which represents the ions, and produces products based on their weights,
-   * without reducing them. The user is responsible for setting the weight of
-   * the marker species in a way that reproduces the sources they want.
+   * @brief Constructor for Recombination.
    *
    * @param sycl_target_ SYCL target pointer used to interface with
    * NESO-Particles routines

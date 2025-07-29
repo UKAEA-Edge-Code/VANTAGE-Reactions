@@ -7,15 +7,14 @@ using namespace NESO::Particles;
 namespace Reactions {
 
 /**
- * struct ConstantRateCrossSection - Cross section class evaluating to K/v_r
- * where K is a constant rate and v_r is the relative velocity
+ * @brief A struct that defines a cross section evaluating to K/v_r
+ * where K is a constant rate and v_r is the relative velocity. Leads to always
+ * accepting in rejection algorithms weighted by this cross-section
  */
 struct ConstantRateCrossSection : public AbstractCrossSection {
 
   /**
-   * @brief Constant collision rate cross section - evaluates to K/v_r where K
-   * is a constant rate and v_r is the relative velocity. Leads to always
-   * accepting in rejection algorithms weighted by this cross-section
+   * @brief Constructor for ConstantRateCrossSection.
    *
    * @param constant_sigma_v Constant collision rate
    */

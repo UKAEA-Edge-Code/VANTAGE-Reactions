@@ -16,8 +16,15 @@ constexpr int num_products_per_parent = 1;
 } // namespace BASE_RECOMB_KERNEL
 
 /**
- * struct RecombReactionKernelsOnDevice - SYCL device-compatible kernel for
+ * @brief A struct that contains SYCL device-compatible kernels for
  * recombination reactions.
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle
+ * velocity property.
+ * @tparam ndim_source_momentum The number of dimensions for source
+ * momentum property.
+ * @tparam has_momentum_req_data The boolean specifying whether a
+ * projectile momentum req_data is available.
  */
 template <int ndim_velocity, int ndim_source_momentum,
           bool has_momentum_req_data>
@@ -217,7 +224,7 @@ struct RecombReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
       props.velocity, props.weight};
   /**
-   * @brief Recombination reaction kernel host type constructor
+   * @brief Constructor for RecombReactionKerenls.
    *
    * @param target_species Species object representing the recombination
    * target

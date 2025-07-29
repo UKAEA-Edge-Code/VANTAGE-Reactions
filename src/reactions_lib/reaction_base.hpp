@@ -22,14 +22,17 @@ namespace Reactions {
  * particles in a ParticleSubGroup in a given cell and modify the
  * ParticleSubGroup and, depending on the reaction, produce and
  * process descendants.
- *
- * @param sycl_target Compute device used by the instance.
- * @param properties_map Optional property remapping. Used to get weight and
- * rate buffer syms.
  */
 struct AbstractReaction {
   AbstractReaction() = default;
 
+  /**
+   * @brief Constructor for AbstractReaction.
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param properties_map Optional property remapping. Used to get weight and
+   * rate buffer syms.
+   */
   AbstractReaction(
       SYCLTargetSharedPtr sycl_target,
       const std::map<int, std::string> &properties_map = get_default_map())
@@ -177,6 +180,22 @@ struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = delete;
 
+  /**
+   * @brief Constructor for LinearReactionBase.
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param in_state Integer specifying the ID of the species on
+   * which the derived reaction is acting on.
+   * @param out_states Array of integers specifying the species IDs of the
+   * descendants produced by the derived reaction.
+   * @param reaction_data ReactionData object to be used in run_rate_loop.
+   * @param reaction_kernels ReactionKernels object to be used in
+   * descendant_product_loop.
+   * @param data_calculator DataCalculator object for filling in the
+   * pre_req_data buffer
+   * @param properties_map Optional property remapping. Used to get weight and
+   * rate buffer syms.
+   */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
@@ -240,13 +259,8 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
+   * \overload
    * @brief Constructor with no explicit DataCalculator
-   *
-   * @tparam num_products_per_parent The number of products produced per parent
-   * by the derived linear reaction.
-   * @tparam ReactionData typename for reaction_data constructor argument
-   * @tparam ReactionKernels template class for reaction_kernels constructor
-   * argument
    *
    * @param sycl_target Compute device used by the instance.
    * @param in_state Integer specifying the ID of the species on
