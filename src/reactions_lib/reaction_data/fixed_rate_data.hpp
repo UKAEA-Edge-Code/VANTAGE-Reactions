@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FIXED_RATE_DATA_H
+#define FIXED_RATE_DATA_H
 #include <neso_particles.hpp>
 #include "../reaction_data.hpp"
 
@@ -72,3 +73,4 @@ public:
   }
 };
 }; // namespace Reactions
+#endif

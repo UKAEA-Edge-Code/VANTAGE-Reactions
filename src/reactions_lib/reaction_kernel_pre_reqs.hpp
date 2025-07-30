@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTION_KERNEL_PRE_REQS_H
+#define REACTION_KERNEL_PRE_REQS_H
 #include "particle_properties_map.hpp"
 #include <iterator>
 #include <neso_particles.hpp>
@@ -494,3 +495,4 @@ private:
   std::vector<int> all_props;
 };
 }; // namespace Reactions
+#endif

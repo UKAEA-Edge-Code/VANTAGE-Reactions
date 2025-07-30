@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FIXED_COEFFICIENT_DATA_H
+#define FIXED_COEFFICIENT_DATA_H
 #include "../reaction_data.hpp"
 #include <neso_particles.hpp>
 #include <vector>
@@ -98,3 +99,4 @@ public:
   }
 };
 }; // namespace Reactions
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ELECTRON_IMPACT_IONISATION_H
+#define ELECTRON_IMPACT_IONISATION_H
 #include "../data_calculator.hpp"
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
@@ -52,3 +53,4 @@ struct ElectronImpactIonisation
             DataCalculator<EnergyRateData>(energy_rate_data), properties_map) {}
 };
 }; // namespace Reactions
+#endif

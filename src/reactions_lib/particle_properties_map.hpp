@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PARTICLE_PROPERTIES_MAP_H
+#define PARTICLE_PROPERTIES_MAP_H
 #include <map>
 #include <neso_particles.hpp>
 #include <string>
@@ -144,3 +145,4 @@ inline bool map_subset_check(std::map<int, std::string> custom_map) {
   return true;
 };
 }; // namespace Reactions
+#endif

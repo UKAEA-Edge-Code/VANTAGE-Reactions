@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DATA_CALCULATOR_H
+#define DATA_CALCULATOR_H
 #include "reaction_data.hpp"
 #include "utils.hpp"
 #include <neso_particles.hpp>
@@ -151,3 +152,4 @@ private:
   std::vector<std::vector<Sym<REAL>>> data_loop_real_syms;
 };
 } // namespace Reactions
+#endif

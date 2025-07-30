@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MOCK_REACTIONS_H
+#define MOCK_REACTIONS_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
@@ -426,3 +427,4 @@ public:
     return this->test_reaction_var_data_on_device;
   }
 };
+#endif

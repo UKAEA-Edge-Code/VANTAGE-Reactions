@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_H
+#define REACTIONS_H
 
 #include "neso_test_assert.hpp"
 #include "reactions_lib/common_markers.hpp"
@@ -31,3 +32,4 @@
 
 #include "reactions_lib/derived_reactions/electron_impact_ionisation.hpp"
 #include "reactions_lib/derived_reactions/recombination_reaction.hpp"
+#endif

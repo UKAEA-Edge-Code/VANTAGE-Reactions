@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTION_DATA_H
+#define REACTION_DATA_H
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
 #include <neso_particles.hpp>
@@ -270,3 +271,4 @@ struct ReactionDataBaseOnDevice {
   static constexpr size_t get_dim() { return dim; }
 };
 }; // namespace Reactions
+#endif

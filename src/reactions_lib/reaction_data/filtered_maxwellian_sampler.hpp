@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FILTERED_MAXWELLIAN_SAMPLER_H
+#define FILTERED_MAXWELLIAN_SAMPLER_H
 #include "../cross_sections/constant_rate_cs.hpp"
 #include "../particle_properties_map.hpp"
 #include "../utils.hpp"
@@ -235,3 +236,4 @@ public:
   }
 };
 }; // namespace Reactions
+#endif

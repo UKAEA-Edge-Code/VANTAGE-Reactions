@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UTILS_H
+#define UTILS_H
 #include <cassert>
 #include <cmath>
 #include <neso_particles.hpp>
@@ -92,3 +93,4 @@ inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
   return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
 };
 } // namespace Reactions::utils
+#endif

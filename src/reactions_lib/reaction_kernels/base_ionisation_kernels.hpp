@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BASE_IONISATION_KERNELS_H
+#define BASE_IONISATION_KERNELS_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
@@ -213,3 +214,4 @@ public:
                                 has_momentum_req_data> get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
 };
 }; // namespace Reactions
+#endif

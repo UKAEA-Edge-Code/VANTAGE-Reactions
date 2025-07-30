@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTION_BASE_H
+#define REACTION_BASE_H
 #include "data_calculator.hpp"
 #include "particle_properties_map.hpp"
 #include "reaction_data.hpp"
@@ -616,3 +617,4 @@ private:
   DataCalc data_calculator;
 };
 } // namespace Reactions
+#endif

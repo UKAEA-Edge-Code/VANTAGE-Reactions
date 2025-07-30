@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MOCK_PARTICLE_PROPERTIES_H
+#define MOCK_PARTICLE_PROPERTIES_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
@@ -64,3 +65,4 @@ namespace PropertiesTest {
       PropertiesMap(custom_prop_map_no_weight_struct().get_map()).get_map();
   
 } // namespace PropertiesTest
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTION_CONTROLLER_H
+#define REACTION_CONTROLLER_H
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include "common_transformations.hpp"
@@ -431,3 +432,4 @@ private:
   }
 };
 } // namespace Reactions
+#endif

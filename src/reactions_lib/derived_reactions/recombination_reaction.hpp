@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RECOMBINATION_REACTION_H
+#define RECOMBINATION_REACTION_H
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels/base_recombination_kernels.hpp"
@@ -62,3 +63,4 @@ struct Recombination
             data_calc_obj, properties_map) {}
 };
 }; // namespace Reactions
+#endif

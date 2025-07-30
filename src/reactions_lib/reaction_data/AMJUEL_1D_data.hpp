@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AMJUEL_1D_DATA_H
+#define AMJUEL_1D_DATA_H
 #include "../particle_properties_map.hpp"
 #include <array>
 #include <cmath>
@@ -156,3 +157,4 @@ public:
   }
 };
 }; // namespace Reactions
+#endif

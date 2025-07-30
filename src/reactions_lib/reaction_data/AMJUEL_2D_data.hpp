@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AMJUEL_2D_DATA_H
+#define AMJUEL_2D_DATA_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
@@ -183,3 +184,4 @@ public:
   }
 };
 }; // namespace Reactions
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BASE_CX_KERNELS_H
+#define BASE_CX_KERNELS_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
@@ -316,3 +317,4 @@ public:
   }
 };
 }; // namespace Reactions
+#endif

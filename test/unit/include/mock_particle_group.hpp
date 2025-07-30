@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MOCK_PARTICLE_GROUP_H
+#define MOCK_PARTICLE_GROUP_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
@@ -121,3 +122,4 @@ inline auto create_test_particle_group(int N_total)
 
   return particle_group;
 }
+#endif

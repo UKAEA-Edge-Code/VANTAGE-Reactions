@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AMJUEL_FIT_CS_H
+#define AMJUEL_FIT_CS_H
 #include <neso_particles.hpp>
 #include "../reaction_data.hpp"
 
@@ -124,3 +125,4 @@ private:
   std::array<REAL, num_r_coeffs> r_coeffs;
 };
 }; // namespace Reactions
+#endif
