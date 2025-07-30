@@ -209,6 +209,7 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
 
-  auto get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
+                                has_momentum_req_data> get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
 };
 }; // namespace Reactions

@@ -121,6 +121,11 @@ inline auto get_default_map() {
   return PropertiesMap().get_map();
 }
 
+/**
+ * @brief Function to check whether a custom map is a subset of the default map.
+ *
+ * @return True if the given custom map is a subset of the default map.
+ */
 inline bool map_subset_check(std::map<int, std::string> custom_map) {
   auto default_map = get_default_map();
   auto default_map_size = default_map.size();

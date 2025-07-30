@@ -7,10 +7,14 @@ namespace Reactions {
 
 /**
  * @brief SYCL device-compatible ReactionData class returning a fixed rate
- *
- * @param rate REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for FixedRateDataOnDevice.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
   FixedRateDataOnDevice(const REAL &rate) : rate(rate){};
 
   /**
@@ -26,6 +30,8 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,

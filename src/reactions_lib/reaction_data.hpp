@@ -256,6 +256,8 @@ struct ReactionDataBaseOnDevice {
    * need to be used for the reaction data calculation.
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation
+   *
+   * @return A REAL-valued array of size dim containing the calculated reaction rate.
    */
   std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,

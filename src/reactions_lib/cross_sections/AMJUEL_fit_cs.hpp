@@ -64,7 +64,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    *
    * @param relative_vel Relative projectile and target velocity (in normalised
    * units)
-   * @return Value of the cross section (in normalised units) at the givent
+   * @return Value of the cross section (in normalised units) at the given
    * velocity value, obeying the fit asymptotic rules
    */
   REAL get_value_at(const REAL &relative_vel) const {
@@ -105,6 +105,11 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
     return Kernel::exp(sum_E) * 1e-4 / this->cs_norm;
   };
 
+  /**
+   * @brief Returns maximum value of the rate sigma*v of for this cross-section.
+   *
+   * @return REAL-valued maximum value.
+   */
   REAL get_max_rate_val() const { return this->max_val; };
 
 private:

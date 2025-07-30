@@ -66,13 +66,6 @@ public:
     return (this->name.value());
   }
 
-  /**
-   * @brief Return true if this species has an id associated with it
-   *
-   * @return True if this species has an id associated with it
-   */
-  bool has_id() const { return this->id.has_value(); }
-
   INT get_id() const {
     NESOASSERT(this->id.has_value(),
                "The member variable: Species.id has not been assigned");
@@ -98,6 +91,13 @@ public:
   void set_mass(const REAL &mass_in) { this->mass = mass_in; }
 
   void set_charge(const REAL &charge_in) { this->charge = charge_in; }
+
+  /**
+   * @brief Return true if this species has an id associated with it
+   *
+   * @return True if this species has an id associated with it
+   */
+  bool has_id() const { return this->id.has_value(); }
 
 private:
   std::optional<std::string> name;

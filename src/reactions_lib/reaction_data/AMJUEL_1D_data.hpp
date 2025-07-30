@@ -14,16 +14,21 @@ namespace Reactions {
  *
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
  * rate calculation.
- * @param evolved_quantity_normalisation Normalisation constant for the evolved
- * quantity (for default rates should be 1)
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
- * reaction rate calculation.
  */
 template <int num_coeffs>
 struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for AMJUEL1DDataOnDevice.
+   *
+   * @param evolved_quantity_normalisation Normalisation constant for the evolved
+   * quantity (for default rates should be 1)
+   * @param density_normalisation Density normalisation constant in m^{-3}
+   * @param temperature_normalisation Temperature normalisation in eV
+   * @param time_normalisation Time normalisation in seconds
+   * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
+   * reaction rate calculation.
+   */
   AMJUEL1DDataOnDevice(const REAL &evolved_quantity_normalisation_,
                        const REAL &density_normalisation_,
                        const REAL &temperature_normalisation_,
@@ -47,6 +52,8 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,

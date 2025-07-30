@@ -9,10 +9,14 @@ namespace Reactions {
 /**
  * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.
- *
- * @param rate REAL-valued rate to be used in reaction rate calculation.
  */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for FixedCoefficientDataOnDevice.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 
   /**
@@ -29,6 +33,8 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,

@@ -9,8 +9,6 @@
 using namespace NESO::Particles;
 namespace Reactions {
 
-// AMJUEL 2D Fit
-
 /**
  * @brief A struct that contains data and calc_data functions that are to be
  * stored on and used on a SYCL device.
@@ -19,16 +17,21 @@ namespace Reactions {
  * for 2D AMJUEL reaction rate calculation.
  * @tparam num_coeffs_n The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @param evolved_quantity_normalisation Normalisation constant for the evolved
- * quantity (for default rates should be 1)
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
- * AMJUEL reaction rate calculation.
  */
 template <int num_coeffs_T, int num_coeffs_n>
 struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for AMJUEL2DDataOnDevice.
+   *
+   * @param evolved_quantity_normalisation Normalisation constant for the evolved
+   * quantity (for default rates should be 1)
+   * @param density_normalisation Density normalisation constant in m^{-3}
+   * @param temperature_normalisation Temperature normalisation in eV
+   * @param time_normalisation Time normalisation in seconds
+   * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
+   * AMJUEL reaction rate calculation.
+   */
   AMJUEL2DDataOnDevice(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
@@ -54,6 +57,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,

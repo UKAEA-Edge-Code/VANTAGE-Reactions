@@ -10,8 +10,6 @@
 using namespace NESO::Particles;
 namespace Reactions {
 
-// AMJUEL 2D Fit
-
 /**
  * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
  * against neutral particle energy and ion/plasma temperature
@@ -22,18 +20,23 @@ namespace Reactions {
  * for 2D AMJUEL reaction rate calculation.
  * @tparam dim The number of dimensions for the particle velocity
  * property and background fluid flow.
- * @param evolved_quantity_normalisation Normalisation constant for the evolved
- * quantity (for default rates should be 1)
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param velocity_normalisation Velocity normalisation in m/s
- * @param mass_amu Mass of the neutral particle in amus
- * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
- * AMJUEL reaction rate calculation.
  */
 template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim>
 struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for AMJUEL2DDataH3OnDevice.
+   *
+   * @param evolved_quantity_normalisation Normalisation constant for the evolved
+   * quantity (for default rates should be 1)
+   * @param density_normalisation Density normalisation constant in m^{-3}
+   * @param temperature_normalisation Temperature normalisation in eV
+   * @param time_normalisation Time normalisation in seconds
+   * @param velocity_normalisation Velocity normalisation in m/s
+   * @param mass_amu Mass of the neutral particle in amus
+   * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
+   * AMJUEL reaction rate calculation.
+   */
   AMJUEL2DDataH3OnDevice(
       const REAL &evolved_quantity_normalisation_,
       const REAL &density_normalisation_,
@@ -61,6 +64,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
@@ -75,9 +80,6 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
     REAL log_temp =
         Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
 
-    if (log_temp < 0) {
-      return std::array<REAL, 1>{0.0};
-    }
 
     REAL E = 0;
     for (int i = 0; i < dim; i++) {

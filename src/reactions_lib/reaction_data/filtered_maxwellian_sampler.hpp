@@ -17,15 +17,20 @@ namespace Reactions {
  * fields
  * @tparam CROSS_SECTION The typename corresponding to the cross-section class
  * used
- * @param norm_ratio The ratio of the temperature and kinetic energy
- * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
- * and v are the temperature and velocity normalisation constants
- * @param cross_section Cross section object to be used in the rejection method
- * sampling
  */
 template <size_t ndim, typename CROSS_SECTION>
 struct FilteredMaxwellianOnDevice
     : public ReactionDataBaseOnDevice<ndim, HostAtomicBlockKernelRNG<REAL>> {
+
+  /**
+   * @brief Constructor for FilteredMaxwellianOnDevice.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param cross_section Cross section object to be used in the rejection method
+   * sampling
+   */
   FilteredMaxwellianOnDevice(const REAL &norm_ratio,
                              CROSS_SECTION cross_section)
       : norm_ratio(norm_ratio), cross_section(cross_section){};
@@ -43,6 +48,8 @@ struct FilteredMaxwellianOnDevice
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel - assumed uniform
+   *
+   * @return A REAL-valued array of size ndim that contains the calculated sampled ion velocities.
    */
   std::array<REAL, ndim>
   calc_data(const Access::LoopIndex::Read &index,
@@ -199,8 +206,14 @@ struct FilteredMaxwellianSampler
 
   /**
    * \overload
-   * @brief Overloaded constructor which sets default values for the
-   * cross_section.
+   * @brief Constructor which sets default values for the
+   * cross_section and properties_map.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
+   * set as the rng_kernel in ReactionDataBase.
    */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,

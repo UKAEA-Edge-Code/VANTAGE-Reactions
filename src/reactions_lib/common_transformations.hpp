@@ -48,7 +48,7 @@ struct CompositeTransform : TransformationStrategy {
 
   /**
    * \overload
-   * @brief Overloaded constructor for CompositeTransform that allows for initializing
+   * @brief Constructor for CompositeTransform that allows for initializing
    * the member variable components.
    *
    * @param components A vector of TransformationStrategy shared pointers. These define

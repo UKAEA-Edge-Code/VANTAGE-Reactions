@@ -85,7 +85,7 @@ private:
 
     /**
      * \overload
-     * @brief Overloaded constructor for ComparisonMarkerSingleDevice that sets both
+     * @brief Constructor for ComparisonMarkerSingleDevice that sets both
      * arguments to 0.
      */
     ComparisonMarkerSingleDevice() : 
@@ -153,7 +153,7 @@ public:
 
   /**
    * \overload
-   * @brief Overloaded constructor for ComparisonMarkerSingle (REAL-version).
+   * @brief Constructor for ComparisonMarkerSingle (REAL-version).
    *
    * @param comparison_var Sym<REAL> specifying the comparison property.
    * @param comparison_value Value to compare the REAL-valued ParticleDat.
@@ -183,7 +183,7 @@ public:
   
   /**
    * \overload
-   * @brief Overloaded constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_value and comparison_component to default values (NaN).
+   * @brief Constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_value and comparison_component to default values (NaN).
    *
    * @param comparison_var Sym<REAL> specifying the comparison property.
    */
@@ -192,7 +192,7 @@ public:
 
   /**
    * \overload
-   * @brief Overloaded constructor for ComparisonMarkerSingle (INT-version) that sets comparison_value and comparison_component to default values (NaN).
+   * @brief Constructor for ComparisonMarkerSingle (INT-version) that sets comparison_value and comparison_component to default values (NaN).
    *
    * @param comparison_var Sym<INT> specifying the comparison property.
    */
@@ -201,7 +201,7 @@ public:
 
   /**
    * \overload
-   * @brief Overloaded constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_component to a default value (NaN).
+   * @brief Constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_component to a default value (NaN).
    *
    * @param comparison_var Sym<REAL> specifying the comparison property.
    * @param comparison_value Value to compare the REAL-valued ParticleDat.
@@ -211,7 +211,7 @@ public:
 
   /**
    * \overload
-   * @brief Overloaded constructor for ComparisonMarkerSingle (INT-version) that sets comparison_component to a default value (NaN).
+   * @brief Constructor for ComparisonMarkerSingle (INT-version) that sets comparison_component to a default value (NaN).
    *
    * @param comparison_var Sym<INT> specifying the comparison property.
    * @param comparison_value Value to compare the INT-valued ParticleDat.
