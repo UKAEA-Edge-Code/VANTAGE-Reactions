@@ -8,7 +8,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A struct that contains data and calc_data functions that are to be
@@ -94,7 +94,7 @@ struct FilteredMaxwellianOnDevice
           break;
         }
 
-        auto current_samples = Reactions::utils::box_muller_transform(rand1, rand2);
+        auto current_samples = utils::box_muller_transform(rand1, rand2);
         total_samples[i] = current_samples[0];
         total_samples[i + 1] = current_samples[1];
       };
@@ -235,5 +235,5 @@ public:
     return this->device_obj;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

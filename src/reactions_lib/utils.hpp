@@ -8,7 +8,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions::utils {
+namespace VANTAGE::Reactions::utils {
 /**
  * @brief Helper function to calculate the L2 norm of a vector of arithmetic
  * types.
@@ -92,5 +92,5 @@ inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
   const REAL valuesin = Kernel::sincos(two_pi * u2, &valuecos);
   return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
 };
-} // namespace Reactions::utils
+} // namespace VANTAGE::Reactions::utils
 #endif

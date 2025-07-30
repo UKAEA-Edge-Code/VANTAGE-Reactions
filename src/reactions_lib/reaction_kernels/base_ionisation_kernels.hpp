@@ -9,7 +9,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 namespace BASE_IONISATION_KERNEL {
 constexpr int num_products_per_parent = 0;
@@ -213,5 +213,5 @@ public:
   IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
                                 has_momentum_req_data> get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

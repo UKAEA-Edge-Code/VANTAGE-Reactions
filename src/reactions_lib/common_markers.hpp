@@ -6,7 +6,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 // TODO: improve documentation
 
 /**
@@ -279,7 +279,7 @@ public:
    * @param properties_map (Optional) A std::map<int, std::string> object to be used to retrieve the Sym for the Panic property.
    */
   PanickedParticleMarker(
-      const std::map<int, std::string> &properties_map = Reactions::get_default_map())
+      const std::map<int, std::string> &properties_map = get_default_map())
         {
           NESOWARN(
             map_subset_check(properties_map),
@@ -287,7 +287,7 @@ public:
             There may be inconsitencies with indexing of properties."
           );
 
-          this->panic_sym = Sym<INT>(properties_map.at(Reactions::default_properties.panic));
+          this->panic_sym = Sym<INT>(properties_map.at(default_properties.panic));
         };
 
   ParticleSubGroupSharedPtr
@@ -305,12 +305,12 @@ private:
 
 inline bool panicked(
     ParticleSubGroupSharedPtr particle_group,
-    const std::map<int, std::string> &properties_map = Reactions::get_default_map()) {
+    const std::map<int, std::string> &properties_map = get_default_map()) {
 
   auto marker = PanickedParticleMarker(properties_map);
 
   return marker.make_marker_subgroup(particle_group)->get_npart_local();
 }
 
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

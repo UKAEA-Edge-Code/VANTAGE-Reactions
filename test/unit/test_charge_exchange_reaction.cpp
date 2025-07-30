@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(ChargeExchange, simple_beam_exchange) {
   const int N_total = 1000;

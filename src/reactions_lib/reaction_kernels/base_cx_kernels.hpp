@@ -8,7 +8,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A struct that contains the SYCL device-compatible kernels for
@@ -316,5 +316,5 @@ public:
     return this->cx_reaction_kernels_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

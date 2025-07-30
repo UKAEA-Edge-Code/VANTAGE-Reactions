@@ -6,7 +6,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Abstract base class for marking strategies. All marking strategies
@@ -276,5 +276,5 @@ struct MarkingFunctionWrapperBase {
     return underlying.marking_condition(real_vars, int_vars);
   }
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

@@ -4,7 +4,7 @@
 #include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief SYCL device-compatible ReactionData class returning a fixed rate
@@ -72,5 +72,5 @@ public:
     return this->fixed_rate_data_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

@@ -5,7 +5,7 @@
 #include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A struct that defines a cross section evaluating to K/v_r
@@ -62,5 +62,5 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
 private:
   REAL constant_sigma_v;
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

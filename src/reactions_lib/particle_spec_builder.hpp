@@ -7,7 +7,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 /**
  * @brief Helper struct to build custom particle specs based on user provided
  * particle properties (or if necessary extend existing particle specs.)
@@ -161,6 +161,6 @@ struct ParticleSpecBuilder {
 private:
   ParticleSpec particle_spec;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 
 #endif

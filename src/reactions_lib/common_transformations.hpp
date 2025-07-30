@@ -7,7 +7,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 /**
  * @brief No operations transformation strategy
  */
@@ -402,5 +402,5 @@ private:
   std::string weight_sym_name;
   std::shared_ptr<CellDatConst<REAL>> weight_buffer;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

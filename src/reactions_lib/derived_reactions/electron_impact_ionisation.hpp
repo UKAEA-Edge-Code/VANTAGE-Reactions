@@ -7,7 +7,7 @@
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A struct defining a reaction representing electron impact
@@ -52,5 +52,5 @@ struct ElectronImpactIonisation
                                         electron_species, properties_map),
             DataCalculator<EnergyRateData>(energy_rate_data), properties_map) {}
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

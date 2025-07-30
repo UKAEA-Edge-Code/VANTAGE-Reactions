@@ -4,7 +4,7 @@
 #include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 namespace PropertiesTest {
   inline auto int_props = Properties<INT>(

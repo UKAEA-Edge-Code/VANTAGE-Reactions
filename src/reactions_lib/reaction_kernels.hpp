@@ -5,7 +5,7 @@
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Base reaction kernels object.
@@ -388,5 +388,5 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
     return;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

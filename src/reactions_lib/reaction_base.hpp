@@ -16,7 +16,7 @@ using namespace NESO::Particles;
 // TODO: Improve docs - implementation specific parameter descriptions -
 // avoid!!!
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Abstract base class for reactions. All reactions operate on
@@ -616,5 +616,5 @@ private:
 
   DataCalc data_calculator;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

@@ -4,7 +4,7 @@
 #include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 template <size_t ndim = 2>
 inline auto create_test_particle_group(int N_total)

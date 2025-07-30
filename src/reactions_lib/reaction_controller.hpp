@@ -11,7 +11,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Enum class containing possible modes for the ReactionController
@@ -431,5 +431,5 @@ private:
     this->particle_group_temporary = std::make_shared<ParticleGroupTemporary>();
   }
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

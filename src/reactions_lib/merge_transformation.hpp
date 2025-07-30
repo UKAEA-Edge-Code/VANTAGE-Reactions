@@ -15,7 +15,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 /**
  * @brief  Implementation of simplified merging algorithm from M. Vranic et
  * al. Computer Physics Communications 191 2015.
@@ -316,5 +316,5 @@ private:
   Sym<REAL> momentum;
   MinimumNPartInCellMarker min_npart_marker;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

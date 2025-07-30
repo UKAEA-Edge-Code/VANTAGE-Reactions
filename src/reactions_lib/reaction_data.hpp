@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief An abstract base class for cross-section objects.
@@ -270,5 +270,5 @@ struct ReactionDataBaseOnDevice {
 
   static constexpr size_t get_dim() { return dim; }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

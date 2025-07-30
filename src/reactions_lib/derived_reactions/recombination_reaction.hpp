@@ -6,7 +6,7 @@
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A struct defining a reaction representing recombination. 
@@ -62,5 +62,5 @@ struct Recombination
                                     normalised_potential_energy),
             data_calc_obj, properties_map) {}
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

@@ -9,7 +9,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 namespace BASE_RECOMB_KERNEL {
 constexpr int num_products_per_parent = 1;
@@ -324,5 +324,5 @@ public:
     return this->recomb_reaction_kernels_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

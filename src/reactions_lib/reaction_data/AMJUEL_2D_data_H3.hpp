@@ -9,7 +9,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
@@ -214,5 +214,5 @@ public:
     return this->amjuel_2d_data_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

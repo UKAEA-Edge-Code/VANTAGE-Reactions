@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 auto create_test_particle_group_merging(int N_total, int ndim)
     -> std::shared_ptr<ParticleGroup> {

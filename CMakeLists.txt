@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 # no space in these names! used as shared object name and python module name
-set(PROJECT_NAME Reactions)
+set(PROJECT_NAME VANTAGE-Reactions)
 
 project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
@@ -11,10 +11,10 @@ include(GNUInstallDirs)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Create interface/Header only library
-add_library(Reactions INTERFACE)
-add_library(Reactions::Reactions ALIAS Reactions)
+add_library(VANTAGE-Reactions INTERFACE)
+add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 
-set_property(TARGET Reactions PROPERTY CXX_STANDARD 17)
+set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD 17)
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
@@ -35,7 +35,7 @@ if (REACTIONS_ENABLE_TESTS)
 endif()
 
 install(
-    TARGETS Reactions
+    TARGETS VANTAGE-Reactions
     EXPORT ${PROJECT_NAME}_Targets
     FILE_SET public_headers
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

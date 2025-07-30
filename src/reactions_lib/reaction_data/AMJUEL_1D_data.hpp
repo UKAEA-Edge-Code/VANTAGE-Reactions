@@ -7,7 +7,7 @@
 #include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A struct that contains data and calc_data functions that are to be
@@ -156,5 +156,5 @@ public:
     return this->amjuel_1d_data_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

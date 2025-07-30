@@ -7,7 +7,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /** 
  * @brief A struct containing an enum with labels consisting of the variable names in
@@ -144,5 +144,5 @@ inline bool map_subset_check(std::map<int, std::string> custom_map) {
 
   return true;
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
 #endif

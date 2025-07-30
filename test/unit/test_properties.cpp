@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(Properties, property_constructor) {
   auto test_map = PropertiesTest::custom_prop_map;

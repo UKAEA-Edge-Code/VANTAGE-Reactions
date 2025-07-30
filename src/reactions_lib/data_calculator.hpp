@@ -9,7 +9,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief A dummy struct to derive DataCalculator from
@@ -151,5 +151,5 @@ private:
   std::vector<std::vector<Sym<INT>>> data_loop_int_syms;
   std::vector<std::vector<Sym<REAL>>> data_loop_real_syms;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif
