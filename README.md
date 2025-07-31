@@ -8,10 +8,10 @@ See here for more details: <https://docs.docker.com/engine/install/linux-postins
 
 Clone the repo:
 ```
-git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/NEC_Reactions
+git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/VANTAGE_Reactions
 ```
 
-Feel free to replace ``$HOME/NEC_Reactions`` with a directory name of your choice.
+Feel free to replace ``$HOME/VANTAGE_Reactions`` with a directory name of your choice.
 Next from within the repo directory, execute:
 ```
 docker build -t vantage_reactions_img -f .devcontainer/Dockerfile .
