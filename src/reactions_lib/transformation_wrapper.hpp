@@ -1,5 +1,5 @@
-#ifndef TRANSFORM_WRAPPER_H
-#define TRANSFORM_WRAPPER_H
+#ifndef REACTIONS_TRANSFORM_WRAPPER_H
+#define REACTIONS_TRANSFORM_WRAPPER_H
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>

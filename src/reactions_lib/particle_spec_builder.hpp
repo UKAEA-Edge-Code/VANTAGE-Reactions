@@ -1,5 +1,5 @@
-#ifndef PARTICLE_SPEC_BUILDER
-#define PARTICLE_SPEC_BUILDER
+#ifndef REACTIONS_PARTICLE_SPEC_BUILDER
+#define REACTIONS_PARTICLE_SPEC_BUILDER
 
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"

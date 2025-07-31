@@ -1,5 +1,5 @@
-#ifndef REACTION_CONTROLLER_H
-#define REACTION_CONTROLLER_H
+#ifndef REACTIONS_REACTION_CONTROLLER_H
+#define REACTIONS_REACTION_CONTROLLER_H
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include "common_transformations.hpp"

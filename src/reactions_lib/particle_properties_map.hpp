@@ -1,5 +1,5 @@
-#ifndef PARTICLE_PROPERTIES_MAP_H
-#define PARTICLE_PROPERTIES_MAP_H
+#ifndef REACTIONS_PARTICLE_PROPERTIES_MAP_H
+#define REACTIONS_PARTICLE_PROPERTIES_MAP_H
 #include <map>
 #include <neso_particles.hpp>
 #include <string>
@@ -57,8 +57,7 @@ const auto default_properties = StandardPropertiesEnum();
 
 /**
  * @brief A struct containing a map to reference strings associated with properties in
- * ParticleSpec via integer indices defined in an enumerator from a struct in
- * ParticlePropertiesIndices. 
+ * ParticleSpec via integer indices defined in an enumerator from a StandardPropertiesEnum(or derived) struct.
  */
 struct PropertiesMap {
 

@@ -1,5 +1,5 @@
-#ifndef REACTION_DATA_H
-#define REACTION_DATA_H
+#ifndef REACTIONS_REACTION_DATA_H
+#define REACTIONS_REACTION_DATA_H
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
 #include <neso_particles.hpp>

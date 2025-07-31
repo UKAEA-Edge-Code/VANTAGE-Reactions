@@ -1,5 +1,5 @@
-#ifndef AMJUEL_2D_DATA_H3_H
-#define AMJUEL_2D_DATA_H3_H
+#ifndef REACTIONS_AMJUEL_2D_DATA_H3_H
+#define REACTIONS_AMJUEL_2D_DATA_H3_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"

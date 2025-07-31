@@ -1,5 +1,5 @@
-#ifndef COMMON_TRANSFORMATIONS_H
-#define COMMON_TRANSFORMATIONS_H
+#ifndef REACTIONS_COMMON_TRANSFORMATIONS_H
+#define REACTIONS_COMMON_TRANSFORMATIONS_H
 #include <memory>
 #include <neso_particles.hpp>
 #include "transformation_wrapper.hpp"

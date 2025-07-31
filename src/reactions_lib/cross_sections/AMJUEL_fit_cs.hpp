@@ -1,5 +1,5 @@
-#ifndef AMJUEL_FIT_CS_H
-#define AMJUEL_FIT_CS_H
+#ifndef REACTIONS_AMJUEL_FIT_CS_H
+#define REACTIONS_AMJUEL_FIT_CS_H
 #include <neso_particles.hpp>
 #include "../reaction_data.hpp"
 

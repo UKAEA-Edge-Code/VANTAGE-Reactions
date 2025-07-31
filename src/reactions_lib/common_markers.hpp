@@ -1,5 +1,5 @@
-#ifndef COMMON_MARKERS_H
-#define COMMON_MARKERS_H
+#ifndef REACTIONS_COMMON_MARKERS_H
+#define REACTIONS_COMMON_MARKERS_H
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include <neso_particles.hpp>

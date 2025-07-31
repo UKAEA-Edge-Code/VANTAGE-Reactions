@@ -1,5 +1,5 @@
-#ifndef REACTIONS_H
-#define REACTIONS_H
+#ifndef REACTIONS_REACTIONS_H
+#define REACTIONS_REACTIONS_H
 
 #include "neso_test_assert.hpp"
 #include "reactions_lib/common_markers.hpp"

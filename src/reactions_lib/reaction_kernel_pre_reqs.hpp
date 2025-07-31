@@ -1,5 +1,5 @@
-#ifndef REACTION_KERNEL_PRE_REQS_H
-#define REACTION_KERNEL_PRE_REQS_H
+#ifndef REACTIONS_REACTION_KERNEL_PRE_REQS_H
+#define REACTIONS_REACTION_KERNEL_PRE_REQS_H
 #include "particle_properties_map.hpp"
 #include <iterator>
 #include <neso_particles.hpp>
@@ -133,8 +133,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param simple_props_ An integer vector defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the vector will be enums from the
-   * ParticlePropertiesIndices namespace.
+   * species). The values in the vector will be enums from a StandardPropertiesEnum(or derived) struct.
    * @param species_ A vector of Species structs that contain the species(plural)
    * that the species_props_ need to be combined with in order to produce
    * the correct property names.
@@ -159,8 +158,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param simple_props_ An integer vector defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the vector will be enums from the
-   * ParticlePropertiesIndices namespace. 
+   * species). The values in the vector will be enums from a StandardPropertiesEnum(or derived) struct. 
    */
   Properties(std::vector<int> simple_props_)
       : Properties(simple_props_, std::vector<Species>{}, std::vector<int>{}){};
@@ -188,8 +186,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param simple_props_ An integer array defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the array will be enums from the
-   * ParticlePropertiesIndices namespace.
+   * species). The values in the array will be enums from a StandardPropertiesEnum(or derived) struct.
    * @param species_ A vector of Species structs that contain the species(plural)
    * that the species_props_ need to be combined with in order to produce
    * the correct property names.
@@ -220,8 +217,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param simple_props_ An integer array defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the array will be enums from the
-   * ParticlePropertiesIndices namespace. 
+   * species). The values in the array will be enums from a StandardPropertiesEnum(or derived) struct. 
    */
   template <size_t N>
   Properties(const std::array<int, N> &simple_props_)
@@ -331,7 +327,7 @@ template <typename PROP_TYPE> struct Properties {
    * all_props given a requested property.
    *
    * @param prop An integer that corresponds to a value from the enumerator in
-   * ParticlePropertiesIndices (eg. for "VELOCITY" this would be the variable
+   * a StandardPropertiesEnum(or derived) struct (eg. for "VELOCITY" this would be the variable
    * name - velocity - which corresponds to 1.)
    * @param properties_map A std::map<int, std::string> object to be used in
    * recovering the property indices.
@@ -398,7 +394,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param species_name Requested species name (eg. "ELECTRON")
    * @param prop An integer that corresponds to a value from the enumerator in
-   * ParticlePropertiesIndices (eg. for "DENSITY" this would be the variable
+   * a StandardPropertiesEnum(or derived) struct (eg. for "DENSITY" this would be the variable
    * name - density - which corresponds to 8).
    * @param properties_map A std::map<int, std::string> object to be used in
    * recovering the property indices.

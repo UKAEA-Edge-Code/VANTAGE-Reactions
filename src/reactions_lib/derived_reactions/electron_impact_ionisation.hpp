@@ -1,5 +1,5 @@
-#ifndef ELECTRON_IMPACT_IONISATION_H
-#define ELECTRON_IMPACT_IONISATION_H
+#ifndef REACTIONS_ELECTRON_IMPACT_IONISATION_H
+#define REACTIONS_ELECTRON_IMPACT_IONISATION_H
 #include "../data_calculator.hpp"
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"

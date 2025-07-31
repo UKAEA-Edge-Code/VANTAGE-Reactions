@@ -1,5 +1,5 @@
-#ifndef CONSTANT_RATE_CS_H
-#define CONSTANT_RATE_CS_H
+#ifndef REACTIONS_CONSTANT_RATE_CS_H
+#define REACTIONS_CONSTANT_RATE_CS_H
 #include <limits>
 #include <neso_particles.hpp>
 #include "../reaction_data.hpp"

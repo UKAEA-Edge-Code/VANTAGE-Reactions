@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef REACTIONS_UTILS_H
+#define REACTIONS_UTILS_H
 #include <cassert>
 #include <cmath>
 #include <neso_particles.hpp>

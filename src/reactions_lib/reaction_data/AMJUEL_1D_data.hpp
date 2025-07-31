@@ -1,5 +1,5 @@
-#ifndef AMJUEL_1D_DATA_H
-#define AMJUEL_1D_DATA_H
+#ifndef REACTIONS_AMJUEL_1D_DATA_H
+#define REACTIONS_AMJUEL_1D_DATA_H
 #include "../particle_properties_map.hpp"
 #include <array>
 #include <cmath>

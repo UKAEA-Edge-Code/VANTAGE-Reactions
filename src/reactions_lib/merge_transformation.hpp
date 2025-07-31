@@ -1,5 +1,5 @@
-#ifndef MERGE_TRANSFORMATION_H
-#define MERGE_TRANSFORMATION_H
+#ifndef REACTIONS_MERGE_TRANSFORMATION_H
+#define REACTIONS_MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
 #include "particle_properties_map.hpp"

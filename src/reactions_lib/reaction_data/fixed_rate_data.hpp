@@ -1,5 +1,5 @@
-#ifndef FIXED_RATE_DATA_H
-#define FIXED_RATE_DATA_H
+#ifndef REACTIONS_FIXED_RATE_DATA_H
+#define REACTIONS_FIXED_RATE_DATA_H
 #include <neso_particles.hpp>
 #include "../reaction_data.hpp"
 

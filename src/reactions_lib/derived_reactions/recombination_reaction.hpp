@@ -1,5 +1,5 @@
-#ifndef RECOMBINATION_REACTION_H
-#define RECOMBINATION_REACTION_H
+#ifndef REACTIONS_RECOMBINATION_REACTION_H
+#define REACTIONS_RECOMBINATION_REACTION_H
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels/base_recombination_kernels.hpp"

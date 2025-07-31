@@ -1,5 +1,5 @@
-#ifndef REACTION_KERNELS_H
-#define REACTION_KERNELS_H
+#ifndef REACTIONS_REACTION_KERNELS_H
+#define REACTIONS_REACTION_KERNELS_H
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>

@@ -1,5 +1,5 @@
-#ifndef NESO_TEST_ASSERT_H
-#define NESO_TEST_ASSERT_H
+#ifndef REACTIONS_NESO_TEST_ASSERT_H
+#define REACTIONS_NESO_TEST_ASSERT_H
 #include <cstdlib>
 #include <neso_particles/typedefs.hpp>
 #include <stdexcept>
