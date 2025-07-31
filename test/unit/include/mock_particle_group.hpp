@@ -1,5 +1,5 @@
-#ifndef MOCK_PARTICLE_GROUP_H
-#define MOCK_PARTICLE_GROUP_H
+#ifndef REACTIONS_MOCK_PARTICLE_GROUP_H
+#define REACTIONS_MOCK_PARTICLE_GROUP_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
