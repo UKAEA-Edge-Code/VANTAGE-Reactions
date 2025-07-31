@@ -91,7 +91,7 @@ struct ReactionDataBase {
    * information regarding the required REAL-based ephemeral properties for the
    * reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names, i.e. remapping default property names
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionDataBase(Properties<INT> required_int_props,
@@ -123,7 +123,7 @@ struct ReactionDataBase {
    * @brief Constructor for ReactionDataBase that sets not required properties.
    *
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names, i.e. remapping default property names
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionDataBase(std::map<int, std::string> properties_map = get_default_map())
@@ -138,7 +138,7 @@ struct ReactionDataBase {
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names, i.e. remapping default property names
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionDataBase(Properties<INT> required_int_props,
@@ -154,7 +154,7 @@ struct ReactionDataBase {
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names, i.e. remapping default property names
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionDataBase(Properties<REAL> required_real_props,
@@ -172,7 +172,7 @@ struct ReactionDataBase {
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names, i.e. remapping default property names
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionDataBase(Properties<INT> required_int_props,

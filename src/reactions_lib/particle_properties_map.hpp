@@ -10,22 +10,23 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /** 
- * @brief A struct containing an enum with labels consisting of the variable names in
- * standard_properties
- */
-
-/*! This can be extended by deriving from this struct and defining a public enum
+ * @brief Data from this struct is used to access property names in a map from PropertiesMap.
+ *
+ * This can be extended by deriving from this struct and defining a public enum
  * member with the first element being the value of the last element in
  * StandardPropertiesEnum+1. For example:
-  struct CustomPropertiesEnum : StandardPropertiesEnum {
-    public:
-      enum {
-        custom_prop_1 = StandardPropertiesEnum::fluid_flow_speed+1,
-        custom_prop_2,
-        custom_prop_3
-      };
-  };
-  Further chaining would work on the same principle.*/
+ * ```
+ *     struct CustomPropertiesEnum : StandardPropertiesEnum {
+ *       public:
+ *         enum {
+ *           custom_prop_1 = StandardPropertiesEnum::fluid_flow_speed+1,
+ *           custom_prop_2,
+ *           custom_prop_3
+ *         };
+ *     };
+ * ```
+ * Further chaining would work on the same principle.
+ */
 struct StandardPropertiesEnum {
 public:
   enum {
