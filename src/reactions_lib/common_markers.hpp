@@ -7,7 +7,6 @@
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
-// TODO: improve documentation
 
 /**
  * @brief Wrapper for more than comparison to be used by the the comparison

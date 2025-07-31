@@ -42,7 +42,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
   /**
    * @brief Constructor for MergeTransformationStrategy.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used to retreive the syms for the position, weight and velocity properties.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used to remap the syms for the position, weight and velocity properties.
    */
   MergeTransformationStrategy(
       const std::map<int, std::string> &properties_map = get_default_map())
