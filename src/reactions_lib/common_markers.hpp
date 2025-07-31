@@ -111,7 +111,7 @@ private:
 
   private:
     U comparison_val; //!< Value to compare the ParticleDat passed
-                      //!< to marking_condition against using <
+                      //!< to marking_condition against <
     INT comparison_component; //!< Component of the passed
                               //!< ParticleDat to compare
     T<U> comparison_wrapper;  //!< Comparison function wrapper (see
@@ -126,7 +126,7 @@ public:
    * @brief Constructor for ComparisonMarkerSingle (INT-version).
    *
    * @param comparison_var Sym<INT> specifying the comparison property
-   * @param comparison_value Value to compare the INT-valued ParticleDat
+   * @param comparison_value Value to compare the INT-valued ParticleDat with
    * @param comparison_component Component of the INT-valued ParticleDat to compare
    */
   ComparisonMarkerSingle(
@@ -155,9 +155,9 @@ public:
    * \overload
    * @brief Constructor for ComparisonMarkerSingle (REAL-version).
    *
-   * @param comparison_var Sym<REAL> specifying the comparison property.
-   * @param comparison_value Value to compare the REAL-valued ParticleDat.
-   * @param comparison_component Component of the REAL-valued ParticleDat to compare.
+   * @param comparison_var Sym<REAL> specifying the comparison property
+   * @param comparison_value Value to compare the REAL-valued ParticleDat with
+   * @param comparison_component Component of the REAL-valued ParticleDat to compare
    */
   ComparisonMarkerSingle(
     const Sym<REAL> comparison_var,
@@ -204,7 +204,7 @@ public:
    * @brief Constructor for ComparisonMarkerSingle (REAL-version) that sets comparison_component to a default value (NaN).
    *
    * @param comparison_var Sym<REAL> specifying the comparison property.
-   * @param comparison_value Value to compare the REAL-valued ParticleDat.
+   * @param comparison_value Value to compare the REAL-valued ParticleDat with.
    */
   ComparisonMarkerSingle(const Sym<REAL> comparison_var, const REAL comparison_value) : 
     ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
@@ -214,7 +214,7 @@ public:
    * @brief Constructor for ComparisonMarkerSingle (INT-version) that sets comparison_component to a default value (NaN).
    *
    * @param comparison_var Sym<INT> specifying the comparison property.
-   * @param comparison_value Value to compare the INT-valued ParticleDat.
+   * @param comparison_value Value to compare the INT-valued ParticleDat with.
    */
   ComparisonMarkerSingle(const Sym<INT> comparison_var, const INT comparison_value) :
     ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
