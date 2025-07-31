@@ -7,7 +7,7 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief SYCL device-compatible ReactionData class returning a fixed rate
+ * @brief On device: Reaction rate data calculation for a fixed rate reaction.
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
 
@@ -49,7 +49,7 @@ private:
 };
 
 /**
- * @brief A struct defining the data needed for a fixed rate reaction.
+ * @brief Reaction rate data calculation for a fixed rate reaction.
  */
 struct FixedRateData : public ReactionDataBase<> {
 

@@ -132,7 +132,7 @@ public:
 };
 
 /**
- * @brief  Reaction rate data calculation based on AMJUEL H.3 fits against
+ * @brief Reaction rate data calculation based on AMJUEL H.3 fits against
  * neutral particle energy and ion/plasma temperature
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed

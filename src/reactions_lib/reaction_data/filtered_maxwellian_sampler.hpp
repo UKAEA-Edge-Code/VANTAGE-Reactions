@@ -11,8 +11,11 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A struct that contains data and calc_data functions that are to be
- * stored on and used on a SYCL device.
+ * @brief On device: Reaction data class for calculating velocity samples from a filtered
+ * Maxwellian distribution given a fluid temperature and flow speed. The sampled
+ * distribution is formally sigma(|v-u|)f_M(v), where sigma is a cross-section
+ * evaluated at the relative speed |v-u| of the neutrals (v) and ions (u). The
+ * filtering is performed using a rejection method.
  *
  * @tparam ndim The velocity space dimensionality for both the particles and the
  * fields

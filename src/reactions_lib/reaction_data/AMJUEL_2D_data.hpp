@@ -11,8 +11,7 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A struct that contains data and calc_data functions that are to be
- * stored on and used on a SYCL device.
+ * @brief On device: Reaction rate data calculation based on 2D AMJUEL rate calculation against ion/plasma density  and ion/plasma temperature. Handles Coronal approximation correctly.
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.
@@ -118,9 +117,7 @@ public:
 };
 
 /**
- * @brief A struct defining the data needed for a 2D AMJUEL rate calculation,
- * assuming density is the second parameter. Handles Coronal approximation
- * correctly.
+ * @brief Reaction rate data calculation based on 2D AMJUEL rate calculation against ion/plasma density  and ion/plasma temperature. Handles Coronal approximation correctly.
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.

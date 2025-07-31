@@ -10,8 +10,7 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A struct that contains data and calc_data functions that are to be
- * stored on and used on a SYCL device.
+ * @brief On device: Reaction rate data calculation based on AMJUEL fits against ion/plasma temperature.
  *
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
  * rate calculation.
@@ -96,7 +95,7 @@ public:
 };
 
 /**
- * @brief A struct defining the data needed for a 1D AMJUEL rate calculation
+ * @brief Reaction rate data calculation based on AMJUEL fits against ion/plasma temperature.
  *
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
  * rate calculation.

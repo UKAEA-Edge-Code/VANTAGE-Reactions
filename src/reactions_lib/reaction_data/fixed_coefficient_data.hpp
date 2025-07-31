@@ -8,8 +8,7 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A struct that contains data and calc_data functions that are to be
- * stored on and used on a SYCL device.
+ * @brief On device: Reaction rate data calculation for a fixed rate coefficient reaction. The reaction rate is calculated as rate_coefficient*particle_weight.
  */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
 
@@ -21,7 +20,7 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 
   /**
-   * @brief Function to calculate the reaction rate for a fixed reaction
+   * @brief Function to calculate the reaction rate for a fixed rate
    * coefficient reaction
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
@@ -54,9 +53,7 @@ public:
 };
 
 /**
- * @brief A struct defining the data needed for a fixed rate coefficient
- * reaction. The reaction rate is calculated as
- * rate_coefficient*particle_weight.
+ * @brief Reaction rate data calculation for a fixed rate coefficient reaction. The reaction rate is calculated as rate_coefficient*particle_weight.
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
