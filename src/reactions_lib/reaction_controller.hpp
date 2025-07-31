@@ -43,8 +43,8 @@ struct ReactionController {
    * products are to be handled
    * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
    * Defaults to true.
-   * @param properties_map Optional remapping of default properties (panic flag,
-   * internal_state, and total rate)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names (eg. panic flag, internal_state, and total rate)
    */
   ReactionController(
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
@@ -84,8 +84,8 @@ struct ReactionController {
    *
    * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
    * Defaults to true.
-   * @param properties_map Optional remapping of default properties (panic flag,
-   * internal_state, and total rate)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names (eg. panic flag, internal_state, and total rate)
    */
   ReactionController(
       bool auto_clean_tot_rate_buffer = true,
@@ -103,8 +103,8 @@ struct ReactionController {
    * products are to be handled
    * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
    * Defaults to true.
-   * @param properties_map Optional remapping of default properties (panic flag,
-   * internal_state, and total rate)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names (eg. panic flag, internal_state, and total rate)
    */
   ReactionController(
       std::shared_ptr<TransformationWrapper> child_transform,
@@ -125,8 +125,8 @@ struct ReactionController {
    * products are to be handled
    * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
    * Defaults to true.
-   * @param properties_map Optional remapping of default properties (panic flag,
-   * internal_state, and total rate)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names (eg. panic flag, internal_state, and total rate)
    */
   ReactionController(
       std::shared_ptr<TransformationWrapper> parent_transform,

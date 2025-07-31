@@ -139,8 +139,8 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
    * @param electron_species Species object representing the electrons
    * @param projectile_species Species object representing the projectile
    * species
-   * @param properties_map A std::map<int, std::string> object to be to be
-   * passed to ReactionKernelsBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   IoniseReactionKernels(
       const Species &target_species, const Species &electron_species,

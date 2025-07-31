@@ -31,8 +31,8 @@ struct AbstractReaction {
    * @brief Constructor for AbstractReaction.
    *
    * @param sycl_target Compute device used by the instance.
-   * @param properties_map Optional property remapping. Used to get weight and
-   * rate buffer syms.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   AbstractReaction(
       SYCLTargetSharedPtr sycl_target,
@@ -161,19 +161,6 @@ private:
  * argument
  * @tparam DataCalc typename for the DataCalculator object used to calculate
  * prerequisite data (defaults to DataCalculator<>)
- *
- * @param sycl_target Compute device used by the instance.
- * @param in_state Integer specifying the ID of the species on
- * which the derived reaction is acting on.
- * @param out_states Array of integers specifying the species IDs of the
- * descendants produced by the derived reaction.
- * @param reaction_data ReactionData object to be used in run_rate_loop.
- * @param reaction_kernels ReactionKernels object to be used in
- * descendant_product_loop.
- * @param data_calculator DataCalculator object for filling in the
- * pre_req_data buffer
- * @param properties_map Optional property remapping. Used to get weight and
- * rate buffer syms.
  */
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels, typename DataCalc = DataCalculator<>>
@@ -194,8 +181,8 @@ struct LinearReactionBase : public AbstractReaction {
    * descendant_product_loop.
    * @param data_calculator DataCalculator object for filling in the
    * pre_req_data buffer
-   * @param properties_map Optional property remapping. Used to get weight and
-   * rate buffer syms.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
@@ -271,8 +258,8 @@ struct LinearReactionBase : public AbstractReaction {
    * @param reaction_data ReactionData object to be used in run_rate_loop.
    * @param reaction_kernels ReactionKernels object to be used in
    * descendant_product_loop.
-   * @param properties_map Optional property remapping. Used to get weight and
-   * rate buffer syms.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,

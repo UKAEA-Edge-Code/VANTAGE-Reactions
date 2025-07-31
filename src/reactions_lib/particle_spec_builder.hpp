@@ -32,7 +32,8 @@ struct ParticleSpecBuilder {
    * properties in Reactions
    *
    * @param ndim Dimensionality of vector quantities
-   * @param properties_map Optional remapping of the default property names
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   ParticleSpecBuilder(
       int ndim,
@@ -74,8 +75,8 @@ struct ParticleSpecBuilder {
    * will apply to all properties from properties_)
    * @param positions Boolean to indicate whether the properties to be added are
    * particle position or cell id or not.
-   * @param properties_map Property map to be used when adding properties into
-   * the spec. Defaults to default_map.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   template <typename PROP_TYPE>
   void add_particle_prop(

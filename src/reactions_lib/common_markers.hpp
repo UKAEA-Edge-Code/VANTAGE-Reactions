@@ -75,7 +75,7 @@ private:
     /**
      * @brief Constructor for ComparisonMarkerSingleDevice.
      *
-     * @param comparison_value Value to compare the ParticleDat
+     * @param comparison_value Value to compare the ParticleDat value with
      * @param comparison_component Component of the ParticleDat to compare
      */
     ComparisonMarkerSingleDevice(U comparison_value, INT comparison_component)
@@ -276,7 +276,7 @@ public:
   /**
    * @brief Constructor for PanickedParticleMarker.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used to retrieve the Sym for the Panic property.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used to remap the Sym for the Panic property.
    */
   PanickedParticleMarker(
       const std::map<int, std::string> &properties_map = get_default_map())

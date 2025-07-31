@@ -233,8 +233,8 @@ struct RecombReactionKernels : public ReactionKernelsBase {
    * involved in the recombination (eg. electron).
    * @param normalised_potential_energy Used in calculating the projectile
    * source energy loss
-   * @param properties_map A std::map<int, std::string> object to be to be
-   * passed to ReactionKernelsBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   RecombReactionKernels(
       const Species &target_species, const Species &projectile_species,

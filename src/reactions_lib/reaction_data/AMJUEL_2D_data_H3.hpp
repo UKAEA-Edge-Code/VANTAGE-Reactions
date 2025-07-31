@@ -163,8 +163,8 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
    * @param mass_amu Mass of the neutral particle in amus
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
-   * @param properties_map A std::map<int, std::string> object to be passed to
-   * ReactionDataBase
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
 
   AMJUEL2DDataH3(

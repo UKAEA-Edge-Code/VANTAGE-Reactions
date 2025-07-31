@@ -46,8 +46,8 @@ struct Recombination
    * @param normalised_potential_energy Used in calculating the electron source
    * energy loss, the rate of which is given by the first data_calc_obj element
    * + the potential energy x rate
-   * @param properties_map Optional property map to be used with the
-   * recombination kernels. Defaults to the default_map object
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   Recombination(SYCLTargetSharedPtr sycl_target_, RateData rate_data,
                 DataCalcType data_calc_obj, Species marker_species,

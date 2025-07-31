@@ -31,7 +31,7 @@ struct ReactionKernelsBase {
    * when this kernel and the DataCalculator object are passed to a
    * LinearReactionBase-derived object constructor).
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * retrieving property names (in get_required_real_props(...) and
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(Properties<INT> required_int_props,
@@ -59,7 +59,7 @@ struct ReactionKernelsBase {
    * @brief Constructor for ReactionKernelsBase that by default sets no required props.
    *
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * retrieving property names (in get_required_real_props(...) and
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(std::map<int, std::string> properties_map = get_default_map())
@@ -79,7 +79,7 @@ struct ReactionKernelsBase {
    * when this kernel and the DataCalculator object are passed to a
    * LinearReactionBase-derived object constructor).
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * retrieving property names (in get_required_real_props(...) and
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
@@ -100,7 +100,7 @@ struct ReactionKernelsBase {
    * when this kernel and the DataCalculator object are passed to a
    * LinearReactionBase-derived object constructor).
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * retrieving property names (in get_required_real_props(...) and
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(Properties<REAL> required_real_props,
@@ -124,7 +124,7 @@ struct ReactionKernelsBase {
    * when this kernel and the DataCalculator object are passed to a
    * LinearReactionBase-derived object constructor).
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * retrieving property names (in get_required_real_props(...) and
+   * remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(Properties<INT> required_int_props,

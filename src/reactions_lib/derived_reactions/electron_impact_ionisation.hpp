@@ -36,8 +36,8 @@ struct ElectronImpactIonisation
    * @param target_species Species object representing the ionisation target
    * (and the corresponding ion fluid)
    * @param electron_species Species object corresponding to the electrons
-   * @param properties_map Optional property map to be used with the ionisation
-   * kernels. Defaults to the default_map object
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   ElectronImpactIonisation(
       SYCLTargetSharedPtr sycl_target_, RateData rate_data,

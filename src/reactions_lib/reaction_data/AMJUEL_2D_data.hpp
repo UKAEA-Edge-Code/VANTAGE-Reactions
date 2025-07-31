@@ -143,8 +143,8 @@ struct AMJUEL2DData : public ReactionDataBase<> {
    * @param time_normalisation Time normalisation in seconds
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
-   * @param properties_map A std::map<int, std::string> object to be passed to
-   * ReactionDataBase
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   AMJUEL2DData(
       const REAL &evolved_quantity_normalisation_,

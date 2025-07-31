@@ -224,8 +224,8 @@ struct CXReactionKernels : public ReactionKernelsBase {
    * target - the ingoing ion and outgoing neutral
    * @param projectile_species Species object representing the projectile
    * species - the outgoing ion and ingoing neutral
-   * @param properties_map A std::map<int, std::string> object to be to be
-   * passed to ReactionKernelsBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
   CXReactionKernels(const Species &target_species,
                     const Species &projectile_species,

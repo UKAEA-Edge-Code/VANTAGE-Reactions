@@ -68,10 +68,10 @@ struct FixedCoefficientData : public ReactionDataBase<> {
   /**
    * @brief Constructor for FixedCoefficientData.
    *
-   * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
+   * @param rate_coeff A real-valued rate coefficient (rate proportional to this
    * and the particle weight)
-   * @param properties_map A std::map<int, std::string> object to be passed to
-   * ReactionDataBase
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names
    */
   FixedCoefficientData(REAL rate_coefficient,
                        std::map<int, std::string> properties_map = get_default_map())

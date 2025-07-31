@@ -296,7 +296,7 @@ template <typename PROP_TYPE> struct Properties {
    * required simple properties.
    *
    * @param properties_map A std::map<int, std::string> object to be used in
-   * recovering the property names.
+   * remapping the property names.
    *
    * @return simple_prop_names
    */
@@ -330,7 +330,7 @@ template <typename PROP_TYPE> struct Properties {
    * a StandardPropertiesEnum(or derived) struct (eg. for "VELOCITY" this would be the variable
    * name - velocity - which corresponds to 1.)
    * @param properties_map A std::map<int, std::string> object to be used in
-   * recovering the property indices.
+   * remapping the property indices.
    *
    * @return simple_prop_index
    */
@@ -362,7 +362,7 @@ template <typename PROP_TYPE> struct Properties {
    * "ELECTRON" + "_" + "DENSITY")
    *
    * @param properties_map A std::map<int, std::string> object to be used in
-   * recovering the property names.
+   * remapping the property names.
    *
    * @return species_prop_names
    */
@@ -397,7 +397,7 @@ template <typename PROP_TYPE> struct Properties {
    * a StandardPropertiesEnum(or derived) struct (eg. for "DENSITY" this would be the variable
    * name - density - which corresponds to 8).
    * @param properties_map A std::map<int, std::string> object to be used in
-   * recovering the property indices.
+   * remapping the property indices.
    *
    * @return species_prop_index
    */
@@ -450,7 +450,7 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Getter for combined prop_names vector
    *
    * @param properties_map A std::map<int, std::string> object to be used in
-   * recovering the property names.
+   * remapping the property names.
    */
   const std::vector<std::string> get_prop_names(
       const std::map<int, std::string> &properties_map = get_default_map()) {

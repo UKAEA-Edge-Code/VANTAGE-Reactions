@@ -117,8 +117,8 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
   * @param time_normalisation Time normalisation in seconds
   * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
   * reaction rate calculation.
-  * @param properties_map A std::map<int, std::string> object to be passed to
-  * ReactionDataBase.
+  * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
   */
   AMJUEL1DData(const REAL &evolved_quantity_normalisation_,
                 const REAL &density_normalisation_,
