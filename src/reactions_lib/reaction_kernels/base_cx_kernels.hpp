@@ -11,8 +11,7 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A struct that contains the SYCL device-compatible kernels for
- * charge exchange reactions.
+ * @brief Device type for charge-exchange kernels
  *
  * @tparam ndim_velocity The number of dimensions for the particle velocity
  * property.
@@ -121,7 +120,7 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   }
 
   /**
-   * @brief Feedback kernel for calculating and applying
+   * @brief CX feedback kernel for calculating and applying
    * background field modifications from the reaction.
    *
    * @param modified_weight The weight modification needed for calculating
@@ -194,7 +193,7 @@ public:
 };
 
 /**
- * @brief Host type for chrarge-exchange kernels
+ * @brief Host type for charge-exchange kernels
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)

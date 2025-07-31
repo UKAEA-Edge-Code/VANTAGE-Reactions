@@ -11,14 +11,8 @@ using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
-namespace BASE_IONISATION_KERNEL {
-constexpr int num_products_per_parent = 0;
-
-} // namespace BASE_IONISATION_KERNEL
-
 /**
- * @brief A struct that contains SYCL device-compatible kernels for
- * ionisation reactions.
+ * @brief Device type for ionisation kernels
  *
  * @tparam ndim_velocity The number of dimensions for the particle velocity
  * property.
@@ -110,8 +104,7 @@ public:
 };
 
 /**
- * @brief A struct defining data and kernel functions needed for an ionisation
- * reaction.
+ * @brief Host type for ionisation kernels
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)

@@ -11,14 +11,8 @@ using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
-namespace BASE_RECOMB_KERNEL {
-constexpr int num_products_per_parent = 1;
-
-} // namespace BASE_RECOMB_KERNEL
-
 /**
- * @brief A struct that contains SYCL device-compatible kernels for
- * recombination reactions.
+ * @brief Device type for recombination kernels
  *
  * @tparam ndim_velocity The number of dimensions for the particle
  * velocity property.
