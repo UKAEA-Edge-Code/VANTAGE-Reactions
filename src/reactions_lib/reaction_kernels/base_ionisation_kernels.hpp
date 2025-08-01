@@ -132,8 +132,8 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
    * @param electron_species Species object representing the electrons
    * @param projectile_species Species object representing the projectile
    * species
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   IoniseReactionKernels(
       const Species &target_species, const Species &electron_species,
@@ -204,7 +204,10 @@ public:
    */
 
   IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
-                                has_momentum_req_data> get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
+                                has_momentum_req_data>
+  get_on_device_obj() {
+    return this->ionise_reaction_kernels_on_device;
+  }
 };
 }; // namespace VANTAGE::Reactions
 #endif

@@ -8,7 +8,9 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device: Reaction rate data calculation for a fixed rate coefficient reaction. The reaction rate is calculated as rate_coefficient*particle_weight.
+ * @brief On device: Reaction rate data calculation for a fixed rate coefficient
+ * reaction. The reaction rate is calculated as
+ * rate_coefficient*particle_weight.
  */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
 
@@ -34,7 +36,8 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
+   * @return A REAL-valued array of size 1 containing the calculated reaction
+   * rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
@@ -53,7 +56,8 @@ public:
 };
 
 /**
- * @brief Reaction rate data calculation for a fixed rate coefficient reaction. The reaction rate is calculated as rate_coefficient*particle_weight.
+ * @brief Reaction rate data calculation for a fixed rate coefficient reaction.
+ * The reaction rate is calculated as rate_coefficient*particle_weight.
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
@@ -67,11 +71,12 @@ struct FixedCoefficientData : public ReactionDataBase<> {
    *
    * @param rate_coeff A real-valued rate coefficient (rate proportional to this
    * and the particle weight)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names
    */
-  FixedCoefficientData(REAL rate_coefficient,
-                       std::map<int, std::string> properties_map = get_default_map())
+  FixedCoefficientData(
+      REAL rate_coefficient,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<REAL>(required_simple_real_props),
                          properties_map),
         fixed_coefficient_data_on_device(

@@ -1,10 +1,10 @@
 #ifndef REACTIONS_REACTION_CONTROLLER_H
 #define REACTIONS_REACTION_CONTROLLER_H
-#include "particle_properties_map.hpp"
-#include "transformation_wrapper.hpp"
-#include "common_transformations.hpp"
 #include "common_markers.hpp"
+#include "common_transformations.hpp"
+#include "particle_properties_map.hpp"
 #include "reaction_base.hpp"
+#include "transformation_wrapper.hpp"
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
@@ -37,14 +37,15 @@ struct ReactionController {
   /**
    * @brief Constructor for ReactionController.
    *
-   * @param parent_transform Vector of TransformationWrappers informing how parent
-   * particles are to be handled
-   * @param child_transform Vector of TransformationWrappers informing how descendant
-   * products are to be handled
-   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
-   * Defaults to true.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (eg. panic flag, internal_state, and total rate)
+   * @param parent_transform Vector of TransformationWrappers informing how
+   * parent particles are to be handled
+   * @param child_transform Vector of TransformationWrappers informing how
+   * descendant products are to be handled
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate
+   * buffer. Defaults to true.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (eg. panic flag, internal_state, and
+   * total rate)
    */
   ReactionController(
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
@@ -55,16 +56,19 @@ struct ReactionController {
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
-    this->id_sym = Sym<INT>(properties_map.at(default_properties.internal_state));
-    this->tot_rate_buffer = Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    this->id_sym =
+        Sym<INT>(properties_map.at(default_properties.internal_state));
+    this->tot_rate_buffer =
+        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->panic_flag = Sym<INT>(properties_map.at(default_properties.panic));
-    this->reacted_flag = Sym<INT>(properties_map.at(default_properties.reacted_flag));
-    
+    this->reacted_flag =
+        Sym<INT>(properties_map.at(default_properties.reacted_flag));
+
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{tot_rate_buffer.name});
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
@@ -80,12 +84,14 @@ struct ReactionController {
 
   /**
    * \overload
-   * @brief Constructor for ReactionController with no parent and child transformation strategies.
+   * @brief Constructor for ReactionController with no parent and child
+   * transformation strategies.
    *
-   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
-   * Defaults to true.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (eg. panic flag, internal_state, and total rate)
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate
+   * buffer. Defaults to true.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (eg. panic flag, internal_state, and
+   * total rate)
    */
   ReactionController(
       bool auto_clean_tot_rate_buffer = true,
@@ -97,14 +103,16 @@ struct ReactionController {
 
   /**
    * \overload
-   * @brief Constructor for ReactionController with no parent transformation strategies.
+   * @brief Constructor for ReactionController with no parent transformation
+   * strategies.
    *
    * @param child_transform A TransformationWrapper informing how descendant
    * products are to be handled
-   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
-   * Defaults to true.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (eg. panic flag, internal_state, and total rate)
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate
+   * buffer. Defaults to true.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (eg. panic flag, internal_state, and
+   * total rate)
    */
   ReactionController(
       std::shared_ptr<TransformationWrapper> child_transform,
@@ -123,10 +131,11 @@ struct ReactionController {
    * particles are to be handled
    * @param child_transform A TransformationWrapper informing how descendant
    * products are to be handled
-   * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
-   * Defaults to true.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (eg. panic flag, internal_state, and total rate)
+   * @param auto_clean_tot_rate_buffer Automatically flush the total rate
+   * buffer. Defaults to true.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (eg. panic flag, internal_state, and
+   * total rate)
    */
   ReactionController(
       std::shared_ptr<TransformationWrapper> parent_transform,
@@ -225,7 +234,8 @@ public:
    *
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
-   * @param controller_mode The mode to run the controller in. Either standard_mode (default) or semi_dsmc_mode.
+   * @param controller_mode The mode to run the controller in. Either
+   * standard_mode (default) or semi_dsmc_mode.
    */
   void apply_reactions(
       ParticleGroupSharedPtr particle_group, double dt,

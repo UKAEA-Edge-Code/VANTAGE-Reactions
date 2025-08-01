@@ -1,8 +1,8 @@
 #ifndef REACTIONS_COMMON_TRANSFORMATIONS_H
 #define REACTIONS_COMMON_TRANSFORMATIONS_H
+#include "transformation_wrapper.hpp"
 #include <memory>
 #include <neso_particles.hpp>
-#include "transformation_wrapper.hpp"
 #include <utility>
 
 using namespace NESO::Particles;
@@ -51,9 +51,9 @@ struct CompositeTransform : TransformationStrategy {
    * @brief Constructor for CompositeTransform that allows for initializing
    * the member variable components.
    *
-   * @param components A vector of TransformationStrategy shared pointers. These define
-   * the transfrormations that are to be applied when calling the transform member
-   * function.
+   * @param components A vector of TransformationStrategy shared pointers. These
+   * define the transfrormations that are to be applied when calling the
+   * transform member function.
    */
   CompositeTransform(
       std::vector<std::shared_ptr<TransformationStrategy>> components)
@@ -85,7 +85,7 @@ private:
 /**
  * @brief Transformation strategy that zeroes out a set of particle dats
  *
- * @tparam T REAL or INT 
+ * @tparam T REAL or INT
  */
 template <typename T> struct ParticleDatZeroer : TransformationStrategy {
 
@@ -157,8 +157,8 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
   /**
    * @brief Constructor for CellwiseAccumulator.
    *
-   * @param template_group A template particle group used to provide the CellDatConsts for
-   * the dats specified by dat_names.
+   * @param template_group A template particle group used to provide the
+   * CellDatConsts for the dats specified by dat_names.
    * @param dat_names A vector of strings specifying the names of the dats
    * to be accumulated cell-wise.
    */
@@ -191,9 +191,9 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    */
   void transform(ParticleSubGroupSharedPtr target_subgroup) override {
     for (auto i = 0; i < std::size(this->dats); i++) {
-        Kernel::plus<T> op{};
-        reduce_dat_components_cellwise(target_subgroup, this->dats.at(i),
-                                       this->values.at(this->dats.at(i)), op);
+      Kernel::plus<T> op{};
+      reduce_dat_components_cellwise(target_subgroup, this->dats.at(i),
+                                     this->values.at(this->dats.at(i)), op);
     }
   }
 
@@ -270,8 +270,8 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
   /**
    * @brief Constructor for WeightedCellwiseAccumulator.
    *
-   * @param template_group A template particle group used to provide the CellDatConsts for
-   * the dats specified by dat_names.
+   * @param template_group A template particle group used to provide the
+   * CellDatConsts for the dats specified by dat_names.
    * @param dat_names A vector of strings specifying the names of the dats
    * to be accumulated cell-wise.
    * @param weight_sym_name Name of the sym associated with the weight property.

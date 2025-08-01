@@ -32,18 +32,18 @@ struct ParticleSpecBuilder {
    * properties in Reactions
    *
    * @param ndim Dimensionality of vector quantities
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   ParticleSpecBuilder(
       int ndim,
       const std::map<int, std::string> &properties_map = get_default_map()) {
 
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     this->add_particle_spec(ParticleSpec(
         ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
@@ -51,9 +51,9 @@ struct ParticleSpecBuilder {
         ParticleProp(Sym<INT>(properties_map.at(default_properties.cell_id)), 1,
                      true)));
 
-    auto int_props = Properties<INT>(
-        std::vector<int>{default_properties.panic, default_properties.id,
-                         default_properties.internal_state,default_properties.reacted_flag});
+    auto int_props = Properties<INT>(std::vector<int>{
+        default_properties.panic, default_properties.id,
+        default_properties.internal_state, default_properties.reacted_flag});
     auto real_props_scalar = Properties<REAL>(std::vector<int>{
         default_properties.weight, default_properties.tot_reaction_rate});
     auto real_props_vector =
@@ -75,20 +75,20 @@ struct ParticleSpecBuilder {
    * will apply to all properties from properties_)
    * @param positions Boolean to indicate whether the properties to be added are
    * particle position or cell id or not.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   template <typename PROP_TYPE>
   void add_particle_prop(
       Properties<PROP_TYPE> properties, int ndim = 1, bool positions = false,
       const std::map<int, std::string> &properties_map = get_default_map()) {
-    
+
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
-    
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
+
     auto simple_prop_names = properties.simple_prop_names(properties_map);
 
     auto species_prop_names = properties.species_prop_names(properties_map);

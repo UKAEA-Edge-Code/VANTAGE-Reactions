@@ -107,7 +107,7 @@ private:
   std::optional<REAL> charge;
 };
 
-//TODO: Make this more robust 
+// TODO: Make this more robust
 inline bool operator==(const Species &lhs, const Species &rhs) {
 
   if (lhs.has_id() && rhs.has_id()) {
@@ -133,16 +133,17 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param simple_props An integer vector defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the vector will be enums from a StandardPropertiesEnum (or derived) struct.
+   * species). The values in the vector will be enums from a
+   * StandardPropertiesEnum (or derived) struct.
    * @param species A vector of Species structs that contain the species(plural)
    * that the species_props_ need to be combined with in order to produce
    * the correct property names.
    * @param species_props An integer vector defining the required
-   * species properties that are to be combined with species_ to produce property
-   * names.
+   * species properties that are to be combined with species_ to produce
+   * property names.
    */
   Properties(std::vector<int> simple_props, // simple_props (including
-                                             // fluid_density for example)
+                                            // fluid_density for example)
              std::vector<Species> species,
              std::vector<int> species_props) // species_props
       : simple_props(simple_props), species(species),
@@ -158,7 +159,8 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param simple_props An integer vector defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the vector will be enums from a StandardPropertiesEnum (or derived) struct. 
+   * species). The values in the vector will be enums from a
+   * StandardPropertiesEnum (or derived) struct.
    */
   Properties(std::vector<int> simple_props)
       : Properties(simple_props, std::vector<Species>{}, std::vector<int>{}){};
@@ -171,39 +173,41 @@ template <typename PROP_TYPE> struct Properties {
    * that the species_props_ need to be combined with in order to produce
    * the correct property names.
    * @param species_props An integer vector defining the required
-   * species properties that are to be combined with species_ to produce property
-   * names.
+   * species properties that are to be combined with species_ to produce
+   * property names.
    */
   Properties(std::vector<Species> species, std::vector<int> species_props)
       : Properties(std::vector<int>{}, species, species_props){};
 
   /**
    * \overload
-   * @brief Constructor for Properties that uses std::arrays instead of std::vectors for the props.
+   * @brief Constructor for Properties that uses std::arrays instead of
+   * std::vectors for the props.
    *
    * @tparam N Size of simple props array.
    * @tparam M Size of species props array.
    *
    * @param simple_props An integer array defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the array will be enums from a StandardPropertiesEnum (or derived) struct.
+   * species). The values in the array will be enums from a
+   * StandardPropertiesEnum (or derived) struct.
    * @param species A vector of Species structs that contain the species(plural)
    * that the species_props_ need to be combined with in order to produce
    * the correct property names.
    * @param species_props An integer array defining the required
-   * species properties that are to be combined with species_ to produce property
-   * names.
+   * species properties that are to be combined with species_ to produce
+   * property names.
    */
   template <size_t N, size_t M>
   Properties(
       const std::array<int, N> &simple_props, // simple_props (including
-                                               // fluid_density for example)
+                                              // fluid_density for example)
       std::vector<Species> species,
       const std::array<int, M> &species_props) // species_props
       : simple_props(
             std::vector<int>(simple_props.begin(), simple_props.end())),
-        species(species), species_props(std::vector<int>(
-                               species_props.begin(), species_props.end())) {
+        species(species), species_props(std::vector<int>(species_props.begin(),
+                                                         species_props.end())) {
     this->all_props = this->simple_props;
     this->all_props.insert(this->all_props.end(), this->species_props.begin(),
                            this->species_props.end());
@@ -211,13 +215,15 @@ template <typename PROP_TYPE> struct Properties {
 
   /**
    * \overload
-   * @brief Constructor for Properties that only sets the simple props using std::array.
+   * @brief Constructor for Properties that only sets the simple props using
+   * std::array.
    *
    * @tparam N Size of simple props array.
    *
    * @param simple_props An integer array defining the required simple
    * properties (either particle or field properties that don't depend on
-   * species). The values in the array will be enums from a StandardPropertiesEnum (or derived) struct. 
+   * species). The values in the array will be enums from a
+   * StandardPropertiesEnum (or derived) struct.
    */
   template <size_t N>
   Properties(const std::array<int, N> &simple_props)
@@ -226,7 +232,8 @@ template <typename PROP_TYPE> struct Properties {
 
   /**
    * \overload
-   * @brief Constructor for Properties that only sets Species props using std::array.
+   * @brief Constructor for Properties that only sets Species props using
+   * std::array.
    *
    * @tparam M Size of species props array.
    *
@@ -234,8 +241,8 @@ template <typename PROP_TYPE> struct Properties {
    * that the species_props_ need to be combined with in order to produce
    * the correct property names.
    * @param species_props An integer array defining the required
-   * species properties that are to be combined with species_ to produce property
-   * names.
+   * species properties that are to be combined with species_ to produce
+   * property names.
    */
   template <size_t M>
   Properties(std::vector<Species> species,
@@ -295,8 +302,8 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Function to return a vector of strings containing the names of the
    * required simple properties.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used in
-   * remapping the property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used in remapping the property names.
    *
    * @return simple_prop_names
    */
@@ -304,10 +311,10 @@ template <typename PROP_TYPE> struct Properties {
       const std::map<int, std::string> &properties_map = get_default_map()) {
 
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     std::vector<std::string> simple_prop_names_vec;
     for (auto req_prop : this->simple_props) {
@@ -327,22 +334,22 @@ template <typename PROP_TYPE> struct Properties {
    * all_props given a requested property.
    *
    * @param prop An integer that corresponds to a value from the enumerator in
-   * a StandardPropertiesEnum (or derived) struct (eg. for "VELOCITY" this would be the variable
-   * name - velocity - which corresponds to 1.)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used in
-   * remapping the property indices.
+   * a StandardPropertiesEnum (or derived) struct (eg. for "VELOCITY" this would
+   * be the variable name - velocity - which corresponds to 1.)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used in remapping the property indices.
    *
    * @return simple_prop_index
    */
   int simple_prop_index(
       int prop,
       const std::map<int, std::string> &properties_map = get_default_map()) {
-    
+
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
@@ -361,20 +368,20 @@ template <typename PROP_TYPE> struct Properties {
    * required species props combined with the species as a prefix. (eg.
    * "ELECTRON" + "_" + "DENSITY")
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used in
-   * remapping the property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used in remapping the property names.
    *
    * @return species_prop_names
    */
   std::vector<std::string> species_prop_names(
       const std::map<int, std::string> &properties_map = get_default_map()) {
-    
+
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
-    
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
+
     std::vector<std::string> species_real_prop_names_vec;
 
     for (auto i_species : this->species) {
@@ -394,22 +401,22 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param species_name Requested species name (eg. "ELECTRON")
    * @param prop An integer that corresponds to a value from the enumerator in
-   * a StandardPropertiesEnum (or derived) struct (eg. for "DENSITY" this would be the variable
-   * name - density - which corresponds to 8).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used in
-   * remapping the property indices.
+   * a StandardPropertiesEnum (or derived) struct (eg. for "DENSITY" this would
+   * be the variable name - density - which corresponds to 8).
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used in remapping the property indices.
    *
    * @return species_prop_index
    */
   int species_prop_index(
       std::string species_name, int prop,
       const std::map<int, std::string> &properties_map = get_default_map()) {
-    
+
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
@@ -449,8 +456,8 @@ template <typename PROP_TYPE> struct Properties {
   /**
    * @brief Getter for combined prop_names vector
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used in
-   * remapping the property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used in remapping the property names.
    */
   const std::vector<std::string> get_prop_names(
       const std::map<int, std::string> &properties_map = get_default_map()) {

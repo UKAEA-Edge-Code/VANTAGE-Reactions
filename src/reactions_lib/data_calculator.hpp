@@ -31,8 +31,7 @@ struct DataCalculator : public AbstractDataCalculator {
    *
    * @param data List of ReactionData objects (as multiple arguments).
    */
-  DataCalculator(DATATYPE... data)
-      :  data(std::make_tuple(data...)) {
+  DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
     (

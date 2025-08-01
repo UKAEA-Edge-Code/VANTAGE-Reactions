@@ -70,7 +70,8 @@ struct AbstractCrossSection {
 /**
  * @brief Base reaction data object.
  *
- * @tparam dim Used to set the size of the array that calc_data returns (Optional).
+ * @tparam dim Used to set the size of the array that calc_data returns
+ * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
@@ -90,27 +91,27 @@ struct ReactionDataBase {
    * @param required_real_props_ephemeral Properties<REAL> object containing
    * information regarding the required REAL-based ephemeral properties for the
    * reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (in get_required_real_props(...) and
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionDataBase(Properties<INT> required_int_props,
-                   Properties<REAL> required_real_props,
-                   Properties<INT> required_int_props_ephemeral,
-                   Properties<REAL> required_real_props_ephemeral,
-                   std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      Properties<INT> required_int_props_ephemeral,
+      Properties<REAL> required_real_props_ephemeral,
+      std::map<int, std::string> properties_map = get_default_map())
       : required_int_props(
             required_int_props.merge_with(required_int_props_ephemeral)),
         required_real_props(
             required_real_props.merge_with(required_real_props_ephemeral)),
         required_int_props_ephemeral(required_int_props_ephemeral),
         required_real_props_ephemeral(required_real_props_ephemeral) {
-    
+
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-       There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     this->properties_map = properties_map;
 
@@ -122,62 +123,68 @@ struct ReactionDataBase {
    * \overload
    * @brief Constructor for ReactionDataBase that sets not required properties.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (in get_required_real_props(...) and
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionDataBase(std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
 
   /**
    * \overload
-   * @brief Constructor for ReactionDataBase that sets only required int properties.
+   * @brief Constructor for ReactionDataBase that sets only required int
+   * properties.
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (in get_required_real_props(...) and
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionDataBase(Properties<INT> required_int_props,
-                   std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(
+      Properties<INT> required_int_props,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(required_int_props, Properties<REAL>(),
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
 
   /**
    * \overload
-   * @brief Constructor for ReactionDataBase that sets only required real properties.
+   * @brief Constructor for ReactionDataBase that sets only required real
+   * properties.
    *
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (in get_required_real_props(...) and
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionDataBase(Properties<REAL> required_real_props,
-                   std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(
+      Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(), required_real_props,
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
 
   /**
    * \overload
-   * @brief Constructor for ReactionDataBase that sets only required int and real properties.
+   * @brief Constructor for ReactionDataBase that sets only required int and
+   * real properties.
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (in get_required_real_props(...) and
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionDataBase(Properties<INT> required_int_props,
-                   Properties<REAL> required_real_props,
-                   std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(required_int_props, required_real_props,
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
@@ -236,7 +243,8 @@ protected:
 /**
  * @brief Base reaction data object to be used on SYCL devices.
  *
- * @tparam dim Used to set the size of the array that calc_data returns (Optional).
+ * @tparam dim Used to set the size of the array that calc_data returns
+ * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
@@ -258,7 +266,8 @@ struct ReactionDataBaseOnDevice {
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation
    *
-   * @return A REAL-valued array of size dim containing the calculated reaction rate.
+   * @return A REAL-valued array of size dim containing the calculated reaction
+   * rate.
    */
   std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,

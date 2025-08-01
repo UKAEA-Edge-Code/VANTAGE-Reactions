@@ -11,11 +11,11 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device: Reaction data class for calculating velocity samples from a filtered
- * Maxwellian distribution given a fluid temperature and flow speed. The sampled
- * distribution is formally sigma(|v-u|)f_M(v), where sigma is a cross-section
- * evaluated at the relative speed |v-u| of the neutrals (v) and ions (u). The
- * filtering is performed using a rejection method.
+ * @brief On device: Reaction data class for calculating velocity samples from a
+ * filtered Maxwellian distribution given a fluid temperature and flow speed.
+ * The sampled distribution is formally sigma(|v-u|)f_M(v), where sigma is a
+ * cross-section evaluated at the relative speed |v-u| of the neutrals (v) and
+ * ions (u). The filtering is performed using a rejection method.
  *
  * @tparam ndim The velocity space dimensionality for both the particles and the
  * fields
@@ -32,8 +32,8 @@ struct FilteredMaxwellianOnDevice
    * @param norm_ratio The ratio of the temperature and kinetic energy
    * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
    * and v are the temperature and velocity normalisation constants
-   * @param cross_section Cross section object to be used in the rejection method
-   * sampling
+   * @param cross_section Cross section object to be used in the rejection
+   * method sampling
    */
   FilteredMaxwellianOnDevice(const REAL &norm_ratio,
                              CROSS_SECTION cross_section)
@@ -53,7 +53,8 @@ struct FilteredMaxwellianOnDevice
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel - assumed uniform
    *
-   * @return A REAL-valued array of size ndim that contains the calculated sampled ion velocities.
+   * @return A REAL-valued array of size ndim that contains the calculated
+   * sampled ion velocities.
    */
   std::array<REAL, ndim>
   calc_data(const Access::LoopIndex::Read &index,
@@ -172,12 +173,12 @@ struct FilteredMaxwellianSampler
    * @param norm_ratio The ratio of the temperature and kinetic energy
    * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
    * and v are the temperature and velocity normalisation constants
-   * @param cross_section Cross section object to be used in the rejection method
-   * sampling
-   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
-   * set as the rng_kernel in ReactionDataBase.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * @param cross_section Cross section object to be used in the rejection
+   * method sampling
+   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
+   * be set as the rng_kernel in ReactionDataBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
@@ -185,8 +186,7 @@ struct FilteredMaxwellianSampler
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
-            Properties<REAL>(required_simple_real_props),
-            properties_map),
+            Properties<REAL>(required_simple_real_props), properties_map),
         device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
             norm_ratio, cross_section)) {
 
@@ -216,8 +216,8 @@ struct FilteredMaxwellianSampler
    * @param norm_ratio The ratio of the temperature and kinetic energy
    * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
    * and v are the temperature and velocity normalisation constants
-   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
-   * set as the rng_kernel in ReactionDataBase.
+   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
+   * be set as the rng_kernel in ReactionDataBase.
    */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,

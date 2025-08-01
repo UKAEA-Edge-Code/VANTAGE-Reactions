@@ -9,8 +9,9 @@ using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
-/** 
- * @brief Data from this struct is used to access property names in a map from PropertiesMap.
+/**
+ * @brief Data from this struct is used to access property names in a map from
+ * PropertiesMap.
  *
  * This can be extended by deriving from this struct and defining a public enum
  * member with the first element being the value of the last element in
@@ -57,7 +58,8 @@ public:
 const auto default_properties = StandardPropertiesEnum();
 
 /**
- * @brief Used to define mappings between integer indices defined in an enumerator from a StandardPropertiesEnum to Sym names.
+ * @brief Used to define mappings between integer indices defined in an
+ * enumerator from a StandardPropertiesEnum to Sym names.
  */
 struct PropertiesMap {
 
@@ -117,9 +119,7 @@ private:
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
-inline auto get_default_map() {
-  return PropertiesMap().get_map();
-}
+inline auto get_default_map() { return PropertiesMap().get_map(); }
 
 /**
  * @brief Function to check whether a custom map is a subset of the default map.

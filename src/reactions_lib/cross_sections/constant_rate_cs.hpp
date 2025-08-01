@@ -1,8 +1,8 @@
 #ifndef REACTIONS_CONSTANT_RATE_CS_H
 #define REACTIONS_CONSTANT_RATE_CS_H
+#include "../reaction_data.hpp"
 #include <limits>
 #include <neso_particles.hpp>
-#include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {

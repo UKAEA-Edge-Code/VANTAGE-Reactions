@@ -28,8 +28,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
   /**
    * @brief Constructor for AMJUEL2DDataH3OnDevice.
    *
-   * @param evolved_quantity_normalisation Normalisation constant for the evolved
-   * quantity (for default rates should be 1)
+   * @param evolved_quantity_normalisation Normalisation constant for the
+   * evolved quantity (for default rates should be 1)
    * @param density_normalisation Density normalisation constant in m^{-3}
    * @param temperature_normalisation Temperature normalisation in eV
    * @param time_normalisation Time normalisation in seconds
@@ -40,9 +40,9 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    */
   AMJUEL2DDataH3OnDevice(
       const REAL &evolved_quantity_normalisation,
-      const REAL &density_normalisation,
-      const REAL &temperature_normalisation, const REAL &time_normalisation,
-      const REAL &velocity_normalisation, const REAL &mass_amu,
+      const REAL &density_normalisation, const REAL &temperature_normalisation,
+      const REAL &time_normalisation, const REAL &velocity_normalisation,
+      const REAL &mass_amu,
       const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
@@ -66,7 +66,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
+   * @return A REAL-valued array of size 1 containing the calculated reaction
+   * rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
@@ -80,7 +81,6 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     REAL log_temp =
         Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
-
 
     REAL E = 0;
     for (int i = 0; i < dim; i++) {
@@ -154,8 +154,8 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
   /**
    * @brief Constructor for AMJUEL2DDataH3.
    *
-   * @param evolved_quantity_normalisation Normalisation constant for the evolved
-   * quantity (for default rates should be 1)
+   * @param evolved_quantity_normalisation Normalisation constant for the
+   * evolved quantity (for default rates should be 1)
    * @param density_normalisation Density normalisation constant in m^{-3}
    * @param temperature_normalisation Temperature normalisation in eV
    * @param time_normalisation Time normalisation in seconds
@@ -163,20 +163,19 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
    * @param mass_amu Mass of the neutral particle in amus
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
 
   AMJUEL2DDataH3(
       const REAL &evolved_quantity_normalisation,
-      const REAL &density_normalisation,
-      const REAL &temperature_normalisation, const REAL &time_normalisation,
-      const REAL &velocity_normalisation, const REAL &mass_amu,
+      const REAL &density_normalisation, const REAL &temperature_normalisation,
+      const REAL &time_normalisation, const REAL &velocity_normalisation,
+      const REAL &mass_amu,
       const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase(
-            Properties<REAL>(required_simple_real_props),
-            properties_map),
+      : ReactionDataBase(Properties<REAL>(required_simple_real_props),
+                         properties_map),
         amjuel_2d_data_on_device(
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
                 evolved_quantity_normalisation, density_normalisation,
