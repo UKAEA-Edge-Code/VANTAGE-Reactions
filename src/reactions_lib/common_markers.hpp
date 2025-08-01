@@ -136,11 +136,11 @@ public:
       std::vector<Sym<REAL>>(), std::vector<Sym<INT>>{comparison_var}
     )
   {
-    if (std::isnan(comparison_value)) {
+    if (comparison_value == 0) {
       this->device_wrapper = ComparisonMarkerSingleDevice();
     }
     else {
-      if (std::isnan(comparison_component)) {
+      if (comparison_component == 0) {
         this->device_wrapper = ComparisonMarkerSingleDevice(comparison_value, 0);
       }
       else {
@@ -166,11 +166,11 @@ public:
       std::vector<Sym<REAL>>{comparison_var}, std::vector<Sym<INT>>()
     )
   {
-    if (std::isnan(comparison_value)) {
+    if (comparison_value == 0.0) {
       this->device_wrapper = ComparisonMarkerSingleDevice();
     }
     else {
-      if (std::isnan(comparison_component)) {
+      if (comparison_component == 0.0) {
         this->device_wrapper = ComparisonMarkerSingleDevice(comparison_value, 0);
       }
       else {
@@ -187,7 +187,7 @@ public:
    * @param comparison_var Sym<REAL> specifying the comparison property.
    */
   ComparisonMarkerSingle(const Sym<REAL> comparison_var) : 
-    ComparisonMarkerSingle(comparison_var, std::numeric_limits<REAL>().quiet_NaN(), std::numeric_limits<INT>().quiet_NaN()) {}
+    ComparisonMarkerSingle(comparison_var, 0.0, 0) {}
 
   /**
    * \overload
@@ -196,7 +196,7 @@ public:
    * @param comparison_var Sym<INT> specifying the comparison property.
    */
   ComparisonMarkerSingle(const Sym<INT> comparison_var) : 
-    ComparisonMarkerSingle(comparison_var, std::numeric_limits<INT>().quiet_NaN(), std::numeric_limits<INT>().quiet_NaN()) {}
+    ComparisonMarkerSingle(comparison_var, 0, 0) {}
 
   /**
    * \overload
@@ -206,7 +206,7 @@ public:
    * @param comparison_value Value to compare the REAL-valued ParticleDat with.
    */
   ComparisonMarkerSingle(const Sym<REAL> comparison_var, const REAL comparison_value) : 
-    ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
+    ComparisonMarkerSingle(comparison_var, comparison_value, 0) {}
 
   /**
    * \overload
@@ -216,7 +216,7 @@ public:
    * @param comparison_value Value to compare the INT-valued ParticleDat with.
    */
   ComparisonMarkerSingle(const Sym<INT> comparison_var, const INT comparison_value) :
-    ComparisonMarkerSingle(comparison_var, comparison_value, std::numeric_limits<INT>().quiet_NaN()) {}
+    ComparisonMarkerSingle(comparison_var, comparison_value, 0) {}
 
 protected:
   ComparisonMarkerSingleDevice get_device_data() const {

@@ -57,8 +57,7 @@ public:
 const auto default_properties = StandardPropertiesEnum();
 
 /**
- * @brief A struct containing a map to reference strings associated with properties in
- * ParticleSpec via integer indices defined in an enumerator from a StandardPropertiesEnum (or derived) struct.
+ * @brief Used to define mappings between integer indices defined in an enumerator from a StandardPropertiesEnum to Sym names.
  */
 struct PropertiesMap {
 

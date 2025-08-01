@@ -13,9 +13,6 @@
 
 using namespace NESO::Particles;
 
-// TODO: Improve docs - implementation specific parameter descriptions -
-// avoid!!!
-
 namespace VANTAGE::Reactions {
 
 /**
@@ -32,7 +29,7 @@ struct AbstractReaction {
    *
    * @param sycl_target Compute device used by the instance. This must be the same sycl_target that is assigned to the ParticleGroup that the Reaction is to be applied to.
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * remapping property names (weight and total_reaction_rate).
    */
   AbstractReaction(
       SYCLTargetSharedPtr sycl_target,
@@ -180,7 +177,7 @@ struct LinearReactionBase : public AbstractReaction {
    * @param reaction_kernels ReactionKernels object defining the properties of the products and the feedback on the parent particle and fields (used in descendant_product_loop)
    * @param data_calculator DataCalculator object defining any additional required data for the kernels, in addition to the rate
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
@@ -256,7 +253,7 @@ struct LinearReactionBase : public AbstractReaction {
    * @param reaction_data ReactionData object defining the reaction rate (used in run_rate_loop)
    * @param reaction_kernels ReactionKernels object defining the properties of the products and the feedback on the parent particle and fields (used in descendant_product_loop)
    * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
