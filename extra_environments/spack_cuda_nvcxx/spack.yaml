@@ -5,7 +5,7 @@
 spack:
   # add package specs to the `specs` list
   specs:
-    - nec_reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=cudanvcxx ^nec_reactions.googletest
+    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=cudanvcxx ^vantage-reactions.googletest
 
   view: false
   concretizer:
