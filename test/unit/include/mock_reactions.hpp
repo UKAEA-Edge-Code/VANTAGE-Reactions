@@ -7,7 +7,7 @@ using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
-  TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
+  TestReactionDataOnDevice(REAL rate) : rate(rate){};
 
   std::array<REAL, 1>
   calc_data(Access::LoopIndex::Read &index,
@@ -25,9 +25,9 @@ private:
 
 struct TestReactionData : public ReactionDataBase<> {
 
-  TestReactionData(REAL rate_)
-      : rate(rate_),
-        test_reaction_data_on_device(TestReactionDataOnDevice(rate_)) {}
+  TestReactionData(REAL rate)
+      : rate(rate),
+        test_reaction_data_on_device(TestReactionDataOnDevice(rate)) {}
 
 private:
   TestReactionDataOnDevice test_reaction_data_on_device;
@@ -278,11 +278,11 @@ struct TestReaction
 
   TestReaction() = default;
 
-  TestReaction(SYCLTargetSharedPtr sycl_target_, REAL rate_, int in_states_,
-               const std::array<int, num_products_per_parent> out_states_)
+  TestReaction(SYCLTargetSharedPtr sycl_target, REAL rate, int in_states,
+               const std::array<int, num_products_per_parent> out_states)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
-            sycl_target_, in_states_, out_states_, TestReactionData(rate_),
+            sycl_target, in_states, out_states, TestReactionData(rate),
             TestReactionKernels<num_products_per_parent>()) {}
 };
 

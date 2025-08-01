@@ -39,17 +39,17 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * AMJUEL reaction rate calculation.
    */
   AMJUEL2DDataH3OnDevice(
-      const REAL &evolved_quantity_normalisation_,
-      const REAL &density_normalisation_,
-      const REAL &temperature_normalisation_, const REAL &time_normalisation_,
-      const REAL &velocity_normalisation_, const REAL &mass_amu_,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_)
-      : mult_const(density_normalisation_ * time_normalisation_ /
-                   evolved_quantity_normalisation_),
-        temperature_normalisation(temperature_normalisation_),
-        en_mult_const(std::pow(velocity_normalisation_, 2) * mass_amu_ *
+      const REAL &evolved_quantity_normalisation,
+      const REAL &density_normalisation,
+      const REAL &temperature_normalisation, const REAL &time_normalisation,
+      const REAL &velocity_normalisation, const REAL &mass_amu,
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs)
+      : mult_const(density_normalisation * time_normalisation /
+                   evolved_quantity_normalisation),
+        temperature_normalisation(temperature_normalisation),
+        en_mult_const(std::pow(velocity_normalisation, 2) * mass_amu *
                       1.66053904e-27 / (2 * 1.60217663e-19)),
-        coeffs(coeffs_){};
+        coeffs(coeffs){};
 
   /**
    * @brief Function to calculate the reaction rate for a 2D H.3 AMJUEL-based
@@ -168,20 +168,20 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
    */
 
   AMJUEL2DDataH3(
-      const REAL &evolved_quantity_normalisation_,
-      const REAL &density_normalisation_,
-      const REAL &temperature_normalisation_, const REAL &time_normalisation_,
-      const REAL &velocity_normalisation_, const REAL &mass_amu_,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_,
+      const REAL &evolved_quantity_normalisation,
+      const REAL &density_normalisation,
+      const REAL &temperature_normalisation, const REAL &time_normalisation,
+      const REAL &velocity_normalisation, const REAL &mass_amu,
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(
             Properties<REAL>(required_simple_real_props),
             properties_map),
         amjuel_2d_data_on_device(
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
-                evolved_quantity_normalisation_, density_normalisation_,
-                temperature_normalisation_, time_normalisation_,
-                velocity_normalisation_, mass_amu_, coeffs_)) {
+                evolved_quantity_normalisation, density_normalisation,
+                temperature_normalisation, time_normalisation,
+                velocity_normalisation, mass_amu, coeffs)) {
 
     this->amjuel_2d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density,

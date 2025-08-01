@@ -28,7 +28,7 @@ struct ElectronImpactIonisation
   /**
    * @brief Constructor for ElectronImpactIonisation.
    *
-   * @param sycl_target_ SYCL target pointer used to interface with
+   * @param sycl_target SYCL target pointer used to interface with
    * NESO-Particles routines
    * @param rate_data ReactionData object used to calculate the ionisation rate
    * @param energy_rate_data ReactionData object used to calculate the electron
@@ -40,13 +40,13 @@ struct ElectronImpactIonisation
    * remapping property names.
    */
   ElectronImpactIonisation(
-      SYCLTargetSharedPtr sycl_target_, RateData rate_data,
+      SYCLTargetSharedPtr sycl_target, RateData rate_data,
       EnergyRateData energy_rate_data, Species target_species,
       Species electron_species,
       const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
-            sycl_target_, target_species.get_id(), std::array<int, 0>{},
+            sycl_target, target_species.get_id(), std::array<int, 0>{},
             rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species, properties_map),

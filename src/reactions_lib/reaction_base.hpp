@@ -102,8 +102,8 @@ protected:
 
   const Sym<REAL> &get_total_reaction_rate() { return total_reaction_rate; }
 
-  void set_total_reaction_rate(const Sym<REAL> &total_reaction_rate_) {
-    this->total_reaction_rate = total_reaction_rate_;
+  void set_total_reaction_rate(const Sym<REAL> &total_reaction_rate) {
+    this->total_reaction_rate = total_reaction_rate;
   }
 
   const LocalArraySharedPtr<REAL> &get_device_rate_buffer() {
@@ -121,8 +121,8 @@ protected:
     return this->device_rate_buffer->size;
   }
 
-  void set_device_rate_buffer(LocalArraySharedPtr<REAL> &device_rate_buffer_) {
-    this->device_rate_buffer = device_rate_buffer_;
+  void set_device_rate_buffer(LocalArraySharedPtr<REAL> &device_rate_buffer) {
+    this->device_rate_buffer = device_rate_buffer;
   }
 
   const SYCLTargetSharedPtr &get_sycl_target() { return sycl_target_stored; }
@@ -131,8 +131,8 @@ protected:
     return pre_req_data;
   }
 
-  void set_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data_) {
-    this->pre_req_data = pre_req_data_;
+  void set_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data) {
+    this->pre_req_data = pre_req_data;
   }
 
   size_t get_max_buffer_size() { return this->max_buffer_size; }
@@ -186,11 +186,11 @@ struct LinearReactionBase : public AbstractReaction {
       SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
-      DataCalc data_calculator_,
+      DataCalc data_calculator,
       const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), data_calculator(data_calculator_) {
+        reaction_kernels(reaction_kernels), data_calculator(data_calculator) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and

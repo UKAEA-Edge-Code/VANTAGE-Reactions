@@ -19,11 +19,11 @@ struct ParticleSpecBuilder {
   /**
    * @brief Constructor for ParticleSpecBuilder.
    *
-   * @param particle_spec_ ParticleSpec that is to be extended (optional pass via
+   * @param particle_spec ParticleSpec that is to be extended (optional pass via
    * a non-recommended constructor for ParticleSpecBuilder).
    */
-  ParticleSpecBuilder(ParticleSpec particle_spec_) {
-    this->add_particle_spec(particle_spec_);
+  ParticleSpecBuilder(ParticleSpec particle_spec) {
+    this->add_particle_spec(particle_spec);
   }
 
   /**
@@ -69,7 +69,7 @@ struct ParticleSpecBuilder {
    * @brief Method to add particle properties to member particle_spec.
    *
    * @tparam PROP_TYPE Specifier for type of property (INT or REAL)
-   * @param properties_ Properties object containing names of the particle
+   * @param properties Properties object containing names of the particle
    * properties to be added.
    * @param ndim Number of dimensions for the properties to be added (note this
    * will apply to all properties from properties_)
@@ -80,7 +80,7 @@ struct ParticleSpecBuilder {
    */
   template <typename PROP_TYPE>
   void add_particle_prop(
-      Properties<PROP_TYPE> properties_, int ndim = 1, bool positions = false,
+      Properties<PROP_TYPE> properties, int ndim = 1, bool positions = false,
       const std::map<int, std::string> &properties_map = get_default_map()) {
     
     NESOWARN(
@@ -89,9 +89,9 @@ struct ParticleSpecBuilder {
       There may be inconsitencies with indexing of properties."
     );
     
-    auto simple_prop_names = properties_.simple_prop_names(properties_map);
+    auto simple_prop_names = properties.simple_prop_names(properties_map);
 
-    auto species_prop_names = properties_.species_prop_names(properties_map);
+    auto species_prop_names = properties.species_prop_names(properties_map);
 
     for (auto prop_name : simple_prop_names) {
       auto particle_prop =

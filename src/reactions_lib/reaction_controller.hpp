@@ -225,6 +225,7 @@ public:
    *
    * @param particle_group The ParticleGroup to apply the reactions to.
    * @param dt The current time step size.
+   * @param controller_mode The mode to run the controller in. Either standard_mode (default) or semi_dsmc_mode.
    */
   void apply_reactions(
       ParticleGroupSharedPtr particle_group, double dt,
