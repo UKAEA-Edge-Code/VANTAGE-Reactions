@@ -8,7 +8,7 @@ set(INCLUDE_REACTIONS_DIR ${INCLUDE_DIR}/reactions_lib)
 set(HEADER_FILES ${src_files})
 
 target_sources(
-    Reactions
+    VANTAGE-Reactions
     PUBLIC FILE_SET
         public_headers
         TYPE
@@ -19,4 +19,4 @@ target_sources(
         ${HEADER_FILES}
 )
 
-target_link_libraries(Reactions INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles Reactions)
+target_link_libraries(VANTAGE-Reactions INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles VANTAGE::Reactions)

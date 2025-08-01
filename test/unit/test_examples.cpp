@@ -2,7 +2,7 @@
 #include "include/mock_particle_group.hpp"
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 #include "./example_sources/example_marking_strategy.hpp"
 #include "./example_sources/example_removal_strategy.hpp"

@@ -1,14 +1,19 @@
-#pragma once
+#ifndef REACTIONS_RECOMBINATION_REACTION_H
+#define REACTIONS_RECOMBINATION_REACTION_H
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels/base_recombination_kernels.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * struct Recombination - Reaction representing recombination
+ * @brief A struct defining a reaction representing recombination. 
+ * Takes in a marker species, which represents the ions,
+ * and produces products based on their weights,
+ * without reducing them. The user is responsible for setting the weight of
+ * the marker species in a way that reproduces the sources they want.
  *
  * @tparam RateData ReactionData template parameter used for the rate
  * calculation
@@ -23,12 +28,9 @@ struct Recombination
                                 DataCalcType> {
 
   /**
-   * @brief Electron impact recombination reaction. Takes in a marker species,
-   * which represents the ions, and produces products based on their weights,
-   * without reducing them. The user is responsible for setting the weight of
-   * the marker species in a way that reproduces the sources they want.
+   * @brief Constructor for Recombination.
    *
-   * @param sycl_target_ SYCL target pointer used to interface with
+   * @param sycl_target SYCL target pointer used to interface with
    * NESO-Particles routines
    * @param rate_data ReactionData object used to calculate the recombination
    * rate
@@ -44,20 +46,21 @@ struct Recombination
    * @param normalised_potential_energy Used in calculating the electron source
    * energy loss, the rate of which is given by the first data_calc_obj element
    * + the potential energy x rate
-   * @param properties_map Optional property map to be used with the
-   * recombination kernels. Defaults to the default_map object
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
    */
-  Recombination(SYCLTargetSharedPtr sycl_target_, RateData rate_data,
+  Recombination(SYCLTargetSharedPtr sycl_target, RateData rate_data,
                 DataCalcType data_calc_obj, Species marker_species,
                 Species electron_species, Species neutral_species,
                 const REAL &normalised_potential_energy,
                 const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<1, RateData, RecombReactionKernels<>, DataCalcType>(
-            sycl_target_, marker_species.get_id(),
+            sycl_target, marker_species.get_id(),
             std::array<int, 1>{static_cast<int>(neutral_species.get_id())},
             rate_data,
             RecombReactionKernels<>(marker_species, electron_species,
                                     normalised_potential_energy),
             data_calc_obj, properties_map) {}
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

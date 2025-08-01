@@ -1,30 +1,40 @@
-#pragma once
+#ifndef REACTIONS_FILTERED_MAXWELLIAN_SAMPLER_H
+#define REACTIONS_FILTERED_MAXWELLIAN_SAMPLER_H
 #include "../cross_sections/constant_rate_cs.hpp"
 #include "../particle_properties_map.hpp"
+#include "../utils.hpp"
 #include <iostream>
 #include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * @brief A struct that contains data and calc_data functions that are to be
- * stored on and used on a SYCL device.
+ * @brief On device: Reaction data class for calculating velocity samples from a filtered
+ * Maxwellian distribution given a fluid temperature and flow speed. The sampled
+ * distribution is formally sigma(|v-u|)f_M(v), where sigma is a cross-section
+ * evaluated at the relative speed |v-u| of the neutrals (v) and ions (u). The
+ * filtering is performed using a rejection method.
  *
  * @tparam ndim The velocity space dimensionality for both the particles and the
  * fields
  * @tparam CROSS_SECTION The typename corresponding to the cross-section class
  * used
- * @param norm_ratio The ratio of the temperature and kinetic energy
- * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
- * and v are the temperature and velocity normalisation constants
- * @param cross_section Cross section object to be used in the rejection method
- * sampling
  */
 template <size_t ndim, typename CROSS_SECTION>
 struct FilteredMaxwellianOnDevice
     : public ReactionDataBaseOnDevice<ndim, HostAtomicBlockKernelRNG<REAL>> {
+
+  /**
+   * @brief Constructor for FilteredMaxwellianOnDevice.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param cross_section Cross section object to be used in the rejection method
+   * sampling
+   */
   FilteredMaxwellianOnDevice(const REAL &norm_ratio,
                              CROSS_SECTION cross_section)
       : norm_ratio(norm_ratio), cross_section(cross_section){};
@@ -42,6 +52,8 @@ struct FilteredMaxwellianOnDevice
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel - assumed uniform
+   *
+   * @return A REAL-valued array of size ndim that contains the calculated sampled ion velocities.
    */
   std::array<REAL, ndim>
   calc_data(const Access::LoopIndex::Read &index,
@@ -141,16 +153,6 @@ public:
  * fields
  * @tparam CROSS_SECTION The typename corresponding to the cross-section class
  * used
- * @param norm_ratio The ratio of the temperature and kinetic energy
- * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
- * and v are the temperature and velocity normalisation constants
- * @param cross_section Cross section object to be used in the rejection method
- * sampling
- * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
- * set as the rng_kernel in ReactionDataBase.
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase
- *
  */
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
@@ -164,6 +166,19 @@ struct FilteredMaxwellianSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
+  /**
+   * @brief Constructor for FilteredMaxwellianSampler.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param cross_section Cross section object to be used in the rejection method
+   * sampling
+   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
+   * set as the rng_kernel in ReactionDataBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
+   */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
@@ -194,8 +209,15 @@ struct FilteredMaxwellianSampler
   }
 
   /**
-   * @brief Overloaded constructor which sets default values for the
-   * cross_section.
+   * \overload
+   * @brief Constructor which sets default values for the
+   * cross_section and properties_map.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to be
+   * set as the rng_kernel in ReactionDataBase.
    */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,
@@ -216,4 +238,5 @@ public:
     return this->device_obj;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

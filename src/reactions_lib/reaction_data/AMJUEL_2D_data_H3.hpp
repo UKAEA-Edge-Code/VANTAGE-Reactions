@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_AMJUEL_2D_DATA_H3_H
+#define REACTIONS_AMJUEL_2D_DATA_H3_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
@@ -8,9 +9,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
-
-// AMJUEL 2D Fit
+namespace VANTAGE::Reactions {
 
 /**
  * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
@@ -20,30 +19,37 @@ namespace Reactions {
  * for 2D AMJUEL reaction rate calculation.
  * @tparam num_coeffs_E The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @param evolved_quantity_normalisation Normalisation constant for the evolved
- * quantity (for default rates should be 1)
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param velocity_normalisation Velocity normalisation in m/s
- * @param mass_amu Mass of the neutral particle in amus
- * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
- * AMJUEL reaction rate calculation.
+ * @tparam dim The number of dimensions for the particle velocity
+ * property and background fluid flow.
  */
 template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim>
 struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for AMJUEL2DDataH3OnDevice.
+   *
+   * @param evolved_quantity_normalisation Normalisation constant for the evolved
+   * quantity (for default rates should be 1)
+   * @param density_normalisation Density normalisation constant in m^{-3}
+   * @param temperature_normalisation Temperature normalisation in eV
+   * @param time_normalisation Time normalisation in seconds
+   * @param velocity_normalisation Velocity normalisation in m/s
+   * @param mass_amu Mass of the neutral particle in amus
+   * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
+   * AMJUEL reaction rate calculation.
+   */
   AMJUEL2DDataH3OnDevice(
-      const REAL &evolved_quantity_normalisation_,
-      const REAL &density_normalisation_,
-      const REAL &temperature_normalisation_, const REAL &time_normalisation_,
-      const REAL &velocity_normalisation_, const REAL &mass_amu_,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_)
-      : mult_const(density_normalisation_ * time_normalisation_ /
-                   evolved_quantity_normalisation_),
-        temperature_normalisation(temperature_normalisation_),
-        en_mult_const(std::pow(velocity_normalisation_, 2) * mass_amu_ *
+      const REAL &evolved_quantity_normalisation,
+      const REAL &density_normalisation,
+      const REAL &temperature_normalisation, const REAL &time_normalisation,
+      const REAL &velocity_normalisation, const REAL &mass_amu,
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs)
+      : mult_const(density_normalisation * time_normalisation /
+                   evolved_quantity_normalisation),
+        temperature_normalisation(temperature_normalisation),
+        en_mult_const(std::pow(velocity_normalisation, 2) * mass_amu *
                       1.66053904e-27 / (2 * 1.60217663e-19)),
-        coeffs(coeffs_){};
+        coeffs(coeffs){};
 
   /**
    * @brief Function to calculate the reaction rate for a 2D H.3 AMJUEL-based
@@ -59,6 +65,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
@@ -73,9 +81,6 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
     REAL log_temp =
         Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
 
-    if (log_temp < 0) {
-      return std::array<REAL, 1>{0.0};
-    }
 
     REAL E = 0;
     for (int i = 0; i < dim; i++) {
@@ -127,24 +132,15 @@ public:
 };
 
 /**
- * @brief  Reaction rate data calculation based on AMJUEL H.3 fits against
+ * @brief Reaction rate data calculation based on AMJUEL H.3 fits against
  * neutral particle energy and ion/plasma temperature
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.
  * @tparam num_coeffs_E The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @param evolved_quantity_normalisation Normalisation constant for the evolved
- * quantity (for default rates should be 1)
- * @param density_normalisation Density normalisation constant in m^{-3}
- * @param temperature_normalisation Temperature normalisation in eV
- * @param time_normalisation Time normalisation in seconds
- * @param velocity_normalisation Velocity normalisation in m/s
- * @param mass_amu Mass of the neutral particle in amus
- * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
- * AMJUEL reaction rate calculation.
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase
+ * @tparam dim The number of dimensions for the particle velocity
+ * property and background fluid flow (default value of 2)
  */
 template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim = 2>
 struct AMJUEL2DDataH3 : public ReactionDataBase<> {
@@ -155,21 +151,37 @@ struct AMJUEL2DDataH3 : public ReactionDataBase<> {
       props.fluid_density, props.fluid_temperature, props.fluid_flow_speed,
       props.weight, props.velocity};
 
+  /**
+   * @brief Constructor for AMJUEL2DDataH3.
+   *
+   * @param evolved_quantity_normalisation Normalisation constant for the evolved
+   * quantity (for default rates should be 1)
+   * @param density_normalisation Density normalisation constant in m^{-3}
+   * @param temperature_normalisation Temperature normalisation in eV
+   * @param time_normalisation Time normalisation in seconds
+   * @param velocity_normalisation Velocity normalisation in m/s
+   * @param mass_amu Mass of the neutral particle in amus
+   * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
+   * AMJUEL reaction rate calculation.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names.
+   */
+
   AMJUEL2DDataH3(
-      const REAL &evolved_quantity_normalisation_,
-      const REAL &density_normalisation_,
-      const REAL &temperature_normalisation_, const REAL &time_normalisation_,
-      const REAL &velocity_normalisation_, const REAL &mass_amu_,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs_,
+      const REAL &evolved_quantity_normalisation,
+      const REAL &density_normalisation,
+      const REAL &temperature_normalisation, const REAL &time_normalisation,
+      const REAL &velocity_normalisation, const REAL &mass_amu,
+      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(
             Properties<REAL>(required_simple_real_props),
             properties_map),
         amjuel_2d_data_on_device(
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
-                evolved_quantity_normalisation_, density_normalisation_,
-                temperature_normalisation_, time_normalisation_,
-                velocity_normalisation_, mass_amu_, coeffs_)) {
+                evolved_quantity_normalisation, density_normalisation,
+                temperature_normalisation, time_normalisation,
+                velocity_normalisation, mass_amu, coeffs)) {
 
     this->amjuel_2d_data_on_device.fluid_density_ind =
         this->required_real_props.simple_prop_index(props.fluid_density,
@@ -202,4 +214,5 @@ public:
     return this->amjuel_2d_data_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_NESO_TEST_ASSERT_H
+#define REACTIONS_NESO_TEST_ASSERT_H
 #include <cstdlib>
 #include <neso_particles/typedefs.hpp>
 #include <stdexcept>
@@ -18,3 +19,4 @@ inline void neso_particles_test_assert(const char *expr_str, bool expr, const ch
   }
 }
 #include <neso_particles.hpp>
+#endif

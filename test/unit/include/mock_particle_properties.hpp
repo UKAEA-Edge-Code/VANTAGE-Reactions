@@ -1,9 +1,10 @@
-#pragma once
+#ifndef REACTIONS_MOCK_PARTICLE_PROPERTIES_H
+#define REACTIONS_MOCK_PARTICLE_PROPERTIES_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 namespace PropertiesTest {
   inline auto int_props = Properties<INT>(
@@ -64,3 +65,4 @@ namespace PropertiesTest {
       PropertiesMap(custom_prop_map_no_weight_struct().get_map()).get_map();
   
 } // namespace PropertiesTest
+#endif

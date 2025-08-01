@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_PARTICLE_PROPERTIES_MAP_H
+#define REACTIONS_PARTICLE_PROPERTIES_MAP_H
 #include <map>
 #include <neso_particles.hpp>
 #include <string>
@@ -6,23 +7,26 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
-/*! A struct containing an enum with labels consisting of the variable names in
- * standard_properties*/
-
-/*! This can be extended by deriving from this struct and defining a public enum
+/** 
+ * @brief Data from this struct is used to access property names in a map from PropertiesMap.
+ *
+ * This can be extended by deriving from this struct and defining a public enum
  * member with the first element being the value of the last element in
  * StandardPropertiesEnum+1. For example:
-  struct CustomPropertiesEnum : StandardPropertiesEnum {
-    public:
-      enum {
-        custom_prop_1 = StandardPropertiesEnum::fluid_flow_speed+1,
-        custom_prop_2,
-        custom_prop_3
-      };
-  };
-  Further chaining would work on the same principle.*/
+ * ```
+ *     struct CustomPropertiesEnum : StandardPropertiesEnum {
+ *       public:
+ *         enum {
+ *           custom_prop_1 = StandardPropertiesEnum::fluid_flow_speed+1,
+ *           custom_prop_2,
+ *           custom_prop_3
+ *         };
+ *     };
+ * ```
+ * Further chaining would work on the same principle.
+ */
 struct StandardPropertiesEnum {
 public:
   enum {
@@ -52,15 +56,15 @@ public:
 
 const auto default_properties = StandardPropertiesEnum();
 
-/*! A struct containing a map to reference strings associated with properties in
- * ParticleSpec via integer indices defined in an enumerator from a struct in
- * ParticlePropertiesIndices. */
+/**
+ * @brief Used to define mappings between integer indices defined in an enumerator from a StandardPropertiesEnum to Sym names.
+ */
 struct PropertiesMap {
 
   PropertiesMap() = default;
 
   /**
-   * @brief properties_map constructor
+   * @brief Constructor for PropertiesMap.
    *
    * @param custom_map User-provided custom map to replace the default
    * private_map.
@@ -117,6 +121,11 @@ inline auto get_default_map() {
   return PropertiesMap().get_map();
 }
 
+/**
+ * @brief Function to check whether a custom map is a subset of the default map.
+ *
+ * @return True if the given custom map is a subset of the default map.
+ */
 inline bool map_subset_check(std::map<int, std::string> custom_map) {
   auto default_map = get_default_map();
   auto default_map_size = default_map.size();
@@ -134,4 +143,5 @@ inline bool map_subset_check(std::map<int, std::string> custom_map) {
 
   return true;
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

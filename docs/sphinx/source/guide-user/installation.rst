@@ -86,10 +86,10 @@ Installation
 Clone the repo:
 ::
 
-    git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/NEC_Reactions
-    cd $HOME/NEC_Reactions
+    git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/VANTAGE_Reactions
+    cd $HOME/VANTAGE_Reactions
 
-Feel free to replace ``$HOME/NEC_Reactions`` with a directory name of your choice.
+Feel free to replace ``$HOME/VANTAGE_Reactions`` with a directory name of your choice.
 Next activate the spack environment (the details of the config are in ``spack.yaml``):
 ::
 
@@ -112,12 +112,12 @@ NOTE - It is recommended to not exceed ``-j2`` if there's less than 16GB of syst
 
 Optional variants
 ~~~~~~~~~~~~~~~~~
-In addition to the default environment defined in ``spack.yaml`` in the root directory of the package (``$HOME/NEC_Reactions``), there are also some variants included in the ``extra_environments``.
+In addition to the default environment defined in ``spack.yaml`` in the root directory of the package (``$HOME/VANTAGE_Reactions``), there are also some variants included in the ``extra_environments``.
 
 Each sub-folder has it's own ``spack.yaml`` that defines an environment and spec that's specific to that sub-folder. For example, the ``spack_omp_accelerated``
 contains a spec that allows for an installation with ``adaptivecpp`` designating ``llvm`` as the backend for compilation.
 
-To use any of these environments, navigate to the relevant folder and activate the environment with ``spack env activate -p -d .`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Then simply navigate to the package root directory (``$HOME/NEC_Reactions``) and run ``spack install``.
+To use any of these environments, navigate to the relevant folder and activate the environment with ``spack env activate -p -d .`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Then simply navigate to the package root directory (``$HOME/VANTAGE_Reactions``) and run ``spack install``.
 
 For CUDA-specific installations, the environments are provided but given the subtleties associated with this installation, there is no guarantee that these will work out-of-the-box and might require more modifications (possibly outside of the ``spack.yaml``) to function.
 

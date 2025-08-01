@@ -1,16 +1,26 @@
-#pragma once
+#ifndef REACTIONS_FIXED_COEFFICIENT_DATA_H
+#define REACTIONS_FIXED_COEFFICIENT_DATA_H
 #include "../reaction_data.hpp"
 #include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
+/**
+ * @brief On device: Reaction rate data calculation for a fixed rate coefficient reaction. The reaction rate is calculated as rate_coefficient*particle_weight.
+ */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for FixedCoefficientDataOnDevice.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 
   /**
-   * @brief Function to calculate the reaction rate for a fixed reaction
+   * @brief Function to calculate the reaction rate for a fixed rate
    * coefficient reaction
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
@@ -23,6 +33,8 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
@@ -41,14 +53,7 @@ public:
 };
 
 /**
- * @brief A struct defining the data needed for a fixed rate coefficient
- * reaction. The reaction rate is calculated as
- * rate_coefficient*particle_weight.
- *
- * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
- * and the particle weight)
- * @param properties_map A std::map<int, std::string> object to be passed to
- * ReactionDataBase
+ * @brief Reaction rate data calculation for a fixed rate coefficient reaction. The reaction rate is calculated as rate_coefficient*particle_weight.
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
@@ -57,6 +62,14 @@ struct FixedCoefficientData : public ReactionDataBase<> {
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.weight};
 
+  /**
+   * @brief Constructor for FixedCoefficientData.
+   *
+   * @param rate_coeff A real-valued rate coefficient (rate proportional to this
+   * and the particle weight)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
+   * remapping property names
+   */
   FixedCoefficientData(REAL rate_coefficient,
                        std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<REAL>(required_simple_real_props),
@@ -82,4 +95,5 @@ public:
     return this->fixed_coefficient_data_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

@@ -1,17 +1,22 @@
-#pragma once
+#ifndef REACTIONS_FIXED_RATE_DATA_H
+#define REACTIONS_FIXED_RATE_DATA_H
 #include <neso_particles.hpp>
 #include "../reaction_data.hpp"
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * @brief SYCL device-compatible ReactionData class returning a fixed rate
- *
- * @param rate_ REAL-valued rate to be used in reaction rate calculation.
+ * @brief On device: Reaction rate data calculation for a fixed rate reaction.
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
-  FixedRateDataOnDevice(const REAL &rate_) : rate(rate_){};
+
+  /**
+   * @brief Constructor for FixedRateDataOnDevice.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
+  FixedRateDataOnDevice(const REAL &rate) : rate(rate){};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction
@@ -26,6 +31,8 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,
@@ -42,14 +49,17 @@ private:
 };
 
 /**
- * @brief A struct defining the data needed for a fixed rate reaction.
- *
- * @param rate_ REAL-valued rate to be used in reaction rate calculation.
+ * @brief Reaction rate data calculation for a fixed rate reaction.
  */
 struct FixedRateData : public ReactionDataBase<> {
 
-  FixedRateData(const REAL &rate_)
-      : fixed_rate_data_on_device(FixedRateDataOnDevice(rate_)) {}
+  /**
+   * @brief Constructor for FixedRateData.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
+  FixedRateData(const REAL &rate)
+      : fixed_rate_data_on_device(FixedRateDataOnDevice(rate)) {}
 
 private:
   FixedRateDataOnDevice fixed_rate_data_on_device;
@@ -62,4 +72,5 @@ public:
     return this->fixed_rate_data_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

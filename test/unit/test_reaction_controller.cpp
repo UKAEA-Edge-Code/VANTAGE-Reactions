@@ -5,7 +5,7 @@
 #include <memory>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, single_reaction_multi_apply) {
   const int N_total = 1600;
