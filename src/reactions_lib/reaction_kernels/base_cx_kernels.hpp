@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_BASE_CX_KERNELS_H
+#define REACTIONS_BASE_CX_KERNELS_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
@@ -7,11 +8,15 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * struct CXReactionKernelsOnDevice - SYCL device-compatible kernel for
- * charge exchange reactions.
+ * @brief Device type for charge-exchange kernels
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle velocity
+ * property.
+ * @tparam ndim_source_momentum The number of dimensions for
+ * source momentum property.
  */
 template <int ndim_velocity, int ndim_source_momentum>
 struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
@@ -115,7 +120,7 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   }
 
   /**
-   * @brief Feedback kernel for calculating and applying
+   * @brief CX feedback kernel for calculating and applying
    * background field modifications from the reaction.
    *
    * @param modified_weight The weight modification needed for calculating
@@ -188,7 +193,7 @@ public:
 };
 
 /**
- * @brief Host type for chrarge-exchange kernels
+ * @brief Host type for charge-exchange kernels
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
@@ -212,18 +217,18 @@ struct CXReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
       props.velocity, props.weight};
   /**
-   * @brief Charge exchange reaction kernel host type constructor
+   * @brief Constructor for CXReactionKernels.
    *
    * @param target_species Species object representing the charge exchange
    * target - the ingoing ion and outgoing neutral
    * @param projectile_species Species object representing the projectile
    * species - the outgoing ion and ingoing neutral
-   * @param properties_map A std::map<int, std::string> object to be to be
-   * passed to ReactionKernelsBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
-  CXReactionKernels(const Species &target_species,
-                    const Species &projectile_species,
-                    std::map<int, std::string> properties_map = get_default_map())
+  CXReactionKernels(
+      const Species &target_species, const Species &projectile_species,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
             Properties<REAL>(
                 required_simple_real_props,
@@ -310,4 +315,5 @@ public:
     return this->cx_reaction_kernels_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

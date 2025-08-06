@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_REACTION_BASE_H
+#define REACTIONS_REACTION_BASE_H
 #include "data_calculator.hpp"
 #include "particle_properties_map.hpp"
 #include "reaction_data.hpp"
@@ -12,36 +13,46 @@
 
 using namespace NESO::Particles;
 
-// TODO: Improve docs - implementation specific parameter descriptions -
-// avoid!!!
-
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Abstract base class for reactions. All reactions operate on
  * particles in a ParticleSubGroup in a given cell and modify the
  * ParticleSubGroup and, depending on the reaction, produce and
  * process descendants.
- *
- * @param sycl_target Compute device used by the instance.
- * @param properties_map Optional property remapping. Used to get weight and
- * rate buffer syms.
  */
 struct AbstractReaction {
   AbstractReaction() = default;
 
+  /**
+   * @brief Constructor for AbstractReaction.
+   *
+   * @param sycl_target Compute device used by the instance. This must be the
+   * same sycl_target that is assigned to the ParticleGroup that the Reaction is
+   * to be applied to.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
+   */
   AbstractReaction(
       SYCLTargetSharedPtr sycl_target,
       const std::map<int, std::string> &properties_map = get_default_map())
       : sycl_target_stored(sycl_target),
-        total_reaction_rate(
-            Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate))),
         device_rate_buffer(
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        weight_sym(Sym<REAL>(properties_map.at(default_properties.weight))),
         max_buffer_size(16384 * 256) {
+
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsistencies with indexing of properties.");
+
+    this->total_reaction_rate =
+        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
+
     this->pre_req_data->fill(0.0);
   }
 
@@ -91,8 +102,8 @@ protected:
 
   const Sym<REAL> &get_total_reaction_rate() { return total_reaction_rate; }
 
-  void set_total_reaction_rate(const Sym<REAL> &total_reaction_rate_) {
-    this->total_reaction_rate = total_reaction_rate_;
+  void set_total_reaction_rate(const Sym<REAL> &total_reaction_rate) {
+    this->total_reaction_rate = total_reaction_rate;
   }
 
   const LocalArraySharedPtr<REAL> &get_device_rate_buffer() {
@@ -110,8 +121,8 @@ protected:
     return this->device_rate_buffer->size;
   }
 
-  void set_device_rate_buffer(LocalArraySharedPtr<REAL> &device_rate_buffer_) {
-    this->device_rate_buffer = device_rate_buffer_;
+  void set_device_rate_buffer(LocalArraySharedPtr<REAL> &device_rate_buffer) {
+    this->device_rate_buffer = device_rate_buffer;
   }
 
   const SYCLTargetSharedPtr &get_sycl_target() { return sycl_target_stored; }
@@ -120,8 +131,8 @@ protected:
     return pre_req_data;
   }
 
-  void set_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data_) {
-    this->pre_req_data = pre_req_data_;
+  void set_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data) {
+    this->pre_req_data = pre_req_data;
   }
 
   size_t get_max_buffer_size() { return this->max_buffer_size; }
@@ -150,19 +161,6 @@ private:
  * argument
  * @tparam DataCalc typename for the DataCalculator object used to calculate
  * prerequisite data (defaults to DataCalculator<>)
- *
- * @param sycl_target Compute device used by the instance.
- * @param in_state Integer specifying the ID of the species on
- * which the derived reaction is acting on.
- * @param out_states Array of integers specifying the species IDs of the
- * descendants produced by the derived reaction.
- * @param reaction_data ReactionData object to be used in run_rate_loop.
- * @param reaction_kernels ReactionKernels object to be used in
- * descendant_product_loop.
- * @param data_calculator DataCalculator object for filling in the
- * pre_req_data buffer
- * @param properties_map Optional property remapping. Used to get weight and
- * rate buffer syms.
  */
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels, typename DataCalc = DataCalculator<>>
@@ -170,15 +168,33 @@ struct LinearReactionBase : public AbstractReaction {
 
   LinearReactionBase() = delete;
 
+  /**
+   * @brief Constructor for LinearReactionBase.
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param in_state Integer specifying the ID of the species on
+   * which the derived reaction is acting on.
+   * @param out_states Array of integers specifying the species IDs of the
+   * descendants produced by the derived reaction.
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in run_rate_loop)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * descendant_product_loop)
+   * @param data_calculator DataCalculator object defining any additional
+   * required data for the kernels, in addition to the rate
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
+   */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
-      DataCalc data_calculator_,
+      DataCalc data_calculator,
       const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), data_calculator(data_calculator_) {
+        reaction_kernels(reaction_kernels), data_calculator(data_calculator) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for run_rate_loop and
     // descendant_product_loop to operate correctly, ReactionData and
@@ -233,24 +249,21 @@ struct LinearReactionBase : public AbstractReaction {
   }
 
   /**
+   * \overload
    * @brief Constructor with no explicit DataCalculator
-   *
-   * @tparam num_products_per_parent The number of products produced per parent
-   * by the derived linear reaction.
-   * @tparam ReactionData typename for reaction_data constructor argument
-   * @tparam ReactionKernels template class for reaction_kernels constructor
-   * argument
    *
    * @param sycl_target Compute device used by the instance.
    * @param in_state Integer specifying the ID of the species on
    * which the derived reaction is acting on.
    * @param out_states Array of integers specifying the species IDs of the
    * descendants produced by the derived reaction.
-   * @param reaction_data ReactionData object to be used in run_rate_loop.
-   * @param reaction_kernels ReactionKernels object to be used in
-   * descendant_product_loop.
-   * @param properties_map Optional property remapping. Used to get weight and
-   * rate buffer syms.
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in run_rate_loop)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * descendant_product_loop)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
@@ -594,4 +607,5 @@ private:
 
   DataCalc data_calculator;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
+#endif

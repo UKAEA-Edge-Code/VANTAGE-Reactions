@@ -1,8 +1,8 @@
-#include <reactions.hpp>
 #include <gtest/gtest.h>
+#include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 auto create_test_particle_group_marking(int N_total)
     -> std::shared_ptr<ParticleGroup> {

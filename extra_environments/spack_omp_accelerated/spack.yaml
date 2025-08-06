@@ -1,0 +1,30 @@
+# This is a Spack Environment file.
+#
+# It describes the set of packages to be installed when developing
+# NESO, along with configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=ompaccelerated ^vantage-reactions.googletest
+
+  view: false
+  concretizer:
+    unify: false
+  repos:
+    - ${PWD}/Reactions-repo
+    - ${PWD}/NESO-Spack
+    - $spack/var/spack/repos/builtin
+  develop:
+    reactions:
+      path: ${PWD}
+      spec: reactions@working
+    neso-particles:
+      path: ${PWD}/neso-particles
+      spec: neso-particles@working
+  packages:
+    all:
+      require:
+        - spec: "%gcc@11.3:"
+      providers:
+        mpi: [mpich]
+        sycl: [adaptivecpp]

@@ -6,17 +6,17 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(Properties, property_constructor) {
   auto test_map = PropertiesTest::custom_prop_map;
-  ASSERT_THROW(properties_map(test_map).at(
+  ASSERT_THROW(PropertiesMap(test_map).at(
                    PropertiesTest::custom_props.test_custom_prop2 + 1),
                std::out_of_range);
 }
 
 TEST(Properties, modify_property_map) {
-  auto test_map_obj = properties_map(PropertiesTest::custom_prop_map);
+  auto test_map_obj = PropertiesMap(PropertiesTest::custom_prop_map);
   test_map_obj.at(PropertiesTest::custom_props.test_custom_prop2) =
       "TEST_PROP3";
   auto test_map = test_map_obj.get_map();

@@ -1,12 +1,12 @@
-#ifndef TRANSFORM_WRAPPER_H
-#define TRANSFORM_WRAPPER_H
+#ifndef REACTIONS_TRANSFORM_WRAPPER_H
+#define REACTIONS_TRANSFORM_WRAPPER_H
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Abstract base class for marking strategies. All marking strategies
@@ -17,7 +17,7 @@ namespace Reactions {
 struct MarkingStrategy {
 
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group){
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
     // This function should never actually be called. If it is called and we do
     // not have a return value then the calling function will receive an
     // undefined value. By setting a value we at least know what the returned
@@ -84,15 +84,31 @@ struct TransformationWrapper {
 
   TransformationWrapper() = delete;
 
-  TransformationWrapper(
-      std::shared_ptr<TransformationStrategy> transformation_strategy)
-      : transformation_strat(transformation_strategy) {}
-
+  /**
+   * @brief Constructor for TransformationWrapper.
+   *
+   * @param marking_strategy A vector of shared pointers of MarkingStrategy
+   * objects.
+   * @param transformation_strategy A shared pointer of a
+   * TransformationStrategy.
+   */
   TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>> marking_strategy,
       std::shared_ptr<TransformationStrategy> transformation_strategy)
       : marking_strat(marking_strategy),
         transformation_strat(transformation_strategy) {}
+
+  /**
+   * \overload
+   * @brief Constructor for TransformationWrapper that only sets the
+   * transformation strategy.
+   *
+   * @param transformation_strategy A shared pointer of a
+   * TransformationStrategy.
+   */
+  TransformationWrapper(
+      std::shared_ptr<TransformationStrategy> transformation_strategy)
+      : transformation_strat(transformation_strategy) {}
 
   /**
    * @brief Applies the marking and transformation strategies to a given
@@ -183,7 +199,7 @@ struct MarkingStrategyBase : MarkingStrategy {
   MarkingStrategyBase() = default;
 
   /**
-   * @brief Construct a new Marking Strategy Base object
+   * @brief Constructor for MarkingStrategyBase.
    *
    * @param required_dats_real_read Standard vector of Sym<REAL>s representing
    * those real-valued NESO-Particles ParticleDats to be passed to device type
@@ -264,5 +280,5 @@ struct MarkingFunctionWrapperBase {
     return underlying.marking_condition(real_vars, int_vars);
   }
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

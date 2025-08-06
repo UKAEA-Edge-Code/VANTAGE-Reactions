@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_BASE_RECOMBINATION_KERNELS_H
+#define REACTIONS_BASE_RECOMBINATION_KERNELS_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
@@ -8,11 +9,17 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * struct RecombReactionKernelsOnDevice - SYCL device-compatible kernel for
- * recombination reactions.
+ * @brief Device type for recombination kernels
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle
+ * velocity property.
+ * @tparam ndim_source_momentum The number of dimensions for source
+ * momentum property.
+ * @tparam has_momentum_req_data The boolean specifying whether a
+ * projectile momentum req_data is available.
  */
 template <int ndim_velocity, int ndim_source_momentum>
 struct RecombReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
@@ -208,7 +215,7 @@ struct RecombReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
       props.velocity, props.weight};
   /**
-   * @brief Recombination reaction kernel host type constructor
+   * @brief Constructor for RecombReactionKerenls.
    *
    * @param target_species Species object representing the recombination
    * target
@@ -216,8 +223,8 @@ struct RecombReactionKernels : public ReactionKernelsBase {
    * involved in the recombination (eg. electron).
    * @param normalised_potential_energy Used in calculating the projectile
    * source energy loss
-   * @param properties_map A std::map<int, std::string> object to be to be
-   * passed to ReactionKernelsBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   RecombReactionKernels(
       const Species &target_species, const Species &projectile_species,
@@ -305,4 +312,5 @@ public:
     return this->recomb_reaction_kernels_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

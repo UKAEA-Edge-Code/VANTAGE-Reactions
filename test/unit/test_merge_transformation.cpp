@@ -1,8 +1,8 @@
-#include <reactions.hpp>
 #include <gtest/gtest.h>
+#include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 auto create_test_particle_group_merging(int N_total, int ndim)
     -> std::shared_ptr<ParticleGroup> {
@@ -125,12 +125,11 @@ TEST(MergeTransformationStrategy, transform_2D) {
     REAL energy_tot = reduction_data->at(4, 0);
     REAL energy_merged = 0;
     for (int i = 0; i < 2; i++) {
-      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0),
-                       wt / 2, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
       EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
-                       reduction_data->at(0, 0) / wt, 1e-12);
+                  reduction_data->at(0, 0) / wt, 1e-12);
       EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
-                       reduction_data->at(1, 0) / wt, 1e-12);
+                  reduction_data->at(1, 0) / wt, 1e-12);
       energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, 0) *
                            particles->at(Sym<REAL>("VELOCITY"), i, 0) +
                        particles->at(Sym<REAL>("VELOCITY"), i, 1) *

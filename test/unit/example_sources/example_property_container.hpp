@@ -34,7 +34,7 @@ inline void property_container_example() {
 
   auto req_int_prop_names = int_props.simple_prop_names(
       get_default_map()); // explicitly passing the default map - could be a
-                    // user-defined map
+                          // user-defined map
   auto req_simple_real_prop_names =
       real_props.simple_prop_names(); // map defaults to default_map
 

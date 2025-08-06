@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_NESO_TEST_ASSERT_H
+#define REACTIONS_NESO_TEST_ASSERT_H
 #include <cstdlib>
 #include <neso_particles/typedefs.hpp>
 #include <stdexcept>
@@ -7,14 +8,15 @@
 #define NESOASSERT_FUNCTION neso_particles_test_assert
 
 template <typename T>
-inline void neso_particles_test_assert(const char *expr_str, bool expr, const char *file, int line, T && msg) {
+inline void neso_particles_test_assert(const char *expr_str, bool expr,
+                                       const char *file, int line, T &&msg) {
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     if (!expr) {
       throw std::logic_error("");
     }
-  }
-  else {
+  } else {
     NESO::Particles::neso_particles_assert(expr_str, expr, file, line, msg);
   }
 }
 #include <neso_particles.hpp>
+#endif

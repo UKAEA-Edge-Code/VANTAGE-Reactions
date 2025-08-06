@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 # no space in these names! used as shared object name and python module name
-set(PROJECT_NAME Reactions)
+set(PROJECT_NAME VANTAGE-Reactions)
 
 project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
@@ -11,10 +11,10 @@ include(GNUInstallDirs)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Create interface/Header only library
-add_library(Reactions INTERFACE)
-add_library(Reactions::Reactions ALIAS Reactions)
+add_library(VANTAGE-Reactions INTERFACE)
+add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 
-set_property(TARGET Reactions PROPERTY CXX_STANDARD 17)
+set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD 17)
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
@@ -30,21 +30,12 @@ add_subdirectory(src)
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
 if (REACTIONS_ENABLE_TESTS)
-  if (REACTIONS_DEVICE_TYPE STREQUAL GPU)
-    set(BUILD_TYPE_COMPILE_FLAGS "-O0")
-    set(TEST_COVERAGE_FLAGS "")
-  else()
-    set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
-    set(TEST_COVERAGE_FLAGS "--coverage")
-    link_libraries(gcov)
-    set(TEST_LIBRARIES "gcov")
-  endif()
-  enable_testing()
+  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
   add_subdirectory(test)
 endif()
 
 install(
-    TARGETS Reactions
+    TARGETS VANTAGE-Reactions
     EXPORT ${PROJECT_NAME}_Targets
     FILE_SET public_headers
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

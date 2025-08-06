@@ -52,7 +52,9 @@ inline void spec_builder_example() {
 
   // Finally we can merge the particle spec in the builder with other specs
   // (will ignore duplicates)
-  particle_spec_builder.add_particle_spec(ParticleSpec{ParticleProp(Sym<REAL>("w"),1,false), ParticleProp(Sym<REAL>("NEW_PROP"),2,false)});
+  particle_spec_builder.add_particle_spec(
+      ParticleSpec{ParticleProp(Sym<REAL>("w"), 1, false),
+                   ParticleProp(Sym<REAL>("NEW_PROP"), 2, false)});
 
   auto built_spec = particle_spec_builder.get_particle_spec();
   return;

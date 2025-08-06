@@ -1,12 +1,13 @@
-#pragma once
+#ifndef REACTIONS_MOCK_REACTIONS_H
+#define REACTIONS_MOCK_REACTIONS_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
-  TestReactionDataOnDevice(REAL rate_) : rate(rate_){};
+  TestReactionDataOnDevice(REAL rate) : rate(rate){};
 
   std::array<REAL, 1>
   calc_data(Access::LoopIndex::Read &index,
@@ -24,9 +25,9 @@ private:
 
 struct TestReactionData : public ReactionDataBase<> {
 
-  TestReactionData(REAL rate_)
-      : rate(rate_),
-        test_reaction_data_on_device(TestReactionDataOnDevice(rate_)) {}
+  TestReactionData(REAL rate)
+      : rate(rate),
+        test_reaction_data_on_device(TestReactionDataOnDevice(rate)) {}
 
 private:
   TestReactionDataOnDevice test_reaction_data_on_device;
@@ -38,17 +39,6 @@ public:
     return this->test_reaction_data_on_device;
   }
 };
-
-namespace TEST_REACTION_KERNEL {
-const auto props = default_properties;
-const std::vector<int> required_simple_real_props = {props.velocity,
-                                                     props.weight};
-
-const std::vector<int> required_descendant_simple_int_props = {
-    props.internal_state};
-const std::vector<int> required_descendant_simple_real_props = {props.velocity,
-                                                                props.weight};
-} // namespace TEST_REACTION_KERNEL
 
 template <INT num_products_per_parent>
 struct TestReactionKernelsOnDevice
@@ -116,11 +106,21 @@ public:
 
 template <INT num_products_per_parent>
 struct TestReactionKernels : public ReactionKernelsBase {
-  TestReactionKernels(std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(
-            Properties<REAL>(TEST_REACTION_KERNEL::required_simple_real_props),
-            0, properties_map) {
-    auto props = TEST_REACTION_KERNEL::props;
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 2> required_simple_real_props = {
+      props.velocity, props.weight};
+
+  constexpr static std::array<int, 1> required_descendant_simple_int_props = {
+      props.internal_state};
+
+  constexpr static std::array<int, 2> required_descendant_simple_real_props = {
+      props.velocity, props.weight};
+
+  TestReactionKernels(
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionKernelsBase(Properties<REAL>(required_simple_real_props), 0,
+                            properties_map) {
 
     this->test_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity,
@@ -129,11 +129,11 @@ struct TestReactionKernels : public ReactionKernelsBase {
         this->required_real_props.simple_prop_index(props.weight,
                                                     this->properties_map);
 
-    this->set_required_descendant_int_props(Properties<INT>(
-        TEST_REACTION_KERNEL::required_descendant_simple_int_props));
+    this->set_required_descendant_int_props(
+        Properties<INT>(required_descendant_simple_int_props));
 
-    this->set_required_descendant_real_props(Properties<REAL>(
-        TEST_REACTION_KERNEL::required_descendant_simple_real_props));
+    this->set_required_descendant_real_props(
+        Properties<REAL>(required_descendant_simple_real_props));
 
     this->test_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
@@ -157,14 +157,6 @@ public:
     return this->test_reaction_kernels_on_device;
   }
 };
-
-namespace TEST_REACTION_KERNEL_DATA_CALC {
-const auto props = default_properties;
-const std::vector<int> required_simple_real_props = {props.velocity,
-                                                     props.weight};
-const std::vector<int> required_species_real_props = {props.source_density,
-                                                      props.source_energy};
-} // namespace TEST_REACTION_KERNEL_DATA_CALC
 
 template <INT num_products_per_parent>
 struct TestReactionKernelsDataCalcOnDevice
@@ -233,15 +225,20 @@ public:
 
 template <INT num_products_per_parent>
 struct TestReactionDataCalcKernels : public ReactionKernelsBase {
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 2> required_simple_real_props = {
+      props.velocity, props.weight};
+
+  constexpr static std::array<int, 2> required_species_real_props = {
+      props.source_density, props.source_energy};
+
   TestReactionDataCalcKernels()
       : ReactionKernelsBase(
-            Properties<REAL>(
-                TEST_REACTION_KERNEL_DATA_CALC::required_simple_real_props,
-                std::vector<Species>{Species("ELECTRON")},
-                TEST_REACTION_KERNEL_DATA_CALC::required_species_real_props),
+            Properties<REAL>(required_simple_real_props,
+                             std::vector<Species>{Species("ELECTRON")},
+                             required_species_real_props),
             2) {
-
-    auto props = TEST_REACTION_KERNEL::props;
 
     this->test_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity);
@@ -275,18 +272,13 @@ struct TestReaction
 
   TestReaction() = default;
 
-  TestReaction(SYCLTargetSharedPtr sycl_target_, REAL rate_, int in_states_,
-               const std::array<int, num_products_per_parent> out_states_)
+  TestReaction(SYCLTargetSharedPtr sycl_target, REAL rate, int in_states,
+               const std::array<int, num_products_per_parent> out_states)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
-            sycl_target_, in_states_, out_states_, TestReactionData(rate_),
+            sycl_target, in_states, out_states, TestReactionData(rate),
             TestReactionKernels<num_products_per_parent>()) {}
 };
-
-namespace TEST_REACTION_VAR_DATA {
-const auto props = default_properties;
-const std::vector<int> required_simple_real_props = {props.position};
-} // namespace TEST_REACTION_VAR_DATA
 
 struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionVarDataOnDevice() = default;
@@ -306,11 +298,15 @@ public:
 };
 
 struct TestReactionVarData : public ReactionDataBase<> {
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.position};
+
   TestReactionVarData()
-      : ReactionDataBase(
-            Properties<REAL>(TEST_REACTION_VAR_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})) {
-    auto props = TEST_REACTION_VAR_DATA::props;
+      : ReactionDataBase(Properties<REAL>(required_simple_real_props,
+                                          std::vector<Species>{},
+                                          std::array<int, 0>{})) {
 
     this->test_reaction_var_data_on_device.position_ind =
         this->required_real_props.simple_prop_index(props.position);
@@ -325,25 +321,14 @@ public:
   }
 };
 
-namespace TEST_REACTION_VAR_KERNEL {
-constexpr int num_products_per_parent = 0;
-
-const auto props = default_properties;
-
-const std::vector<int> required_simple_real_props = {props.weight};
-} // namespace TEST_REACTION_VAR_KERNEL
-
-struct TestReactionVarKernelsOnDevice
-    : public ReactionKernelsBaseOnDevice<
-          TEST_REACTION_VAR_KERNEL::num_products_per_parent> {
-  void feedback_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, TEST_REACTION_VAR_KERNEL::num_products_per_parent>
-          &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+struct TestReactionVarKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
+  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                       Access::DescendantProducts::Write &descendant_products,
+                       Access::SymVector::Write<INT> &req_int_props,
+                       Access::SymVector::Write<REAL> &req_real_props,
+                       const std::array<int, 0> &out_states,
+                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                       double dt) const {
     req_real_props.at(weight_ind, index, 0) -= modified_weight;
   }
 
@@ -352,12 +337,15 @@ public:
 };
 
 struct TestReactionVarKernels : public ReactionKernelsBase {
-  TestReactionVarKernels()
-      : ReactionKernelsBase(Properties<REAL>(
-            TEST_REACTION_VAR_KERNEL::required_simple_real_props,
-            std::vector<Species>{}, std::vector<int>{})) {
+  constexpr static auto props = default_properties;
 
-    auto props = TEST_REACTION_VAR_KERNEL::props;
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.weight};
+
+  TestReactionVarKernels()
+      : ReactionKernelsBase(Properties<REAL>(required_simple_real_props,
+                                             std::vector<Species>{},
+                                             std::array<int, 0>{})) {
 
     this->test_reaction_var_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
@@ -410,7 +398,8 @@ struct TestEphemeralVarData : public ReactionDataBase<> {
   constexpr static std::array<int, 2> required_simple_real_props_ephemeral = {
       props.boundary_intersection_point, props.boundary_intersection_normal};
 
-  TestEphemeralVarData(std::map<int, std::string> properties_map = get_default_map())
+  TestEphemeralVarData(
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(),
                          Properties<REAL>(required_simple_real_props),
                          Properties<INT>(),
@@ -434,3 +423,4 @@ public:
     return this->test_reaction_var_data_on_device;
   }
 };
+#endif

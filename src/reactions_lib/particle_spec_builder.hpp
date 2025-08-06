@@ -1,5 +1,5 @@
-#ifndef PARTICLE_SPEC_BUILDER
-#define PARTICLE_SPEC_BUILDER
+#ifndef REACTIONS_PARTICLE_SPEC_BUILDER
+#define REACTIONS_PARTICLE_SPEC_BUILDER
 
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
@@ -7,32 +7,43 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 /**
  * @brief Helper struct to build custom particle specs based on user provided
  * particle properties (or if necessary extend existing particle specs.)
- *
- * @param particle_spec_ ParticleSpec that is to be extended (optional pass via
- * a non-default constructor for ParticleSpecBuilder).
  */
 
 struct ParticleSpecBuilder {
   ParticleSpecBuilder() = delete;
 
-  ParticleSpecBuilder(ParticleSpec particle_spec_) {
-    this->add_particle_spec(particle_spec_);
+  /**
+   * @brief Constructor for ParticleSpecBuilder.
+   *
+   * @param particle_spec ParticleSpec that is to be extended (optional pass via
+   * a non-recommended constructor for ParticleSpecBuilder).
+   */
+  ParticleSpecBuilder(ParticleSpec particle_spec) {
+    this->add_particle_spec(particle_spec);
   }
 
   /**
+   * \overload
    * @brief Recommended constructor, populating the generally required
    * properties in Reactions
    *
    * @param ndim Dimensionality of vector quantities
-   * @param properties_map Optional remapping of the default property names
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   ParticleSpecBuilder(
       int ndim,
       const std::map<int, std::string> &properties_map = get_default_map()) {
+
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     this->add_particle_spec(ParticleSpec(
         ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
@@ -40,9 +51,9 @@ struct ParticleSpecBuilder {
         ParticleProp(Sym<INT>(properties_map.at(default_properties.cell_id)), 1,
                      true)));
 
-    auto int_props = Properties<INT>(
-        std::vector<int>{default_properties.panic, default_properties.id,
-                         default_properties.internal_state,default_properties.reacted_flag});
+    auto int_props = Properties<INT>(std::vector<int>{
+        default_properties.panic, default_properties.id,
+        default_properties.internal_state, default_properties.reacted_flag});
     auto real_props_scalar = Properties<REAL>(std::vector<int>{
         default_properties.weight, default_properties.tot_reaction_rate});
     auto real_props_vector =
@@ -58,22 +69,29 @@ struct ParticleSpecBuilder {
    * @brief Method to add particle properties to member particle_spec.
    *
    * @tparam PROP_TYPE Specifier for type of property (INT or REAL)
-   * @param properties_ Properties object containing names of the particle
+   * @param properties Properties object containing names of the particle
    * properties to be added.
    * @param ndim Number of dimensions for the properties to be added (note this
    * will apply to all properties from properties_)
    * @param positions Boolean to indicate whether the properties to be added are
    * particle position or cell id or not.
-   * @param properties_map Property map to be used when adding properties into
-   * the spec. Defaults to default_map.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   template <typename PROP_TYPE>
   void add_particle_prop(
-      Properties<PROP_TYPE> properties_, int ndim = 1, bool positions = false,
+      Properties<PROP_TYPE> properties, int ndim = 1, bool positions = false,
       const std::map<int, std::string> &properties_map = get_default_map()) {
-    auto simple_prop_names = properties_.simple_prop_names(properties_map);
 
-    auto species_prop_names = properties_.species_prop_names(properties_map);
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
+
+    auto simple_prop_names = properties.simple_prop_names(properties_map);
+
+    auto species_prop_names = properties.species_prop_names(properties_map);
 
     for (auto prop_name : simple_prop_names) {
       auto particle_prop =
@@ -144,6 +162,6 @@ struct ParticleSpecBuilder {
 private:
   ParticleSpec particle_spec;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 
 #endif
