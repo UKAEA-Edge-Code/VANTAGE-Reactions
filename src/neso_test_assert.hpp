@@ -8,13 +8,13 @@
 #define NESOASSERT_FUNCTION neso_particles_test_assert
 
 template <typename T>
-inline void neso_particles_test_assert(const char *expr_str, bool expr, const char *file, int line, T && msg) {
+inline void neso_particles_test_assert(const char *expr_str, bool expr,
+                                       const char *file, int line, T &&msg) {
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     if (!expr) {
       throw std::logic_error("");
     }
-  }
-  else {
+  } else {
     NESO::Particles::neso_particles_assert(expr_str, expr, file, line, msg);
   }
 }

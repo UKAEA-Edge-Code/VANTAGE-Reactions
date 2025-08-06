@@ -1,7 +1,7 @@
 #ifndef REACTIONS_FIXED_RATE_DATA_H
 #define REACTIONS_FIXED_RATE_DATA_H
-#include <neso_particles.hpp>
 #include "../reaction_data.hpp"
+#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -32,7 +32,8 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size 1 containing the calculated reaction rate.
+   * @return A REAL-valued array of size 1 containing the calculated reaction
+   * rate.
    */
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,

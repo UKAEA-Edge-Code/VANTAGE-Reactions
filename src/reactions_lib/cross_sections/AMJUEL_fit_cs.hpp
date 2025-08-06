@@ -1,7 +1,7 @@
 #ifndef REACTIONS_AMJUEL_FIT_CS_H
 #define REACTIONS_AMJUEL_FIT_CS_H
-#include <neso_particles.hpp>
 #include "../reaction_data.hpp"
+#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -27,7 +27,8 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    *
    * @param vel_norm Velocity normalisation in m/s
    * @param cs_norm Cross-section normalisation in m^2
-   * @param mass_amu Reduced mass of the collision partners in the H.1 reaction in amus
+   * @param mass_amu Reduced mass of the collision partners in the H.1 reaction
+   * in amus
    * @param coeffs Bulk fit coefficients
    * @param l_coeffs Left asymptote coefficients (size 0 if no low-energy
    * treatment)

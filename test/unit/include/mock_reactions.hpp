@@ -109,21 +109,18 @@ struct TestReactionKernels : public ReactionKernelsBase {
   constexpr static auto props = default_properties;
 
   constexpr static std::array<int, 2> required_simple_real_props = {
-    props.velocity, props.weight
-  };
+      props.velocity, props.weight};
 
   constexpr static std::array<int, 1> required_descendant_simple_int_props = {
-    props.internal_state
-  };
+      props.internal_state};
 
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
-    props.velocity, props.weight
-  };
+      props.velocity, props.weight};
 
-  TestReactionKernels(std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(
-            Properties<REAL>(required_simple_real_props),
-            0, properties_map) {
+  TestReactionKernels(
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionKernelsBase(Properties<REAL>(required_simple_real_props), 0,
+                            properties_map) {
 
     this->test_reaction_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity,
@@ -132,11 +129,11 @@ struct TestReactionKernels : public ReactionKernelsBase {
         this->required_real_props.simple_prop_index(props.weight,
                                                     this->properties_map);
 
-    this->set_required_descendant_int_props(Properties<INT>(
-        required_descendant_simple_int_props));
+    this->set_required_descendant_int_props(
+        Properties<INT>(required_descendant_simple_int_props));
 
-    this->set_required_descendant_real_props(Properties<REAL>(
-        required_descendant_simple_real_props));
+    this->set_required_descendant_real_props(
+        Properties<REAL>(required_descendant_simple_real_props));
 
     this->test_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(
@@ -231,19 +228,16 @@ struct TestReactionDataCalcKernels : public ReactionKernelsBase {
   constexpr static auto props = default_properties;
 
   constexpr static std::array<int, 2> required_simple_real_props = {
-    props.velocity, props.weight
-  };
+      props.velocity, props.weight};
 
   constexpr static std::array<int, 2> required_species_real_props = {
-    props.source_density, props.source_energy
-  };
+      props.source_density, props.source_energy};
 
   TestReactionDataCalcKernels()
       : ReactionKernelsBase(
-            Properties<REAL>(
-                required_simple_real_props,
-                std::vector<Species>{Species("ELECTRON")},
-                required_species_real_props),
+            Properties<REAL>(required_simple_real_props,
+                             std::vector<Species>{Species("ELECTRON")},
+                             required_species_real_props),
             2) {
 
     this->test_reaction_kernels_on_device.velocity_ind =
@@ -306,12 +300,13 @@ public:
 struct TestReactionVarData : public ReactionDataBase<> {
   constexpr static auto props = default_properties;
 
-  constexpr static std::array<int, 1> required_simple_real_props = {props.position};
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.position};
 
   TestReactionVarData()
-      : ReactionDataBase(
-            Properties<REAL>(required_simple_real_props,
-                             std::vector<Species>{}, std::array<int, 0>{})) {
+      : ReactionDataBase(Properties<REAL>(required_simple_real_props,
+                                          std::vector<Species>{},
+                                          std::array<int, 0>{})) {
 
     this->test_reaction_var_data_on_device.position_ind =
         this->required_real_props.simple_prop_index(props.position);
@@ -326,15 +321,14 @@ public:
   }
 };
 
-struct TestReactionVarKernelsOnDevice
-    : public ReactionKernelsBaseOnDevice<0> {
-  void feedback_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, 0> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+struct TestReactionVarKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
+  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
+                       Access::DescendantProducts::Write &descendant_products,
+                       Access::SymVector::Write<INT> &req_int_props,
+                       Access::SymVector::Write<REAL> &req_real_props,
+                       const std::array<int, 0> &out_states,
+                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                       double dt) const {
     req_real_props.at(weight_ind, index, 0) -= modified_weight;
   }
 
@@ -345,12 +339,13 @@ public:
 struct TestReactionVarKernels : public ReactionKernelsBase {
   constexpr static auto props = default_properties;
 
-  constexpr static std::array<int, 1> required_simple_real_props = {props.weight};
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.weight};
 
   TestReactionVarKernels()
-      : ReactionKernelsBase(Properties<REAL>(
-            required_simple_real_props,
-            std::vector<Species>{}, std::array<int, 0>{})) {
+      : ReactionKernelsBase(Properties<REAL>(required_simple_real_props,
+                                             std::vector<Species>{},
+                                             std::array<int, 0>{})) {
 
     this->test_reaction_var_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight);
@@ -403,7 +398,8 @@ struct TestEphemeralVarData : public ReactionDataBase<> {
   constexpr static std::array<int, 2> required_simple_real_props_ephemeral = {
       props.boundary_intersection_point, props.boundary_intersection_normal};
 
-  TestEphemeralVarData(std::map<int, std::string> properties_map = get_default_map())
+  TestEphemeralVarData(
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<INT>(),
                          Properties<REAL>(required_simple_real_props),
                          Properties<INT>(),

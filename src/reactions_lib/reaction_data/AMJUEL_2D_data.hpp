@@ -11,7 +11,9 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device: Reaction rate data calculation based on 2D AMJUEL rate calculation against ion/plasma density  and ion/plasma temperature. Handles Coronal approximation correctly.
+ * @brief On device: Reaction rate data calculation based on 2D AMJUEL rate
+ * calculation against ion/plasma density  and ion/plasma temperature. Handles
+ * Coronal approximation correctly.
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.
@@ -24,8 +26,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
   /**
    * @brief Constructor for AMJUEL2DDataOnDevice.
    *
-   * @param evolved_quantity_normalisation Normalisation constant for the evolved
-   * quantity (for default rates should be 1)
+   * @param evolved_quantity_normalisation Normalisation constant for the
+   * evolved quantity (for default rates should be 1)
    * @param density_normalisation Density normalisation constant in m^{-3}
    * @param temperature_normalisation Temperature normalisation in eV
    * @param time_normalisation Time normalisation in seconds
@@ -34,14 +36,13 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    */
   AMJUEL2DDataOnDevice(
       const REAL &evolved_quantity_normalisation,
-      const REAL &density_normalisation,
-      const REAL &temperature_normalisation, const REAL &time_normalisation,
+      const REAL &density_normalisation, const REAL &temperature_normalisation,
+      const REAL &time_normalisation,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
         density_normalisation(density_normalisation),
-        temperature_normalisation(temperature_normalisation),
-        coeffs(coeffs){};
+        temperature_normalisation(temperature_normalisation), coeffs(coeffs){};
 
   /**
    * @brief Function to calculate the reaction rate for a 2D AMJUEL-based
@@ -82,10 +83,10 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     REAL log_rate = 0.0;
     // Ensuring the Coronal asymptote gets treated correctly
     // TODO: Add variable Coronal cut-off density
-    auto log_n =
-        (fluid_density_dat * this->density_normalisation >= 1e14)
-            ? Kernel::log(fluid_density_dat * this->density_normalisation / 1e14)
-            : 0;
+    auto log_n = (fluid_density_dat * this->density_normalisation >= 1e14)
+                     ? Kernel::log(fluid_density_dat *
+                                   this->density_normalisation / 1e14)
+                     : 0;
     // TODO: Ensure LTE asymptotic behaviour obeyed
 
     std::array<REAL, num_coeffs_n> log_n_arr;
@@ -117,7 +118,9 @@ public:
 };
 
 /**
- * @brief Reaction rate data calculation based on 2D AMJUEL rate calculation against ion/plasma density  and ion/plasma temperature. Handles Coronal approximation correctly.
+ * @brief Reaction rate data calculation based on 2D AMJUEL rate calculation
+ * against ion/plasma density  and ion/plasma temperature. Handles Coronal
+ * approximation correctly.
  *
  * @tparam num_coeffs_T The number of fit parameters in the T direction needed
  * for 2D AMJUEL reaction rate calculation.
@@ -135,20 +138,20 @@ struct AMJUEL2DData : public ReactionDataBase<> {
   /**
    * @brief Constructor for AMJUEL2DData.
    *
-   * @param evolved_quantity_normalisation Normalisation constant for the evolved
-   * quantity (for default rates should be 1)
+   * @param evolved_quantity_normalisation Normalisation constant for the
+   * evolved quantity (for default rates should be 1)
    * @param density_normalisation Density normalisation constant in m^{-3}
    * @param temperature_normalisation Temperature normalisation in eV
    * @param time_normalisation Time normalisation in seconds
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   AMJUEL2DData(
       const REAL &evolved_quantity_normalisation,
-      const REAL &density_normalisation,
-      const REAL &temperature_normalisation, const REAL &time_normalisation,
+      const REAL &density_normalisation, const REAL &temperature_normalisation,
+      const REAL &time_normalisation,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase(Properties<REAL>(required_simple_real_props),

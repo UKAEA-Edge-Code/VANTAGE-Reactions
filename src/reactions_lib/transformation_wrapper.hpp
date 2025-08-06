@@ -17,7 +17,7 @@ namespace VANTAGE::Reactions {
 struct MarkingStrategy {
 
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group){
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
     // This function should never actually be called. If it is called and we do
     // not have a return value then the calling function will receive an
     // undefined value. By setting a value we at least know what the returned
@@ -87,8 +87,10 @@ struct TransformationWrapper {
   /**
    * @brief Constructor for TransformationWrapper.
    *
-   * @param marking_strategy A vector of shared pointers of MarkingStrategy objects.
-   * @param transformation_strategy A shared pointer of a TransformationStrategy.
+   * @param marking_strategy A vector of shared pointers of MarkingStrategy
+   * objects.
+   * @param transformation_strategy A shared pointer of a
+   * TransformationStrategy.
    */
   TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>> marking_strategy,
@@ -98,9 +100,11 @@ struct TransformationWrapper {
 
   /**
    * \overload
-   * @brief Constructor for TransformationWrapper that only sets the transformation strategy.
+   * @brief Constructor for TransformationWrapper that only sets the
+   * transformation strategy.
    *
-   * @param transformation_strategy A shared pointer of a TransformationStrategy.
+   * @param transformation_strategy A shared pointer of a
+   * TransformationStrategy.
    */
   TransformationWrapper(
       std::shared_ptr<TransformationStrategy> transformation_strategy)

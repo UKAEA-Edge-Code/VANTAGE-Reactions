@@ -27,9 +27,11 @@ struct AbstractReaction {
   /**
    * @brief Constructor for AbstractReaction.
    *
-   * @param sycl_target Compute device used by the instance. This must be the same sycl_target that is assigned to the ParticleGroup that the Reaction is to be applied to.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (weight and total_reaction_rate).
+   * @param sycl_target Compute device used by the instance. This must be the
+   * same sycl_target that is assigned to the ParticleGroup that the Reaction is
+   * to be applied to.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
    */
   AbstractReaction(
       SYCLTargetSharedPtr sycl_target,
@@ -40,14 +42,15 @@ struct AbstractReaction {
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
         max_buffer_size(16384 * 256) {
-    
-    NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
 
-    this->total_reaction_rate = Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsistencies with indexing of properties.");
+
+    this->total_reaction_rate =
+        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
 
     this->pre_req_data->fill(0.0);
@@ -173,11 +176,15 @@ struct LinearReactionBase : public AbstractReaction {
    * which the derived reaction is acting on.
    * @param out_states Array of integers specifying the species IDs of the
    * descendants produced by the derived reaction.
-   * @param reaction_data ReactionData object defining the reaction rate (used in run_rate_loop)
-   * @param reaction_kernels ReactionKernels object defining the properties of the products and the feedback on the parent particle and fields (used in descendant_product_loop)
-   * @param data_calculator DataCalculator object defining any additional required data for the kernels, in addition to the rate
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (weight and total_reaction_rate).
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in run_rate_loop)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * descendant_product_loop)
+   * @param data_calculator DataCalculator object defining any additional
+   * required data for the kernels, in addition to the rate
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
@@ -250,10 +257,13 @@ struct LinearReactionBase : public AbstractReaction {
    * which the derived reaction is acting on.
    * @param out_states Array of integers specifying the species IDs of the
    * descendants produced by the derived reaction.
-   * @param reaction_data ReactionData object defining the reaction rate (used in run_rate_loop)
-   * @param reaction_kernels ReactionKernels object defining the properties of the products and the feedback on the parent particle and fields (used in descendant_product_loop)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be used when
-   * remapping property names (weight and total_reaction_rate).
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in run_rate_loop)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * descendant_product_loop)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBase(
       SYCLTargetSharedPtr sycl_target, int in_state,
