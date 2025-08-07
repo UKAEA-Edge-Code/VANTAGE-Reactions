@@ -20,3 +20,22 @@ then execute:
 ```
 docker run --name vantage_reactions -v "$(pwd):/root/Reactions" vantage_reactions_img:latest -c "cd /root/Reactions && source run_tests.sh"
 ```
+
+## Documentation
+To build the documentation ensure the following pre-requisites are installed (via `pip`):
+
+- sphinx (https://pypi.org/project/Sphinx/)
+- pydata-sphinx-theme (https://pypi.org/project/pydata-sphinx-theme/)
+- breathe (https://pypi.org/project/breathe/)
+
+This can be done manually or by running:
+```
+pip install -U -r $HOME/VANTAGE_Reactions/docs/sphinx/requirements.txt
+```
+(replace `$HOME/VANTAGE_Reactions` with the name of the directory that the repo was cloned into.)
+
+Then simply run `make` inside the `docs` folder in the repo. The documentation should be contained within:
+```
+$HOME/VANTAGE_Reactions/docs/build/sphinx/html/
+```
+Start by opening `index.html` in a web browser of your choice.
