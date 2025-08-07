@@ -1,12 +1,13 @@
-#pragma once
-#include <neso_particles.hpp>
+#ifndef REACTIONS_AMJUEL_FIT_CS_H
+#define REACTIONS_AMJUEL_FIT_CS_H
 #include "../reaction_data.hpp"
+#include <neso_particles.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * struct AMJUELFitCrossSection - General H.1 AMJUEL cross section fit, with
+ * @brief A struct that defines a general H.1 AMJUEL cross section fit, with
  * left and right asymptotic treatment. Assumes monotonically decreasing
  * cross-sections, and takes as the maximum value the evaluated rate at
  * some maximum lab frame impact energy.
@@ -22,12 +23,12 @@ template <size_t num_coeffs, size_t num_l_coeffs, size_t num_r_coeffs>
 struct AMJUELFitCrossSection : public AbstractCrossSection {
 
   /**
-   * @brief General H.1 AMJUEL cross section fit, with optional left and right
-   * asymptotic fits.
+   * @brief Constructor for AMJUELFitCrossSection.
    *
    * @param vel_norm Velocity normalisation in m/s
    * @param cs_norm Cross-section normalisation in m^2
-   * @param mass_amu Reduced mass of the collision partners in the H.1 reaction in amus
+   * @param mass_amu Reduced mass of the collision partners in the H.1 reaction
+   * in amus
    * @param coeffs Bulk fit coefficients
    * @param l_coeffs Left asymptote coefficients (size 0 if no low-energy
    * treatment)
@@ -65,7 +66,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    *
    * @param relative_vel Relative projectile and target velocity (in normalised
    * units)
-   * @return Value of the cross section (in normalised units) at the givent
+   * @return Value of the cross section (in normalised units) at the given
    * velocity value, obeying the fit asymptotic rules
    */
   REAL get_value_at(const REAL &relative_vel) const {
@@ -106,6 +107,11 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
     return Kernel::exp(sum_E) * 1e-4 / this->cs_norm;
   };
 
+  /**
+   * @brief Returns maximum value of the rate sigma*v of for this cross-section.
+   *
+   * @return REAL-valued maximum value.
+   */
   REAL get_max_rate_val() const { return this->max_val; };
 
 private:
@@ -119,4 +125,5 @@ private:
   std::array<REAL, num_l_coeffs> l_coeffs;
   std::array<REAL, num_r_coeffs> r_coeffs;
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

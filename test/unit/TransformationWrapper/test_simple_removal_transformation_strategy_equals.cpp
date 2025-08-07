@@ -3,7 +3,7 @@
 #include "transformation_wrapper_utils.hpp"
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_equals) {
   const int N_total = 1000;

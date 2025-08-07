@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 // Testing getters for Properties struct
 TEST(Properties, properties_getters) {

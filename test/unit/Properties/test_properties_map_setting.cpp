@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(Properties, properties_map_setting) {
   std::map<int, std::string> test_property_map = {

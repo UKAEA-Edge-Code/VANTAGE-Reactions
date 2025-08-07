@@ -1,6 +1,8 @@
 [submodule "NESO-Spack"]
 	path = NESO-Spack
-	url = ssh://git@github.com/ExCALIBUR-NEPTUNE/NESO-Spack.git
+	# url = ssh://git@github.com/ExCALIBUR-NEPTUNE/NESO-Spack.git
+	url = https://github.com/ExCALIBUR-NEPTUNE/NESO-Spack.git
 [submodule "neso-particles"]
 	path = neso-particles
-	url = ssh://git@github.com/ExCALIBUR-NEPTUNE/NESO-Particles.git
+	# url = ssh://git@github.com/ExCALIBUR-NEPTUNE/NESO-Particles.git
+	url = https://github.com/ExCALIBUR-NEPTUNE/NESO-Particles.git

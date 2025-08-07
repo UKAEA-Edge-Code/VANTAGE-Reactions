@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_DATA_CALCULATOR_H
+#define REACTIONS_DATA_CALCULATOR_H
 #include "reaction_data.hpp"
 #include "utils.hpp"
 #include <neso_particles.hpp>
@@ -8,25 +9,29 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * struct AbstractDataCalculator - Dummy struct to derive DataCalculator from
+ * @brief A dummy struct to derive DataCalculator from
  * for the purposes of type-checking of DataCalculator (when it's passed as a
  * typename template parameter - see LinearReactionBase)
  */
 struct AbstractDataCalculator {};
 
 /**
- * struct DataCalculator - Static container class for ReactionData objects
+ * @brief A static container class for ReactionData objects
  *
  * @tparam DATATYPE ReactionData types
  */
 template <typename... DATATYPE>
 struct DataCalculator : public AbstractDataCalculator {
 
-  DataCalculator(DATATYPE... data)
-      :  data(std::make_tuple(data...)) {
+  /**
+   * @brief Constructor for DataCalculator.
+   *
+   * @param data List of ReactionData objects (as multiple arguments).
+   */
+  DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
     (
@@ -145,4 +150,5 @@ private:
   std::vector<std::vector<Sym<INT>>> data_loop_int_syms;
   std::vector<std::vector<Sym<REAL>>> data_loop_real_syms;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
+#endif

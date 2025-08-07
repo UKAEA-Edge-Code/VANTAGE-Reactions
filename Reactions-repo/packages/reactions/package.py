@@ -53,6 +53,7 @@ class Reactions(CMakePackage):
         for item_path in glob.glob(stage_build_dir):
             if os.path.isdir(item_path):
                 print(item_path)
+                shutil.copyfile(os.path.join(item_path, "compile_commands.json"), os.path.join(self.stage.path, "compile_commands.json"))
                 shutil.rmtree(item_path)
             elif os.path.isfile(item_path):
                 continue

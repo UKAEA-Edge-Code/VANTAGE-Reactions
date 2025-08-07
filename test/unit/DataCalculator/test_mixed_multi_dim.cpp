@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(DataCalculator, mixed_multi_dim) {
   const int N_total = 100;

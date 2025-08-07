@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");

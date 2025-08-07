@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_UTILS_H
+#define REACTIONS_UTILS_H
 #include <cassert>
 #include <cmath>
 #include <neso_particles.hpp>
@@ -7,7 +8,7 @@
 #include <vector>
 
 using namespace NESO::Particles;
-namespace Reactions::utils {
+namespace VANTAGE::Reactions::utils {
 /**
  * @brief Helper function to calculate the L2 norm of a vector of arithmetic
  * types.
@@ -80,6 +81,9 @@ build_sym_vector(std::vector<std::string> required_properties) {
  *
  * @param u1 First uniformly distributed random number
  * @param u2 Second uniformly distributed random number
+ *
+ * @return A REAL-valued array of size 2 containing the calculated two normal
+ * variates.
  */
 inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
   constexpr REAL two_pi = 2 * M_PI;
@@ -89,4 +93,5 @@ inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
   const REAL valuesin = Kernel::sincos(two_pi * u2, &valuecos);
   return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
 };
-} // namespace Reactions::utils
+} // namespace VANTAGE::Reactions::utils
+#endif

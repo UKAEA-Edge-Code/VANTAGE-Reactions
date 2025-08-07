@@ -1,5 +1,5 @@
-#ifndef MERGE_TRANSFORMATION_H
-#define MERGE_TRANSFORMATION_H
+#ifndef REACTIONS_MERGE_TRANSFORMATION_H
+#define REACTIONS_MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
 #include "particle_properties_map.hpp"
@@ -15,7 +15,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 /**
  * @brief  Implementation of simplified merging algorithm from M. Vranic et
  * al. Computer Physics Communications 191 2015.
@@ -34,20 +34,26 @@ namespace Reactions {
  * real quantities. This means that those values will be lost, so this algorithm
  * should be called only AFTER they are no longer needed.
  *
- * @tparam ndim dimesion parameter - 2 and 3 supported
+ * @tparam ndim dimension parameter - 2 and 3 supported
  */
 template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
+  /**
+   * @brief Constructor for MergeTransformationStrategy.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used to remap the syms for the position, weight and velocity properties.
+   */
   MergeTransformationStrategy(
       const std::map<int, std::string> &properties_map = get_default_map())
       : min_npart_marker(MinimumNPartInCellMarker(3)) {
 
     NESOWARN(
-      map_subset_check(properties_map),
-      "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-      There may be inconsitencies with indexing of properties."
-    );
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
     this->position = Sym<REAL>(properties_map.at(default_properties.position));
     this->weight = Sym<REAL>(properties_map.at(default_properties.weight));
@@ -311,5 +317,5 @@ private:
   Sym<REAL> momentum;
   MinimumNPartInCellMarker min_npart_marker;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

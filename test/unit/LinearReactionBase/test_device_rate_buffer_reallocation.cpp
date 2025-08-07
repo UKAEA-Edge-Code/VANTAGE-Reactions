@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   auto particle_group = create_test_particle_group(1600);

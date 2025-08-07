@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(Properties, full_use_properties_map) {
   const int N_total = 1000;

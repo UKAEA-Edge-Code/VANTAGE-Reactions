@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 // Testing required_simple_prop_index call for Properties struct
 TEST(Properties, simple_prop_index) {

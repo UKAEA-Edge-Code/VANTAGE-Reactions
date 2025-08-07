@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, split_group_single_reaction) {
   const int N_total = 100;

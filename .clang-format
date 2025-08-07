@@ -1,4 +1,2 @@
 ---
-BasedOnStyle: LLVM
-
-...
+# BasedOnStyle: LLVM

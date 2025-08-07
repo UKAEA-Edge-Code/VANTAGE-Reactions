@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_BASE_IONISATION_KERNELS_H
+#define REACTIONS_BASE_IONISATION_KERNELS_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
@@ -8,16 +9,17 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
-
-namespace BASE_IONISATION_KERNEL {
-constexpr int num_products_per_parent = 0;
-
-} // namespace BASE_IONISATION_KERNEL
+namespace VANTAGE::Reactions {
 
 /**
- * struct IoniseReactionKernelsOnDevice - SYCL device-compatible kernel for
- * ionisation reactions.
+ * @brief Device type for ionisation kernels
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle velocity
+ * property.
+ * @tparam ndim_source_momentum The number of dimensions for electron
+ * source momentum property.
+ * @tparam has_momentum_req_data The boolean specifying whether a
+ * projectile momentum req_data is available.
  */
 template <int ndim_velocity, int ndim_source_momentum,
           bool has_momentum_req_data>
@@ -102,8 +104,7 @@ public:
 };
 
 /**
- * @brief A struct defining data and kernel functions needed for an ionisation
- * reaction.
+ * @brief Host type for ionisation kernels
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
@@ -124,15 +125,15 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 3> required_species_real_props = {
       props.source_density, props.source_energy, props.source_momentum};
   /**
-   * @brief Ionisation reaction kernel host type constructor
+   * @brief Constructor for IonisationReactionKernels.
    *
    * @param target_species Species object representing the ionisation target
    * (and the corresponding ion field!)
    * @param electron_species Species object representing the electrons
    * @param projectile_species Species object representing the projectile
    * species
-   * @param properties_map A std::map<int, std::string> object to be to be
-   * passed to ReactionKernelsBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
    */
   IoniseReactionKernels(
       const Species &target_species, const Species &electron_species,
@@ -202,6 +203,11 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
 
-  auto get_on_device_obj() { return this->ionise_reaction_kernels_on_device; }
+  IoniseReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
+                                has_momentum_req_data>
+  get_on_device_obj() {
+    return this->ionise_reaction_kernels_on_device;
+  }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

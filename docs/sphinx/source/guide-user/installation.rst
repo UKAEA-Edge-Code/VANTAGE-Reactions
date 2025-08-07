@@ -6,7 +6,6 @@ Pre-requisites
 ==============
 
 * gcc 11.3.0+: Tested up to 14.2.0
-* clang 18.1.+: Tested up to 18.1.8
 * spack v0.23.0+: Tested up to v0.23.1
 
 Spack environment setup
@@ -34,11 +33,9 @@ Spack can operate with multiple installations of ``gcc`` but will choose the def
 
 Compiler setup
 ==============
-GCC
-~~~
-For ``gcc``, a pre-existing installation higher than version 11.3.0 should work without issue. If there is no compatible version available then it's necessary to install one through spack if a build of Reactions with gcc is necessary.
-If permissions allow, installing ``gcc`` through a package manager (such as ``apt`` or ``dnf``) and running ``spack compiler find`` should work but if not then the compiler will need to be installed via spack.
-For this a version of ``gcc`` needs to be present that is older than the version that you wish to install. To install the new compiler, first run:
+A pre-existing ``gcc`` installation higher than version 11.3.0 should work without issue.
+If necessary and permissions allow, installing ``gcc`` through a package manager (such as ``apt`` or ``dnf``) and running ``spack compiler find`` should work but if not then the compiler will need to be installed via spack.
+For installing via spack a version of ``gcc`` needs to be present that is older than the version that you wish to install. To install the new compiler, first run:
 ::
 
     spack compiler find
@@ -48,51 +45,30 @@ This should let ``spack`` find the pre-existing compiler. If for example, ``gcc-
 
     spack install gcc@11.3.0%gcc@9.4.0
 
-Now it's necessary to remove all the compilers listed in ``spack compilers``, the reasoning for this is that the newly installed compiler will be tied to the ``Reactions`` installation rather than using it system-wide. This can be done using ``spack compiler remove {compiler}``, where ``{compiler}`` is the entry from ``spack compilers`` that is to be removed.
-Run the following command:
+Now it's necessary to remove all the compilers listed in ``spack compilers``, the reasoning for this is that the newly installed compiler will be tied to the ``Reactions`` installation rather than using it system-wide. 
+This can be done using ``spack compiler remove {compiler}``, where ``{compiler}`` is the entry from ``spack compilers`` that is to be removed.
+Then, run the following command:
 ::
 
     spack find --paths gcc
 
-Note the paths listed for the ``gcc`` command (for convenience the path could be set to an environment variable) and run:
+Note the paths listed for the ``gcc`` command (for convenience the path can be set to an environment variable) and run:
 ::
 
     spack compiler find ${gcc_compiler_install_path}
 
-From here the ``Standard Installation`` should be followed.
+Defining external packages (optional)
+=====================================
 
-Clang
-~~~~~
-For ``clang``, a pre-existing installation (ie. one installed with the OS) may not have the full ``llvm`` installation. Additionally, the version may not be one that's been validated for ``Reactions``. 
-If permissions allow, installing a compatible version of ``llvm`` through a package manager (such as ``apt`` or ``dnf``) and running ``spack compiler find`` should work but if not then the compiler will need to be installed via spack.
-For compatibility, it's recommended to install ``llvm@18.1.8`` using a pre-existing ``gcc`` compiler (ensuring that it's listed in ``spack compilers``), for example:
-::
-
-    spack install llvm@18.1.8%gcc@9.4.0
-
-
-Again remove existing compilers from ``spack compilers`` using ``spack compiler remove {compiler}`` where ``{compiler}`` is the entry from ``spack compilers`` that is to be removed.
-Run the following command:
-::
-
-    spack find --paths llvm
-
-Note the paths listed for the ``llvm`` command (for convenience the path could be set to an environment variable) and run:
-::
-
-    spack compiler find ${clang_compiler_install_path}
-
-From here the ``Standard Installation`` should be followed.
-
-Defining external packages
-==========================
-
-If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18.1.+) are pre-installed, then they can be designated as external packages that spack will try and use when installing Reactions. This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly. To designate a package as an external one, the path of the root directory of the package must be known, then the following command sets the package as external:
+If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18.1.+) are pre-installed, then they can be designated as external packages that spack will try and use when installing Reactions. 
+This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly. 
+To designate a package as an external one, the path of the root directory of the package must be known, then the following command sets the package as external:
 ::
 
     spack external find --path {path_to_package} {name_of_package}
 
-Note, this must be done outside the Reactions spack environment (for example in the $HOME directory). For example, to set ``llvm`` as an external package where it's been installed via a package manager (``apt`` in this case):
+Note, this must be done outside the Reactions spack environment (for example in the $HOME directory). 
+For example, to set ``llvm`` as an external package where it's been installed via a package manager (``apt`` in this case):
 ::
 
     spack external find --path /usr/lib/llvm-18 llvm
@@ -104,16 +80,16 @@ Non-cluster specific externals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The above packages are necessary for general installations on non-clusters and clusters, but on non-clusters there is an additional package that can be designated as external. Namely the ``mpich`` package, if pre-installed, is a useful external package. The same general command listed in this section should work for ``mpich``.
 
-Standard Installation
+Installation
 =====================
 
 Clone the repo:
 ::
 
-    git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/NEC_Reactions
-    cd $HOME/NEC_Reactions
+    git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/VANTAGE_Reactions
+    cd $HOME/VANTAGE_Reactions
 
-Feel free to replace ``$HOME/NEC_Reactions`` with a directory name of your choice.
+Feel free to replace ``$HOME/VANTAGE_Reactions`` with a directory name of your choice.
 Next activate the spack environment (the details of the config are in ``spack.yaml``):
 ::
 
@@ -123,67 +99,42 @@ You can exit the spack environment using the (``spack env deactivate`` command).
 
 **NOTE: All commands following this must be executed inside this environment.**
 
-Within the matrix of spec definitions in ``spack.yaml``, there is a entry relating to compilers containing ``"%gcc@11.3.0:"`` and ``%clang@18.1:`` which denotes the compilers that ``spack`` will try and concretize with. If either is not present, simply comment out that entry with ``#`` before concretizing.
-
-Concretize the current specs to be installed:
+Default Install
+~~~~~~~~~~~~~~~
+For a standard install (CPU-only, using GCC) run the commands:
 ::
 
-    spack -C ./scopes/{system-scope} concretize -f -U
+    spack install
 
-, where ``{system-scope}`` is either ``general`` or ``CSD3_GPU_node`` depending on which system type ``Reactions`` is being installed on.
+Note if there is a compiler error or out-of-RAM crash when running the command then add ``-j1`` after ``spack install`` and try again. 
 
-Install
-~~~~~~~
-For a standard install (CPU-only, no tests) run the commands:
-::
+NOTE - It is recommended to not exceed ``-j2`` if there's less than 16GB of system RAM.
 
-    spack install --only-concrete reactions%{compiler}~enable_tests ^adaptivecpp compilationflow={omplibraryonly, ompaccelerated}
+Optional variants
+~~~~~~~~~~~~~~~~~
+In addition to the default environment defined in ``spack.yaml`` in the root directory of the package (``$HOME/VANTAGE_Reactions``), there are also some variants included in the ``extra_environments``.
 
-Where the ``{compiler}`` is the compiler you wish to install with. Additionally choose one of the two options listed for the ``compilationflow``. Note if there is a compiler error when running the command then add ``-j1`` after ``spack install`` and try again.
+Each sub-folder has it's own ``spack.yaml`` that defines an environment and spec that's specific to that sub-folder. For example, the ``spack_omp_accelerated``
+contains a spec that allows for an installation with ``adaptivecpp`` designating ``llvm`` as the backend for compilation.
 
-CUDA installation (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To use any of these environments, navigate to the relevant folder and activate the environment with ``spack env activate -p -d .`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Then simply navigate to the package root directory (``$HOME/VANTAGE_Reactions``) and run ``spack install``.
 
-For a NVIDIA-GPU specific installation, if not already done then repeat the steps for cloning the repo, activating the environment and concretizing the specs. For the installation:
-::
+For CUDA-specific installations, the environments are provided but given the subtleties associated with this installation, there is no guarantee that these will work out-of-the-box and might require more modifications (possibly outside of the ``spack.yaml``) to function.
 
-    spack install --only-concrete reactions~enable_tests%{compiler} ^adaptivecpp compilationflow={cudanvcxx, cudallvm}
-
-Unit tests (Optional)
-=====================
-
-Building the unit-tests is mostly the same as a standard installation with some install options changed. The compilation will produce a ``unit_tests`` executable in the ``test/unit`` directory inside the build directory created by spack during installation.
-
-Note that for running the tests, it might be necessary to load the relevant MPI package that spack has installed. It's possible to identify this by using ``spack find mpich`` and subsequently loading the relevant package with ``spack load`` before running the unit tests. This is only necessary if not running on CSD3 (or any other system with an externally defined openmpi or mpich).
-
-Build unit-tests (CPU)
-~~~~~~~~~~~~~~~~~~~~~~
-
-For the CPU specific version:
-::
-
-    spack install --only-concrete reactions%{compiler}+enable_tests ^neso-particles~build_tests ^adaptivecpp compilationflow={omplibraryonly, ompaccelerated}
-
-This will build the unit tests for ``Reactions`` but not for ``neso-particles``. To build the ``neso-particles`` tests as well, run:
-::
-
-    spack install --only-concrete reactions%{compiler}+enable_tests ^neso-particles+build_tests ^adaptivecpp compilationflow={omplibraryonly, ompaccelerated}
-
-Build unit-tests (GPU)
-~~~~~~~~~~~~~~~~~~~~~~
-
-For the GPU specific version:
-::
-
-    spack install --only-concrete reactions%{compiler}+enable_tests ^neso-particles~build_tests ^adaptivecpp compilationflow={cudanvcxx, cudallvm}
-
-This will build the unit tests for ``Reactions`` but not for ``neso-particles``. To build the ``neso-particles`` tests as well, run:
-::
-
-    spack install --only-concrete reactions%{compiler}+enable_tests ^neso-particles+build_tests ^adaptivecpp compilationflow={cudanvcxx, cudallvm}
+If any compatibility issues are present when attempting these optional variants, please contact the repo maintainers for support.
 
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
+
+The unit test binary is located in the build directory(referred from here as ``{build_dir}``) that's created by spack. The signature for the path usually looks like:
+::
+
+    {build_dir} = build-{OS}-{DISTRO}-{ARCH}-{HASH}/spack-build-{HASH}
+
+For example a ``build-{OS}-{DISTRO}-{ARCH}`` prefix might look like: ``build-linux-ubuntu20.04-skylake``, indicating the system specs as a Linux OS, Ubuntu 20.04 distro and Intel Skylake architecture for the CPU.
+
+With the default installation, there should only be one build directory that looks like this, but if multiple variants are installed then there will be multiple build directories.
+The ``{HASH}`` for these builds can be found using the ``spack find -vl reactions`` command. This will list the installed version of the package for the environment that is currently activated.
 
 The CPU specific command to run the unit tests is:
 ::

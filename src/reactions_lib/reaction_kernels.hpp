@@ -1,77 +1,141 @@
-#pragma once
+#ifndef REACTIONS_REACTION_KERNELS_H
+#define REACTIONS_REACTION_KERNELS_H
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Base reaction kernels object.
- *
- * @param required_int_props Properties<INT> object containing information
- * regarding the required INT-based properties for the reaction kernel.
- * @param required_real_props Properties<REAL> object containing information
- * regarding the required REAL-based properties for the reaction kernel.
- * @param required_int_props_ephemeral Properties<INT> object containing
- * information regarding the required INT-based ephemeral properties for the
- * reaction kernel.
- * @param required_real_props_ephemeral Properties<REAL> object containing
- * information regarding the required REAL-based properties for the reaction
- * kernel.
- * @param pre_req_ndims Integer defining the number of dimensions required by a
- * reaction kernel (this in turn matches the number of ReactionData-derived
- * objects that must be passed to the constructor of a DataCalculator object
- * when this kernel and the DataCalculator object are passed to a
- * LinearReactionBase-derived object constructor).
- * @param properties_map A std::map<int, std::string> object to be used when
- * retrieving property names (in get_required_real_props(...) and
- * get_required_int_props(...)).
  */
 struct ReactionKernelsBase {
 
-  ReactionKernelsBase(Properties<INT> required_int_props,
-                      Properties<REAL> required_real_props,
-                      Properties<INT> required_int_props_ephemeral,
-                      Properties<REAL> required_real_props_ephemeral,
-                      INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = get_default_map())
+  /**
+   * @brief Constructor for ReactionKernelsBase.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction kernel.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction kernel.
+   * @param required_int_props_ephemeral Properties<INT> object containing
+   * information regarding the required INT-based ephemeral properties for the
+   * reaction kernel.
+   * @param required_real_props_ephemeral Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the reaction
+   * kernel.
+   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
+   * required by a reaction kernel (this in turn matches the number of
+   * ReactionData-derived objects that must be passed to the constructor of a
+   * DataCalculator object when this kernel and the DataCalculator object are
+   * passed to a LinearReactionBase-derived object constructor).
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionKernelsBase(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      Properties<INT> required_int_props_ephemeral,
+      Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims = 0,
+      std::map<int, std::string> properties_map = get_default_map())
       : required_int_props(required_int_props),
         required_real_props(required_real_props),
         required_int_props_ephemeral(required_int_props_ephemeral),
         required_real_props_ephemeral(required_real_props_ephemeral),
         pre_req_ndims(pre_req_ndims) {
-          NESOWARN(
-            map_subset_check(properties_map),
-            "The provided properties_map does not include all the keys from the default_map (and therefore is not an extension of that map). \
-            There may be inconsitencies with indexing of properties."
-          );
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
 
-          this->properties_map = properties_map;
-        }
+    this->properties_map = properties_map;
+  }
 
-  ReactionKernelsBase(std::map<int, std::string> properties_map = get_default_map())
+  /**
+   * \overload
+   * @brief Constructor for ReactionKernelsBase that by default sets no required
+   * props.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionKernelsBase(
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
                             Properties<INT>(), Properties<REAL>(), 0,
                             properties_map) {}
 
-  ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = get_default_map())
+  /**
+   * \overload
+   * @brief Constructor for ReactionKernelsBase that by default only sets
+   * required_int_props.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction kernel.
+   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
+   * required by a reaction kernel (this in turn matches the number of
+   * ReactionData-derived objects that must be passed to the constructor of a
+   * DataCalculator object when this kernel and the DataCalculator object are
+   * passed to a LinearReactionBase-derived object constructor).
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionKernelsBase(
+      Properties<INT> required_int_props, INT pre_req_ndims = 0,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(required_int_props, Properties<REAL>(),
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}
 
-  ReactionKernelsBase(Properties<REAL> required_real_props,
-                      INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = get_default_map())
+  /**
+   * \overload
+   * @brief Constructor for ReactionKernelsBase that by default only sets
+   * required_real_props.
+   *
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction kernel.
+   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
+   * required by a reaction kernel (this in turn matches the number of
+   * ReactionData-derived objects that must be passed to the constructor of a
+   * DataCalculator object when this kernel and the DataCalculator object are
+   * passed to a LinearReactionBase-derived object constructor).
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionKernelsBase(
+      Properties<REAL> required_real_props, INT pre_req_ndims = 0,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(Properties<INT>(), required_real_props,
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}
 
-  ReactionKernelsBase(Properties<INT> required_int_props,
-                      Properties<REAL> required_real_props,
-                      INT pre_req_ndims = 0,
-                      std::map<int, std::string> properties_map = get_default_map())
+  /**
+   * \overload
+   * @brief Constructor for ReactionKernelsBase that by default only sets
+   * required_int_props and required_real_props.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction kernel.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction kernel.
+   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
+   * required by a reaction kernel (this in turn matches the number of
+   * ReactionData-derived objects that must be passed to the constructor of a
+   * DataCalculator object when this kernel and the DataCalculator object are
+   * passed to a LinearReactionBase-derived object constructor).
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionKernelsBase(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      INT pre_req_ndims = 0,
+      std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(required_int_props, required_real_props,
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}
@@ -329,4 +393,5 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
     return;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
+#endif

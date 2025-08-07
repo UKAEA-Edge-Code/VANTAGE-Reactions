@@ -1,7 +1,7 @@
 #include "test_particle_group_merging.hpp"
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(MergeTransformationStrategy, transform_2D) {
 

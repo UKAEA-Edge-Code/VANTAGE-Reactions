@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 // Testing required_species_prop_names call for Properties struct
 TEST(Properties, species_prop_names) {

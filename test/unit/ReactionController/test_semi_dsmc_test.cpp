@@ -4,7 +4,7 @@
 #include <memory>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, semi_dsmc_test) {
   const int N_total = 1600;

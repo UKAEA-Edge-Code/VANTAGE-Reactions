@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(CrossSections, AMJUEL_H1_low_energy) {  
     REAL mass_amu = 1.0;

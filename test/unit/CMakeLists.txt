@@ -51,7 +51,7 @@ foreach(TEST_DIR ${TEST_DIRS})
 
         add_executable(${TEST_NAME} ${TEST_SOURCES})
 
-        target_link_libraries(${TEST_NAME} PRIVATE Reactions NESO-Particles::NESO-Particles GTest::gtest)
+        target_link_libraries(${TEST_NAME} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
         target_compile_definitions(${TEST_NAME} PRIVATE GPU_SELECTOR=0)
         target_compile_options(${TEST_NAME} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS} ${TEST_COVERAGE_FLAGS})
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${TEST_COVERAGE_FLAGS}")
@@ -68,13 +68,12 @@ if($ENV{SINGLE_TEST_NAME} STREQUAL "ALL" OR $ENV{SINGLE_TEST_NAME} STREQUAL "FUL
     message("Building all tests...")
     add_executable(${EXECUTABLE} ${TEST_MAIN} ${TEST_LIST})
 
-    target_link_libraries(${EXECUTABLE} PRIVATE Reactions NESO-Particles::NESO-Particles GTest::gtest)
-    target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
-    target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-    
-    add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${TEST_MAIN} ${TEST_LIST})
-    gtest_add_tests(TARGET ${EXECUTABLE} SOURCES ${TEST_MAIN})
+target_link_libraries(${EXECUTABLE} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
+target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
+target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${src_unit})
+gtest_add_tests(TARGET ${EXECUTABLE} SOURCES ${src_unit})
 
     install(TARGETS ${EXECUTABLE} DESTINATION bin)
 else()

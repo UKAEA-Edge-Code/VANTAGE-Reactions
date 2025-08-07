@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(ReactionData, AMJUEL2DData_coronal) {
   const int N_total = 1000;

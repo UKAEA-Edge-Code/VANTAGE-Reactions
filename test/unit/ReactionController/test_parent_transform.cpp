@@ -4,7 +4,7 @@
 #include <memory>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, parent_transform) {
   const int N_total = 1600;

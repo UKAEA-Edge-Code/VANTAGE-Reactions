@@ -1,9 +1,10 @@
-#pragma once
+#ifndef REACTIONS_MOCK_PARTICLE_GROUP_H
+#define REACTIONS_MOCK_PARTICLE_GROUP_H
 #include <neso_particles.hpp>
 #include <reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 template <size_t ndim = 2>
 inline auto create_test_particle_group(int N_total)
@@ -121,3 +122,4 @@ inline auto create_test_particle_group(int N_total)
 
   return particle_group;
 }
+#endif
