@@ -1,4 +1,4 @@
-#include "include/mock_particle_group.hpp"
+#include "../include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -9,8 +9,6 @@ TEST(Recombination, kernel_test) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto particle_spec = particle_group->particle_spec;
-
   particle_loop(
       particle_group, [=](auto internal_state) { internal_state.at(0) = -1; },
       Access::write(Sym<INT>("INTERNAL_STATE")))
@@ -18,15 +16,16 @@ TEST(Recombination, kernel_test) {
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
+  auto particle_spec = particle_group->get_particle_spec();
   auto marker_species = Species("ION", 1.0, 0.0, -1);
   auto neutral_species = Species("ION", 1.0, 0.0, 0);
 
   auto test_data = FixedRateData(1.0);
   auto test_data_2 = FixedRateData(2.0);
 
-  auto test_data_calc =
-      DataCalculator<decltype(test_data), decltype(test_data),
-                     decltype(test_data_2)>(test_data, test_data, test_data_2);
+  auto test_data_calc = DataCalculator<decltype(test_data), decltype(test_data),
+                                       decltype(test_data_2)>(
+      test_data, test_data, test_data_2);
 
   auto test_normalised_potential_energy = 13.6;
 

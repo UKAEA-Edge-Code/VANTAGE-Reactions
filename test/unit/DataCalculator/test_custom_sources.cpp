@@ -1,22 +1,26 @@
-#include "include/mock_particle_group.hpp"
+#include "../include/mock_particle_group.hpp"
+#include "../include/mock_reactions.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
-TEST(IoniseReaction, calc_rate) {
+TEST(DataCalculator, custom_sources) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto test_data = FixedRateData(1.0);
-  auto electron_species = Species("ELECTRON");
-  auto target_species = Species("ION", 1.0);
-  target_species.set_id(0);
-  auto test_reaction = ElectronImpactIonisation<FixedRateData, FixedRateData>(
-      particle_group->sycl_target, test_data, test_data, target_species,
-      electron_species);
+  auto particle_spec = particle_group->get_particle_spec();
+
+  auto test_reaction =
+      LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
+                         DataCalculator<TestReactionData, TestReactionData>>(
+
+          particle_group->sycl_target, 0, std::array<int, 0>{},
+          TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
+          DataCalculator<TestReactionData, TestReactionData>(
+              TestReactionData(3.0), TestReactionData(4.0)));
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -32,10 +36,13 @@ TEST(IoniseReaction, calc_rate) {
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
-
+    auto source_density =
+        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.9);
+      EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), 3.0);
+      EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 4.0);
     }
   }
 

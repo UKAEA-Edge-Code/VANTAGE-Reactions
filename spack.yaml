@@ -28,4 +28,7 @@ spack:
       providers:
         mpi: [mpich]
         sycl: [adaptivecpp]
+    python:
+      require:
+        - spec: "@3.8:"
 
