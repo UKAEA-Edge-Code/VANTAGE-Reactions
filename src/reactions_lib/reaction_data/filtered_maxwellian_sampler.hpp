@@ -118,7 +118,7 @@ struct FilteredMaxwellianOnDevice
                            (neutral_vels[i] - sampled_vels[i]);
       }
 
-      REAL relative_vel = std::sqrt(relative_vel_sq);
+      REAL relative_vel = Kernel::sqrt(relative_vel_sq);
       REAL value_at = this->cross_section.get_value_at(relative_vel);
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 

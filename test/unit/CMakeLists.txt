@@ -51,6 +51,14 @@ foreach(TEST_DIR ${TEST_DIRS})
 
         add_executable(${TEST_NAME} ${TEST_SOURCES})
 
+        target_precompile_headers(
+            ${TEST_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/src/reactions.hpp
+            ${CMAKE_SOURCE_DIR}/test/unit/include/mock_particle_group.hpp
+            ${CMAKE_SOURCE_DIR}/test/unit/include/mock_particle_properties.hpp
+            ${CMAKE_SOURCE_DIR}/test/unit/include/mock_reactions.hpp
+        )
+
         target_link_libraries(${TEST_NAME} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
         target_compile_definitions(${TEST_NAME} PRIVATE GPU_SELECTOR=0)
         target_compile_options(${TEST_NAME} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS} ${TEST_COVERAGE_FLAGS})
@@ -64,9 +72,16 @@ foreach(TEST_DIR ${TEST_DIRS})
     unset(src_unit)
 endforeach()
 
-if($ENV{SINGLE_TEST_NAME} STREQUAL "ALL" OR $ENV{SINGLE_TEST_NAME} STREQUAL "FULL")
+if($ENV{SINGLE_TEST_NAME} STREQUAL "ALL")
     message("Building all tests...")
     add_executable(${EXECUTABLE} ${TEST_MAIN} ${TEST_LIST})
+    target_precompile_headers(
+        ${EXECUTABLE} PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/reactions.hpp
+        ${CMAKE_SOURCE_DIR}/test/unit/include/mock_particle_group.hpp
+        ${CMAKE_SOURCE_DIR}/test/unit/include/mock_particle_properties.hpp
+        ${CMAKE_SOURCE_DIR}/test/unit/include/mock_reactions.hpp
+    )
 
 target_link_libraries(${EXECUTABLE} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
 target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
@@ -76,6 +91,8 @@ add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${src_unit})
 gtest_add_tests(TARGET ${EXECUTABLE} SOURCES ${src_unit})
 
     install(TARGETS ${EXECUTABLE} DESTINATION bin)
+elseif($ENV{SINGLE_TEST_NAME} STREQUAL "FULL")
+    message("Building all individual tests...")
 else()
     set(VALID_SINGLE_TEST FALSE)
     foreach(ITEST_NAME ${TEST_NAME_LIST})
