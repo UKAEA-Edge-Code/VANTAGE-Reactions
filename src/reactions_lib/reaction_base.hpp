@@ -56,6 +56,8 @@ struct AbstractReaction {
     this->pre_req_data->fill(0.0);
   }
 
+  virtual ~AbstractReaction() = default;
+
 public:
   /**
    * @brief Virtual functions to be overidden by an implementation in a derived
