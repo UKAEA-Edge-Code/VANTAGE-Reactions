@@ -89,7 +89,7 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
   reaction_controller.add_reaction(ionise_reaction_2);
 
   // We can now request an Euler step of 0.01 time units in standard deterministic mode
-  reaction_controller.apply_reactions(particle_group, 0.01, ControllerMode::standard_mode);
+  reaction_controller.apply(particle_group, 0.01, ControllerMode::standard_mode);
 
   return;
 }

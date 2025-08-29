@@ -23,11 +23,11 @@ TEST(ReactionData, FixedCoefficientData) {
       particle_group->sycl_target);
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
     auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
@@ -66,7 +66,7 @@ TEST(ReactionData, AMJUEL2DData) {
   auto expected_rate = 3.880728735562758;
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
@@ -110,7 +110,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
   REAL logT = std::log(2);
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     auto vel = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
     const int nrow = rate->nrow;
@@ -157,7 +157,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   auto expected_rate = 2.737188973785161;
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
@@ -235,7 +235,7 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 

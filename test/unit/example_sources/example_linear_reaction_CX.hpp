@@ -97,14 +97,14 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
     // This is the rate loop, here the reaction rates are calculated,
     // they are added to a total reaction rate, and the DataCalculator
     // performs any calculations in needs to
-    cx_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    cx_reaction.calculate_rates(particle_sub_group, i, i + 1);
 
     // For the product loop, the reaction needs to know the timestep (here
     // arbitrarily set to 0.1) and the product group
     //
     // The timestep is used to calculate the total particle weight participating
     // in the reaction as rate * timestep
-    cx_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    cx_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                         product_group);
   }
 

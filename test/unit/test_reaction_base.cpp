@@ -24,8 +24,8 @@ TEST(LinearReactionBase, calc_rate) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -53,8 +53,8 @@ TEST(LinearReactionBase, calc_var_rate) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   for (int i = 0; i < cell_count; i++) {
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -126,11 +126,11 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(subgroups[reaction], i, i + 1);
+      reactions[reaction]->calculate_rates(subgroups[reaction], i, i + 1);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->descendant_product_loop(
+      reactions[reaction]->apply(
           subgroups[reaction], i, i + 1, 0.1, descendant_particles);
     }
 
@@ -200,11 +200,11 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
         std::make_shared<ParticleSubGroup>(particle_group);
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->run_rate_loop(particle_sub_group, i, i + 1);
+      reactions[reaction]->calculate_rates(particle_sub_group, i, i + 1);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->descendant_product_loop(particle_sub_group, i, i + 1,
+      reactions[reaction]->apply(particle_sub_group, i, i + 1,
                                                    0.1, descendant_particles);
     }
 
