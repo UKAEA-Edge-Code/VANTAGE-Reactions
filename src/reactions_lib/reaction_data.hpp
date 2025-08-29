@@ -231,6 +231,8 @@ struct ReactionDataBase {
 
   static constexpr size_t get_dim() { return dim; }
 
+  virtual ~ReactionDataBase<dim, RNG_TYPE>() = default;
+
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;

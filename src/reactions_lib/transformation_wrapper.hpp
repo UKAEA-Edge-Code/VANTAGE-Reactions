@@ -25,6 +25,8 @@ struct MarkingStrategy {
     // calling code will hopefully segfault.
     return nullptr;
   };
+
+  virtual ~MarkingStrategy() = default;
 };
 
 /**
@@ -54,6 +56,8 @@ struct TransformationStrategy {
   TransformationStrategy() = default;
 
   virtual void transform(ParticleSubGroupSharedPtr target_subgroup){};
+
+  virtual ~TransformationStrategy() = default;
 };
 
 /**
@@ -180,6 +184,8 @@ struct TransformationWrapper {
   void add_marking_strategy(std::shared_ptr<MarkingStrategy> marking_strategy) {
     this->marking_strat.push_back(marking_strategy);
   }
+
+  virtual ~TransformationWrapper() = default;
 
 private:
   std::vector<std::shared_ptr<MarkingStrategy>> marking_strat;

@@ -140,6 +140,8 @@ struct ReactionKernelsBase {
                             Properties<INT>(), Properties<REAL>(),
                             pre_req_ndims, properties_map) {}
 
+  virtual ~ReactionKernelsBase() = default;
+
   /**
    * @brief Return all required integer property names, including ephemeral
    * properties

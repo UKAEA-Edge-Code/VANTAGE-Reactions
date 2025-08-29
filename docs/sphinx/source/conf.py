@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Reactions'
+project = 'VANTAGE-Reactions'
 copyright = '2024, UKAEA'
 author = 'Stefan Mijin, Sanket Gadgil'
 
@@ -23,7 +23,6 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'pydata_sphinx_theme'
-html_static_path = ['_static']
 
 html_sidebars = {
     "**": ["globaltoc.html"]

@@ -21,8 +21,7 @@ namespace VANTAGE::Reactions {
  * @tparam has_momentum_req_data The boolean specifying whether a
  * projectile momentum req_data is available.
  */
-template <int ndim_velocity, int ndim_source_momentum,
-          bool has_momentum_req_data>
+template <int ndim_velocity, int ndim_source_momentum>
 struct RecombReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   RecombReactionKernelsOnDevice() = default;
 
@@ -199,11 +198,8 @@ public:
  * velocity property (default value of 2)
  * @tparam ndim_source_momentum Optional number of dimensions for source
  * momentum property (default value of ndim_velocity)
- * @tparam Optional boolean specifying whether a projectile momentum req_data
- * is available (default value of false)
  */
-template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity,
-          bool has_momentum_req_data = false>
+template <int ndim_velocity = 2, int ndim_source_momentum = ndim_velocity>
 struct RecombReactionKernels : public ReactionKernelsBase {
 
   constexpr static auto props = default_properties;
@@ -304,16 +300,14 @@ struct RecombReactionKernels : public ReactionKernelsBase {
   };
 
 private:
-  RecombReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
-                                has_momentum_req_data>
+  RecombReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum>
       recomb_reaction_kernels_on_device;
 
 public:
   /**
    * @brief Getter for the SYCL device-specific struct.
    */
-  RecombReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum,
-                                has_momentum_req_data>
+  RecombReactionKernelsOnDevice<ndim_velocity, ndim_source_momentum>
   get_on_device_obj() {
     return this->recomb_reaction_kernels_on_device;
   }

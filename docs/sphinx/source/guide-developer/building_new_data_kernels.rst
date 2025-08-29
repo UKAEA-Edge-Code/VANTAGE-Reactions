@@ -17,7 +17,7 @@ Reaction data
 When building new reaction data objects, the following should be kept in mind:
 
 #. The device type should be constructed in the host type constructor and stored on the host type
-#. Required properties need to be passed to the base reaction data class :class:`ReactionDataBase` in the form of :class:`Properties` containers - so they are best stored in a namespace outside of the host class
+#. Required properties need to be passed to the base reaction data class :class:`ReactionDataBase` in the form of :class:`Properties` containers - so they are best stored as static class members
 #. Any required properties must be associated with public indices on the device type - this has to be done in the host type constructor
 #. The device type stored on the host type must be made accessible through the definition of a :code:`get_on_device_obj()` getter 
 

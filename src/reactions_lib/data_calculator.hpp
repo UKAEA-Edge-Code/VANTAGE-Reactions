@@ -16,7 +16,9 @@ namespace VANTAGE::Reactions {
  * for the purposes of type-checking of DataCalculator (when it's passed as a
  * typename template parameter - see LinearReactionBase)
  */
-struct AbstractDataCalculator {};
+struct AbstractDataCalculator {
+  virtual ~AbstractDataCalculator() = default;
+};
 
 /**
  * @brief A static container class for ReactionData objects

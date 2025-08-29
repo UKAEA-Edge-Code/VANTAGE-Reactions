@@ -361,6 +361,8 @@ template <typename PROP_TYPE> struct Properties {
     std::string index_error_msg =
         properties_map.at(prop) + " property not found in simple_props.";
     NESOASSERT(false, index_error_msg);
+
+    return 0;
   }
 
   /**

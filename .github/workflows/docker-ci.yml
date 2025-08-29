@@ -27,6 +27,16 @@ jobs:
         run: |
           docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
 
+  docs:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build docs
+        run: cd docs && pip install -U -r sphinx/requirements.txt && make
   # docs:
   #   runs-on: ubuntu-24.04
   #   needs: tests
