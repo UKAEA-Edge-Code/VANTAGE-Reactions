@@ -1,8 +1,6 @@
 # Edge Code Reactions Library
 
-Repository for a Reactions library as part of the VANTAGE (Versatile Accurate Neutral Transport and Analysis with GPU Execution) suite, based on NESO-Particles.
-
-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library.
+VANTAGE-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library.
 
 Features provided by the library are:
 - An extensible reaction abstraction, designed to be modular, separating the data and the actions on the parents/products 
