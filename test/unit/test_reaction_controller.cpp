@@ -44,7 +44,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.01);
+  reaction_controller.apply(particle_group, 0.01);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -63,7 +63,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
-  reaction_controller.apply_reactions(particle_group, 0.01);
+  reaction_controller.apply(particle_group, 0.01);
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 4);
@@ -144,7 +144,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply(particle_group, 0.1);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -232,7 +232,7 @@ TEST(ReactionController, multi_reaction_multi_apply) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply(particle_group, 0.1);
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
@@ -301,7 +301,7 @@ TEST(ReactionController, parent_transform) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply_reactions(particle_group, 5e-15);
+  reaction_controller.apply(particle_group, 5e-15);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -343,7 +343,7 @@ TEST(ReactionController, ionisation_reaction) {
       std::make_shared<ElectronImpactIonisation<FixedRateData, FixedRateData>>(
           ionise_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 1.5);
+  reaction_controller.apply(particle_group, 1.5);
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -411,7 +411,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
     num_parts.push_back(particle_group->get_npart_cell(icell));
   };
 
-  reaction_controller.apply_reactions(particle_group, 0.5);
+  reaction_controller.apply(particle_group, 0.5);
 
   auto accumulated_1d =
       accumulator_transform->get_cell_data("ELECTRON_SOURCE_DENSITY");
@@ -490,7 +490,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
           ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData>>(
           ionise_reaction));
 
-  reaction_controller.apply_reactions(particle_group, 0.1);
+  reaction_controller.apply(particle_group, 0.1);
 
   auto test_removal_wrapper = TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -567,7 +567,7 @@ TEST(ReactionController, semi_dsmc_test) {
   reaction_controller.add_reaction(test_reaction_2);
 
   auto start_npart = particle_group->get_npart_local();
-  reaction_controller.apply_reactions(particle_group, 1.0,
+  reaction_controller.apply(particle_group, 1.0,
                                       ControllerMode::semi_dsmc_mode);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

@@ -443,7 +443,7 @@ TEST(Properties, full_use_properties_map) {
   auto expected_rate = 3.880728735562758;
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 

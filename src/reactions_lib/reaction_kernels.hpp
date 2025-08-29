@@ -279,7 +279,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which descendant_product_loop is called. Access using either
+   * inside which apply is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -310,7 +310,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which descendant_product_loop is called. Access using either
+   * inside which apply is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -341,7 +341,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which descendant_product_loop is called. Access using either
+   * inside which apply is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -371,7 +371,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
    * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which descendant_product_loop is called. Access using either
+   * inside which apply is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products

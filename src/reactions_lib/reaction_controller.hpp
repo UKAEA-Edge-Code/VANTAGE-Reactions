@@ -237,7 +237,7 @@ public:
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
    */
-  void apply_reactions(
+  void apply(
       ParticleGroupSharedPtr particle_group, double dt,
       ControllerMode controller_mode = ControllerMode::standard_mode) {
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
@@ -262,7 +262,7 @@ public:
                "ParticleGroup passed to controller does not contain expected "
                "reacted flag dat, or the dat has wrong dimensionality");
     NESOASSERT(this->reactions.size() > 0,
-               "ReactionController.apply_reactions(...) cannot be called "
+               "ReactionController.apply(...) cannot be called "
                "without adding at "
                "least one reaction to the ReactionController object (via "
                "ReactionController.add_reaction(...)).");
@@ -322,7 +322,7 @@ public:
 
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        this->reactions[r]->run_rate_loop(
+        this->reactions[r]->calculate_rates(
             this->species_groups[in_state], i,
             std::min(i + this->cell_block_size, cell_count));
       }
@@ -355,7 +355,7 @@ public:
 
           INT in_state = this->reactions[r]->get_in_states()[0];
 
-          this->reactions[r]->run_rate_loop(
+          this->reactions[r]->calculate_rates(
               this->reacted_species_groups[in_state], i,
               std::min(i + this->cell_block_size, cell_count));
         }
@@ -371,7 +371,7 @@ public:
       for (int r = 0; r < reactions.size(); r++) {
         INT in_state = this->reactions[r]->get_in_states()[0];
 
-        this->reactions[r]->descendant_product_loop(
+        this->reactions[r]->apply(
             this->reacted_species_groups[in_state], i,
             std::min(i + this->cell_block_size, cell_count), dt, child_group,
             use_full_weight);

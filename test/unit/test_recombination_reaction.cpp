@@ -42,8 +42,8 @@ TEST(Recombination, kernel_test) {
       particle_group->domain, particle_spec, particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight_child = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);

@@ -63,11 +63,11 @@ public:
    * @brief Virtual functions to be overidden by an implementation in a derived
    * struct.
    */
-  virtual void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
+  virtual void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
                              INT cell_idx_start, INT cell_idx_end) {}
 
   virtual void
-  descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
+  apply(ParticleSubGroupSharedPtr particle_sub_group,
                           INT cell_idx_start, INT cell_idx_end, double dt,
                           ParticleGroupSharedPtr child_group,
                           bool full_weight = false) {}
@@ -179,10 +179,10 @@ struct LinearReactionBase : public AbstractReaction {
    * @param out_states Array of integers specifying the species IDs of the
    * descendants produced by the derived reaction.
    * @param reaction_data ReactionData object defining the reaction rate (used
-   * in run_rate_loop)
+   * in calculate_rates)
    * @param reaction_kernels ReactionKernels object defining the properties of
    * the products and the feedback on the parent particle and fields (used in
-   * descendant_product_loop)
+   * apply)
    * @param data_calculator DataCalculator object defining any additional
    * required data for the kernels, in addition to the rate
    * @param properties_map (Optional) A std::map<int, std::string> object to be
@@ -198,8 +198,8 @@ struct LinearReactionBase : public AbstractReaction {
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), data_calculator(data_calculator) {
     // These assertions are necessary since the typenames for ReactionData and
-    // ReactionKernels could be any type and for run_rate_loop and
-    // descendant_product_loop to operate correctly, ReactionData and
+    // ReactionKernels could be any type and for calculate_rates and
+    // apply to operate correctly, ReactionData and
     // ReactionKernels have to be derived from ReactionKernelsBase and
     // AbstractReactionKernels respectively
     static_assert(std::is_base_of_v<
@@ -223,16 +223,16 @@ struct LinearReactionBase : public AbstractReaction {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
-    run_rate_loop_int_syms = utils::build_sym_vector<INT>(
+    calculate_rates_int_syms = utils::build_sym_vector<INT>(
         reaction_data_buffer.get_required_int_props());
 
-    run_rate_loop_real_syms = utils::build_sym_vector<REAL>(
+    calculate_rates_real_syms = utils::build_sym_vector<REAL>(
         reaction_data_buffer.get_required_real_props());
 
-    descendant_product_loop_int_syms = utils::build_sym_vector<INT>(
+    apply_int_syms = utils::build_sym_vector<INT>(
         reaction_kernel_buffer.get_required_int_props());
 
-    descendant_product_loop_real_syms = utils::build_sym_vector<REAL>(
+    apply_real_syms = utils::build_sym_vector<REAL>(
         reaction_kernel_buffer.get_required_real_props());
 
     auto descendant_matrix_spec =
@@ -260,10 +260,10 @@ struct LinearReactionBase : public AbstractReaction {
    * @param out_states Array of integers specifying the species IDs of the
    * descendants produced by the derived reaction.
    * @param reaction_data ReactionData object defining the reaction rate (used
-   * in run_rate_loop)
+   * in calculate_rates)
    * @param reaction_kernels ReactionKernels object defining the properties of
    * the products and the feedback on the parent particle and fields (used in
-   * descendant_product_loop)
+   * apply)
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (weight and total_reaction_rate).
    */
@@ -287,7 +287,7 @@ struct LinearReactionBase : public AbstractReaction {
    * principle ParticleLoop to calculate reaction rates.
    * @param cell_idx_end The cell id up to which to run the rate loop over
    */
-  void run_rate_loop(ParticleSubGroupSharedPtr particle_sub_group,
+  void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
                      INT cell_idx_start, INT cell_idx_end) override {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
@@ -334,9 +334,9 @@ struct LinearReactionBase : public AbstractReaction {
         },
         Access::read(ParticleLoopIndex{}),
         Access::write(
-            sym_vector<INT>(particle_sub_group, this->run_rate_loop_int_syms)),
+            sym_vector<INT>(particle_sub_group, this->calculate_rates_int_syms)),
         Access::read(sym_vector<REAL>(particle_sub_group,
-                                      this->run_rate_loop_real_syms)),
+                                      this->calculate_rates_real_syms)),
         Access::write(this->get_total_reaction_rate()),
         Access::write(device_rate_buffer),
         Access::read(this->reaction_data.get_rng_kernel()));
@@ -350,7 +350,7 @@ struct LinearReactionBase : public AbstractReaction {
    * @brief Creates and processes any descendant products from the reaction
    * and modifies the appropriate background fields and/or parent particle
    * properties based on a weight modification calculation that utilises
-   * results from run_rate_loop(...)
+   * results from calculate_rates(...)
    *
    * @param particle_sub_group ParticleSubGroupSharedPtr that contains
    * particles with the relevant species ID out of the full ParticleGroup
@@ -363,7 +363,7 @@ struct LinearReactionBase : public AbstractReaction {
    * @param full_weight If true, will consume the full weight of the particles,
    * regardless of timestep
    */
-  void descendant_product_loop(ParticleSubGroupSharedPtr particle_sub_group,
+  void apply(ParticleSubGroupSharedPtr particle_sub_group,
                                INT cell_idx_start, INT cell_idx_end, double dt,
                                ParticleGroupSharedPtr child_group,
                                bool full_weight = false) override {
@@ -443,9 +443,9 @@ struct LinearReactionBase : public AbstractReaction {
         Access::write(this->descendant_particles),
         Access::read(ParticleLoopIndex{}),
         Access::write(sym_vector<INT>(particle_sub_group,
-                                      this->descendant_product_loop_int_syms)),
+                                      this->apply_int_syms)),
         Access::write(sym_vector(particle_sub_group,
-                                 this->descendant_product_loop_real_syms)),
+                                 this->apply_real_syms)),
         Access::read(device_rate_buffer),
         Access::read(this->get_pre_req_data()),
         Access::read(device_weight_buffer),
@@ -601,11 +601,11 @@ private:
   ReactionKernels reaction_kernels;
   std::shared_ptr<DescendantProducts> descendant_particles;
 
-  std::vector<Sym<INT>> run_rate_loop_int_syms;
-  std::vector<Sym<REAL>> run_rate_loop_real_syms;
+  std::vector<Sym<INT>> calculate_rates_int_syms;
+  std::vector<Sym<REAL>> calculate_rates_real_syms;
 
-  std::vector<Sym<INT>> descendant_product_loop_int_syms;
-  std::vector<Sym<REAL>> descendant_product_loop_real_syms;
+  std::vector<Sym<INT>> apply_int_syms;
+  std::vector<Sym<REAL>> apply_real_syms;
 
   DataCalc data_calculator;
 };

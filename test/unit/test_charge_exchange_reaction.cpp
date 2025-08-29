@@ -30,8 +30,8 @@ TEST(ChargeExchange, simple_beam_exchange) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
@@ -113,8 +113,8 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
@@ -206,8 +206,8 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(particle_sub_group, i, i + 1, 0.1,
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                                           descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
