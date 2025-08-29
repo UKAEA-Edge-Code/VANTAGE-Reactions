@@ -31,15 +31,11 @@ The main components of reactions are the reaction data and reaction kernel objec
 * Reaction data - calculate the per particle data required for the application of the reaction. This could be reaction rates, values randomly sampled from some distributions, etc. 
 * Reaction kernels - define the properties of the products of the reaction (velocities, weights, internal states), as well as the feedback on fields and the parent particle 
 
-TODO:[ADD FIGURE WITH EXAMPLE REACTION]
-
 The key idea behind this separation of concern is the ability to separate the data and the physics, and allow the combination of different data calculation methods and different reaction physics. For example, the physics of an ionisation reaction is the same regardless of the reaction rate or the energy cost of the reaction, and the goal of flexibility in Reactions has lead to the data+kernel design. 
 
 The implementation of reactions, as well as reaction kernels will be covered in the developer guide, as it involves considerations of SYCL host and device types, as well as NESO-Particles :class:`ParticleLoop` constructs. 
 
 Both data and kernels, in executing their responsibilities, access particle data, and use the property map system.
-
-TODO:[ADD SIMPLIFIED UML DIAGRAM HERE]
 
 Reaction data and kernels are invoked in the two main :class:`ParticleLoop`-containing methods in the linear reaction class, with the idea that data is calculated first, storing anything needed for the application of the kernels or for the global management of reaction application. Both loops are assumed to be invoked cell-wise, which allows for the reuse of various buffers.
 
