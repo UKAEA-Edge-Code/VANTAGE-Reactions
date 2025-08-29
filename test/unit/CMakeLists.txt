@@ -6,7 +6,7 @@ include(GoogleTest)
 add_executable(${EXECUTABLE} ${src_unit})
 target_precompile_headers(
         ${EXECUTABLE} PRIVATE
-        ${CMAKE_SOURCE_DIR}/src/reactions.hpp
+        ${CMAKE_SOURCE_DIR}/src/reactions/reactions.hpp
         ${CMAKE_SOURCE_DIR}/test/unit/include/mock_particle_group.hpp
         ${CMAKE_SOURCE_DIR}/test/unit/include/mock_particle_properties.hpp
         ${CMAKE_SOURCE_DIR}/test/unit/include/mock_reactions.hpp

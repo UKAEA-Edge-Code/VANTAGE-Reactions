@@ -1,6 +1,6 @@
 
 #include <gtest/gtest.h>
-#include <reactions.hpp>
+#include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
