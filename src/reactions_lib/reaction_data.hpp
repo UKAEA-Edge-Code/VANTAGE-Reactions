@@ -1,14 +1,15 @@
-#pragma once
+#ifndef REACTIONS_REACTION_DATA_H
+#define REACTIONS_REACTION_DATA_H
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include <stdexcept>
 
-// TODO: Generalise cross-section get_max_rate_val()
 using namespace NESO::Particles;
+namespace VANTAGE::Reactions {
 
 /**
- * struct AbstractCrossSection - Abstract base class for cross-section objects.
+ * @brief An abstract base class for cross-section objects.
  * All classes derived from this class should be device copyable in order to be
  * used within ReactionData classes.
  */
@@ -21,7 +22,13 @@ struct AbstractCrossSection {
    * @param relative_vel Magnitude of relative velocity of target and projectile
    * @return REAL-valued cross-section at requested relative vel magnitude
    */
-  virtual REAL get_value_at(const REAL &relative_vel) const {};
+  REAL get_value_at(const REAL &relative_vel) const {
+    // This function should never actually be called. If it is called and we do
+    // not have a return value then the calling function will receive an
+    // undefined value. By setting a value we at least know what the returned
+    // value is and can pick one that is detectable.
+    return std::numeric_limits<REAL>::lowest();
+  };
 
   /**
    * @brief Get the maximum value of sigma*v_r where sigma is this cross-section
@@ -29,7 +36,13 @@ struct AbstractCrossSection {
    *
    * @return REAL-valued maximum rate
    */
-  virtual REAL get_max_rate_val() const {};
+  REAL get_max_rate_val() const {
+    // This function should never actually be called. If it is called and we do
+    // not have a return value then the calling function will receive an
+    // undefined value. By setting a value we at least know what the returned
+    // value is and can pick one that is detectable.
+    return std::numeric_limits<REAL>::lowest();
+  };
 
   /**
    * @brief Accept-reject function for when this cross-section is used in
@@ -40,54 +53,176 @@ struct AbstractCrossSection {
    * @param relative_vel Magnitude of relative velocity of the projectile and
    * target
    * @param uniform_rand Uniformly sampled random number on (0,1)
+   * @param value_at Value of cross section for a given relative velocity value
+   * of projectile and target (NOTE this is currently a workaround due to the
+   * limitation on calling get_value_at(...) inside this function.)
+   * @param max_rate_val Maximum value of sigma*v_r (NOTE this is currently a
+   * workaround due to the limitation on calling get_max_rate_val(...) inside
+   * this function.)
    * @return true if relative_vel value is accepted, false otherwise
    */
-  virtual bool accept_reject(REAL relative_vel, REAL uniform_rand,
-                             REAL value_at, REAL max_rate_val) const {
+  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at,
+                     REAL max_rate_val) const {
     return uniform_rand < (value_at * relative_vel / max_rate_val);
   }
 };
+
 /**
  * @brief Base reaction data object.
+ *
+ * @tparam dim Used to set the size of the array that calc_data returns
+ * (Optional).
+ * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBase {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
-  ReactionDataBase(Properties<INT> required_int_props,
-                   Properties<REAL> required_real_props)
-      : required_int_props(required_int_props),
-        required_real_props(required_real_props) {
+  /**
+   * @brief Constructor for ReactionDataBase.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param required_int_props_ephemeral Properties<INT> object containing
+   * information regarding the required INT-based ephemeral properties for the
+   * reaction data.
+   * @param required_real_props_ephemeral Properties<REAL> object containing
+   * information regarding the required REAL-based ephemeral properties for the
+   * reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBase(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      Properties<INT> required_int_props_ephemeral,
+      Properties<REAL> required_real_props_ephemeral,
+      std::map<int, std::string> properties_map = get_default_map())
+      : required_int_props(
+            required_int_props.merge_with(required_int_props_ephemeral)),
+        required_real_props(
+            required_real_props.merge_with(required_real_props_ephemeral)),
+        required_int_props_ephemeral(required_int_props_ephemeral),
+        required_real_props_ephemeral(required_real_props_ephemeral) {
+
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
+
+    this->properties_map = properties_map;
+
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
   }
 
-  ReactionDataBase()
-      : ReactionDataBase(Properties<INT>(), Properties<REAL>()) {}
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBase that sets not required properties.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBase(
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
 
-  ReactionDataBase(Properties<INT> required_int_props)
-      : ReactionDataBase(required_int_props, Properties<REAL>()) {}
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBase that sets only required int
+   * properties.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBase(
+      Properties<INT> required_int_props,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase(required_int_props, Properties<REAL>(),
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
 
-  ReactionDataBase(Properties<REAL> required_real_props)
-      : ReactionDataBase(Properties<INT>(), required_real_props) {}
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBase that sets only required real
+   * properties.
+   *
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBase(
+      Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase(Properties<INT>(), required_real_props,
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
 
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBase that sets only required int and
+   * real properties.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBase(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase(required_int_props, required_real_props,
+                         Properties<INT>(), Properties<REAL>(),
+                         properties_map) {}
+  /**
+   * @brief Return all required integer property names, including ephemeral
+   * properties
+   *
+   */
   std::vector<std::string> get_required_int_props() {
-    std::vector<std::string> prop_names;
-    try {
-      prop_names = this->required_int_props.get_prop_names();
-    } catch (std::logic_error) {
-    }
-    return prop_names;
+    return this->required_int_props.get_prop_names(this->properties_map);
   }
 
+  /**
+   * @brief Return all required real property names, including ephemeral
+   * properties
+   *
+   */
   std::vector<std::string> get_required_real_props() {
-    std::vector<std::string> prop_names;
-    try {
-      prop_names = this->required_real_props.get_prop_names();
-    } catch (std::logic_error) {
-    }
-    return prop_names;
+    return this->required_real_props.get_prop_names(this->properties_map);
   }
+
+  /**
+   * @brief Return names of required ephemeral integer properties
+   *
+   */
+  std::vector<std::string> get_required_int_props_ephemeral() {
+    return this->required_int_props_ephemeral.get_prop_names(
+        this->properties_map);
+  }
+  /**
+   * @brief Return names of required ephemeral real properties
+   *
+   */
+  std::vector<std::string> get_required_real_props_ephemeral() {
+    return this->required_real_props_ephemeral.get_prop_names(
+        this->properties_map);
+  }
+
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
@@ -96,14 +231,23 @@ struct ReactionDataBase {
 
   static constexpr size_t get_dim() { return dim; }
 
+  virtual ~ReactionDataBase<dim, RNG_TYPE>() = default;
+
 protected:
   Properties<INT> required_int_props;
   Properties<REAL> required_real_props;
+  Properties<INT> required_int_props_ephemeral;
+  Properties<REAL> required_real_props_ephemeral;
   std::shared_ptr<RNG_TYPE> rng_kernel;
+  std::map<int, std::string> properties_map;
 };
 
 /**
  * @brief Base reaction data object to be used on SYCL devices.
+ *
+ * @tparam dim Used to set the size of the array that calc_data returns
+ * (Optional).
+ * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
  */
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBaseOnDevice {
@@ -111,7 +255,7 @@ struct ReactionDataBaseOnDevice {
   ReactionDataBaseOnDevice() = default;
 
   /**
-   * @brief Virtual function to calculate the reaction data.
+   * @brief Function to calculate the reaction data.
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
    * inside which calc_data is called. Access using either
@@ -123,10 +267,13 @@ struct ReactionDataBaseOnDevice {
    * need to be used for the reaction data calculation.
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation
+   *
+   * @return A REAL-valued array of size dim containing the calculated reaction
+   * rate.
    */
-  virtual std::array<REAL, dim>
+  std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Read<INT> &req_int_props,
+            const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             typename RNG_TYPE::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
@@ -134,3 +281,5 @@ struct ReactionDataBaseOnDevice {
 
   static constexpr size_t get_dim() { return dim; }
 };
+}; // namespace VANTAGE::Reactions
+#endif

@@ -1,11 +1,8 @@
-#include "merge_transformation.hpp"
 #include <gtest/gtest.h>
-#include <memory>
-#include <numeric>
-#include <vector>
+#include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 auto create_test_particle_group_merging(int N_total, int ndim)
     -> std::shared_ptr<ParticleGroup> {
@@ -92,13 +89,12 @@ TEST(MergeTransformationStrategy, transform_2D) {
   auto particle_group = create_test_particle_group_merging(N_total, 2);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = MergeTransformationStrategy<2>(
-      Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+  auto test_merger = MergeTransformationStrategy<2>();
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
-                                                   cell_count, 5, 1);
+  auto reduction = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 5, 1);
 
   particle_loop(
       subgroup,
@@ -116,7 +112,8 @@ TEST(MergeTransformationStrategy, transform_2D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count(); ncell++) {
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
+       ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
 
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
@@ -128,22 +125,24 @@ TEST(MergeTransformationStrategy, transform_2D) {
     REAL energy_tot = reduction_data->at(4, 0);
     REAL energy_merged = 0;
     for (int i = 0; i < 2; i++) {
-      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2); //, 1e-12);
-      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("POSITION"), i, 0),
-                  reduction_data->at(0, 0) / wt);
-      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("POSITION"), i, 1),
-                  reduction_data->at(1, 0) / wt);
+      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
+                  reduction_data->at(0, 0) / wt, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
+                  reduction_data->at(1, 0) / wt, 1e-12);
       energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, 0) *
                            particles->at(Sym<REAL>("VELOCITY"), i, 0) +
                        particles->at(Sym<REAL>("VELOCITY"), i, 1) *
                            particles->at(Sym<REAL>("VELOCITY"), i, 1);
-      
-      // Result can be out by as much as ULP=9 so EXPECT_DOUBLE_EQ is not appropriate.
+
+      // Result can be out by as much as ULP=9 so EXPECT_DOUBLE_EQ is not
+      // appropriate.
       EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), 0, i) +
                       particles->at(Sym<REAL>("VELOCITY"), 1, i),
                   reduction_data->at(2 + i, 0) * 2 / wt, 1e-12);
     }
-    // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
   }
 
@@ -157,18 +156,17 @@ TEST(MergeTransformationStrategy, transform_3D) {
   auto particle_group = create_test_particle_group_merging(N_total, 3);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = MergeTransformationStrategy<3>(
-      Sym<REAL>("POSITION"), Sym<REAL>("WEIGHT"), Sym<REAL>("VELOCITY"));
+  auto test_merger = MergeTransformationStrategy<3>();
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
-  auto reduction = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
-                                                   cell_count, 7, 1);
+  auto reduction = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 7, 1);
 
-  auto red_min = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
-                                                 cell_count, 3, 1);
-  auto red_max = std::make_shared<CellDatConst<REAL>>(particle_group->sycl_target,
-                                                 cell_count, 3, 1);
+  auto red_min = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 1);
+  auto red_max = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 1);
 
   red_min->fill(1e16);
   red_max->fill(-1e16);
@@ -192,7 +190,8 @@ TEST(MergeTransformationStrategy, transform_3D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count(); ncell++) {
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
+       ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
     auto reduction_data_min = red_min->get_cell(ncell);
     auto reduction_data_max = red_max->get_cell(ncell);
@@ -215,9 +214,11 @@ TEST(MergeTransformationStrategy, transform_3D) {
     std::vector<REAL> tot_mom_merged = {0, 0, 0};
     for (int i = 0; i < 2; i++) {
 
-      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2);//, 1e-12);
+      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0),
+                       wt / 2); //, 1e-12);
       for (int dim = 0; dim < 3; dim++) {
-        // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not appropriate.
+        // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
+        // appropriate.
         EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
                     reduction_data->at(dim, 0) / wt, 1e-12);
         energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, dim) *
@@ -225,17 +226,20 @@ TEST(MergeTransformationStrategy, transform_3D) {
         tot_mom_merged[dim] += particles->at(Sym<REAL>("VELOCITY"), i, dim);
       }
     }
-    // Result can be out by as much as ULP=5 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP=5 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
     for (int dim = 0; dim < 3; dim++) {
-      // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
+      // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
+      // appropriate.
       EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(3 + dim, 0) * 2 / wt,
                   1e-12);
     }
 
     auto rotation_axis = utils::cross_product(tot_mom_merged, diag);
 
-    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not appropriate.
+    // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
     EXPECT_NEAR(std::inner_product(mom_a.begin(), mom_a.end(),
                                    rotation_axis.begin(), 0.0),
                 0, 1e-12);

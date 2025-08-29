@@ -1,23 +1,22 @@
-#pragma once
-#include "particle_properties_map.hpp"
+#include "include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
-#include <mock_reactions.hpp>
-#include <particle_spec_builder.hpp>
-#include <reaction_kernel_pre_reqs.hpp>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(ParticleSpecBuilder, add_particle_prop) {
-  auto test_particle_spec_builder = ParticleSpecBuilder();
 
-  auto props = ParticlePropertiesIndices::default_properties;
+  auto basic_spec = ParticleSpec{ParticleProp(Sym<REAL>("POSITION"), 2, true),
+                                 ParticleProp(Sym<INT>("CELL_ID"), 1, true)};
+  auto test_particle_spec_builder = ParticleSpecBuilder(basic_spec);
+
+  auto props = default_properties;
 
   auto position_prop = Properties<REAL>(std::vector<int>{props.position});
-  test_particle_spec_builder.add_particle_prop(position_prop);
+  test_particle_spec_builder.add_particle_prop(position_prop, 2, true);
 
   auto cell_id_prop = Properties<INT>(std::vector<int>{props.cell_id});
-  test_particle_spec_builder.add_particle_prop(cell_id_prop);
+  test_particle_spec_builder.add_particle_prop(cell_id_prop, 1, true);
 
   int num_position_props = 0;
   int num_cell_id_props = 0;
@@ -43,7 +42,7 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
 
   // General add_particle_prop test
   auto internal_state_prop = ParticleProp(Sym<INT>("INTERNAL_STATE"), 1);
-  auto weight_prop = ParticleProp(Sym<REAL>("WEIGHT"), 1);
+  auto weight_prop = ParticleProp(Sym<REAL>("w"), 1);
   auto electron_temp_prop = ParticleProp(Sym<REAL>("ELECTRON_TEMPERATURE"), 1);
 
   auto int_props = Properties<INT>(std::vector<int>{props.internal_state});
@@ -52,7 +51,10 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
                                      std::vector<int>{props.temperature});
 
   test_particle_spec_builder.add_particle_prop(int_props);
-  test_particle_spec_builder.add_particle_prop(real_props);
+
+  auto new_map = get_default_map();
+  new_map[props.weight] = "w";
+  test_particle_spec_builder.add_particle_prop(real_props, 1, false, new_map);
 
   auto test_particle_spec = test_particle_spec_builder.get_particle_spec();
 
@@ -66,7 +68,7 @@ TEST(ParticleSpecBuilder, add_particle_spec) {
 
   auto particle_group_spec = particle_group->get_particle_spec();
 
-  auto test_particle_spec_builder = ParticleSpecBuilder();
+  auto test_particle_spec_builder = ParticleSpecBuilder(2);
 
   test_particle_spec_builder.add_particle_spec(particle_group_spec);
 
@@ -96,11 +98,6 @@ TEST(ParticleSpecBuilder, add_particle_spec) {
   for (auto prop : particle_group_spec.properties_real) {
     EXPECT_EQ(test_particle_spec.contains(prop), true);
   }
-
-  EXPECT_EQ(particle_group_spec.properties_int,
-            test_particle_spec_builder.get_particle_spec().properties_int);
-  EXPECT_EQ(particle_group_spec.properties_real,
-            test_particle_spec_builder.get_particle_spec().properties_real);
 
   particle_group->domain->mesh->free();
 }

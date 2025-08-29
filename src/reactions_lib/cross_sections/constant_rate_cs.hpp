@@ -1,20 +1,21 @@
-#pragma once
+#ifndef REACTIONS_CONSTANT_RATE_CS_H
+#define REACTIONS_CONSTANT_RATE_CS_H
+#include "../reaction_data.hpp"
 #include <limits>
 #include <neso_particles.hpp>
-#include <reaction_data.hpp>
 
 using namespace NESO::Particles;
+namespace VANTAGE::Reactions {
 
 /**
- * struct ConstantRateCrossSection - Cross section class evaluating to K/v_r
- * where K is a constant rate and v_r is the relative velocity
+ * @brief A struct that defines a cross section evaluating to K/v_r
+ * where K is a constant rate and v_r is the relative velocity. Leads to always
+ * accepting in rejection algorithms weighted by this cross-section
  */
 struct ConstantRateCrossSection : public AbstractCrossSection {
 
   /**
-   * @brief Constant collision rate cross section - evaluates to K/v_r where K
-   * is a constant rate and v_r is the relative velocity. Leads to always
-   * accepting in rejection algorithms weighted by this cross-section
+   * @brief Constructor for ConstantRateCrossSection.
    *
    * @param constant_sigma_v Constant collision rate
    */
@@ -53,10 +54,13 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @param uniform_rand Uniformly distributed random number
    * @return true
    */
-  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at, REAL max_rate_val) const {
+  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at,
+                     REAL max_rate_val) const {
     return true;
   }
 
 private:
   REAL constant_sigma_v;
 };
+}; // namespace VANTAGE::Reactions
+#endif

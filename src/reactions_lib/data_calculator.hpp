@@ -1,42 +1,39 @@
-#pragma once
+#ifndef REACTIONS_DATA_CALCULATOR_H
+#define REACTIONS_DATA_CALCULATOR_H
 #include "reaction_data.hpp"
 #include "utils.hpp"
 #include <neso_particles.hpp>
-#include <neso_particles/compute_target.hpp>
-#include <neso_particles/typedefs.hpp>
-#include <particle_properties_map.hpp>
 #include <tuple>
 #include <type_traits>
 #include <vector>
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
- * struct AbstractDataCalculator - Dummy struct to derive DataCalculator from
+ * @brief A dummy struct to derive DataCalculator from
  * for the purposes of type-checking of DataCalculator (when it's passed as a
  * typename template parameter - see LinearReactionBase)
  */
-struct AbstractDataCalculator {};
+struct AbstractDataCalculator {
+  virtual ~AbstractDataCalculator() = default;
+};
 
 /**
- * struct DataCalculator - Static container class for ReactionData objects
+ * @brief A static container class for ReactionData objects
  *
  * @tparam DATATYPE ReactionData types
  */
 template <typename... DATATYPE>
 struct DataCalculator : public AbstractDataCalculator {
 
-  DataCalculator() {
-    static_assert(
-        sizeof...(DATATYPE) == 0,
-        "particle_spec is required to be passed for this constructor if "
-        "non-zero number of ReactionData objects are being passed as well.");
-  };
-
-  DataCalculator(ParticleSpec particle_spec, DATATYPE... data)
-      : particle_spec(particle_spec), data(std::make_tuple(data...)) {
+  /**
+   * @brief Constructor for DataCalculator.
+   *
+   * @param data List of ReactionData objects (as multiple arguments).
+   */
+  DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
     (
@@ -57,11 +54,11 @@ struct DataCalculator : public AbstractDataCalculator {
           (
               [&] {
                 this->data_loop_int_syms.push_back(utils::build_sym_vector<INT>(
-                    this->particle_spec, args.get_required_int_props()));
+                    args.get_required_int_props()));
 
                 this->data_loop_real_syms.push_back(
                     utils::build_sym_vector<REAL>(
-                        this->particle_spec, args.get_required_real_props()));
+                        args.get_required_real_props()));
                 dat_idx++;
               }(),
               ...);
@@ -80,13 +77,15 @@ struct DataCalculator : public AbstractDataCalculator {
    * loops
    */
   void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
-                   ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx) {
+                   ParticleSubGroupSharedPtr particle_sub_group,
+                   INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
                "data calculation objects.");
     std::apply(
         [&](auto &&...args) {
           size_t dat_idx = 0u;
+          size_t dat_dim_idx = 0u;
           (
               [&] {
                 auto reaction_data_on_device = args.get_on_device_obj();
@@ -104,19 +103,20 @@ struct DataCalculator : public AbstractDataCalculator {
                               particle_index, req_int_props, req_real_props,
                               kernel);
                       for (auto i = 0; i < data_dim; i++) {
-                        buffer.at(current_count, dat_idx + i) = rate[i];
+                        buffer.at(current_count, dat_dim_idx + i) = rate[i];
                       }
                     },
                     Access::read(ParticleLoopIndex{}),
-                    Access::read(sym_vector<INT>(
+                    Access::write(sym_vector<INT>(
                         particle_sub_group, this->data_loop_int_syms[dat_idx])),
                     Access::read(
                         sym_vector<REAL>(particle_sub_group,
                                          this->data_loop_real_syms[dat_idx])),
                     Access::write(buffer), Access::read(args.get_rng_kernel()));
 
-                loop->execute(cell_idx);
-                dat_idx += data_dim;
+                loop->execute(cell_idx_start, cell_idx_end);
+                dat_idx++;
+                dat_dim_idx += data_dim;
               }(),
               ...);
         },
@@ -124,15 +124,16 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Getter for the size of the stored ReactionData tuple
+   * @brief Getter for the total number of dimensions of the objects in the
+   * ReactionData tuple
    */
-  constexpr size_t get_data_size() const { 
+  size_t get_data_size() const {
     size_t dat_idx = 0u;
     std::apply(
         [&](auto &&...args) {
           (
               [&] {
-                constexpr auto data_dim = args.get_dim();
+                const auto data_dim = args.get_dim();
                 dat_idx += data_dim;
               }(),
               ...);
@@ -141,11 +142,15 @@ struct DataCalculator : public AbstractDataCalculator {
     return dat_idx;
   }
 
+  /**
+   * @brief Getter of the total number of objects in the ReactionData tuple
+   */
+  size_t get_data_tuple_size() const { return std::size(this->data); }
 
 private:
   std::tuple<DATATYPE...> data;
   std::vector<std::vector<Sym<INT>>> data_loop_int_syms;
   std::vector<std::vector<Sym<REAL>>> data_loop_real_syms;
-  ParticleSpec particle_spec;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
+#endif

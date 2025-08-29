@@ -5,18 +5,30 @@
 spack:
   # add package specs to the `specs` list
   specs:
-  - nec_reactions.reactions~nvcxx ^neso.neso-particles~nvcxx%gcc@11.3.0 ^openblas ^neso.hipsycl ^hdf5@1.12.2
-  - nec_reactions.reactions+nvcxx ^neso.neso-particles+nvcxx%gcc@11.3.0 ^openblas ^neso.hipsycl+nvcxx~omp_llvm ^hdf5@1.12.2 ^cuda@12.2.1
+    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^vantage-reactions.googletest
+
   view: false
   concretizer:
-    unify: when_possible
+    unify: false
   repos:
-  - ./Reactions-repo
-  - ./NESO-Spack
-  - $spack/var/spack/repos/builtin
+    - ${PWD}/Reactions-repo
+    - ${PWD}/NESO-Spack
+    - $spack/var/spack/repos/builtin
   develop:
     reactions:
-      path: .
+      path: ${PWD}
       spec: reactions@working
     neso-particles:
+      path: ${PWD}/neso-particles
       spec: neso-particles@working
+  packages:
+    all:
+      require:
+        - spec: "%gcc@11.3:"
+      providers:
+        mpi: [mpich]
+        sycl: [adaptivecpp]
+    python:
+      require:
+        - spec: "@3.8:"
+

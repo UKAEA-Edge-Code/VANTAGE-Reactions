@@ -1,13 +1,12 @@
-#ifndef TRANSFORM_WRAPPER_H
-#define TRANSFORM_WRAPPER_H
-
+#ifndef REACTIONS_TRANSFORM_WRAPPER_H
+#define REACTIONS_TRANSFORM_WRAPPER_H
 #include <memory>
 #include <neso_particles.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Abstract base class for marking strategies. All marking strategies
@@ -18,7 +17,16 @@ namespace Reactions {
 struct MarkingStrategy {
 
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group){};
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+    // This function should never actually be called. If it is called and we do
+    // not have a return value then the calling function will receive an
+    // undefined value. By setting a value we at least know what the returned
+    // value is and can pick one that is detectable. By returning a nullptr the
+    // calling code will hopefully segfault.
+    return nullptr;
+  };
+
+  virtual ~MarkingStrategy() = default;
 };
 
 /**
@@ -48,6 +56,8 @@ struct TransformationStrategy {
   TransformationStrategy() = default;
 
   virtual void transform(ParticleSubGroupSharedPtr target_subgroup){};
+
+  virtual ~TransformationStrategy() = default;
 };
 
 /**
@@ -78,15 +88,31 @@ struct TransformationWrapper {
 
   TransformationWrapper() = delete;
 
-  TransformationWrapper(
-      std::shared_ptr<TransformationStrategy> transformation_strategy)
-      : transformation_strat(transformation_strategy) {}
-
+  /**
+   * @brief Constructor for TransformationWrapper.
+   *
+   * @param marking_strategy A vector of shared pointers of MarkingStrategy
+   * objects.
+   * @param transformation_strategy A shared pointer of a
+   * TransformationStrategy.
+   */
   TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>> marking_strategy,
       std::shared_ptr<TransformationStrategy> transformation_strategy)
       : marking_strat(marking_strategy),
         transformation_strat(transformation_strategy) {}
+
+  /**
+   * \overload
+   * @brief Constructor for TransformationWrapper that only sets the
+   * transformation strategy.
+   *
+   * @param transformation_strategy A shared pointer of a
+   * TransformationStrategy.
+   */
+  TransformationWrapper(
+      std::shared_ptr<TransformationStrategy> transformation_strategy)
+      : transformation_strat(transformation_strategy) {}
 
   /**
    * @brief Applies the marking and transformation strategies to a given
@@ -100,23 +126,49 @@ struct TransformationWrapper {
   }
 
   /**
-   * @brief Applies the marking and transfomation strategies to a given
-   * ParticleGroup, transforming those particle that satisfy some condition in a
-   * given cell.
+   * @brief Applies the marking and transformation strategies to a given
+   * ParticleGroup, transforming those particles that satisfy some condition in
+   * a given cell.
    *
    * @param target_group ParticleGroup to transform
-   * @param cell_id Local cell id to restrict the transformation to
+   * @param cell_id Local cell id index to restrict the transformation to
    */
   void transform(ParticleGroupSharedPtr target_group, int cell_id) {
 
-    auto marker_subgroup = std::make_shared<ParticleSubGroup>(target_group);
-    if (cell_id >= 0) {
+    this->transform(target_group, cell_id, cell_id + 1);
+  }
+  /**
+   * @brief Applies the marking and transfomation strategies to a given
+   * ParticleGroup, transforming those particle that satisfy some condition in a
+   * given block of cells.
+   *
+   * @param target_group ParticleGroup to transform
+   * @param cell_id_start Local cell id block start index to restrict the
+   * transformation to
+   * @param cell_id_end Local cell id block end index to restrict the
+   * transformation to
+   */
+  void transform(ParticleGroupSharedPtr target_group, int cell_id_start,
+                 int cell_id_end) {
+
+    ParticleSubGroupSharedPtr marker_subgroup;
+    if (cell_id_start >= 0) {
       auto cell_num = target_group->domain->mesh->get_cell_count();
       NESOASSERT(
-          cell_id < cell_num,
+          cell_id_start < cell_num,
           "Transformation wrapper transform called with cell id out of range");
-      auto marker_subgroup = particle_sub_group(target_group,cell_id);
+      NESOASSERT(
+          cell_id_end < cell_num + 1,
+          "Transformation wrapper transform called with cell id out of range");
+      NESOASSERT(cell_id_start < cell_id_end,
+                 "Transformation wrapper transform called with cell_id_end not "
+                 "strictly greater than cell_id_start");
+      marker_subgroup =
+          particle_sub_group(target_group, cell_id_start, cell_id_end);
+    } else {
+      marker_subgroup = particle_sub_group(target_group);
     }
+
     for (auto &strat : this->marking_strat) {
       marker_subgroup = strat->make_marker_subgroup(marker_subgroup);
     }
@@ -132,6 +184,8 @@ struct TransformationWrapper {
   void add_marking_strategy(std::shared_ptr<MarkingStrategy> marking_strategy) {
     this->marking_strat.push_back(marking_strategy);
   }
+
+  virtual ~TransformationWrapper() = default;
 
 private:
   std::vector<std::shared_ptr<MarkingStrategy>> marking_strat;
@@ -151,7 +205,7 @@ struct MarkingStrategyBase : MarkingStrategy {
   MarkingStrategyBase() = default;
 
   /**
-   * @brief Construct a new Marking Strategy Base object
+   * @brief Constructor for MarkingStrategyBase.
    *
    * @param required_dats_real_read Standard vector of Sym<REAL>s representing
    * those real-valued NESO-Particles ParticleDats to be passed to device type
@@ -167,6 +221,9 @@ struct MarkingStrategyBase : MarkingStrategy {
 
   ParticleSubGroupSharedPtr
   make_marker_subgroup(ParticleSubGroupSharedPtr particle_sub_group) override {
+
+    NESOASSERT(particle_sub_group != nullptr,
+               "Passing nullptr for particle_sub_group argument!");
 
     const auto &underlying = static_cast<MarkingStrategyDerived &>(*this);
     auto device_type = underlying.get_device_data();
@@ -215,7 +272,7 @@ struct MarkingFunctionWrapperBase {
    * @param real_vars Read-only accessor to a list of real-valued ParticleDats.
    * Use real_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
    * ParticleDat in the list
-   * @param int_vars  Read-only accessor to a list of integer-valued
+   * @param int_vars  Accessor to a list of integer-valued
    * ParticleDats. Use int_vars.at(v_idx,c_idx) to access the c_idx-th component
    * of v_idx-th ParticleDat in the list
    * @return bool The return value of the marking_condition function on the
@@ -226,8 +283,8 @@ struct MarkingFunctionWrapperBase {
     const auto &underlying =
         static_cast<const MarkingFunctionWrapperDerived &>(*this);
 
-    return underlying.template marking_condition(real_vars, int_vars);
+    return underlying.marking_condition(real_vars, int_vars);
   }
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

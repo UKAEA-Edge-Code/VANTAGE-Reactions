@@ -1,21 +1,21 @@
-#ifndef MERGE_TRANSFORMATION_H
-#define MERGE_TRANSFORMATION_H
+#ifndef REACTIONS_MERGE_TRANSFORMATION_H
+#define REACTIONS_MERGE_TRANSFORMATION_H
 
 #include "common_markers.hpp"
+#include "particle_properties_map.hpp"
+#include "transformation_wrapper.hpp"
+#include "utils.hpp"
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <neso_particles.hpp>
-#include <transformation_wrapper.hpp>
-#include <utils.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 /**
  * @brief  Implementation of simplified merging algorithm from M. Vranic et
  * al. Computer Physics Communications 191 2015.
@@ -34,17 +34,31 @@ namespace Reactions {
  * real quantities. This means that those values will be lost, so this algorithm
  * should be called only AFTER they are no longer needed.
  *
- * @tparam ndim dimesion parameter - 2 and 3 supported
+ * @tparam ndim dimension parameter - 2 and 3 supported
  */
 template <int ndim>
 struct MergeTransformationStrategy : TransformationStrategy {
 
-  MergeTransformationStrategy() = delete;
+  /**
+   * @brief Constructor for MergeTransformationStrategy.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used to remap the syms for the position, weight and velocity properties.
+   */
+  MergeTransformationStrategy(
+      const std::map<int, std::string> &properties_map = get_default_map())
+      : min_npart_marker(MinimumNPartInCellMarker(3)) {
 
-  MergeTransformationStrategy(const Sym<REAL> &position,
-                              const Sym<REAL> &weight,
-                              const Sym<REAL> &momentum)
-      : position(position), weight(weight), momentum(momentum) {
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
+
+    this->position = Sym<REAL>(properties_map.at(default_properties.position));
+    this->weight = Sym<REAL>(properties_map.at(default_properties.weight));
+    this->momentum = Sym<REAL>(properties_map.at(default_properties.velocity));
+
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
   };
@@ -54,15 +68,13 @@ struct MergeTransformationStrategy : TransformationStrategy {
    *
    * @param target_subgroup
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) {
+  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
-    auto new_particle_group = std::make_shared<ParticleGroup>(
-        part_group->domain, part_group->particle_spec, part_group->sycl_target);
     bool ndim_check = part_group->domain->mesh->get_ndim() == ndim;
     NESOASSERT(ndim_check,
-                  "The number of dimensions of the target_subgroup's mesh does "
-                  "not match the value of the template parameter: ndim");
+               "The number of dimensions of the target_subgroup's mesh does "
+               "not match the value of the template parameter: ndim");
 
     /*Buffers for the reduction quantities. Scalars are stored in the order
     weight,total energy
@@ -85,17 +97,18 @@ struct MergeTransformationStrategy : TransformationStrategy {
       auto reduction_loop = particle_loop(
           "merge_reduction_loop", target_subgroup,
           [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom) {
-            GA_s.fetch_add(0, 0, W[0]);
+            GA_s.combine(0, 0, W[0]);
             for (int i = 0; i < ndim; i++) {
-              GA_pos.fetch_add(i, 0, W[0] * X[i]);
-              GA_mom.fetch_add(i, 0, W[0] * P[i]);
-              GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
+              GA_pos.combine(i, 0, W[0] * X[i]);
+              GA_mom.combine(i, 0, W[0] * P[i]);
+              GA_s.combine(1, 0, W[0] * P[i] * P[i]);
             }
           },
           Access::read(this->position), Access::read(this->weight),
-          Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
-          Access::add(cell_dat_reduction_pos),
-          Access::add(cell_dat_reduction_mom));
+          Access::read(this->momentum),
+          Access::reduce(cell_dat_reduction_scalars, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_pos, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_mom, Kernel::plus<REAL>()));
 
       reduction_loop->execute();
     }
@@ -109,50 +122,100 @@ struct MergeTransformationStrategy : TransformationStrategy {
           "merge_reduction_loop_3D", target_subgroup,
           [=](auto X, auto W, auto P, auto GA_s, auto GA_pos, auto GA_mom,
               auto GA_mom_min, auto GA_mom_max) {
-            GA_s.fetch_add(0, 0, W[0]);
+            GA_s.combine(0, 0, W[0]);
             for (int i = 0; i < ndim; i++) {
-              GA_pos.fetch_add(i, 0, W[0] * X[i]);
-              GA_mom.fetch_add(i, 0, W[0] * P[i]);
-              GA_s.fetch_add(1, 0, W[0] * P[i] * P[i]);
+              GA_pos.combine(i, 0, W[0] * X[i]);
+              GA_mom.combine(i, 0, W[0] * P[i]);
+              GA_s.combine(1, 0, W[0] * P[i] * P[i]);
 
-              GA_mom_min.fetch_min(i, 0, P[i]);
-              GA_mom_max.fetch_max(i, 0, P[i]);
+              GA_mom_min.combine(i, 0, P[i]);
+              GA_mom_max.combine(i, 0, P[i]);
             }
           },
           Access::read(this->position), Access::read(this->weight),
-          Access::read(this->momentum), Access::add(cell_dat_reduction_scalars),
-          Access::add(cell_dat_reduction_pos),
-          Access::add(cell_dat_reduction_mom),
-          Access::min(cell_dat_reduction_mom_min),
-          Access::max(cell_dat_reduction_mom_max));
+          Access::read(this->momentum),
+          Access::reduce(cell_dat_reduction_scalars, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_pos, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_mom, Kernel::plus<REAL>()),
+          Access::reduce(cell_dat_reduction_mom_min, Kernel::minimum<REAL>()),
+          Access::reduce(cell_dat_reduction_mom_max, Kernel::maximum<REAL>()));
 
       reduction_loop->execute();
     }
 
-    std::vector<INT> layers = {0, 1};
+    // Store the particle counts for each cell to avoid calling get_npart_cell
+    // again.
+    std::vector<int> target_subgroup_npart_cell(cell_count);
+
+    // Vector to hold the offsets into the ParticleSet we create for the new
+    // particles that hold the merged properties.
+    std::vector<int> particle_set_offsets(cell_count);
+    int current_offset = 0;
+
+    // Vector of cell indices to collect which will form the basis of the new
+    // particles with the merged properties.
+    std::vector<INT> cells_to_extract;
+    std::vector<INT> layers_to_extract;
+    cells_to_extract.reserve(cell_count * 2);
+    layers_to_extract.reserve(cell_count * 2);
+
+    for (int cx = 0; cx < cell_count; cx++) {
+      const int npart_cell = target_subgroup->get_npart_cell(cx);
+      target_subgroup_npart_cell[cx] = npart_cell;
+      // Only perform merging for those cells where there are more than 2
+      // particles in the subgroup
+      if (npart_cell > 2) {
+        particle_set_offsets[cx] = current_offset;
+        current_offset += 2;
+        cells_to_extract.push_back(cx);
+        cells_to_extract.push_back(cx);
+        layers_to_extract.push_back(0);
+        layers_to_extract.push_back(1);
+      }
+    }
+
+    // Extract from the target subgroup the source particles for the merged
+    // particles
+    auto new_particles =
+        target_subgroup->get_particles(cells_to_extract, layers_to_extract);
+
+    auto merge_pos = std::vector<REAL>(ndim);
+    auto mom_tot = std::vector<REAL>(ndim);
+    auto mom_a = std::vector<REAL>(ndim);
+    auto mom_b = std::vector<REAL>(ndim);
+
+    auto cell_dat_reduction_scalars_values =
+        cell_dat_reduction_scalars->get_all_cells();
+    auto cell_dat_reduction_pos_values =
+        cell_dat_reduction_pos->get_all_cells();
+    auto cell_dat_reduction_mom_values =
+        cell_dat_reduction_mom->get_all_cells();
+
+    std::vector<CellData<REAL>> cell_dat_reduction_mom_min_values;
+    std::vector<CellData<REAL>> cell_dat_reduction_mom_max_values;
+    if constexpr (ndim == 3) {
+      cell_dat_reduction_mom_min_values =
+          cell_dat_reduction_mom_min->get_all_cells();
+      cell_dat_reduction_mom_max_values =
+          cell_dat_reduction_mom_max->get_all_cells();
+    }
 
     for (int cx = 0; cx < cell_count; cx++) {
 
       // Only perform merging for those cells where there are more than 2
       // particles in the subgroup
-
-      if (target_subgroup->get_npart_cell(cx) > 2) {
-        auto cell_data_scalars = cell_dat_reduction_scalars->get_cell(cx);
-        auto cell_data_pos = cell_dat_reduction_pos->get_cell(cx);
-        auto cell_data_mom = cell_dat_reduction_mom->get_cell(cx);
-
-        auto merge_pos = std::vector<REAL>();
-        auto mom_tot = std::vector<REAL>();
-        auto mom_a = std::vector<REAL>();
-        auto mom_b = std::vector<REAL>();
+      if (target_subgroup_npart_cell[cx] > 2) {
+        auto cell_data_scalars = cell_dat_reduction_scalars_values.at(cx);
+        auto cell_data_pos = cell_dat_reduction_pos_values.at(cx);
+        auto cell_data_mom = cell_dat_reduction_mom_values.at(cx);
 
         REAL wt = cell_data_scalars->at(0, 0);
         REAL et = cell_data_scalars->at(1, 0);
         for (int dimx = 0; dimx < ndim; dimx++) {
-          merge_pos.push_back(cell_data_pos->at(dimx, 0) / wt);
-          mom_tot.push_back(cell_data_mom->at(dimx, 0));
-          mom_a.push_back(mom_tot[dimx] / wt);
-          mom_b.push_back(mom_tot[dimx] / wt);
+          merge_pos[dimx] = cell_data_pos->at(dimx, 0) / wt;
+          mom_tot[dimx] = cell_data_mom->at(dimx, 0);
+          mom_a[dimx] = mom_tot[dimx] / wt;
+          mom_b[dimx] = mom_tot[dimx] / wt;
         }
 
         REAL pt = utils::norm2(mom_tot);
@@ -175,8 +238,8 @@ struct MergeTransformationStrategy : TransformationStrategy {
           mom_b[1] -= p_perp * mom_tot[0] / pt;
         }
         if constexpr (ndim == 3) {
-          auto cell_data_mom_min = cell_dat_reduction_mom_min->get_cell(cx);
-          auto cell_data_mom_max = cell_dat_reduction_mom_max->get_cell(cx);
+          auto cell_data_mom_min = cell_dat_reduction_mom_min_values.at(cx);
+          auto cell_data_mom_max = cell_dat_reduction_mom_max_values.at(cx);
 
           // we generate the bounding box in momentum space of the subgroup and
           // set its diagonal
@@ -218,52 +281,41 @@ struct MergeTransformationStrategy : TransformationStrategy {
             mom_b[i] -= mom_perp[i];
           }
         }
-        // Add above particles
 
-        std::vector<INT> cells = {cx, cx};
-        auto new_particles = target_subgroup->get_particles(cells, layers);
+        // The index for the first particle in the new particles ParticleSet for
+        // this cell.
+        const int particle_set_index_start = particle_set_offsets[cx];
 
-        for (int i = 0; i < 2; i++) {
+        // Modify the data in the ParticleSet to be the merged properties.
+        for (int i = particle_set_index_start;
+             i < (particle_set_index_start + 2); i++) {
           for (int dimx = 0; dimx < ndim; dimx++) {
             new_particles->at(this->position, i, dimx) = merge_pos[dimx];
           }
           new_particles->at(this->weight, i, 0) = wt / 2;
         }
-
         for (int dimx = 0; dimx < ndim; dimx++) {
-          new_particles->at(this->momentum, 0, dimx) = mom_a[dimx];
-          new_particles->at(this->momentum, 1, dimx) = mom_b[dimx];
+          new_particles->at(this->momentum, particle_set_index_start, dimx) =
+              mom_a[dimx];
+          new_particles->at(this->momentum, particle_set_index_start + 1,
+                            dimx) = mom_b[dimx];
         }
-
-        new_particle_group->add_particles_local(new_particles);
-
-        auto cell_select_strategy =
-            make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                Sym<INT>("CELL_ID"), cx);
-
-        auto target_subgroup_cx =
-            cell_select_strategy->make_marker_subgroup(target_subgroup);
-
-        auto new_particle_group_cx = cell_select_strategy->make_marker_subgroup(
-            std::make_shared<ParticleSubGroup>(new_particle_group));
-
-        part_group->remove_particles(target_subgroup_cx);
-
-        part_group->add_particles_local(new_particle_group_cx);
       }
     }
 
-    // remove the marked particles
+    auto to_remove_sub_group =
+        this->min_npart_marker.make_marker_subgroup(target_subgroup);
+    part_group->remove_particles(to_remove_sub_group);
 
-    // part_group->remove_particles(target_subgroup);
-
-    // part_group->add_particles_local(new_particle_group);
+    // Add the particles that are the new particles with the merged properties.
+    part_group->add_particles_local(new_particles);
   }
 
 private:
   Sym<REAL> position;
   Sym<REAL> weight;
   Sym<REAL> momentum;
+  MinimumNPartInCellMarker min_npart_marker;
 };
-} // namespace Reactions
+} // namespace VANTAGE::Reactions
 #endif

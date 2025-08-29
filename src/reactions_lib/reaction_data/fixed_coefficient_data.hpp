@@ -1,28 +1,28 @@
-#pragma once
-#include "particle_properties_map.hpp"
+#ifndef REACTIONS_FIXED_COEFFICIENT_DATA_H
+#define REACTIONS_FIXED_COEFFICIENT_DATA_H
+#include "../reaction_data.hpp"
 #include <neso_particles.hpp>
-#include <reaction_base.hpp>
-#include <reaction_controller.hpp>
-#include <reaction_data.hpp>
-#include <reaction_kernels.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
-using namespace Reactions;
-using namespace ParticlePropertiesIndices;
+namespace VANTAGE::Reactions {
 
-namespace FIXED_COEFFICIENT_DATA {
-
-const auto props = ParticlePropertiesIndices::default_properties;
-
-const std::vector<int> required_simple_real_props = {props.weight};
-} // namespace FIXED_COEFFICIENT_DATA
-
+/**
+ * @brief On device: Reaction rate data calculation for a fixed rate coefficient
+ * reaction. The reaction rate is calculated as
+ * rate_coefficient*particle_weight.
+ */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
+
+  /**
+   * @brief Constructor for FixedCoefficientDataOnDevice.
+   *
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   */
   FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
 
   /**
-   * @brief Function to calculate the reaction rate for a fixed reaction
+   * @brief Function to calculate the reaction rate for a fixed rate
    * coefficient reaction
    *
    * @param index Read-only accessor to a loop index for a ParticleLoop
@@ -33,15 +33,21 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the calculation
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
+   *
+   * @return A REAL-valued array of size 1 containing the calculated reaction
+   * rate.
    */
-  std::array<REAL,1> calc_data(const Access::LoopIndex::Read &index,
-                 const Access::SymVector::Read<INT> &req_int_props,
-                 const Access::SymVector::Read<REAL> &req_real_props,
-                 typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType  &kernel) const {
+  std::array<REAL, 1>
+  calc_data(const Access::LoopIndex::Read &index,
+            const Access::SymVector::Write<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
+                &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
-    return std::array<REAL,1>{weight * this->rate};
+    return std::array<REAL, 1>{weight * this->rate};
   }
 
 public:
@@ -50,26 +56,35 @@ public:
 };
 
 /**
- * @brief A struct defining the data needed for a fixed rate coefficient
- * reaction. The reaction rate is calculated as
- * rate_coefficient*particle_weight.
- *
- * @param rate_coeff A real-valued rate coefficient (rate proportianl to this
- * and the particle weight)
+ * @brief Reaction rate data calculation for a fixed rate coefficient reaction.
+ * The reaction rate is calculated as rate_coefficient*particle_weight.
  */
 struct FixedCoefficientData : public ReactionDataBase<> {
 
-  FixedCoefficientData(REAL rate_coefficient)
-      : ReactionDataBase(
-            Properties<REAL>(FIXED_COEFFICIENT_DATA::required_simple_real_props,
-                             std::vector<Species>{}, std::vector<int>{})),
+  constexpr static auto props = default_properties;
+
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.weight};
+
+  /**
+   * @brief Constructor for FixedCoefficientData.
+   *
+   * @param rate_coeff A real-valued rate coefficient (rate proportional to this
+   * and the particle weight)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names
+   */
+  FixedCoefficientData(
+      REAL rate_coefficient,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase(Properties<REAL>(required_simple_real_props),
+                         properties_map),
         fixed_coefficient_data_on_device(
             FixedCoefficientDataOnDevice(rate_coefficient)) {
 
-    auto props = FIXED_COEFFICIENT_DATA::props;
-
     this->fixed_coefficient_data_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight);
+        this->required_real_props.simple_prop_index(props.weight,
+                                                    this->properties_map);
   }
 
 private:
@@ -85,3 +100,5 @@ public:
     return this->fixed_coefficient_data_on_device;
   }
 };
+}; // namespace VANTAGE::Reactions
+#endif

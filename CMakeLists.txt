@@ -1,55 +1,72 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.24)
 
 # no space in these names! used as shared object name and python module name
-set(PROJECT_NAME reactions) 
-set(PROJECT_LIB_NAME ${PROJECT_NAME}-lib)
+set(PROJECT_NAME VANTAGE-Reactions)
 
-set(CMAKE_CXX_STANDARD 17)
 project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+include(GNUInstallDirs)
 
-#include(${CMAKE_SOURCE_DIR}/cmake/SetBuildType.cmake)
-
-enable_testing()
-
-## put all targets in bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-## put all libraries in lib
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 # Produce compile_commands.json for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+# Create interface/Header only library
+add_library(VANTAGE-Reactions INTERFACE)
+add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
+
+set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD 17)
+
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
-find_package(hipSYCL REQUIRED)
-
-############################################################
-# Set the build type environment variable
-############################################################
-if(BUILD_TYPE STREQUAL "TEST")
-  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0;--coverage")
-  link_libraries(gcov)
-  set(TEST_LIBRARIES "gcov")
-elseif(BUILD_TYPE STREQUAL "DEBUG")
-  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
-  set(TEST_LIBRARIES "")
-elseif(BUILD_TYPE STREQUAL "RELEASE")
-  set(BUILD_TYPE_COMPILE_FLAGS "-O2")
-  set(TEST_LIBRARIES "")
-endif()
+find_sycl_if_required()
 
 ############################################################
 # Add directories with source files
 ############################################################
 add_subdirectory(src)
-add_subdirectory(test)
 
+############################################################
+# Set the build type environment variable
+############################################################
+option(REACTIONS_ENABLE_TESTS "Build tests." ON)
+if (REACTIONS_ENABLE_TESTS)
+  set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
+  add_subdirectory(test)
+endif()
+
+install(
+    TARGETS VANTAGE-Reactions
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE_SET public_headers
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE ${PROJECT_NAME}Targets.cmake
+    NAMESPACE ${PROJECT_NAME}::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
+export(
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/${PROJECT_NAME}Targets.cmake"
+    NAMESPACE ${PROJECT_NAME}::
+)
 ############################################################
 # all configurable options
 ############################################################
 find_package(Doxygen)
-option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" ${DOXYGEN_FOUND})
+option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" OFF)
 
 ############################################################
 # Create doxygen documentation `make doc`
