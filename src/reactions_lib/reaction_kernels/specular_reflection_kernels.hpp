@@ -8,7 +8,7 @@
 
 using namespace NESO::Particles;
 
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * struct SpecularReflectionKernelsOnDevice - SYCL device-compatible kernel for
@@ -124,4 +124,4 @@ public:
     return this->specular_reflection_kernels_on_device;
   }
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions
