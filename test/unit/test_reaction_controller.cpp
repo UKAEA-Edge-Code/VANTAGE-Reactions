@@ -182,7 +182,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
 
     auto particle_group_2 = create_test_particle_group(N_total);
-    EXPECT_THROW(reaction_controller.apply_reactions(particle_group_2, 0.1),
+    EXPECT_THROW(reaction_controller.apply(particle_group_2, 0.1),
                  std::logic_error);
   }
   particle_group->domain->mesh->free();
