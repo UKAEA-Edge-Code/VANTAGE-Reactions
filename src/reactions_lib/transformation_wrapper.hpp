@@ -55,7 +55,7 @@ struct TransformationStrategy {
 
   TransformationStrategy() = default;
 
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup){};
+  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {};
 
   virtual ~TransformationStrategy() = default;
 };
@@ -103,7 +103,6 @@ struct TransformationWrapper {
         transformation_strat(transformation_strategy) {}
 
   /**
-<<<<<<< HEAD
    * \overload
    * @brief Constructor for TransformationWrapper that only sets the
    * transformation strategy.
@@ -124,16 +123,6 @@ struct TransformationWrapper {
    */
   template <typename PARENT> void transform(std::shared_ptr<PARENT> target) {
 
-=======
-   * @brief Applies the marking and transformation strategies to a given
-   * ParticleGroup or ParticleSubGroup, transforming those particles that
-   * satisfy some condition.
-   *
-   * @param target ParticleGroup or ParticleSubGroup to transform
-   */
-  template <typename PARENT> void transform(std::shared_ptr<PARENT> target) {
-
->>>>>>> 613908fc7c15efb8eb2abc99cc30fc8309d3c219
     this->transform(target, -1);
   }
 
