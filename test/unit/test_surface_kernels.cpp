@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
-using namespace Reactions;
+using namespace VANTAGE::Reactions;
 
 TEST(SurfaceKernels, SpecularReflection) {
 
@@ -47,11 +47,10 @@ TEST(SurfaceKernels, SpecularReflection) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
-    test_reaction.descendant_product_loop(
-        particle_sub_group, i, i + 1, 0.1, descendant_particles,
-        true); // Apply to all of weight, the same way a surface reaction
-               // controller would
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1, descendant_particles,
+                        true); // Apply to all of weight, the same way a surface
+                               // reaction controller would
     auto velocity = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
     const int nrow = velocity->nrow;
 

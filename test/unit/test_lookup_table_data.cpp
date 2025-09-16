@@ -36,7 +36,7 @@ TEST(LookupTableData, ArrayLookupTable) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     auto is = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
     const int nrow = rate->nrow;
@@ -99,7 +99,7 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.run_rate_loop(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
     auto id = particle_group->get_cell(Sym<INT>("ID"), i);
     const int nrow = rate->nrow;
