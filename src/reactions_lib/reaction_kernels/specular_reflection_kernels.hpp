@@ -2,6 +2,7 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
+#include "../utils.hpp"
 #include <array>
 #include <neso_particles.hpp>
 #include <vector>
@@ -54,13 +55,13 @@ struct SpecularReflectionKernelsOnDevice
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
       k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
       surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
-      proj_factor += 2 * k_V[vdim] * surface_n[vdim];
     }
 
+    std::array<REAL, ndim_velocity> reflected =
+        utils::reflect_vector(k_V, surface_n);
     // reflect across surface normal
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
-      req_real_props.at(velocity_ind, index, vdim) =
-          k_V[vdim] - proj_factor * surface_n[vdim];
+      req_real_props.at(velocity_ind, index, vdim) = reflected[vdim];
     }
     req_real_props.at(this->weight_ind, index, 0) = modified_weight;
   }
