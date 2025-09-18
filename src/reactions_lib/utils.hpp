@@ -93,5 +93,35 @@ inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
   const REAL valuesin = Kernel::sincos(two_pi * u2, &valuecos);
   return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
 };
+
+/**
+ * @brief Reflect an input array across a normalised reflection vector (e.g.
+ * surface normal). output = input - 2 * dot_product(input,ref_vector) *
+ * ref_vector
+ *
+ * @param input Input array to be reflected
+ * @param ref_vector Normalised vector to reflect through
+ * @return Reflected array
+ */
+template <size_t n_dim>
+inline std::array<REAL, n_dim>
+reflect_vector(std::array<REAL, n_dim> input,
+               std::array<REAL, n_dim> ref_vector) {
+
+  REAL proj_factor = 0.0;
+  std::array<REAL, n_dim> output;
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    proj_factor += 2 * input[dim] * ref_vector[dim];
+  }
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    output[dim] = input[dim] - proj_factor * ref_vector[dim];
+  }
+
+  return output;
+};
 } // namespace VANTAGE::Reactions::utils
 #endif
