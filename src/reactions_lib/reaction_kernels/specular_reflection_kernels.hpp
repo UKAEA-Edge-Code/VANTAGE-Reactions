@@ -53,9 +53,6 @@ struct SpecularReflectionKernelsOnDevice
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
       k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
-      // TODO: clean this up once we know whether we are ephemeral or not
-      //  surface_n[vdim] = req_real_props.at_ephemeral(normal_ind, index,
-      //  vdim);
       surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
       proj_factor += 2 * k_V[vdim] * surface_n[vdim];
     }
@@ -87,9 +84,6 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 3> required_simple_real_props = {
       props.weight, props.velocity, props.boundary_intersection_normal};
 
-  // TODO: clean up
-  // constexpr static std::array<int, 1> required_simple_real_props_ephemeral =
-  // { props.boundary_intersection_normal};
   /**
    * @brief Specular reflection host type constructor
    *
@@ -101,8 +95,6 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
       : ReactionKernelsBase(Properties<INT>(),
                             Properties<REAL>(required_simple_real_props),
                             Properties<INT>(), Properties<REAL>()) {
-    // TODO: clean up
-    // Properties<REAL>(required_simple_real_props_ephemeral)) {
 
     this->specular_reflection_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity,
