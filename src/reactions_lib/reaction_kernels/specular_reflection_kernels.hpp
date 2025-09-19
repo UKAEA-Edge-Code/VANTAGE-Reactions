@@ -81,7 +81,6 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
 
   constexpr static auto props = default_properties;
 
-  // TODO: clean up
   constexpr static std::array<int, 3> required_simple_real_props = {
       props.weight, props.velocity, props.boundary_intersection_normal};
 

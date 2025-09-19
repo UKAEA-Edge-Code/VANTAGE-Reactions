@@ -25,10 +25,12 @@
 #include "../reactions_lib/reaction_data/filtered_maxwellian_sampler.hpp"
 #include "../reactions_lib/reaction_data/fixed_coefficient_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_rate_data.hpp"
+#include "../reactions_lib/reaction_data/specular_reflection_data.hpp"
 
 #include "../reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_recombination_kernels.hpp"
+#include "../reactions_lib/reaction_kernels/general_linear_scattering_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 
 #include "../reactions_lib/derived_reactions/electron_impact_ionisation.hpp"
