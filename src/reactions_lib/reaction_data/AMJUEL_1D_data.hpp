@@ -37,7 +37,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
                        const std::array<REAL, num_coeffs> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
-        temperature_normalisation(temperature_normalisation), coeffs(coeffs){};
+        temperature_normalisation(temperature_normalisation), coeffs(coeffs) {};
 
   /**
    * @brief Function to calculate the reaction rate for a 1D AMJUEL-based
@@ -104,7 +104,9 @@ public:
  * @tparam num_coeffs The number of coefficients needed for 1D AMJUEL reaction
  * rate calculation.
  */
-template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
+template <int num_coeffs>
+struct AMJUEL1DData
+    : public ReactionDataBase<AMJUEL1DDataOnDevice<num_coeffs>> {
 
   constexpr static auto props = default_properties;
 
@@ -130,34 +132,32 @@ template <int num_coeffs> struct AMJUEL1DData : public ReactionDataBase<> {
                const REAL &time_normalisation,
                const std::array<REAL, num_coeffs> &coeffs,
                std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase(Properties<REAL>(required_simple_real_props),
-                         properties_map),
-        amjuel_1d_data_on_device(AMJUEL1DDataOnDevice<num_coeffs>(
-            evolved_quantity_normalisation, density_normalisation,
-            temperature_normalisation, time_normalisation, coeffs)) {
+      : ReactionDataBase<AMJUEL1DDataOnDevice<num_coeffs>>(
+            Properties<REAL>(required_simple_real_props), properties_map) {
 
-    this->amjuel_1d_data_on_device.fluid_density_ind =
-        this->required_real_props.simple_prop_index(props.fluid_density,
-                                                    this->properties_map);
-    this->amjuel_1d_data_on_device.fluid_temperature_ind =
-        this->required_real_props.simple_prop_index(props.fluid_temperature,
-                                                    this->properties_map);
-    this->amjuel_1d_data_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight,
-                                                    this->properties_map);
+    this->on_device_obj = AMJUEL1DDataOnDevice<num_coeffs>(
+        evolved_quantity_normalisation, density_normalisation,
+        temperature_normalisation, time_normalisation, coeffs);
+    this->index_on_device_object();
   }
 
-private:
-  AMJUEL1DDataOnDevice<num_coeffs> amjuel_1d_data_on_device;
-
-public:
   /**
-   * @brief Getter for the SYCL device-specific
-   * struct.
+   * @brief Index the fluid density, temperature, and particle weight on the
+   * on-device object
    */
-  AMJUEL1DDataOnDevice<num_coeffs> get_on_device_obj() {
-    return this->amjuel_1d_data_on_device;
-  }
+  void index_on_device_object() {
+
+    this->on_device_obj->fluid_density_ind =
+        this->required_real_props.find_index(
+            this->properties_map.at(props.fluid_density));
+
+    this->on_device_obj->fluid_temperature_ind =
+        this->required_real_props.find_index(
+            this->properties_map.at(props.fluid_temperature));
+
+    this->on_device_obj->weight_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.weight));
+  };
 };
 }; // namespace VANTAGE::Reactions
 #endif

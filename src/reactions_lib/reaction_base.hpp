@@ -64,13 +64,12 @@ public:
    * struct.
    */
   virtual void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
-                             INT cell_idx_start, INT cell_idx_end) {}
+                               INT cell_idx_start, INT cell_idx_end) {}
 
-  virtual void
-  apply(ParticleSubGroupSharedPtr particle_sub_group,
-                          INT cell_idx_start, INT cell_idx_end, double dt,
-                          ParticleGroupSharedPtr child_group,
-                          bool full_weight = false) {}
+  virtual void apply(ParticleSubGroupSharedPtr particle_sub_group,
+                     INT cell_idx_start, INT cell_idx_end, double dt,
+                     ParticleGroupSharedPtr child_group,
+                     bool full_weight = false) {}
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
 
@@ -202,12 +201,14 @@ struct LinearReactionBase : public AbstractReaction {
     // apply to operate correctly, ReactionData and
     // ReactionKernels have to be derived from ReactionKernelsBase and
     // AbstractReactionKernels respectively
-    static_assert(std::is_base_of_v<
-                      ReactionDataBase<reaction_data.get_dim(),
-                                       typename ReactionData::RNG_KERNEL_TYPE>,
-                      ReactionData>,
-                  "Template parameter ReactionData is not derived from "
-                  "ReactionDataBase...");
+    static_assert(
+        std::is_base_of_v<
+            ReactionDataBase<typename ReactionData::ON_DEVICE_OBJ_TYPE,
+                             reaction_data.get_dim(),
+                             typename ReactionData::RNG_KERNEL_TYPE>,
+            ReactionData>,
+        "Template parameter ReactionData is not derived from "
+        "ReactionDataBase...");
     static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
                   "Template parameter DataCalc is not derived from "
                   "AbstractDataCalculator...");
@@ -288,7 +289,7 @@ struct LinearReactionBase : public AbstractReaction {
    * @param cell_idx_end The cell id up to which to run the rate loop over
    */
   void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
-                     INT cell_idx_start, INT cell_idx_end) override {
+                       INT cell_idx_start, INT cell_idx_end) override {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
@@ -333,8 +334,8 @@ struct LinearReactionBase : public AbstractReaction {
           tot_rate[0] += rate[0];
         },
         Access::read(ParticleLoopIndex{}),
-        Access::write(
-            sym_vector<INT>(particle_sub_group, this->calculate_rates_int_syms)),
+        Access::write(sym_vector<INT>(particle_sub_group,
+                                      this->calculate_rates_int_syms)),
         Access::read(sym_vector<REAL>(particle_sub_group,
                                       this->calculate_rates_real_syms)),
         Access::write(this->get_total_reaction_rate()),
@@ -363,10 +364,9 @@ struct LinearReactionBase : public AbstractReaction {
    * @param full_weight If true, will consume the full weight of the particles,
    * regardless of timestep
    */
-  void apply(ParticleSubGroupSharedPtr particle_sub_group,
-                               INT cell_idx_start, INT cell_idx_end, double dt,
-                               ParticleGroupSharedPtr child_group,
-                               bool full_weight = false) override {
+  void apply(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx_start,
+             INT cell_idx_end, double dt, ParticleGroupSharedPtr child_group,
+             bool full_weight = false) override {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
     auto device_weight_buffer = this->get_device_weight_buffer();
@@ -442,10 +442,9 @@ struct LinearReactionBase : public AbstractReaction {
         },
         Access::write(this->descendant_particles),
         Access::read(ParticleLoopIndex{}),
-        Access::write(sym_vector<INT>(particle_sub_group,
-                                      this->apply_int_syms)),
-        Access::write(sym_vector(particle_sub_group,
-                                 this->apply_real_syms)),
+        Access::write(
+            sym_vector<INT>(particle_sub_group, this->apply_int_syms)),
+        Access::write(sym_vector(particle_sub_group, this->apply_real_syms)),
         Access::read(device_rate_buffer),
         Access::read(this->get_pre_req_data()),
         Access::read(device_weight_buffer),
