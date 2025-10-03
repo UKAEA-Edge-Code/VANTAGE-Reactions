@@ -22,9 +22,16 @@ namespace Reactions {
  */
 template <size_t N, bool ephemeral_dat>
 struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
+
+  /**
+   * @brief Constructor for ArrayLookupDataOnDevice.
+   *
+   * @param key_comp The component of the ParticleDat to be used as the key
+   * @param default_data REAL-valued array returned if the key is not found
+   */
   ArrayLookupDataOnDevice(const int &key_comp,
                           const std::array<REAL, N> &default_data)
-      : key_comp(key_comp), default_data(default_data){};
+      : key_comp(key_comp), default_data(default_data) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction
@@ -51,10 +58,11 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
 
     if constexpr (ephemeral_dat) {
 
-      key_val = req_int_props.at_ephemeral(0, index, this->key_comp);
+      key_val =
+          req_int_props.at_ephemeral(this->key_ind, index, this->key_comp);
     } else {
 
-      key_val = req_int_props.at(0, index, this->key_comp);
+      key_val = req_int_props.at(this->key_ind, index, this->key_comp);
     }
 
     const std::array<REAL, N> *val_ptr = nullptr;
@@ -74,6 +82,7 @@ private:
 
 public:
   BlockedBinaryNode<int, std::array<REAL, N>, 8> *lut_root;
+  INT key_ind;
 };
 
 /**
@@ -88,16 +97,20 @@ public:
  * cannot be found
  */
 template <size_t N, bool ephemeral_dat = false>
-struct ArrayLookupData : public ReactionDataBase<N> {
+struct ArrayLookupData
+    : public ReactionDataBase<ArrayLookupDataOnDevice<N, ephemeral_dat>, N> {
 
   ArrayLookupData(const Sym<INT> &key_sym, int key_sym_comp,
                   const std::map<int, std::array<REAL, N>> &lookup_table,
                   const std::array<REAL, N> &default_values,
                   SYCLTargetSharedPtr sycl_target)
-      : ReactionDataBase<N>(), key_sym(key_sym),
-        array_lookup_data_on_device(ArrayLookupDataOnDevice<N, ephemeral_dat>(
-            key_sym_comp, default_values)) {
+      : ReactionDataBase<ArrayLookupDataOnDevice<N, ephemeral_dat>, N>(),
+        key_sym(key_sym) {
 
+    this->on_device_obj =
+        ArrayLookupDataOnDevice<N, ephemeral_dat>(key_sym_comp, default_values);
+
+    this->required_int_props.add(key_sym.name);
     this->lut =
         std::make_shared<BlockedBinaryTree<int, std::array<REAL, N>, 8>>(
             sycl_target);
@@ -105,33 +118,22 @@ struct ArrayLookupData : public ReactionDataBase<N> {
     for (const auto &[key, value] : lookup_table)
       this->lut->add(key, value);
 
-    this->array_lookup_data_on_device.lut_root = lut->root;
+    this->on_device_obj->lut_root = lut->root;
+
+    this->index_on_device_object();
   }
+
+  /**
+   * @brief Index the lookup table key variable on the on-device object
+   */
+  void index_on_device_object() {
+
+    this->on_device_obj->key_ind =
+        this->required_int_props.find_index(this->key_sym.name);
+  };
 
 private:
   Sym<INT> key_sym;
-  ArrayLookupDataOnDevice<N, ephemeral_dat> array_lookup_data_on_device;
   std::shared_ptr<BlockedBinaryTree<int, std::array<REAL, N>, 8>> lut;
-
-public:
-  /**
-   * @brief Getter for the SYCL device-specific struct.
-   */
-  ArrayLookupDataOnDevice<N, ephemeral_dat> get_on_device_obj() {
-    return this->array_lookup_data_on_device;
-  }
-
-  std::vector<std::string> get_required_int_props() {
-    return std::vector<std::string>{this->key_sym.name};
-  }
-
-  std::vector<std::string> get_required_int_props_ephemeral() {
-    if constexpr (ephemeral_dat) {
-      return std::vector<std::string>{this->key_sym.name};
-    } else {
-      return this->required_int_props_ephemeral.get_prop_names(
-          this->properties_map);
-    }
-  }
 };
 }; // namespace Reactions

@@ -70,14 +70,17 @@ struct AbstractCrossSection {
 /**
  * @brief Base reaction data object.
  *
+ * @tparam ON_DEVICE_TYPE Type of the on-device object
  * @tparam dim Used to set the size of the array that calc_data returns
  * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
  */
-template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
+template <typename ON_DEVICE_TYPE, size_t dim = 1,
+          typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBase {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
+  using ON_DEVICE_OBJ_TYPE = ON_DEVICE_TYPE;
   /**
    * @brief Constructor for ReactionDataBase.
    *
@@ -101,19 +104,14 @@ struct ReactionDataBase {
       Properties<REAL> required_real_props_ephemeral,
       std::map<int, std::string> properties_map = get_default_map())
       : required_int_props(
-            required_int_props.merge_with(required_int_props_ephemeral)),
+            ArgumentNameSet(required_int_props, properties_map)
+                .merge_with(ArgumentNameSet(required_int_props_ephemeral,
+                                            properties_map))),
         required_real_props(
-            required_real_props.merge_with(required_real_props_ephemeral)),
-        required_int_props_ephemeral(required_int_props_ephemeral),
-        required_real_props_ephemeral(required_real_props_ephemeral) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
-    this->properties_map = properties_map;
+            ArgumentNameSet(required_real_props, properties_map)
+                .merge_with(ArgumentNameSet(required_real_props_ephemeral,
+                                            properties_map))),
+        properties_map(properties_map) {
 
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
@@ -194,7 +192,25 @@ struct ReactionDataBase {
    *
    */
   std::vector<std::string> get_required_int_props() {
-    return this->required_int_props.get_prop_names(this->properties_map);
+    return this->required_int_props.to_string_vector();
+  }
+
+  /**
+   * @brief Setter for required integer properties
+   *
+   * @param props ArgumentNameSet to use
+   */
+  void set_required_int_props(const ArgumentNameSet<INT> &props) {
+    this->required_int_props = props;
+    this->index_on_device_object();
+  }
+
+  /**
+   * @brief Return all required integer properties as a vector of Syms
+   *
+   */
+  std::vector<Sym<INT>> get_required_int_sym_vector() {
+    return this->required_int_props.to_sym_vector();
   }
 
   /**
@@ -203,24 +219,25 @@ struct ReactionDataBase {
    *
    */
   std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.get_prop_names(this->properties_map);
+    return this->required_real_props.to_string_vector();
   }
 
   /**
-   * @brief Return names of required ephemeral integer properties
+   * @brief Return all required real properties as a vector of Syms
    *
    */
-  std::vector<std::string> get_required_int_props_ephemeral() {
-    return this->required_int_props_ephemeral.get_prop_names(
-        this->properties_map);
+  std::vector<Sym<REAL>> get_required_real_sym_vector() {
+    return this->required_real_props.to_sym_vector();
   }
+
   /**
-   * @brief Return names of required ephemeral real properties
+   * @brief Setter for required real properties
    *
+   * @param props ArgumentNameSet to use
    */
-  std::vector<std::string> get_required_real_props_ephemeral() {
-    return this->required_real_props_ephemeral.get_prop_names(
-        this->properties_map);
+  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
+    this->required_real_props = props;
+    this->index_on_device_object();
   }
 
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
@@ -231,13 +248,29 @@ struct ReactionDataBase {
 
   static constexpr size_t get_dim() { return dim; }
 
-  virtual ~ReactionDataBase<dim, RNG_TYPE>() = default;
+  virtual ~ReactionDataBase<ON_DEVICE_TYPE, dim, RNG_TYPE>() = default;
+
+  /**
+   * @brief To be implemented by each derived class in order to handle required
+   * property indexing on the on-device object
+   */
+  virtual void index_on_device_object() {};
+
+  /**
+   * @brief Getter for the SYCL device-specific
+   * struct.
+   */
+  ON_DEVICE_TYPE get_on_device_obj() {
+
+    NESOASSERT(this->on_device_obj.has_value(),
+               "on_device_obj in ReactionDataBase not initialised");
+    return this->on_device_obj.value();
+  }
 
 protected:
-  Properties<INT> required_int_props;
-  Properties<REAL> required_real_props;
-  Properties<INT> required_int_props_ephemeral;
-  Properties<REAL> required_real_props_ephemeral;
+  std::optional<ON_DEVICE_TYPE> on_device_obj;
+  ArgumentNameSet<INT> required_int_props;
+  ArgumentNameSet<REAL> required_real_props;
   std::shared_ptr<RNG_TYPE> rng_kernel;
   std::map<int, std::string> properties_map;
 };

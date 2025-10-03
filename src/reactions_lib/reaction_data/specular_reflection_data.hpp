@@ -64,7 +64,8 @@ public:
  * @tparam ndim The velocity space dimensionality
  */
 template <size_t ndim>
-struct SpecularReflectionData : public ReactionDataBase<ndim> {
+struct SpecularReflectionData
+    : public ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim> {
 
   constexpr static auto props = default_properties;
 
@@ -78,28 +79,25 @@ struct SpecularReflectionData : public ReactionDataBase<ndim> {
    */
   SpecularReflectionData(
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<ndim>(Properties<REAL>(required_simple_real_props),
-                               properties_map) {
+      : ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim>(
+            Properties<REAL>(required_simple_real_props), properties_map) {
 
-    this->device_obj.velocity_ind = this->required_real_props.simple_prop_index(
-        props.velocity, this->properties_map);
-
-    this->device_obj.normal_ind = this->required_real_props.simple_prop_index(
-        props.boundary_intersection_normal);
+    this->on_device_obj = SpecularReflectionDataOnDevice<ndim>();
+    this->index_on_device_object();
   }
 
-private:
-  SpecularReflectionDataOnDevice<ndim> device_obj;
-
-public:
   /**
-   * @brief Getter for the SYCL device-specific
-   * struct.
+   * @brief Index the particle velocity and surface normal properties on the
+   * on-device object
    */
+  void index_on_device_object() {
 
-  SpecularReflectionDataOnDevice<ndim> get_on_device_obj() {
-    return this->device_obj;
-  }
+    this->on_device_obj->velocity_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.velocity));
+
+    this->on_device_obj->normal_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.boundary_intersection_normal));
+  };
 };
 }; // namespace VANTAGE::Reactions
 #endif

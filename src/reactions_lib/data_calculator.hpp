@@ -40,7 +40,8 @@ struct DataCalculator : public AbstractDataCalculator {
         [&] {
           static_assert(
               std::is_base_of_v<
-                  ReactionDataBase<data.get_dim(),
+                  ReactionDataBase<typename decltype(data)::ON_DEVICE_OBJ_TYPE,
+                                   data.get_dim(),
                                    typename decltype(data)::RNG_KERNEL_TYPE>,
                   decltype(data)>,
               "DATATYPE provided is not derived from ReactionDataBase.");

@@ -7,7 +7,8 @@ using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
-  TestReactionDataOnDevice(REAL rate) : rate(rate){};
+
+  TestReactionDataOnDevice(REAL rate) : rate(rate) {};
 
   std::array<REAL, 1>
   calc_data(Access::LoopIndex::Read &index,
@@ -23,21 +24,16 @@ private:
   REAL rate;
 };
 
-struct TestReactionData : public ReactionDataBase<> {
+struct TestReactionData : public ReactionDataBase<TestReactionDataOnDevice> {
 
-  TestReactionData(REAL rate)
-      : rate(rate),
-        test_reaction_data_on_device(TestReactionDataOnDevice(rate)) {}
+  TestReactionData(REAL rate) : rate(rate) {
+    this->on_device_obj = TestReactionDataOnDevice(rate);
+  }
+
+  void index_on_device_object() {}
 
 private:
-  TestReactionDataOnDevice test_reaction_data_on_device;
-
   REAL rate;
-
-public:
-  TestReactionDataOnDevice get_on_device_obj() {
-    return this->test_reaction_data_on_device;
-  }
 };
 
 template <INT num_products_per_parent>
@@ -297,28 +293,27 @@ public:
   int position_ind;
 };
 
-struct TestReactionVarData : public ReactionDataBase<> {
+struct TestReactionVarData
+    : public ReactionDataBase<TestReactionVarDataOnDevice> {
   constexpr static auto props = default_properties;
 
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.position};
 
   TestReactionVarData()
-      : ReactionDataBase(Properties<REAL>(required_simple_real_props,
-                                          std::vector<Species>{},
-                                          std::array<int, 0>{})) {
+      : ReactionDataBase<TestReactionVarDataOnDevice>(
+            Properties<REAL>(required_simple_real_props, std::vector<Species>{},
+                             std::array<int, 0>{})) {
+    this->on_device_obj = TestReactionVarDataOnDevice();
 
-    this->test_reaction_var_data_on_device.position_ind =
-        this->required_real_props.simple_prop_index(props.position);
+    this->index_on_device_object();
   };
 
-private:
-  TestReactionVarDataOnDevice test_reaction_var_data_on_device;
+  void index_on_device_object() {
 
-public:
-  TestReactionVarDataOnDevice get_on_device_obj() {
-    return this->test_reaction_var_data_on_device;
-  }
+    this->on_device_obj->position_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.position));
+  };
 };
 
 struct TestReactionVarKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
@@ -388,7 +383,8 @@ public:
   int normal_ind, point_ind;
 };
 // TODO: Add corresponding kernel for ephemeral dat test
-struct TestEphemeralVarData : public ReactionDataBase<> {
+struct TestEphemeralVarData
+    : public ReactionDataBase<TestEphemeralVarDataOnDevice> {
 
   constexpr static auto props = default_properties;
 
@@ -400,27 +396,23 @@ struct TestEphemeralVarData : public ReactionDataBase<> {
 
   TestEphemeralVarData(
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase(Properties<INT>(),
-                         Properties<REAL>(required_simple_real_props),
-                         Properties<INT>(),
-                         Properties<REAL>(required_simple_real_props_ephemeral),
-                         properties_map) {
+      : ReactionDataBase<TestEphemeralVarDataOnDevice>(
+            Properties<INT>(), Properties<REAL>(required_simple_real_props),
+            Properties<INT>(),
+            Properties<REAL>(required_simple_real_props_ephemeral),
+            properties_map) {
 
-    this->test_reaction_var_data_on_device.point_ind =
-        this->required_real_props.simple_prop_index(
-            props.boundary_intersection_point);
-
-    this->test_reaction_var_data_on_device.normal_ind =
-        this->required_real_props.simple_prop_index(
-            props.boundary_intersection_normal);
+    this->on_device_obj = TestEphemeralVarDataOnDevice();
+    this->index_on_device_object();
   }
 
-private:
-  TestEphemeralVarDataOnDevice test_reaction_var_data_on_device;
+  void index_on_device_object() {
 
-public:
-  TestEphemeralVarDataOnDevice get_on_device_obj() {
-    return this->test_reaction_var_data_on_device;
-  }
+    this->on_device_obj->point_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.boundary_intersection_point));
+
+    this->on_device_obj->normal_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.boundary_intersection_normal));
+  };
 };
 #endif
