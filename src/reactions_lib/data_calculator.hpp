@@ -54,12 +54,11 @@ struct DataCalculator : public AbstractDataCalculator {
           size_t dat_idx = 0u;
           (
               [&] {
-                this->data_loop_int_syms.push_back(utils::build_sym_vector<INT>(
-                    args.get_required_int_props()));
+                this->data_loop_int_syms.push_back(
+                    args.get_required_int_sym_vector());
 
                 this->data_loop_real_syms.push_back(
-                    utils::build_sym_vector<REAL>(
-                        args.get_required_real_props()));
+                    args.get_required_real_sym_vector());
                 dat_idx++;
               }(),
               ...);

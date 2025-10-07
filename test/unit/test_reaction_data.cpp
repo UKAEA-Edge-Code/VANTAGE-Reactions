@@ -183,7 +183,7 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
       get_default_map().at(default_properties.boundary_intersection_point),
       get_default_map().at(default_properties.boundary_intersection_normal)};
 
-  auto test_prop_names = test_data.get_required_real_props();
+  auto test_prop_names = test_data.get_required_real_props().to_string_vector();
 
   ASSERT_EQ(expected_prop_names.size(), test_prop_names.size());
   for (int i = 0; i < test_prop_names.size(); i++) {
