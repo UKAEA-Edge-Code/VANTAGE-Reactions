@@ -187,12 +187,11 @@ struct ReactionDataBase {
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
   /**
-   * @brief Return all required integer property names, including ephemeral
-   * properties
+   * @brief Return all required integer properties, including ephemeral
    *
    */
-  std::vector<std::string> get_required_int_props() {
-    return this->required_int_props.to_string_vector();
+  ArgumentNameSet<INT> get_required_int_props() {
+    return this->required_int_props;
   }
 
   /**
@@ -214,12 +213,12 @@ struct ReactionDataBase {
   }
 
   /**
-   * @brief Return all required real property names, including ephemeral
+   * @brief Return all required real properteis, including ephemeral
    * properties
    *
    */
-  std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.to_string_vector();
+  ArgumentNameSet<REAL> get_required_real_props() {
+    return this->required_real_props;
   }
 
   /**

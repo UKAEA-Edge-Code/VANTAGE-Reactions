@@ -224,16 +224,16 @@ struct LinearReactionBase : public AbstractReaction {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
-    calculate_rates_int_syms = utils::build_sym_vector<INT>(
-        reaction_data_buffer.get_required_int_props());
+    this->calculate_rates_int_syms =
+        reaction_data_buffer.get_required_int_sym_vector();
 
-    calculate_rates_real_syms = utils::build_sym_vector<REAL>(
-        reaction_data_buffer.get_required_real_props());
+    this->calculate_rates_real_syms =
+        reaction_data_buffer.get_required_real_sym_vector();
 
-    apply_int_syms = utils::build_sym_vector<INT>(
+    this->apply_int_syms = utils::build_sym_vector<INT>(
         reaction_kernel_buffer.get_required_int_props());
 
-    apply_real_syms = utils::build_sym_vector<REAL>(
+    this->apply_real_syms = utils::build_sym_vector<REAL>(
         reaction_kernel_buffer.get_required_real_props());
 
     auto descendant_matrix_spec =
