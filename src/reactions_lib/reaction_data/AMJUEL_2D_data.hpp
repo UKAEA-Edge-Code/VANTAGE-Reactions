@@ -23,6 +23,7 @@ namespace VANTAGE::Reactions {
 template <int num_coeffs_T, int num_coeffs_n>
 struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
 
+  AMJUEL2DDataOnDevice() = default;
   /**
    * @brief Constructor for AMJUEL2DDataOnDevice.
    *

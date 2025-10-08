@@ -11,6 +11,7 @@ namespace VANTAGE::Reactions {
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
 
+  FixedRateDataOnDevice() = default;
   /**
    * @brief Constructor for FixedRateDataOnDevice.
    *

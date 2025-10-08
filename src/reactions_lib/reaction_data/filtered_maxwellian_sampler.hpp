@@ -26,6 +26,7 @@ template <size_t ndim, typename CROSS_SECTION>
 struct FilteredMaxwellianOnDevice
     : public ReactionDataBaseOnDevice<ndim, HostAtomicBlockKernelRNG<REAL>> {
 
+  FilteredMaxwellianOnDevice() = default;
   /**
    * @brief Constructor for FilteredMaxwellianOnDevice.
    *

@@ -16,6 +16,8 @@ namespace VANTAGE::Reactions {
 template <size_t ndim>
 struct SpecularReflectionDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
 
+  SpecularReflectionDataOnDevice() = default;
+
   /**
    * @brief Function to calculate the specularly reflected velocities
    *

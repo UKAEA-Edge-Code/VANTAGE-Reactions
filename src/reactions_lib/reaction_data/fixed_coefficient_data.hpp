@@ -14,6 +14,7 @@ namespace VANTAGE::Reactions {
  */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
 
+  FixedCoefficientDataOnDevice() = default;
   /**
    * @brief Constructor for FixedCoefficientDataOnDevice.
    *

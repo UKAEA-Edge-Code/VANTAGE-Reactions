@@ -23,6 +23,7 @@ namespace Reactions {
 template <size_t N, bool ephemeral_dat>
 struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
 
+  ArrayLookupDataOnDevice() = default;
   /**
    * @brief Constructor for ArrayLookupDataOnDevice.
    *

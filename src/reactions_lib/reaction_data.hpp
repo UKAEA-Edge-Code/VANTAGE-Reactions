@@ -81,6 +81,8 @@ struct ReactionDataBase {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
   using ON_DEVICE_OBJ_TYPE = ON_DEVICE_TYPE;
+  static const size_t DIM = dim;
+
   /**
    * @brief Constructor for ReactionDataBase.
    *
@@ -284,6 +286,8 @@ protected:
 template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
 struct ReactionDataBaseOnDevice {
   using RNG_KERNEL_TYPE = RNG_TYPE;
+  static const size_t DIM = dim;
+
   ReactionDataBaseOnDevice() = default;
 
   /**
