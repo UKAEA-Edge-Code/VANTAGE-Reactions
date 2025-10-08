@@ -3,6 +3,7 @@
 
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
+#include "../reactions_lib/concatenator_data.hpp"
 #include "../reactions_lib/data_calculator.hpp"
 #include "../reactions_lib/merge_transformation.hpp"
 #include "../reactions_lib/particle_properties_map.hpp"
