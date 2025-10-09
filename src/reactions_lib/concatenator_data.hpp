@@ -12,6 +12,13 @@ constexpr size_t total_dim() {
   return T::DIM + total_dim<U, DATATYPE...>();
 };
 
+/**
+ * @brief On device recursive concatenator data - calc_data returns the
+ * concatenated result of all contained ReactionDataOnDevice objects
+ *
+ * @tparam DATATYPE ReactionDataOnDevice variadic parameters whose calc_data is
+ * called from this object
+ */
 template <typename... DATATYPE>
 struct ConcatenatorDataOnDevice
     : public ReactionDataBaseOnDevice<total_dim<DATATYPE...>()> {
@@ -95,17 +102,35 @@ get_on_device_objs(std::tuple<DATATYPE...> &data) {
       data);
 };
 
+/**
+ * @brief Composite ReactionData object constaining multiple other ReactionData
+ * objects. On calculation of the data, returns the concatenated (in the
+ * template order) results of the contained data objects.
+ *
+ * @tparam DATATYPE ReactionData derived types contained within this composite
+ * object
+ */
 template <typename... DATATYPE>
 struct ConcatenatorData
     : public ReactionDataBase<typename OnDeviceTemplate<
                                   ConcatenatorDataOnDevice, DATATYPE...>::type,
                               total_dim<DATATYPE...>()> {
 
+  /**
+   * @brief Constructor for ConcatenatorData
+   *
+   * @param data Variadic argument with all of the contained ReactionData
+   * objects
+   */
   ConcatenatorData(DATATYPE... data) : data(std::make_tuple(data...)) {
     this->set_required_int_props(this->get_required_int_props_children());
     this->set_required_real_props(this->get_required_real_props_children());
   };
 
+  /**
+   * @brief Reconstruct the composite on-device object (assuming the individual
+   * on-device objects have been modified/re-indexed)
+   */
   void index_on_device_object() {
 
     this->on_device_obj = std::make_from_tuple<
@@ -119,7 +144,7 @@ struct ConcatenatorData
 
     std::apply(
         [&](auto &&...args) {
-          ((new_set.merge_with(args.get_required_real_props())), ...);
+          ((new_set = new_set.merge_with(args.get_required_real_props())), ...);
         },
         this->data);
 
@@ -132,7 +157,7 @@ struct ConcatenatorData
 
     std::apply(
         [&](auto &&...args) {
-          ((new_set.merge_with(args.get_required_int_props())), ...);
+          ((new_set = new_set.merge_with(args.get_required_int_props())), ...);
         },
         this->data);
 
