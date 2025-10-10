@@ -87,12 +87,6 @@ private:
   Tuple::Tuple<DATATYPE...> data;
 };
 
-template <template <class> class ON_DEVICE_TYPE, typename... ARGS>
-struct OnDeviceTemplate {
-
-  using type = ON_DEVICE_TYPE<typename ARGS::ON_DEVICE_OBJ_TYPE...>;
-};
-
 template <typename... DATATYPE>
 inline std::tuple<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>
 get_on_device_objs(std::tuple<DATATYPE...> &data) {
@@ -112,9 +106,9 @@ get_on_device_objs(std::tuple<DATATYPE...> &data) {
  */
 template <typename... DATATYPE>
 struct ConcatenatorData
-    : public ReactionDataBase<typename OnDeviceTemplate<
-                                  ConcatenatorDataOnDevice, DATATYPE...>::type,
-                              total_dim<DATATYPE...>()> {
+    : public ReactionDataBase<
+          ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
+          total_dim<DATATYPE...>()> {
 
   /**
    * @brief Constructor for ConcatenatorData
@@ -134,7 +128,7 @@ struct ConcatenatorData
   void index_on_device_object() {
 
     this->on_device_obj = std::make_from_tuple<
-        typename OnDeviceTemplate<ConcatenatorDataOnDevice, DATATYPE...>::type>(
+        ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>>(
         get_on_device_objs(this->data));
   };
 
