@@ -24,7 +24,7 @@ spack:
   packages:
     all:
       require:
-        - spec: "%gcc@11.3:"
+        - spec: "%clang@18:"
       providers:
         mpi: [mpich]
         sycl: [adaptivecpp]

@@ -20,6 +20,7 @@
 #include "../reactions_lib/cross_sections/AMJUEL_fit_cs.hpp"
 #include "../reactions_lib/cross_sections/constant_rate_cs.hpp"
 
+#include "../reactions_lib/reaction_data/ADAS_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_1D_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data_H3.hpp"
