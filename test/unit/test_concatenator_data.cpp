@@ -86,10 +86,66 @@ TEST(ConcatenatorData, req_prop_test) {
         particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), position->at(rowx, 0));
-      EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 1.0); // weight pre-reaction
+      EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 1.0); // weight
     }
   }
 
   particle_group->domain->mesh->free();
   descendant_particles->domain->mesh->free();
+}
+
+TEST(ConcatenatorData, mixed_dim_rng) {
+  const int N_total = 100;
+
+  auto particle_group = create_test_particle_group(N_total);
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto energy_dat_0 = FixedRateData(0.1);
+  auto energy_dat_1 = FixedRateData(1.5);
+
+  // std::mt19937 rng = std::mt19937(std::random_device{}());
+  // const double extents[1] = {1.0};
+  auto rng_lambda = [&]() -> REAL { return 1.0; };
+  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, N_total);
+
+  // auto constant_rate_cross_section = ConstantRateCrossSection(1.0);
+  auto vel_dat = FilteredMaxwellianSampler<2>(2.0, rng_kernel);
+
+  // (1D, 2D, 1D) order of ReactionData dimensions
+  auto data_calc_obj =
+      DataCalculator<ConcatenatorData<decltype(energy_dat_0), decltype(vel_dat),
+                                      decltype(energy_dat_1)>>(
+          ConcatenatorData(energy_dat_0, vel_dat, energy_dat_1));
+
+  auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+      particle_group->sycl_target, 0, data_calc_obj.get_data_size());
+  pre_req_data->fill(0);
+
+  const int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  for (int i = 0; i < cell_count; i++) {
+    auto shape = pre_req_data->index.shape;
+    auto n_part_cell = particle_sub_group->get_npart_cell(i);
+    size_t buffer_size = n_part_cell;
+    pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape[1]);
+    pre_req_data->fill(0);
+
+    data_calc_obj.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
+
+    auto temp_dat = pre_req_data->get();
+
+    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
+      auto dim_size = pre_req_data->index.shape[1];
+
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 0], 0.1);
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 1],
+                       1); // FLUID_FLOW_SPEED x
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 2],
+                       3); // FLUID_FLOW_SPEED y
+      EXPECT_DOUBLE_EQ(temp_dat[(ipart * dim_size) + 3], 1.5);
+    }
+  }
+
+  particle_group->domain->mesh->free();
 }

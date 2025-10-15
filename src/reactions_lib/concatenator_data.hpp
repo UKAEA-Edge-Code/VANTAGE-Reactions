@@ -21,7 +21,9 @@ constexpr size_t total_dim() {
  */
 template <typename... DATATYPE>
 struct ConcatenatorDataOnDevice
-    : public ReactionDataBaseOnDevice<total_dim<DATATYPE...>()> {
+    : public ReactionDataBaseOnDevice<
+          total_dim<DATATYPE...>(),
+          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>> {
 
   ConcatenatorDataOnDevice(DATATYPE... data)
       : data(Tuple::to_tuple(data...)) {};
@@ -35,21 +37,22 @@ struct ConcatenatorDataOnDevice
    * inside which calc_data is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param req_int_props Vector of symbols for integer-valued properties
+   * that need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
-   * @param kernel The random number generator kernel potentially used in the
-   * calculation
+   * @param kernel The random number generator kernels used in the
+   * calculation, a TupleRNG accessor
    *
    * @return Concatenated return arrays of all the contained device types
    */
-  std::array<REAL, DIM>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
-            typename ReactionDataBaseOnDevice<DIM>::RNG_KERNEL_TYPE::KernelType
-                &rng_kernel) const {
+  std::array<REAL, DIM> calc_data(
+      const Access::LoopIndex::Read &index,
+      const Access::SymVector::Write<INT> &req_int_props,
+      const Access::SymVector::Read<REAL> &req_real_props,
+      typename TupleRNG<
+          std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
+          &rng_kernel) const {
 
     std::array<REAL, DIM> result;
 
@@ -63,16 +66,16 @@ struct ConcatenatorDataOnDevice
       const Access::LoopIndex::Read &index,
       const Access::SymVector::Write<INT> &req_int_props,
       const Access::SymVector::Read<REAL> &req_real_props,
-      typename ReactionDataBaseOnDevice<DIM>::RNG_KERNEL_TYPE::KernelType
+      typename TupleRNG<
+          std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel,
       std::array<REAL, DIM> &result, size_t dat_dim_idx) const {
-
     if constexpr (I < (sizeof...(DATATYPE))) {
 
       const auto arg = Tuple::get<I>(this->data);
       constexpr auto data_dim = decltype(arg)::DIM;
-      std::array<REAL, data_dim> calculated_data =
-          arg.calc_data(index, req_int_props, req_real_props, rng_kernel);
+      std::array<REAL, data_dim> calculated_data = arg.calc_data(
+          index, req_int_props, req_real_props, rng_kernel.template get<I>());
       for (auto i = 0; i < data_dim; i++) {
         result[dat_dim_idx + i] = calculated_data[i];
       };
@@ -108,7 +111,8 @@ template <typename... DATATYPE>
 struct ConcatenatorData
     : public ReactionDataBase<
           ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
-          total_dim<DATATYPE...>()> {
+          total_dim<DATATYPE...>(),
+          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>> {
 
   /**
    * @brief Constructor for ConcatenatorData
@@ -119,6 +123,9 @@ struct ConcatenatorData
   ConcatenatorData(DATATYPE... data) : data(std::make_tuple(data...)) {
     this->set_required_int_props(this->get_required_int_props_children());
     this->set_required_real_props(this->get_required_real_props_children());
+    this->set_rng_kernel(std::apply(
+        tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+        this->get_rng_kernels_children()));
   };
 
   /**
@@ -131,6 +138,14 @@ struct ConcatenatorData
         ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>>(
         get_on_device_objs(this->data));
   };
+
+  std::tuple<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>
+  get_rng_kernels_children() {
+
+    return std::apply(
+        [](auto &&...args) { return std::tuple(args.get_rng_kernel()...); },
+        this->data);
+  }
 
   ArgumentNameSet<REAL> get_required_real_props_children() {
 
