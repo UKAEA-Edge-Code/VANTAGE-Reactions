@@ -115,8 +115,7 @@ struct ReactionDataBase {
                                             properties_map))),
         properties_map(properties_map) {
 
-    auto rng_lambda = [&]() -> REAL { return 0; };
-    this->rng_kernel = std::make_shared<RNG_TYPE>(rng_lambda, 0);
+    this->rng_kernel = std::make_shared<RNG_TYPE>();
   }
 
   /**

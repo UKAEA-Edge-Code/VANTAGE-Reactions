@@ -22,6 +22,8 @@ namespace VANTAGE::Reactions {
 template <size_t num_coeffs, size_t num_l_coeffs, size_t num_r_coeffs>
 struct AMJUELFitCrossSection : public AbstractCrossSection {
 
+  AMJUELFitCrossSection() = default;
+
   /**
    * @brief Constructor for AMJUELFitCrossSection.
    *
