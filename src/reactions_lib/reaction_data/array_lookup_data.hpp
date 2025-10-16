@@ -93,14 +93,24 @@ public:
  * @tparam N The size of the REAL-valued array stored in the lookup table
  * @tparam ephemeral_dat True if the Sym storing the key value is an ephemeral
  * dat
- * @param key_comp The key dat component index to use as the lookup key
- * @param default_data The default array to be returned in case the lookup key
- * cannot be found
  */
 template <size_t N, bool ephemeral_dat = false>
 struct ArrayLookupData
     : public ReactionDataBase<ArrayLookupDataOnDevice<N, ephemeral_dat>, N> {
 
+  /**
+   * @brief Constructor for ArrayLookupData.
+   *
+   * @param key_sym The Sym<INT> corresponding to the dat whose component is
+   * used as the key
+   * @param key_sym_comp The component of the key dat to be used as the lookup
+   * key
+   * @param lookup_table The lookup table of return values as a map of integer
+   * keys to N-dimensional REAL arrays
+   * @param default_data The default array to be returned in case the lookup key
+   * cannot be found
+   * @param sycl_target The sycl target on which this data should be used
+   */
   ArrayLookupData(const Sym<INT> &key_sym, int key_sym_comp,
                   const std::map<int, std::array<REAL, N>> &lookup_table,
                   const std::array<REAL, N> &default_values,
