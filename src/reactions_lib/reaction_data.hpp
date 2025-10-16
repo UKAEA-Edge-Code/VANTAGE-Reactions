@@ -67,6 +67,7 @@ struct AbstractCrossSection {
   }
 };
 
+using DEFAULT_RNG_KERNEL = HostPerParticleBlockRNG<REAL>;
 /**
  * @brief Base reaction data object.
  *
@@ -74,14 +75,17 @@ struct AbstractCrossSection {
  * @tparam dim Used to set the size of the array that calc_data returns
  * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
+ * @tparam input_dim The dimension of the input array (Optional, defaults to 0,
+ * not defining the corresponding calc_data)
  */
 template <typename ON_DEVICE_TYPE, size_t dim = 1,
-          typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
+          typename RNG_TYPE = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
 struct ReactionDataBase {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
   using ON_DEVICE_OBJ_TYPE = ON_DEVICE_TYPE;
   static const size_t DIM = dim;
+  static const size_t INPUT_DIM = input_dim;
 
   /**
    * @brief Constructor for ReactionDataBase.
@@ -248,7 +252,8 @@ struct ReactionDataBase {
 
   static constexpr size_t get_dim() { return dim; }
 
-  virtual ~ReactionDataBase<ON_DEVICE_TYPE, dim, RNG_TYPE>() = default;
+  virtual ~ReactionDataBase<ON_DEVICE_TYPE, dim, RNG_TYPE, input_dim>() =
+      default;
 
   /**
    * @brief To be implemented by each derived class in order to handle required
@@ -281,11 +286,15 @@ protected:
  * @tparam dim Used to set the size of the array that calc_data returns
  * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
+ * @tparam input_dim The dimension of the optional input array (for use in
+ * pipelines)
  */
-template <size_t dim = 1, typename RNG_TYPE = HostPerParticleBlockRNG<REAL>>
+template <size_t dim = 1, typename RNG_TYPE = DEFAULT_RNG_KERNEL,
+          size_t input_dim = 0>
 struct ReactionDataBaseOnDevice {
   using RNG_KERNEL_TYPE = RNG_TYPE;
   static const size_t DIM = dim;
+  static const size_t INPUT_DIM = input_dim;
 
   ReactionDataBaseOnDevice() = default;
 
@@ -306,6 +315,8 @@ struct ReactionDataBaseOnDevice {
    * @return A REAL-valued array of size dim containing the calculated reaction
    * rate.
    */
+  template <std::size_t D = INPUT_DIM,
+            std::enable_if_t<(D == 0) && D == INPUT_DIM, int> = 0>
   std::array<REAL, dim>
   calc_data(const Access::LoopIndex::Read &index,
             const Access::SymVector::Write<INT> &req_int_props,
@@ -314,6 +325,16 @@ struct ReactionDataBaseOnDevice {
     return std::array<REAL, dim>{0.0};
   }
 
+  template <std::size_t D = INPUT_DIM,
+            std::enable_if_t<(D > 0) && D == INPUT_DIM, int> = 0>
+  std::array<REAL, dim>
+  calc_data(const std::array<REAL, INPUT_DIM> &input,
+            const Access::LoopIndex::Read &index,
+            const Access::SymVector::Write<INT> &req_int_props,
+            const Access::SymVector::Read<REAL> &req_real_props,
+            typename RNG_TYPE::KernelType &rng_kernel) const {
+    return std::array<REAL, dim>{0.0};
+  }
   static constexpr size_t get_dim() { return dim; }
 };
 }; // namespace VANTAGE::Reactions
