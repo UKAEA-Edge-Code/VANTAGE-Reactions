@@ -3,6 +3,7 @@
 
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
+#include "../reactions_lib/composite_data.hpp"
 #include "../reactions_lib/concatenator_data.hpp"
 #include "../reactions_lib/data_calculator.hpp"
 #include "../reactions_lib/merge_transformation.hpp"
@@ -23,6 +24,7 @@
 #include "../reactions_lib/reaction_data/AMJUEL_1D_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data_H3.hpp"
+#include "../reactions_lib/reaction_data/extractor_data.hpp"
 #include "../reactions_lib/reaction_data/filtered_maxwellian_sampler.hpp"
 #include "../reactions_lib/reaction_data/fixed_coefficient_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_rate_data.hpp"

@@ -76,6 +76,8 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
 
   auto test_data = FixedRateData(1.0);
 
+  auto velocity_data = ExtractorData<2>(Sym<REAL>("VELOCITY"));
+
   auto properties_map = PropertiesMap();
   properties_map[VANTAGE::Reactions::default_properties.source_momentum] =
       "ION_SOURCE_MOMENTUM";
@@ -86,7 +88,8 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
       LinearScatteringKernels<2>(projectile_species, properties_map.get_map());
 
   auto data_calculator =
-      DataCalculator<SpecularReflectionData<2>>(SpecularReflectionData<2>());
+      DataCalculator<SpecularReflectionData<decltype(velocity_data), 2>>(
+          SpecularReflectionData<decltype(velocity_data), 2>(velocity_data));
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, decltype(test_kernels),
                          decltype(data_calculator)>(
@@ -112,7 +115,6 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
       particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
