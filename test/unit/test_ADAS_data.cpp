@@ -33,8 +33,8 @@ inline auto single_particle() -> std::shared_ptr<ParticleGroup> {
 
   auto properties_map = get_default_map();
 
-  particle_spec_builder.add_particle_prop(Properties<REAL>(std::vector<int>(
-      default_properties.fluid_density, default_properties.fluid_temperature)));
+  particle_spec_builder.add_particle_prop(Properties<REAL>(std::vector<int>{
+      default_properties.fluid_density, default_properties.fluid_temperature}));
 
   auto particle_spec = particle_spec_builder.get_particle_spec();
 
@@ -52,8 +52,6 @@ inline auto single_particle() -> std::shared_ptr<ParticleGroup> {
 
 TEST(ADASData, calc_data) {
   auto particle_group = single_particle();
-
-  printf("PROBE\n");
 
   static const int ndens_dim = 8;
   static const int ntemp_dim = 10;
