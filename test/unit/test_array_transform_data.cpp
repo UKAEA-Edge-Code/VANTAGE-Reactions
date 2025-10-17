@@ -56,3 +56,49 @@ TEST(ArrayTransformData, polynomial_linear) {
   particle_group->domain->mesh->free();
   descendant_particles->domain->mesh->free();
 }
+
+TEST(ArrayTransformData, binary_add) {
+  const int N_total = 100;
+
+  auto particle_group = create_test_particle_group(N_total);
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto position_data = ExtractorData<2>(Sym<REAL>("POSITION"));
+
+  auto binary_transform_data = position_data + position_data;
+
+  auto test_reaction =
+      LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
+                         DataCalculator<decltype(binary_transform_data)>>(
+
+          particle_group->sycl_target, 0, std::array<int, 0>{},
+          TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
+          DataCalculator(binary_transform_data));
+
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto descendant_particles = std::make_shared<ParticleGroup>(
+      particle_group->domain, particle_group->get_particle_spec(),
+      particle_group->sycl_target);
+
+  for (int i = 0; i < cell_count; i++) {
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
+                        descendant_particles);
+
+    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    const int nrow = position->nrow;
+
+    auto source_density =
+        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), position->at(rowx, 0) * 2);
+      EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), position->at(rowx, 1) * 2);
+    }
+  }
+
+  particle_group->domain->mesh->free();
+  descendant_particles->domain->mesh->free();
+}

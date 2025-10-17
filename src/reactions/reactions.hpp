@@ -1,6 +1,7 @@
 #ifndef REACTIONS_REACTIONS_H
 #define REACTIONS_REACTIONS_H
 
+#include "../reactions_lib/binary_array_transform_data.hpp"
 #include "../reactions_lib/common_array_transforms.hpp"
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
