@@ -2,6 +2,7 @@
 #define REACTIONS_UTILS_H
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <neso_particles.hpp>
 #include <numeric>
 #include <type_traits>
@@ -124,59 +125,31 @@ reflect_vector(std::array<REAL, n_dim> input,
   return output;
 };
 
-template <int n_range_dim>
-inline std::array<int, 2> calc_closest_point_indices(
-    const REAL &x_interp,
-    const std::array<REAL, n_range_dim> &dim_range) {
+template <std::size_t n_range_dim>
+inline std::array<std::size_t, 2>
+calc_closest_point_indices(const REAL &x_interp,
+                           const std::array<REAL, n_range_dim> &dim_range) {
 
-  std::array<int, 2> closest_indices{0, 0};
-  std::array<int, 2> eq_indices{0, 0};
+  REAL step_result_old = sycl::step(dim_range[0], x_interp);
+  REAL step_result_new = step_result_old;
 
-  std::array<REAL, n_range_dim> step_result;
+  for (std::size_t i = 0; i < n_range_dim; i++) {
+    step_result_new = sycl::step(dim_range[i], x_interp);
 
-  bool x_interp_is_exact = false;
-  bool x_interp_is_sub_range = false;
-  bool x_interp_is_sup_range = false;
-
-  int sub_count = 0;
-  int sup_count = 0;
-
-  for (int i = 0; i < n_range_dim; i++) {
-    if (sycl::fabs(x_interp - dim_range[i]) < 1e-12) {
-      eq_indices = {i, i};
-      x_interp_is_exact = true;
+    if ((step_result_new - step_result_old) != 0.0) {
+      return {i - 1, i};
     }
-    step_result[i] = sycl::step(dim_range[i], x_interp);
-    if (step_result[i] == 0.0) {
-      sub_count += 1;
-    } else if (step_result[i] == 1.0) {
-      sup_count += 1;
-    }
+
+    step_result_old = step_result_new;
   }
 
-  x_interp_is_sub_range = sub_count == n_range_dim ? true : false;
-  x_interp_is_sup_range = sup_count == n_range_dim ? true : false;
-
-  for (int i = 1; i < n_range_dim; i++) {
-    if (step_result[i] != step_result[i - 1]) {
-      closest_indices[0] = i - 1;
-      closest_indices[1] = i;
-      // break;
-    }
-  }
-
-  std::array<int, 2> result =
-      x_interp_is_sub_range
-          ? std::array<int, 2>{0, 0}
-          : (x_interp_is_sup_range
-                 ? std::array<int, 2>{n_range_dim - 1, n_range_dim - 1}
-                 : (x_interp_is_exact ? eq_indices : closest_indices));
-
-  return result;
+  // This return statement is not expected to be hit but is needed to avoid
+  // compiler warnings (since it ensures all paths are defined).
+  return {0, 0};
 };
 
 inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
-                   const REAL &f0, const REAL &f1) {
+                          const REAL &f0, const REAL &f1) {
   REAL dfdx = (f1 - f0) / (x1 - x0);
   REAL c = f0 - (dfdx * x0);
 

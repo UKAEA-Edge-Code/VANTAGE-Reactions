@@ -9,7 +9,7 @@
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
-template <int num_coeffs_T, int num_coeffs_n, int ndim = 2>
+template <std::size_t num_coeffs_T, std::size_t num_coeffs_n>
 struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
   ADASDataOnDevice() = default;
 
@@ -32,25 +32,34 @@ struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
         req_real_props.at(this->fluid_temperature_ind, index, 0);
     auto weight_dat = req_real_props.at(this->weight_ind, index, 0);
 
-    std::array<int, 2> closest_dens = utils::calc_closest_point_indices<num_coeffs_n>(
-        fluid_density_dat, this->density_range);
+    std::array<std::size_t, 2> closest_dens, closest_temp;
 
-    std::array<int, 2> closest_temp = utils::calc_closest_point_indices<num_coeffs_T>(
-        fluid_temperature_dat, this->temperature_range);
+    REAL fluid_dens_min = this->density_range[0];
+    REAL fluid_dens_max = this->density_range[num_coeffs_n-1];
+    REAL fluid_temp_min = this->density_range[0];
+    REAL fluid_temp_max = this->density_range[num_coeffs_T-1];
 
-    // std::array<int, 2> closest_dens {0, 0};
-    // std::array<int, 2> closest_temp {0, 0};
+    if (fluid_dens_min > fluid_density_dat) { closest_dens = {0, 1}; }
+    else if (fluid_dens_max < fluid_density_dat) { closest_dens = {num_coeffs_n-2, num_coeffs_n-1}; }
+    else { closest_dens = utils::calc_closest_point_indices(fluid_density_dat, this->density_range); }
 
-    REAL t0 = closest_temp[0];
-    REAL t1 = closest_temp[1];
-    REAL n0 = closest_dens[0];
-    REAL n1 = closest_dens[1];
+    if (fluid_temp_min > fluid_temperature_dat) { closest_temp = {0, 1}; }
+    else if (fluid_temp_max < fluid_temperature_dat) { closest_temp = {num_coeffs_n-2, num_coeffs_n-1}; }
+    else { closest_temp =utils::calc_closest_point_indices(fluid_temperature_dat, this->density_range); }
 
+    // indices
+    std::size_t t0 = closest_temp[0];
+    std::size_t t1 = closest_temp[1];
+    std::size_t n0 = closest_dens[0];
+    std::size_t n1 = closest_dens[1];
+
+    // values
     REAL temp0 = this->temperature_range[t0];
     REAL temp1 = this->temperature_range[t1];
     REAL dens0 = this->density_range[n0];
     REAL dens1 = this->density_range[n1];
 
+    // function values
     REAL f_n0_t0 = coeffs[t0][n0];
     REAL f_n0_t1 = coeffs[t1][n0];
     REAL f_n1_t0 = coeffs[t0][n1];
