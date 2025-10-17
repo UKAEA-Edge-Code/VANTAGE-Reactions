@@ -67,7 +67,7 @@ struct AbstractCrossSection {
   }
 };
 
-using DEFAULT_RNG_KERNEL = HostPerParticleBlockRNG<REAL>;
+using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
 /**
  * @brief Base reaction data object.
  *
