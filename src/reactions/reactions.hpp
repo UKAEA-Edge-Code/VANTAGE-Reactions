@@ -1,6 +1,7 @@
 #ifndef REACTIONS_REACTIONS_H
 #define REACTIONS_REACTIONS_H
 
+#include "../reactions_lib/common_array_transforms.hpp"
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
 #include "../reactions_lib/concatenator_data.hpp"
@@ -15,6 +16,7 @@
 #include "../reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include "../reactions_lib/reaction_kernels.hpp"
 #include "../reactions_lib/transformation_wrapper.hpp"
+#include "../reactions_lib/unary_array_transform_data.hpp"
 #include "../reactions_lib/utils.hpp"
 #include "neso_test_assert.hpp"
 
