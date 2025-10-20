@@ -1,8 +1,11 @@
+#include "include/mock_particle_group.hpp"
 #include <array>
 #include <gtest/gtest.h>
 #include <neso_particles.hpp>
+#include <neso_particles/loop/particle_loop_functions.hpp>
 #include <neso_particles/typedefs.hpp>
 #include <reactions/reactions.hpp>
+#include <vector>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
@@ -60,14 +63,17 @@ private:
   static const int ndens_dim = 8;
   static const int ntemp_dim = 10;
 
-  constexpr static std::array<REAL, ndens_dim> dens_range = {
+  static constexpr std::array<REAL, ndens_dim> dens_range = {
       1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
-  constexpr static std::array<REAL, ntemp_dim> temp_range = {
+  static constexpr std::array<REAL, ntemp_dim> temp_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
 
   std::array<std::array<REAL, ndens_dim>, ntemp_dim> coeffs;
+
+  std::vector<REAL> coeffs_vec;
+  std::vector<std::vector<REAL>> ranges;
 
 public:
   coefficient_values() {
@@ -76,8 +82,17 @@ public:
       temp_i = this->temp_range[itemp];
       for (int idens = 0; idens < ndens_dim; idens++) {
         this->coeffs[itemp][idens] = temp_i * dens_range[idens];
+        this->coeffs_vec.push_back(this->coeffs[itemp][idens]);
       }
     }
+
+    std::vector<REAL> dens_range_vec(this->dens_range.begin(),
+                                     this->dens_range.end());
+    std::vector<REAL> temp_range_vec(this->temp_range.begin(),
+                                     this->temp_range.end());
+
+    this->ranges.push_back(temp_range_vec);
+    this->ranges.push_back(dens_range_vec);
   };
 
   const std::array<REAL, ndens_dim> &get_dens_range() {
@@ -91,6 +106,12 @@ public:
   const std::array<std::array<REAL, ndens_dim>, ntemp_dim> &get_coeffs() {
     return this->coeffs;
   }
+
+  const std::vector<std::vector<REAL>> &get_ranges_vec() {
+    return this->ranges;
+  }
+
+  const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 };
 
 TEST(ADASData, calc_data) {
@@ -100,18 +121,30 @@ TEST(ADASData, calc_data) {
 
   // Initialize a particle group with a single particle with the fluid density
   // and fluid temperature set to the interpolation values.
-  auto particle_group =
-      single_particle(fluid_density_interp, fluid_temp_interp);
+  auto particle_group = create_test_particle_group(1e6);
+
+  auto npart = particle_group->get_npart_local();
+
+  particle_loop(
+      particle_group,
+      [=](auto fdens, auto ftemp) {
+        fdens.at(0) = fluid_density_interp;
+        ftemp.at(0) = fluid_temp_interp;
+      },
+      Access::write(Sym<REAL>("FLUID_DENSITY")),
+      Access::write(Sym<REAL>("FLUID_TEMPERATURE")))
+      ->execute();
 
   // Setup the mock ADAS data values.
   auto ADAS_values = coefficient_values();
   auto temp_range = ADAS_values.get_temp_range();
   auto dens_range = ADAS_values.get_dens_range();
-  auto coeffs = ADAS_values.get_coeffs();
+  auto ranges_vec = ADAS_values.get_ranges_vec();
+  auto coeffs_vec = ADAS_values.get_coeffs_vec();
 
   // Construct the ADASData object and extract the on-device object.
   auto test_adas_data = ADASData<temp_range.size(), dens_range.size()>(
-      coeffs, temp_range, dens_range);
+      coeffs_vec, ranges_vec, particle_group->sycl_target);
   auto test_adas_data_on_device = test_adas_data.get_on_device_obj();
 
   auto calculate_rates_int_syms = test_adas_data.get_required_int_sym_vector();
@@ -119,8 +152,8 @@ TEST(ADASData, calc_data) {
       test_adas_data.get_required_real_sym_vector();
 
   // For storing the calculation result.
-  LocalArraySharedPtr<REAL> rate_buffer =
-      std::make_shared<LocalArray<REAL>>(particle_group->sycl_target, 1, 0.0);
+  LocalArraySharedPtr<REAL> rate_buffer = std::make_shared<LocalArray<REAL>>(
+      particle_group->sycl_target, npart, 0.0);
 
   auto rate_data_loop = particle_loop(
       "rate_data_loop", particle_group,
@@ -132,6 +165,8 @@ TEST(ADASData, calc_data) {
             particle_index, req_int_props, req_real_props, kernel);
 
         buffer[current_count] = rate[0];
+        // printf("current_count = %d\n", int(current_count));
+        // printf("rate = %f\n", rate[0]);
       },
       Access::read(ParticleLoopIndex{}),
       Access::write(sym_vector<INT>(particle_group, calculate_rates_int_syms)),
