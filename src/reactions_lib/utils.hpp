@@ -85,7 +85,8 @@ build_sym_vector(std::vector<std::string> required_properties) {
  * @return A REAL-valued array of size 2 containing the calculated two normal
  * variates.
  */
-inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
+inline std::array<REAL, 2> box_muller_transform(const REAL &u1,
+                                                const REAL &u2) {
   constexpr REAL two_pi = 2 * M_PI;
 
   auto magnitude = Kernel::sqrt(-2 * Kernel::log(u1));
@@ -105,8 +106,8 @@ inline std::array<REAL, 2> box_muller_transform(REAL u1, REAL u2) {
  */
 template <size_t n_dim>
 inline std::array<REAL, n_dim>
-reflect_vector(std::array<REAL, n_dim> input,
-               std::array<REAL, n_dim> ref_vector) {
+reflect_vector(const std::array<REAL, n_dim> &input,
+               const std::array<REAL, n_dim> &ref_vector) {
 
   REAL proj_factor = 0.0;
   std::array<REAL, n_dim> output;
@@ -123,5 +124,34 @@ reflect_vector(std::array<REAL, n_dim> input,
 
   return output;
 };
+
+/**
+ * @brief Return dot(input,proj_direction) * proj_direction. If proj_direction
+ * is a unit vector this will be a projection of input onto proj_direction.
+ *
+ * @param input The input vector
+ * @param proj_direction Direction onto which to project the input
+ */
+template <size_t n_dim>
+inline std::array<REAL, n_dim>
+project_vector(const std::array<REAL, n_dim> &input,
+               const std::array<REAL, n_dim> &proj_direction) {
+
+  REAL proj_factor = 0.0;
+  std::array<REAL, n_dim> output;
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    proj_factor += input[dim] * proj_direction[dim];
+  }
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    output[dim] = proj_factor * proj_direction[dim];
+  }
+
+  return output;
+};
+
 } // namespace VANTAGE::Reactions::utils
 #endif

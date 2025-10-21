@@ -207,5 +207,10 @@ struct PipelineData
 private:
   std::tuple<DATATYPE...> data;
 };
+
+template <typename... DATATYPE> inline auto pipe(DATATYPE... data) {
+
+  return PipelineData(data...);
+}
 }; // namespace VANTAGE::Reactions
 #endif
