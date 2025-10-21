@@ -49,6 +49,81 @@ private:
 };
 
 /**
+ * @brief Unary array transform multiplying each element of the array with a
+ * scalar
+ *
+ * @tparam DIM The expected input/output size
+ */
+template <size_t DIM>
+struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
+
+  ScalerArrayTransform() = default;
+  /**
+   * @brief Constructor of PolynomialArrayTransform
+   *
+   * @param mult The multiplicative constant to be used
+   */
+  ScalerArrayTransform(const REAL &mult) : mult(mult) {};
+
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+
+    std::array<REAL, DIM> result;
+
+    for (int i = 0; i < DIM; i++) {
+
+      result[i] = this->mult * input[i];
+    }
+
+    return result;
+  };
+
+private:
+  REAL mult;
+};
+
+/**
+ * @brief Unary array transform projecting the input on a fixed input vector
+ *
+ * @tparam DIM The expected input/output size
+ */
+template <size_t DIM>
+struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
+
+  UnaryProjectArrayTransform() = default;
+  /**
+   * @brief Constructor of UnaryProjectArrayTransform
+   *
+   * @param dir The array representing the projection direction vector
+   */
+  UnaryProjectArrayTransform(const std::array<REAL, DIM> &dir) : dir(dir) {};
+
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+
+    return utils::project_vector(input, this->dir);
+  };
+
+private:
+  std::array<REAL, DIM> dir;
+};
+
+/**
+ * @brief Binary array transform projecting the first input onto the second one
+ *
+ * @tparam DIM The size of the transformed array
+ */
+template <size_t DIM>
+struct BinaryProjectArrayTransform
+    : AbstractBinaryArrayTransform<DIM, DIM, DIM> {
+
+  BinaryProjectArrayTransform() = default;
+
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
+                              const std::array<REAL, DIM> &input_2) const {
+
+    return utils::project_vector(input_1, input_2);
+  };
+};
+/**
  * @brief Binary element-wise transform supporting broadcasting from size 1
  * arrays
  *
@@ -60,6 +135,7 @@ template <size_t DIM1, size_t DIM2, typename OP>
 struct BinaryArrayOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, std::max(DIM1, DIM2)> {
 
+  BinaryArrayOperatorTransform() = default;
   BinaryArrayOperatorTransform<DIM1, DIM2, OP>(const OP &op) : op(op) {
 
     if constexpr (DIM1 != DIM2) {
@@ -112,28 +188,41 @@ private:
   OP op;
 };
 
-template <typename ON_DEVICE_TYPE1, size_t dim1, typename RNG_TYPE1,
-          typename ON_DEVICE_TYPE2, size_t dim2, typename RNG_TYPE2>
-inline auto
-operator+(const ReactionDataBase<ON_DEVICE_TYPE1, dim1, RNG_TYPE1, 0> &lhs,
-          const ReactionDataBase<ON_DEVICE_TYPE2, dim2, RNG_TYPE2, 0> &rhs) {
+template <
+    typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
+inline auto operator+(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<dim1, dim2, decltype(sycl::plus())>(
+      BinaryArrayOperatorTransform<T::DIM, U::DIM, decltype(sycl::plus())>(
           sycl::plus()),
       lhs, rhs);
 };
 
-template <typename ON_DEVICE_TYPE1, size_t dim1, typename RNG_TYPE1,
-          typename ON_DEVICE_TYPE2, size_t dim2, typename RNG_TYPE2>
-inline auto
-operator*(const ReactionDataBase<ON_DEVICE_TYPE1, dim1, RNG_TYPE1, 0> &lhs,
-          const ReactionDataBase<ON_DEVICE_TYPE2, dim2, RNG_TYPE2, 0> &rhs) {
+template <
+    typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
+inline auto operator*(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<dim1, dim2, decltype(sycl::multiplies())>(
+      BinaryArrayOperatorTransform<T::DIM, U::DIM,
+                                   decltype(sycl::multiplies())>(
           sycl::multiplies()),
       lhs, rhs);
 };
+
+template <size_t DIM> inline auto scale_by(const REAL &mult) {
+
+  return UnaryArrayTransformData(ScalerArrayTransform<DIM>(mult));
+}
+
 } // namespace VANTAGE::Reactions
 #endif

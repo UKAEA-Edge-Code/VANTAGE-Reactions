@@ -92,5 +92,10 @@ struct ExtractorData
 private:
   Sym<REAL> extracted_sym;
 };
+
+template <size_t n_comp> auto inline extract(const std::string &name) {
+
+  return ExtractorData<n_comp>(Sym<REAL>(name));
+}
 }; // namespace VANTAGE::Reactions
 #endif
