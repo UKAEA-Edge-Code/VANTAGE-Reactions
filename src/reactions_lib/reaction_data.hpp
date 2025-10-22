@@ -290,9 +290,12 @@ protected:
  * pipelines)
  */
 template <size_t dim = 1, typename RNG_TYPE = DEFAULT_RNG_KERNEL,
-          size_t input_dim = 0>
+          size_t input_dim = 0, typename VAL_TYPE = REAL,
+          typename IN_TYPE = REAL>
 struct ReactionDataBaseOnDevice {
   using RNG_KERNEL_TYPE = RNG_TYPE;
+  using VALUE_TYPE = VAL_TYPE;
+  using INPUT_TYPE = IN_TYPE;
   static const size_t DIM = dim;
   static const size_t INPUT_DIM = input_dim;
 
@@ -317,7 +320,7 @@ struct ReactionDataBaseOnDevice {
    */
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D == 0) && D == INPUT_DIM, int> = 0>
-  std::array<REAL, dim>
+  std::array<VAL_TYPE, dim>
   calc_data(const Access::LoopIndex::Read &index,
             const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
@@ -327,8 +330,8 @@ struct ReactionDataBaseOnDevice {
 
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D > 0) && D == INPUT_DIM, int> = 0>
-  std::array<REAL, dim>
-  calc_data(const std::array<REAL, INPUT_DIM> &input,
+  std::array<VAL_TYPE, dim>
+  calc_data(const std::array<IN_TYPE, INPUT_DIM> &input,
             const Access::LoopIndex::Read &index,
             const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
