@@ -1,6 +1,6 @@
 #ifndef REACTIONS_BINARY_ARRAY_TRANSFORM_DATA_H
 #define REACTIONS_BINARY_ARRAY_TRANSFORM_DATA_H
-#include "reaction_data.hpp"
+#include "composite_data.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
@@ -32,10 +32,8 @@ struct AbstractBinaryArrayTransform {
  */
 template <typename TRANSFORM, typename DATATYPE1, typename DATATYPE2>
 struct BinaryArrayTransformDataOnDevice
-    : public ReactionDataBaseOnDevice<
-          TRANSFORM::OUT_DIM,
-          TupleRNG<std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
-                   std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>> {
+    : public CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+                                   DATATYPE2> {
 
   BinaryArrayTransformDataOnDevice() = default;
 
@@ -49,7 +47,9 @@ struct BinaryArrayTransformDataOnDevice
    */
   BinaryArrayTransformDataOnDevice(TRANSFORM transform, DATATYPE1 data1,
                                    DATATYPE2 data2)
-      : transform(transform), data1(data1), data2(data2) {
+      : CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+                              DATATYPE2>(data1, data2),
+        transform(transform) {
 
     static_assert(
         TRANSFORM::IN_DIM_1 == DATATYPE1::DIM &&
@@ -85,16 +85,16 @@ struct BinaryArrayTransformDataOnDevice
           KernelType &rng_kernel) const {
 
     return this->transform.apply(
-        this->data1.calc_data(index, req_int_props, req_real_props,
-                              rng_kernel.template get<0>()),
-        this->data2.calc_data(index, req_int_props, req_real_props,
-                              rng_kernel.template get<1>()));
+        Tuple::get<0>(this->data)
+            .calc_data(index, req_int_props, req_real_props,
+                       rng_kernel.template get<0>()),
+        Tuple::get<1>(this->data)
+            .calc_data(index, req_int_props, req_real_props,
+                       rng_kernel.template get<1>()));
   }
 
 private:
   TRANSFORM transform;
-  DATATYPE1 data1;
-  DATATYPE2 data2;
 };
 
 /**
@@ -109,13 +109,11 @@ private:
  */
 template <typename TRANSFORM, typename DATATYPE1, typename DATATYPE2>
 struct BinaryArrayTransformData
-    : public ReactionDataBase<
+    : public CompositeData<
           BinaryArrayTransformDataOnDevice<
               TRANSFORM, typename DATATYPE1::ON_DEVICE_OBJ_TYPE,
               typename DATATYPE2::ON_DEVICE_OBJ_TYPE>,
-          TRANSFORM::OUT_DIM,
-          TupleRNG<std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
-                   std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>> {
+          TRANSFORM::OUT_DIM, 0, DATATYPE1, DATATYPE2> {
 
   /**
    * @brief Constructor for BinaryArrayTransformData
@@ -127,15 +125,13 @@ struct BinaryArrayTransformData
    */
   BinaryArrayTransformData(TRANSFORM transform, DATATYPE1 data1,
                            DATATYPE2 data2)
-      : transform(transform), data1(data1), data2(data2) {
-    this->set_required_real_props(
-        this->data1.get_required_real_props().merge_with(
-            this->data2.get_required_real_props()));
-    this->set_required_int_props(
-        this->data1.get_required_int_props().merge_with(
-            this->data2.get_required_int_props()));
-    this->set_rng_kernel(
-        tuple_rng(data1.get_rng_kernel(), data2.get_rng_kernel()));
+      : CompositeData<BinaryArrayTransformDataOnDevice<
+                          TRANSFORM, typename DATATYPE1::ON_DEVICE_OBJ_TYPE,
+                          typename DATATYPE2::ON_DEVICE_OBJ_TYPE>,
+                      TRANSFORM::OUT_DIM, 0, DATATYPE1, DATATYPE2>(data1,
+                                                                   data2),
+        transform(transform) {
+    this->post_init();
   };
 
   /**
@@ -145,28 +141,12 @@ struct BinaryArrayTransformData
   void index_on_device_object() {
 
     this->on_device_obj = BinaryArrayTransformDataOnDevice(
-        this->transform, this->data1.get_on_device_obj(),
-        this->data2.get_on_device_obj());
+        this->transform, std::get<0>(this->data).get_on_device_obj(),
+        std::get<1>(this->data).get_on_device_obj());
   };
-
-  void set_required_int_props(const ArgumentNameSet<INT> &props) {
-    this->required_int_props = props;
-    this->data1.set_required_int_props(props);
-    this->data2.set_required_int_props(props);
-    this->index_on_device_object();
-  }
-
-  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
-    this->required_real_props = props;
-    this->data1.set_required_real_props(props);
-    this->data2.set_required_real_props(props);
-    this->index_on_device_object();
-  }
 
 private:
   TRANSFORM transform;
-  DATATYPE1 data1;
-  DATATYPE2 data2;
 };
 }; // namespace VANTAGE::Reactions
 #endif
