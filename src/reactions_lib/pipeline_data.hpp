@@ -18,7 +18,10 @@ template <typename T, typename... DATATYPE> constexpr size_t first_in_dim() {
 template <typename T> constexpr bool check_consistency() { return true; };
 template <typename T, typename U, typename... DATATYPE>
 constexpr bool check_consistency() {
-  return (U::INPUT_DIM == T::DIM) && check_consistency<U, DATATYPE...>();
+  return (U::INPUT_DIM == T::DIM &&
+          std::is_same<typename U::INPUT_TYPE,
+                       typename T::VALUE_TYPE>::value) &&
+         check_consistency<U, DATATYPE...>();
 };
 
 /**
@@ -75,7 +78,7 @@ struct PipelineDataOnDevice
 
   template <size_t I, typename T, typename... ARGS>
   std::array<REAL, DIM> calc_data_recurse(
-      const std::array<REAL, T::INPUT_DIM> input,
+      const std::array<typename T::INPUT_TYPE, T::INPUT_DIM> input,
       const Access::LoopIndex::Read &index,
       const Access::SymVector::Write<INT> &req_int_props,
       const Access::SymVector::Read<REAL> &req_real_props,
