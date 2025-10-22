@@ -287,7 +287,10 @@ protected:
  * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
  * @tparam input_dim The dimension of the optional input array (for use in
- * pipelines)
+ * pipelines) (Optional, default 0)
+ * @tparam VAL_TYPE Return type of this objects calc_data routine (Optional,
+ * default REAL)
+ * @tparam IN_TYPE Input type of array required by this object (if input_dim >0)
  */
 template <size_t dim = 1, typename RNG_TYPE = DEFAULT_RNG_KERNEL,
           size_t input_dim = 0, typename VAL_TYPE = REAL,

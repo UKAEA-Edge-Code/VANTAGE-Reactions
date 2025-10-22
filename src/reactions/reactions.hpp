@@ -5,6 +5,7 @@
 #include "../reactions_lib/common_array_transforms.hpp"
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
+#include "../reactions_lib/composite_data.hpp"
 #include "../reactions_lib/concatenator_data.hpp"
 #include "../reactions_lib/data_calculator.hpp"
 #include "../reactions_lib/merge_transformation.hpp"

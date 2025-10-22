@@ -1,6 +1,6 @@
 #ifndef REACTIONS_CONCATENATOR_DATA_H
 #define REACTIONS_CONCATENATOR_DATA_H
-#include "reaction_data.hpp"
+#include "composite_data.hpp"
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
@@ -21,12 +21,12 @@ constexpr size_t total_dim() {
  */
 template <typename... DATATYPE>
 struct ConcatenatorDataOnDevice
-    : public ReactionDataBaseOnDevice<
-          total_dim<DATATYPE...>(),
-          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>> {
+    : public CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
+                                   DATATYPE...> {
 
   ConcatenatorDataOnDevice(DATATYPE... data)
-      : data(Tuple::to_tuple(data...)) {};
+      : CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
+                              DATATYPE...>(data...) {};
 
   static const size_t DIM = total_dim<DATATYPE...>();
 
@@ -85,18 +85,6 @@ struct ConcatenatorDataOnDevice
                                      dat_dim_idx + data_dim);
     };
   }
-
-private:
-  Tuple::Tuple<DATATYPE...> data;
-};
-
-template <typename... DATATYPE>
-inline std::tuple<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>
-get_on_device_objs(std::tuple<DATATYPE...> &data) {
-
-  return std::apply(
-      [](auto &&...args) { return std::tuple(args.get_on_device_obj()...); },
-      data);
 };
 
 /**
@@ -109,10 +97,9 @@ get_on_device_objs(std::tuple<DATATYPE...> &data) {
  */
 template <typename... DATATYPE>
 struct ConcatenatorData
-    : public ReactionDataBase<
+    : public CompositeData<
           ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
-          total_dim<DATATYPE...>(),
-          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>> {
+          total_dim<DATATYPE...>(), 0, DATATYPE...> {
 
   /**
    * @brief Constructor for ConcatenatorData
@@ -120,12 +107,11 @@ struct ConcatenatorData
    * @param data Variadic argument with all of the contained ReactionData
    * objects
    */
-  ConcatenatorData(DATATYPE... data) : data(std::make_tuple(data...)) {
-    this->set_required_int_props(this->get_required_int_props_children());
-    this->set_required_real_props(this->get_required_real_props_children());
-    this->set_rng_kernel(std::apply(
-        tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
-        this->get_rng_kernels_children()));
+  ConcatenatorData(DATATYPE... data)
+      : CompositeData<
+            ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
+            total_dim<DATATYPE...>(), 0, DATATYPE...>(data...) {
+    this->post_init();
   };
 
   /**
@@ -138,59 +124,6 @@ struct ConcatenatorData
         ConcatenatorDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>>(
         get_on_device_objs(this->data));
   };
-
-  std::tuple<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>
-  get_rng_kernels_children() {
-
-    return std::apply(
-        [](auto &&...args) { return std::tuple(args.get_rng_kernel()...); },
-        this->data);
-  }
-
-  ArgumentNameSet<REAL> get_required_real_props_children() {
-
-    auto new_set = ArgumentNameSet<REAL>();
-
-    std::apply(
-        [&](auto &&...args) {
-          ((new_set = new_set.merge_with(args.get_required_real_props())), ...);
-        },
-        this->data);
-
-    return new_set;
-  }
-
-  ArgumentNameSet<INT> get_required_int_props_children() {
-
-    auto new_set = ArgumentNameSet<INT>();
-
-    std::apply(
-        [&](auto &&...args) {
-          ((new_set = new_set.merge_with(args.get_required_int_props())), ...);
-        },
-        this->data);
-
-    return new_set;
-  }
-
-  void set_required_int_props(const ArgumentNameSet<INT> &props) {
-    this->required_int_props = props;
-    std::apply(
-        [&](auto &&...args) { ((args.set_required_int_props(props)), ...); },
-        this->data);
-    this->index_on_device_object();
-  }
-
-  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
-    this->required_real_props = props;
-    std::apply(
-        [&](auto &&...args) { ((args.set_required_real_props(props)), ...); },
-        this->data);
-    this->index_on_device_object();
-  }
-
-private:
-  std::tuple<DATATYPE...> data;
 };
 }; // namespace VANTAGE::Reactions
 #endif

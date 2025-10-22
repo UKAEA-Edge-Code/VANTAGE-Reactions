@@ -1,5 +1,6 @@
 #ifndef REACTIONS_PIPELINE_DATA_H
 #define REACTIONS_PIPELINE_DATA_H
+#include "composite_data.hpp"
 #include "reaction_data.hpp"
 #include <neso_particles.hpp>
 
@@ -34,11 +35,14 @@ constexpr bool check_consistency() {
  */
 template <typename... DATATYPE>
 struct PipelineDataOnDevice
-    : public ReactionDataBaseOnDevice<
-          last_dim<DATATYPE...>(),
-          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>> {
+    : public CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
+                                   DATATYPE...> {
 
-  PipelineDataOnDevice(DATATYPE... data) : data(Tuple::to_tuple(data...)) {
+  PipelineDataOnDevice() = default;
+
+  PipelineDataOnDevice(DATATYPE... data)
+      : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
+                              DATATYPE...>(data...) {
 
     static_assert(first_in_dim<DATATYPE...>() == 0 &&
                       check_consistency<DATATYPE...>(),
@@ -112,9 +116,6 @@ struct PipelineDataOnDevice
       }
     }
   }
-
-private:
-  Tuple::Tuple<DATATYPE...> data;
 };
 
 /**
@@ -127,10 +128,9 @@ private:
  */
 template <typename... DATATYPE>
 struct PipelineData
-    : public ReactionDataBase<
+    : public CompositeData<
           PipelineDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
-          last_dim<DATATYPE...>(),
-          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>> {
+          last_dim<DATATYPE...>(), 0, DATATYPE...> {
 
   /**
    * @brief Constructor for PipelineData
@@ -138,77 +138,23 @@ struct PipelineData
    * @param data Variadic argument with all of the contained ReactionData
    * objects
    */
-  PipelineData(DATATYPE... data) : data(std::make_tuple(data...)) {
-    this->set_required_int_props(this->get_required_int_props_children());
-    this->set_required_real_props(this->get_required_real_props_children());
-    this->set_rng_kernel(std::apply(
-        tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
-        this->get_rng_kernels_children()));
+  PipelineData(DATATYPE... data)
+      : CompositeData<
+            PipelineDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
+            last_dim<DATATYPE...>(), 0, DATATYPE...>(data...) {
+    this->post_init();
   };
 
   /**
    * @brief Reconstruct the composite on-device object (assuming the individual
    * on-device objects have been modified/re-indexed)
    */
-  void index_on_device_object() {
+  void index_on_device_object() override {
 
     this->on_device_obj = std::make_from_tuple<
         PipelineDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>>(
         get_on_device_objs(this->data));
   };
-
-  std::tuple<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>
-  get_rng_kernels_children() {
-
-    return std::apply(
-        [](auto &&...args) { return std::tuple(args.get_rng_kernel()...); },
-        this->data);
-  }
-
-  ArgumentNameSet<REAL> get_required_real_props_children() {
-
-    auto new_set = ArgumentNameSet<REAL>();
-
-    std::apply(
-        [&](auto &&...args) {
-          ((new_set = new_set.merge_with(args.get_required_real_props())), ...);
-        },
-        this->data);
-
-    return new_set;
-  }
-
-  ArgumentNameSet<INT> get_required_int_props_children() {
-
-    auto new_set = ArgumentNameSet<INT>();
-
-    std::apply(
-        [&](auto &&...args) {
-          ((new_set = new_set.merge_with(args.get_required_int_props())), ...);
-        },
-        this->data);
-
-    return new_set;
-  }
-
-  void set_required_int_props(const ArgumentNameSet<INT> &props) {
-    this->required_int_props = props;
-    std::apply(
-        [&](auto &&...args) { ((args.set_required_int_props(props)), ...); },
-        this->data);
-    this->index_on_device_object();
-  }
-
-  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
-    this->required_real_props = props;
-    std::apply(
-        [&](auto &&...args) { ((args.set_required_real_props(props)), ...); },
-        this->data);
-    this->index_on_device_object();
-  }
-
-private:
-  std::tuple<DATATYPE...> data;
 };
 
 template <typename... DATATYPE> inline auto pipe(DATATYPE... data) {
