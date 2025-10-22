@@ -188,6 +188,27 @@ private:
   OP op;
 };
 
+/**
+ * @brief Binary array transform returning the dot-product of two arrays
+ *
+ * @tparam DIM The size of the transformed array
+ */
+template <size_t DIM>
+struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<DIM, DIM, 1> {
+
+  BinaryDotArrayTransform() = default;
+
+  std::array<REAL, 1> apply(const std::array<REAL, DIM> &input_1,
+                            const std::array<REAL, DIM> &input_2) const {
+    std::array<REAL, 1> result{0};
+
+    for (auto i = 0; i < DIM; i++) {
+
+      result[0] += input_1[i] * input_2[i];
+    }
+    return result;
+  };
+};
 template <
     typename T, typename U,
     std::enable_if_t<
@@ -219,6 +240,18 @@ inline auto operator*(const T &lhs, const U &rhs) {
       lhs, rhs);
 };
 
+template <
+    typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
+
+inline auto dot_product(const T &lhs, const U &rhs) {
+
+  return BinaryArrayTransformData(BinaryDotArrayTransform<T::DIM>(), lhs, rhs);
+};
 template <size_t DIM> inline auto scale_by(const REAL &mult) {
 
   return UnaryArrayTransformData(ScalerArrayTransform<DIM>(mult));
