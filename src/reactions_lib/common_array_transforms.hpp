@@ -247,6 +247,38 @@ template <
                                          typename T::RNG_KERNEL_TYPE, 0>,
                         T>::value,
         bool> = true>
+inline auto operator-(const T &lhs, const U &rhs) {
+
+  // TODO: change to Kernel::minus when available
+  return BinaryArrayTransformData(
+      BinaryArrayOperatorTransform<T::DIM, U::DIM, decltype(std::minus())>(
+          std::minus()),
+      lhs, rhs);
+};
+
+template <
+    typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
+inline auto operator/(const T &lhs, const U &rhs) {
+
+  // TODO: change to Kernel::divides when available
+  return BinaryArrayTransformData(
+      BinaryArrayOperatorTransform<T::DIM, U::DIM, decltype(std::divides())>(
+          std::divides()),
+      lhs, rhs);
+};
+
+template <
+    typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
 
 inline auto dot_product(const T &lhs, const U &rhs) {
 
