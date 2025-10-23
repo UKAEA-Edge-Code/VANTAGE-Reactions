@@ -37,7 +37,7 @@ struct FilteredMaxwellianOnDevice
    */
   FilteredMaxwellianOnDevice(const REAL &norm_ratio,
                              CROSS_SECTION cross_section)
-      : norm_ratio(norm_ratio), cross_section(cross_section){};
+      : norm_ratio(norm_ratio), cross_section(cross_section) {};
 
   /**
    * @brief Function to calculate the sampled ion velocities from a filtered
@@ -111,14 +111,14 @@ struct FilteredMaxwellianOnDevice
       // normal variables
       REAL relative_vel_sq = 0;
       for (int i = 0; i < ndim; i++) {
-        sampled_vels[i] =
-            fluid_temperature_dat * this->norm_ratio * total_samples[i] +
-            fluid_flows[i];
+        sampled_vels[i] = Kernel::sqrt(fluid_temperature_dat * this->norm_ratio) *
+                              total_samples[i] +
+                          fluid_flows[i];
         relative_vel_sq += (neutral_vels[i] - sampled_vels[i]) *
                            (neutral_vels[i] - sampled_vels[i]);
       }
 
-      REAL relative_vel = std::sqrt(relative_vel_sq);
+      REAL relative_vel = Kernel::sqrt(relative_vel_sq);
       REAL value_at = this->cross_section.get_value_at(relative_vel);
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 

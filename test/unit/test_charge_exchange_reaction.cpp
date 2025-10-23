@@ -32,7 +32,7 @@ TEST(ChargeExchange, simple_beam_exchange) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
     auto vel_parent = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
@@ -115,7 +115,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
     auto vel_parent = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
@@ -143,7 +143,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
     EXPECT_EQ(nrow, parent_nrow);
 
     REAL expected_vel_x = 1.0; // u1 = 0.25 => cos(2*pi*u1) = 0, v_x = 1
-    REAL expected_vel_y = 4.0 * std::sqrt(2 * std::log(4)) +
+    REAL expected_vel_y = 2.0 * std::sqrt(2 * std::log(4)) +
                           3.0; // norm_ratio=2, T =2, v_y = 3, u2 = 0.25
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -208,7 +208,7 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
 
     auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
     auto vel_parent = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
@@ -236,9 +236,9 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
     EXPECT_EQ(nrow, parent_nrow);
 
     REAL mag = std::sqrt(-2 * std::log(kernel_return));
-    REAL expected_vel_x = 4.0 * mag * cos(2 * M_PI * kernel_return) + 1.0;
-    REAL expected_vel_y = 4.0 * mag * sin(2 * M_PI * kernel_return) + 3.0;
-    REAL expected_vel_z = 4.0 * mag * cos(2 * M_PI * kernel_return) + 5.0;
+    REAL expected_vel_x = 2.0 * mag * cos(2 * M_PI * kernel_return) + 1.0;
+    REAL expected_vel_y = 2.0 * mag * sin(2 * M_PI * kernel_return) + 3.0;
+    REAL expected_vel_z = 2.0 * mag * cos(2 * M_PI * kernel_return) + 5.0;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_NEAR(weight->at(rowx, 0), 0.1, 1e-14);
