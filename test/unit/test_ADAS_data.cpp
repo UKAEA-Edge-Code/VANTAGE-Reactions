@@ -2,61 +2,11 @@
 #include <array>
 #include <gtest/gtest.h>
 #include <neso_particles.hpp>
-#include <neso_particles/loop/particle_loop_functions.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <reactions/reactions.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
-
-inline auto single_particle(const REAL &fluid_density_interp,
-                            const REAL &fluid_temp_interp)
-    -> std::shared_ptr<ParticleGroup> {
-  auto dims = std::vector<int>(1, 1);
-
-  const double cell_extent = 1.0;
-  const int subdivision_order = 0;
-  const int stencil_width = 1;
-
-  const int pre_subdivision_cells =
-      std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<int>());
-
-  const int global_cell_count =
-      pre_subdivision_cells * std::pow(std::pow(2, subdivision_order), 1);
-  const int npart_per_cell = std::round((double)1 / (double)global_cell_count);
-
-  auto mesh = std::make_shared<CartesianHMesh>(
-      MPI_COMM_WORLD, 1, dims, cell_extent, subdivision_order, stencil_width);
-
-  auto sycl_target =
-      std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
-
-  auto cart_local_mapper = CartesianHMeshLocalMapper(sycl_target, mesh);
-
-  auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
-
-  auto particle_spec_builder = ParticleSpecBuilder(1);
-
-  auto properties_map = get_default_map();
-
-  particle_spec_builder.add_particle_prop(Properties<REAL>(std::vector<int>{
-      default_properties.fluid_density, default_properties.fluid_temperature}));
-
-  auto particle_spec = particle_spec_builder.get_particle_spec();
-
-  auto particle_group =
-      std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
-
-  ParticleSet initial_distribution(1, particle_group->particle_spec);
-  initial_distribution[Sym<REAL>("WEIGHT")][0][0] = 1.0;
-  initial_distribution[Sym<REAL>("FLUID_DENSITY")][0][0] = fluid_density_interp;
-  initial_distribution[Sym<REAL>("FLUID_TEMPERATURE")][0][0] =
-      fluid_temp_interp;
-
-  particle_group->add_particles_local(initial_distribution);
-  return particle_group;
-}
 
 struct coefficient_values {
 private:
@@ -121,7 +71,7 @@ TEST(ADASData, calc_data) {
 
   // Initialize a particle group with a single particle with the fluid density
   // and fluid temperature set to the interpolation values.
-  auto particle_group = create_test_particle_group(1e6);
+  auto particle_group = create_test_particle_group(1e5);
 
   auto npart = particle_group->get_npart_local();
 
@@ -137,14 +87,12 @@ TEST(ADASData, calc_data) {
 
   // Setup the mock ADAS data values.
   auto ADAS_values = coefficient_values();
-  auto temp_range = ADAS_values.get_temp_range();
-  auto dens_range = ADAS_values.get_dens_range();
   auto ranges_vec = ADAS_values.get_ranges_vec();
   auto coeffs_vec = ADAS_values.get_coeffs_vec();
 
   // Construct the ADASData object and extract the on-device object.
-  auto test_adas_data = ADASData<temp_range.size(), dens_range.size()>(
-      coeffs_vec, ranges_vec, particle_group->sycl_target);
+  auto test_adas_data =
+      ADASData(coeffs_vec, ranges_vec, particle_group->sycl_target);
   auto test_adas_data_on_device = test_adas_data.get_on_device_obj();
 
   auto calculate_rates_int_syms = test_adas_data.get_required_int_sym_vector();

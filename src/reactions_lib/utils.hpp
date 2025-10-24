@@ -125,27 +125,26 @@ reflect_vector(std::array<REAL, n_dim> input,
   return output;
 };
 
-template <std::size_t n_range_dim>
-inline std::array<std::size_t, 2>
-calc_closest_point_indices(const REAL &x_interp,
-                           const std::array<REAL, n_range_dim> &dim_range) {
+inline std::size_t calc_closest_point_index(const REAL &x_interp,
+                                            REAL *dim_range,
+                                            const std::size_t &dim_size) {
+  std::size_t L = 0;
+  std::size_t R = dim_size - 1;
+  std::size_t m;
 
-  REAL step_result_old = sycl::step(dim_range[0], x_interp);
-  REAL step_result_new = step_result_old;
-
-  for (std::size_t i = 0; i < n_range_dim; i++) {
-    step_result_new = sycl::step(dim_range[i], x_interp);
-
-    if ((step_result_new - step_result_old) != 0.0) {
-      return {i - 1, i};
+  while ((R - L) > 1) {
+    m = ((L + R) / 2);
+    if (dim_range[m] < x_interp) {
+      L = m;
+    } else if (dim_range[m] > x_interp) {
+      R = m;
+    } else {
+      // for exact matches
+      return m;
     }
-
-    step_result_old = step_result_new;
   }
 
-  // This return statement is not expected to be hit but is needed to avoid
-  // compiler warnings (since it ensures all paths are defined).
-  return {0, 0};
+  return R == (dim_size - 1) ? R : L;
 };
 
 inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
