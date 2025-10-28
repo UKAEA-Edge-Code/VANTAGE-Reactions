@@ -9,6 +9,42 @@
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions::utils {
+
+/**
+ * @brief Wrapper class to provide default constructible lambdas for templating
+ * device types that need them
+ */
+template <class F, size_t DIM = 1> struct LambdaWrapper {
+
+  static const size_t OUTPUT_DIM = DIM;
+
+  LambdaWrapper() = default;
+
+  explicit LambdaWrapper(F &f) {
+
+    static_assert(
+        std::is_trivially_copyable<F>::value,
+        "LambdaWrapper template parameter must be trivially copyable");
+    static_assert(
+        std::is_trivially_destructible<F>::value,
+        "LambdaWrapper template parameter must be trivially destructible");
+    ::new (static_cast<void *>(this->buf)) F(std::forward<F>(f));
+  }
+
+  const F &get() const {
+    return *std::launder(reinterpret_cast<const F *>(this->buf));
+  }
+
+  template <class... Args>
+  auto operator()(Args &...args) const
+      -> decltype(std::declval<const F &>()(std::forward<Args>(args)...)) {
+    return this->get()(std::forward<Args>(args)...);
+  }
+
+private:
+  alignas(F) unsigned char buf[sizeof(F)];
+};
+
 /**
  * @brief Helper function to calculate the L2 norm of a vector of arithmetic
  * types.
@@ -24,7 +60,6 @@ template <typename T> T norm2(const std::vector<T> &vec) {
                                    [](T a, T b) { return a + b * b; }));
 }
 
-template <typename T>
 /**
  * @brief Helper function to compute vector cross product of two length 3
  * vectors.
@@ -33,6 +68,7 @@ template <typename T>
  * @param b second cross product argument
  * @return std::vector<T> a x b
  */
+template <typename T>
 std::vector<T> cross_product(const std::vector<T> &a, const std::vector<T> &b) {
   static_assert(std::is_arithmetic<T>(),
                 "Template type in cross_product must be arithmetic");
@@ -152,6 +188,63 @@ project_vector(const std::array<REAL, n_dim> &input,
 
   return output;
 };
+
+// TODO: refine and test
+
+inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
+                                            const std::array<REAL, 3> &normal) {
+
+  auto proj = project_vector(vel, normal);
+
+  std::array<REAL, 9> result;
+
+  for (auto i = 0; i < 3; i++) {
+
+    result[i] = vel[i] - proj[i];
+  }
+
+  REAL norm = 0;
+
+  for (auto i = 0; i < 3; i++) {
+
+    norm += result[i] * result[i];
+  }
+
+  for (auto i = 0; i < 3; i++) {
+
+    result[i] = result[i] / Kernel::sqrt(norm);
+  }
+  result[3] = normal[1] * result[2] - normal[2] * result[1];
+  result[4] = normal[2] * result[0] - normal[0] * result[2];
+  result[5] = normal[0] * result[1] - normal[1] * result[0];
+
+  result[6] = normal[0];
+  result[7] = normal[1];
+  result[8] = normal[2];
+  return result;
+};
+
+inline std::array<REAL, 3>
+normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
+                          const std::array<REAL, 9> &basis) {
+
+  REAL costheta;
+  REAL theta = coords[1];
+  const REAL sintheta = Kernel::sincos(theta, &costheta);
+
+  REAL cosphi;
+  REAL phi = coords[2];
+  const REAL sinphi = Kernel::sincos(phi, &cosphi);
+
+  std::array<REAL, 3> result;
+
+  for (auto i = 0; i < 3; i++) {
+
+    result[i] = coords[0] *
+                (sintheta * cosphi * basis[i] +
+                 sintheta * sinphi * basis[i + 3] + costheta * basis[i + 6]);
+  }
+}
 
 } // namespace VANTAGE::Reactions::utils
 #endif

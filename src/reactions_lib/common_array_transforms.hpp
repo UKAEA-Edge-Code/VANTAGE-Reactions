@@ -107,6 +107,42 @@ private:
 };
 
 /**
+ * @brief Unary array transform projecting the input onto the plane normal to a
+ * fixed vector, i.e. (I-P)*x where P is the projection operator and x the
+ * input.
+ *
+ * @tparam DIM The expected input/output size
+ */
+template <size_t DIM>
+struct UnaryProjectNormalArrayTransform
+    : AbstractUnaryArrayTransform<DIM, DIM> {
+
+  UnaryProjectNormalArrayTransform() = default;
+  /**
+   * @brief Constructor of UnaryProjectArrayTransform
+   *
+   * @param dir The array representing the projection direction vector
+   */
+  UnaryProjectNormalArrayTransform(const std::array<REAL, DIM> &dir)
+      : dir(dir) {};
+
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+
+    std::array<REAL, DIM> proj = utils::project_vector(input, this->dir);
+
+    for (auto i = 0; i < DIM; i++) {
+
+      proj[i] = input[i] - proj[i];
+    }
+
+    return proj;
+  };
+
+private:
+  std::array<REAL, DIM> dir;
+};
+
+/**
  * @brief Binary array transform projecting the first input onto the second one
  *
  * @tparam DIM The size of the transformed array
@@ -123,6 +159,112 @@ struct BinaryProjectArrayTransform
     return utils::project_vector(input_1, input_2);
   };
 };
+
+/**
+ * @brief Binary array transform projecting the first input onto the plane
+ * normal to the second one
+ *
+ * @tparam DIM The size of the transformed array
+ */
+template <size_t DIM>
+struct BinaryProjectNormalArrayTransform
+    : AbstractBinaryArrayTransform<DIM, DIM, DIM> {
+
+  BinaryProjectNormalArrayTransform() = default;
+
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
+                              const std::array<REAL, DIM> &input_2) const {
+
+    std::array<REAL, DIM> proj = utils::project_vector(input_1, input_2);
+
+    for (auto i = 0; i < DIM; i++) {
+
+      proj[i] = input_1[i] - proj[i];
+    }
+
+    return proj;
+  };
+};
+
+/**
+ * @brief Unary full array transform
+ *
+ * @tparam DIM_IN The size of the transformed array
+ * @tparam DIM_OUT The size of the transformed array
+ * @tparam OP Unary operator to be used (a struct with operator(const
+ * std::array<REAL,DIM_IN>& input) defined)
+ */
+template <size_t DIM_IN, size_t DIM_OUT, typename OP>
+struct UnaryArrayOperatorTransform
+    : AbstractUnaryArrayTransform<DIM_IN, DIM_OUT> {
+
+  UnaryArrayOperatorTransform() = default;
+  UnaryArrayOperatorTransform<DIM_IN, DIM_OUT, OP>(const OP &op) : op(op){};
+
+  std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM_IN> &input) const {
+
+    return this->op(input);
+  };
+
+private:
+  OP op;
+};
+/**
+ * @brief Unary element-wise transform
+ *
+ * @tparam DIM The size of the transformed array
+ * @tparam OP Unary operator to be used (a struct with operator(const REAL&
+ * input) defined)
+ */
+template <size_t DIM, typename OP>
+struct UnaryElementwiseOperatorTransform
+    : AbstractUnaryArrayTransform<DIM, DIM> {
+
+  UnaryElementwiseOperatorTransform() = default;
+  UnaryElementwiseOperatorTransform<DIM, OP>(const OP &op) : op(op){};
+
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+
+    std::array<REAL, DIM> result;
+
+    for (int i = 0; i < DIM; i++) {
+
+      result[i] = this->op(input[i]);
+    }
+    return result;
+  };
+
+private:
+  OP op;
+};
+
+/**
+ * @brief Binary full array transform supporting broadcasting from size 1
+ * arrays
+ *
+ * @tparam DIM1 The size of the first transformed array
+ * @tparam DIM2 The size of the second transformed array
+ * @tparam DIM_OUT The size of the output array
+ * @tparam OP Binary operator to be used (acting on std::arrays)
+ */
+template <size_t DIM1, size_t DIM2, size_t DIM_OUT, typename OP>
+struct BinaryArrayOperatorTransform
+    : AbstractBinaryArrayTransform<DIM1, DIM2, DIM_OUT> {
+
+  BinaryArrayOperatorTransform() = default;
+  BinaryArrayOperatorTransform<DIM1, DIM2, DIM_OUT, OP>(const OP &op)
+      : op(op){};
+
+  std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM1> &input_1,
+                                  const std::array<REAL, DIM2> &input_2) const {
+
+    return this->op(input_1, input_2);
+  };
+
+private:
+  OP op;
+};
+
 /**
  * @brief Binary element-wise transform supporting broadcasting from size 1
  * arrays
@@ -132,17 +274,17 @@ struct BinaryProjectArrayTransform
  * @tparam OP Binary operator to be used
  */
 template <size_t DIM1, size_t DIM2, typename OP>
-struct BinaryArrayOperatorTransform
+struct BinaryElementwiseOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, std::max(DIM1, DIM2)> {
 
-  BinaryArrayOperatorTransform() = default;
-  BinaryArrayOperatorTransform<DIM1, DIM2, OP>(const OP &op) : op(op) {
+  BinaryElementwiseOperatorTransform() = default;
+  BinaryElementwiseOperatorTransform<DIM1, DIM2, OP>(const OP &op) : op(op) {
 
     if constexpr (DIM1 != DIM2) {
 
       static_assert(
           DIM1 == 1 || DIM2 == 1,
-          "BinaryArrayOperatorTransform supports different array sizes "
+          "BinaryElementwiseOperatorTransform supports different array sizes "
           "only if one of them is size 1");
     };
   };
@@ -187,7 +329,6 @@ struct BinaryArrayOperatorTransform
 private:
   OP op;
 };
-
 /**
  * @brief Binary array transform returning the dot-product of two arrays
  *
@@ -219,8 +360,8 @@ template <
 inline auto operator+(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<T::DIM, U::DIM, decltype(sycl::plus())>(
-          sycl::plus()),
+      BinaryElementwiseOperatorTransform<T::DIM, U::DIM,
+                                         decltype(sycl::plus())>(sycl::plus()),
       lhs, rhs);
 };
 
@@ -234,8 +375,8 @@ template <
 inline auto operator*(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<T::DIM, U::DIM,
-                                   decltype(sycl::multiplies())>(
+      BinaryElementwiseOperatorTransform<T::DIM, U::DIM,
+                                         decltype(sycl::multiplies())>(
           sycl::multiplies()),
       lhs, rhs);
 };
@@ -251,8 +392,8 @@ inline auto operator-(const T &lhs, const U &rhs) {
 
   // TODO: change to Kernel::minus when available
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<T::DIM, U::DIM, decltype(std::minus())>(
-          std::minus()),
+      BinaryElementwiseOperatorTransform<T::DIM, U::DIM,
+                                         decltype(std::minus())>(std::minus()),
       lhs, rhs);
 };
 
@@ -267,7 +408,8 @@ inline auto operator/(const T &lhs, const U &rhs) {
 
   // TODO: change to Kernel::divides when available
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<T::DIM, U::DIM, decltype(std::divides())>(
+      BinaryElementwiseOperatorTransform<T::DIM, U::DIM,
+                                         decltype(std::divides())>(
           std::divides()),
       lhs, rhs);
 };
@@ -289,5 +431,47 @@ template <size_t DIM> inline auto scale_by(const REAL &mult) {
   return UnaryArrayTransformData(ScalerArrayTransform<DIM>(mult));
 }
 
+template <size_t DIM_IN, typename LAMBDA>
+inline auto uatData(const LAMBDA &lambda) {
+
+  return UnaryArrayTransformData(
+      UnaryArrayOperatorTransform<DIM_IN, LAMBDA::OUTPUT_DIM, LAMBDA>(lambda));
+}
+
+template <size_t DIM_IN, typename LAMBDA>
+inline auto uetData(const LAMBDA &lambda) {
+
+  return UnaryArrayTransformData(
+      UnaryElementwiseOperatorTransform<DIM_IN, LAMBDA>(lambda));
+}
+
+template <
+    typename LAMBDA, typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
+inline auto batData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
+
+  return BinaryArrayTransformData(
+      BinaryArrayOperatorTransform<T::DIM, U::DIM, LAMBDA::OUTPUT_DIM, LAMBDA>(
+          lambda),
+      lhs, rhs);
+}
+
+template <
+    typename LAMBDA, typename T, typename U,
+    std::enable_if_t<
+        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+                                         typename T::RNG_KERNEL_TYPE, 0>,
+                        T>::value,
+        bool> = true>
+inline auto betData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
+
+  return BinaryArrayTransformData(
+      BinaryElementwiseOperatorTransform<T::DIM, U::DIM, LAMBDA>(lambda), lhs,
+      rhs);
+}
 } // namespace VANTAGE::Reactions
 #endif
