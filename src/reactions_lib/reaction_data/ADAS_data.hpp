@@ -31,21 +31,18 @@ struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
 
     std::size_t closest_dens, closest_temp;
 
-    auto dens_range_vec_ = this->dens_range_buf->ptr;
-    auto temp_range_vec_ = this->temp_range_buf->ptr;
-
-    std::size_t num_coeffs_n = this->dens_range_buf->size;
-    std::size_t num_coeffs_T = this->temp_range_buf->size;
+    auto dens_range_vec_ = this->dens_range_buf;
+    auto temp_range_vec_ = this->temp_range_buf;
 
     REAL fluid_dens_min = dens_range_vec_[0];
-    REAL fluid_dens_max = dens_range_vec_[num_coeffs_n - 1];
+    REAL fluid_dens_max = dens_range_vec_[this->num_coeffs_n - 1];
     REAL fluid_temp_min = temp_range_vec_[0];
-    REAL fluid_temp_max = temp_range_vec_[num_coeffs_T - 1];
+    REAL fluid_temp_max = temp_range_vec_[this->num_coeffs_T - 1];
 
     closest_dens = utils::calc_closest_point_index(
-        fluid_density_dat, dens_range_vec_, this->dens_range_buf->size);
+        fluid_density_dat, dens_range_vec_, this->num_coeffs_n);
     closest_temp = utils::calc_closest_point_index(
-        fluid_temperature_dat, temp_range_vec_, this->temp_range_buf->size);
+        fluid_temperature_dat, temp_range_vec_, this->num_coeffs_T);
 
     // indices
     std::size_t t0 = closest_temp;
@@ -61,9 +58,9 @@ struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
 
     // fetch pointer and calculate indices for flattened vector
     auto coeff_index = [=](std::size_t t, std::size_t n) {
-      return (t * this->dens_range_buf->size) + n;
+      return (t * this->num_coeffs_n) + n;
     };
-    auto nd_coeffs_vec = this->nd_coeffs_buf->ptr;
+    auto nd_coeffs_vec = this->nd_coeffs_buf;
 
     // function values
     REAL f_n0_t0 = nd_coeffs_vec[coeff_index(t0, n0)];
@@ -88,9 +85,11 @@ struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
 
 public:
   int fluid_density_ind, fluid_temperature_ind, weight_ind;
-  BufferDevice<REAL> *nd_coeffs_buf;
-  BufferDevice<REAL> *temp_range_buf;
-  BufferDevice<REAL> *dens_range_buf;
+  REAL *nd_coeffs_buf;
+  REAL *temp_range_buf;
+  REAL *dens_range_buf;
+  std::size_t num_coeffs_n;
+  std::size_t num_coeffs_T;
 };
 
 struct ADASData : public ReactionDataBase<ADASDataOnDevice> {
@@ -118,11 +117,15 @@ struct ADASData : public ReactionDataBase<ADASDataOnDevice> {
     this->dens_range_buf =
         std::make_shared<BufferDevice<REAL>>(sycl_target, ranges[1]);
 
-    this->on_device_obj->nd_coeffs_buf = this->nd_coeff_array.get();
+    this->on_device_obj->nd_coeffs_buf = this->nd_coeff_array->ptr;
 
-    this->on_device_obj->temp_range_buf = this->temp_range_buf.get();
+    this->on_device_obj->temp_range_buf = this->temp_range_buf->ptr;
 
-    this->on_device_obj->dens_range_buf = this->dens_range_buf.get();
+    this->on_device_obj->dens_range_buf = this->dens_range_buf->ptr;
+
+    this->on_device_obj->num_coeffs_n = this->dens_range_buf->size;
+
+    this->on_device_obj->num_coeffs_T = this->temp_range_buf->size;
   }
 
   std::shared_ptr<BufferDevice<REAL>> nd_coeff_array;
