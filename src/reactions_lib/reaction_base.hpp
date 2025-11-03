@@ -41,7 +41,8 @@ struct AbstractReaction {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        max_buffer_size(16384 * 256) {
+        max_buffer_size(16384 *
+                        get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
 
     NESOWARN(
         map_subset_check(properties_map),
