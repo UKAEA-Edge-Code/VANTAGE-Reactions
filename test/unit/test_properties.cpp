@@ -453,6 +453,7 @@ TEST(Properties, full_use_properties_map) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 

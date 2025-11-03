@@ -44,8 +44,8 @@ TEST(DataCalculator, custom_sources) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(DataCalculator, mixed_multi_dim) {
@@ -100,5 +100,6 @@ TEST(DataCalculator, mixed_multi_dim) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

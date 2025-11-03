@@ -56,6 +56,7 @@ TEST(LookupTableData, ArrayLookupTable) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -119,5 +120,6 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

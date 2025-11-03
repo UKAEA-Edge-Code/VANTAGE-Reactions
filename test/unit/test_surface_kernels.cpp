@@ -62,6 +62,7 @@ TEST(SurfaceKernels, SpecularReflection) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -153,6 +154,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -308,5 +310,6 @@ TEST(SurfaceKernels, SphericalBasisReflectionData) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
