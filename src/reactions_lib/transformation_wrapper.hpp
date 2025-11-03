@@ -4,6 +4,8 @@
 #include <neso_particles.hpp>
 #include <vector>
 
+#include "profiling_base.hpp"
+
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
@@ -49,13 +51,34 @@ inline std::shared_ptr<MarkingStrategy> make_marking_strategy(ARGS... args) {
  * @brief Abstract base class for transformation strategies. All transformation
  * strategies take a ParticleSubGroupSharedPtr and perform an arbitrary
  * transformation on it.
- *
  */
-struct TransformationStrategy {
+struct TransformationStrategy : ProfilingBase {
 
   TransformationStrategy() = default;
 
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {};
+  /**
+   * This is the method that downstream specialisations of this class should
+   * override. Callers of the transformation strategy should call the
+   * `transform` method.
+   *
+   * @param target_subgroup ParticleSubGroup to be transformed.
+   */
+  virtual void transform_v(ParticleSubGroupSharedPtr target_subgroup) {}
+
+  /**
+   * This is the method which should be called by downstream code to apply a
+   * transformation. This method internall calls `transform_v` to apply the
+   * transformation. To implement a transformation in a specialisation class the
+   * `transform_v` method should be overridden.
+   *
+   * @param target_subgroup ParticleSubGroup to be transformed.
+   */
+  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {
+    auto r0 =
+        this->start_profiling_region(target_subgroup, "transform");
+    this->transform_v(target_subgroup);
+    this->end_profiling_region(target_subgroup, r0);
+  }
 
   virtual ~TransformationStrategy() = default;
 };

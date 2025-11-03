@@ -68,7 +68,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
    *
    * @param target_subgroup
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
     bool ndim_check = part_group->domain->mesh->get_ndim() == ndim;
