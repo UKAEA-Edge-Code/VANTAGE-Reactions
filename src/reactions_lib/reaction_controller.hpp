@@ -52,7 +52,8 @@ struct ReactionController {
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : parent_transform(parent_transform), child_transform(child_transform),
+      : cell_block_size(get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
+        parent_transform(parent_transform), child_transform(child_transform),
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
     NESOWARN(
