@@ -125,35 +125,5 @@ reflect_vector(std::array<REAL, n_dim> input,
   return output;
 };
 
-inline std::size_t calc_closest_point_index(const REAL &x_interp,
-                                            REAL *dim_range,
-                                            const std::size_t &dim_size) {
-  std::size_t L = 0;
-  std::size_t R = dim_size - 1;
-  std::size_t m;
-
-  while ((R - L) > 1) {
-    m = ((L + R) / 2);
-    if (dim_range[m] < x_interp) {
-      L = m;
-    } else if (dim_range[m] > x_interp) {
-      R = m;
-    } else {
-      // for exact matches
-      return m;
-    }
-  }
-
-  return R == (dim_size - 1) ? R : L;
-};
-
-inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
-                          const REAL &f0, const REAL &f1) {
-  REAL dfdx = (f1 - f0) / (x1 - x0);
-  REAL c = f0 - (dfdx * x0);
-
-  REAL f_interp = (dfdx * x_interp) + c;
-  return f_interp;
-};
 } // namespace VANTAGE::Reactions::utils
 #endif

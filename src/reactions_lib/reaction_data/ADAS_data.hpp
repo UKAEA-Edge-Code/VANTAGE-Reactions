@@ -3,7 +3,6 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
-#include "../utils.hpp"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -39,10 +38,12 @@ struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
     REAL fluid_temp_min = temp_range_vec_[0];
     REAL fluid_temp_max = temp_range_vec_[this->num_coeffs_T - 1];
 
-    closest_dens = utils::calc_closest_point_index(
-        fluid_density_dat, dens_range_vec_, this->num_coeffs_n);
-    closest_temp = utils::calc_closest_point_index(
-        fluid_temperature_dat, temp_range_vec_, this->num_coeffs_T);
+    closest_dens = 0;
+    // utils::ndim_interp::calc_closest_point_index(
+    // fluid_density_dat, dens_range_vec_, this->num_coeffs_n);
+    closest_temp = 0;
+    // utils::ndim_interp::calc_closest_point_index(
+    // fluid_temperature_dat, temp_range_vec_, this->num_coeffs_T);
 
     // indices
     std::size_t t0 = closest_temp;
@@ -68,13 +69,16 @@ struct ADASDataOnDevice : public ReactionDataBaseOnDevice<> {
     REAL f_n1_t0 = nd_coeffs_vec[coeff_index(t0, n1)];
     REAL f_n1_t1 = nd_coeffs_vec[coeff_index(t1, n1)];
 
-    REAL f_n0_t = utils::linear_interp(fluid_temperature_dat, temp0, temp1,
-                                       f_n0_t0, f_n0_t1);
-    REAL f_n1_t = utils::linear_interp(fluid_temperature_dat, temp0, temp1,
-                                       f_n1_t0, f_n1_t1);
+    REAL f_n0_t = 1.0;
+    // utils::ndim_interp::linear_interp(fluid_temperature_dat, temp0, temp1,
+    //               f_n0_t0, f_n0_t1);
+    REAL f_n1_t = 1.0;
+    // utils::ndim_interp::linear_interp(fluid_temperature_dat, temp0, temp1,
+    //                                f_n1_t0, f_n1_t1);
 
-    REAL f_n_t =
-        utils::linear_interp(fluid_density_dat, dens0, dens1, f_n0_t, f_n1_t);
+    REAL f_n_t = 1.0;
+    // utils::ndim_interp::linear_interp(fluid_density_dat, dens0, dens1,
+    // f_n0_t, f_n1_t);
 
     REAL rate = f_n_t;
 
