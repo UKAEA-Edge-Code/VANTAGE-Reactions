@@ -117,9 +117,7 @@ TEST(InterpolationTest, INTERP_2D) {
   REAL fluid_density_interp = 5.2e18;
   REAL fluid_temp_interp = 1.0e3;
   REAL expected_interp_value = fluid_density_interp * fluid_temp_interp;
-  if (std::getenv("DIAG_OUT") != nullptr) {
-    printf("Expected interpolated value: %e\n", expected_interp_value);
-  }
+  printf("Expected interpolated value: %e\n", expected_interp_value);
 
   // Initialize a particle group with a single particle with the fluid density
   // and fluid temperature set to the interpolation values.
@@ -219,11 +217,9 @@ TEST(InterpolationTest, INTERP_2D) {
           input_vertices.at(i) = hypercube_vertices_ptr[i];
         }
 
-        if (std::getenv("DIAG_OUT") != nullptr) {
-          diagnostic_output(particle_count, dim_index, initial_num_points,
-                            origin_indices, input_vertices, vertex_func_evals,
-                            dims_vec_ptr, ranges_vec_ptr);
-        }
+        diagnostic_output(particle_count, dim_index, initial_num_points,
+                          origin_indices, input_vertices, vertex_func_evals,
+                          dims_vec_ptr, ranges_vec_ptr);
 
         while (dim_index >= 0) {
           // Contract the hypercube vertices and evaluations, eg. if
@@ -248,11 +244,9 @@ TEST(InterpolationTest, INTERP_2D) {
             vertex_func_evals.at(i) = output_evals.at(i);
           }
 
-          if (std::getenv("DIAG_OUT") != nullptr) {
-            diagnostic_output(particle_count, dim_index, num_points,
-                              origin_indices, output_vertices, output_evals,
-                              dims_vec_ptr, ranges_vec_ptr);
-          }
+          diagnostic_output(particle_count, dim_index, num_points,
+                            origin_indices, output_vertices, output_evals,
+                            dims_vec_ptr, ranges_vec_ptr);
         }
 
         // Save final result to a buffer
