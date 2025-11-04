@@ -53,8 +53,8 @@ TEST(ArrayTransformData, polynomial_linear) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_add) {
@@ -99,8 +99,8 @@ TEST(ArrayTransformData, binary_add) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_add_left_scalar) {
@@ -147,8 +147,8 @@ TEST(ArrayTransformData, binary_add_left_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_add_right_scalar) {
@@ -195,8 +195,8 @@ TEST(ArrayTransformData, binary_add_right_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_sub) {
@@ -245,8 +245,8 @@ TEST(ArrayTransformData, binary_sub) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_sub_left_scalar) {
@@ -293,8 +293,8 @@ TEST(ArrayTransformData, binary_sub_left_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_sub_right_scalar) {
@@ -341,8 +341,8 @@ TEST(ArrayTransformData, binary_sub_right_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 TEST(ArrayTransformData, binary_mult) {
   const int N_total = 100;
@@ -388,8 +388,8 @@ TEST(ArrayTransformData, binary_mult) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 TEST(ArrayTransformData, binary_mult_right_scalar) {
   const int N_total = 100;
@@ -436,8 +436,8 @@ TEST(ArrayTransformData, binary_mult_right_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_mult_left_scalar) {
@@ -485,8 +485,8 @@ TEST(ArrayTransformData, binary_mult_left_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_div) {
@@ -535,8 +535,8 @@ TEST(ArrayTransformData, binary_div) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 TEST(ArrayTransformData, binary_div_right_scalar) {
   const int N_total = 100;
@@ -582,8 +582,8 @@ TEST(ArrayTransformData, binary_div_right_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_div_left_scalar) {
@@ -630,8 +630,8 @@ TEST(ArrayTransformData, binary_div_left_scalar) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 TEST(ArrayTransformData, unary_project) {
   const int N_total = 100;
@@ -680,8 +680,8 @@ TEST(ArrayTransformData, unary_project) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_project) {
@@ -731,8 +731,8 @@ TEST(ArrayTransformData, binary_project) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_dot) {
@@ -781,8 +781,8 @@ TEST(ArrayTransformData, binary_dot) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, binary_lambda_full_array) {
@@ -836,8 +836,8 @@ TEST(ArrayTransformData, binary_lambda_full_array) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 TEST(ArrayTransformData, binary_lambda_elementwise) {
   const int N_total = 100;
@@ -886,8 +886,8 @@ TEST(ArrayTransformData, binary_lambda_elementwise) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ArrayTransformData, unary_lambda_full_array) {
@@ -942,8 +942,8 @@ TEST(ArrayTransformData, unary_lambda_full_array) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 TEST(ArrayTransformData, unary_lambda_elementwise) {
   const int N_total = 100;
@@ -993,6 +993,6 @@ TEST(ArrayTransformData, unary_lambda_elementwise) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }

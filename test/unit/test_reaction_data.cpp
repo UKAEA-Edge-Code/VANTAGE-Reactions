@@ -37,6 +37,7 @@ TEST(ReactionData, FixedCoefficientData) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -75,6 +76,7 @@ TEST(ReactionData, AMJUEL2DData) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -125,6 +127,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -166,6 +169,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -233,5 +237,6 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

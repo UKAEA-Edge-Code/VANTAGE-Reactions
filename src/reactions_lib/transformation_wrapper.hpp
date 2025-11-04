@@ -4,6 +4,8 @@
 #include <neso_particles.hpp>
 #include <vector>
 
+#include "profiling_base.hpp"
+
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
@@ -14,17 +16,41 @@ namespace VANTAGE::Reactions {
  using some selection criterion.
  *
  */
-struct MarkingStrategy {
+struct MarkingStrategy : ProfilingBase {
 
+  /**
+   * Create the marker sub group.
+   *
+   * @param particle_group Parent `ParticleSubGroup` to create marker sub group
+   * from.
+   * @returns Marker sub group.
+   */
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
     // This function should never actually be called. If it is called and we do
     // not have a return value then the calling function will receive an
     // undefined value. By setting a value we at least know what the returned
     // value is and can pick one that is detectable. By returning a nullptr the
     // calling code will hopefully segfault.
     return nullptr;
-  };
+  }
+
+  /**
+   * Create the marker sub group. Specialisations should override
+   * `make_marker_subgroup_v` instead of this method.
+   *
+   * @param particle_group Parent `ParticleSubGroup` to create marker sub group
+   * from.
+   * @returns Marker sub group.
+   */
+  virtual ParticleSubGroupSharedPtr
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+    auto r0 =
+        this->start_profiling_region(particle_group, "make_marker_subgroup");
+    auto sub_group = this->make_marker_subgroup_v(particle_group);
+    this->end_profiling_region(particle_group, r0);
+    return sub_group;
+  }
 
   virtual ~MarkingStrategy() = default;
 };
@@ -49,13 +75,33 @@ inline std::shared_ptr<MarkingStrategy> make_marking_strategy(ARGS... args) {
  * @brief Abstract base class for transformation strategies. All transformation
  * strategies take a ParticleSubGroupSharedPtr and perform an arbitrary
  * transformation on it.
- *
  */
-struct TransformationStrategy {
+struct TransformationStrategy : ProfilingBase {
 
   TransformationStrategy() = default;
 
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {};
+  /**
+   * This is the method that downstream specialisations of this class should
+   * override. Callers of the transformation strategy should call the
+   * `transform` method.
+   *
+   * @param target_subgroup ParticleSubGroup to be transformed.
+   */
+  virtual void transform_v(ParticleSubGroupSharedPtr target_subgroup) {}
+
+  /**
+   * This is the method which should be called by downstream code to apply a
+   * transformation. This method internall calls `transform_v` to apply the
+   * transformation. To implement a transformation in a specialisation class the
+   * `transform_v` method should be overridden.
+   *
+   * @param target_subgroup ParticleSubGroup to be transformed.
+   */
+  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {
+    auto r0 = this->start_profiling_region(target_subgroup, "transform");
+    this->transform_v(target_subgroup);
+    this->end_profiling_region(target_subgroup, r0);
+  }
 
   virtual ~TransformationStrategy() = default;
 };
@@ -229,8 +275,8 @@ struct MarkingStrategyBase : MarkingStrategy {
       : required_particle_dats_real(required_dats_real_read),
         required_particle_dats_int(required_dats_int_read) {}
 
-  ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_sub_group) override {
+  ParticleSubGroupSharedPtr make_marker_subgroup_v(
+      ParticleSubGroupSharedPtr particle_sub_group) override {
 
     NESOASSERT(particle_sub_group != nullptr,
                "Passing nullptr for particle_sub_group argument!");
