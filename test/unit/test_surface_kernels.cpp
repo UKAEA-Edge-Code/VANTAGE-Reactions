@@ -4,6 +4,7 @@
 #include "reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
+#include <neso_particles/boundary/boundary_interaction_specification.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
@@ -13,6 +14,8 @@ TEST(SurfaceKernels, SpecularReflection) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
+  particle_group->add_particle_dat(
+      BoundaryInteractionSpecification::intersection_normal, 2);
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
   auto test_data = FixedRateData(1.0);
@@ -26,14 +29,11 @@ TEST(SurfaceKernels, SpecularReflection) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  // Add data to subgroup
-  particle_sub_group->add_ephemeral_dat(
-      BoundaryInteractionSpecification::intersection_normal, 2);
-
   particle_loop(
-      "set_ephemeral_data_specular_reflection", particle_sub_group,
+      "set__data_specular_reflection", particle_sub_group,
       [=](auto normal, auto velocity) {
-        normal.at_ephemeral(0) = 1.0;
+        normal.at(0) = 1.0;
+        normal.at(1) = 0.0;
         velocity.at(0) = -1.0;
         velocity.at(1) = 1.0;
       },
