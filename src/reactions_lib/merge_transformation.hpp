@@ -46,8 +46,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
    * used to remap the syms for the position, weight and velocity properties.
    */
   MergeTransformationStrategy(
-      const std::map<int, std::string> &properties_map = get_default_map())
-      : min_npart_marker(MinimumNPartInCellMarker(3)) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
 
     NESOWARN(
         map_subset_check(properties_map),
@@ -330,7 +329,6 @@ private:
   Sym<REAL> position;
   Sym<REAL> weight;
   Sym<REAL> momentum;
-  MinimumNPartInCellMarker min_npart_marker;
 };
 } // namespace VANTAGE::Reactions
 #endif
