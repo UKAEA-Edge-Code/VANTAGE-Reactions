@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_SPECULAR_REFLECTION_KERNELS_H
+#define REACTIONS_SPECULAR_REFLECTION_KERNELS_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
@@ -81,7 +82,6 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
 
   constexpr static auto props = default_properties;
 
-  // TODO: clean up
   constexpr static std::array<int, 3> required_simple_real_props = {
       props.weight, props.velocity, props.boundary_intersection_normal};
 
@@ -124,3 +124,4 @@ public:
   }
 };
 }; // namespace VANTAGE::Reactions
+#endif
