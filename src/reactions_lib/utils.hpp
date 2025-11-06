@@ -190,8 +190,6 @@ project_vector(const std::array<REAL, n_dim> &input,
   return output;
 };
 
-// TODO: refine and test
-
 /**
  * @brief Returns the 3D basis for performing reflections based on an ingoing
  * velocity vector and a normal vector. Handles both possible orientations of
