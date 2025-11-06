@@ -25,10 +25,10 @@ TEST(ReactionData, FixedCoefficientData) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
     auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
 
@@ -183,24 +183,13 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
       get_default_map().at(default_properties.boundary_intersection_point),
       get_default_map().at(default_properties.boundary_intersection_normal)};
 
-  auto test_prop_names = test_data.get_required_real_props();
+  auto test_prop_names = test_data.get_required_real_props().to_string_vector();
 
   ASSERT_EQ(expected_prop_names.size(), test_prop_names.size());
   for (int i = 0; i < test_prop_names.size(); i++) {
-    EXPECT_EQ(expected_prop_names[i], test_prop_names[i]);
-  }
-
-  auto expected_prop_names_ephemeral = std::vector<std::string>{
-      get_default_map().at(default_properties.boundary_intersection_point),
-      get_default_map().at(default_properties.boundary_intersection_normal)};
-
-  auto test_prop_names_ephemeral =
-      test_data.get_required_real_props_ephemeral();
-
-  ASSERT_EQ(expected_prop_names_ephemeral.size(),
-            test_prop_names_ephemeral.size());
-  for (int i = 0; i < test_prop_names_ephemeral.size(); i++) {
-    EXPECT_EQ(expected_prop_names_ephemeral[i], test_prop_names_ephemeral[i]);
+    ASSERT_NE(std::find(test_prop_names.begin(), test_prop_names.end(),
+                        expected_prop_names[i]),
+              test_prop_names.end());
   }
 
   auto test_reaction =

@@ -14,13 +14,14 @@ namespace VANTAGE::Reactions {
  */
 struct ConstantRateCrossSection : public AbstractCrossSection {
 
+  ConstantRateCrossSection() = default;
   /**
    * @brief Constructor for ConstantRateCrossSection.
    *
    * @param constant_sigma_v Constant collision rate
    */
   ConstantRateCrossSection(REAL constant_sigma_v)
-      : constant_sigma_v(constant_sigma_v){};
+      : constant_sigma_v(constant_sigma_v) {};
 
   /**
    * @brief Returns the cross-section value at given relative velocity

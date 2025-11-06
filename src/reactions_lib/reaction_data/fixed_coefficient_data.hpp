@@ -14,12 +14,13 @@ namespace VANTAGE::Reactions {
  */
 struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
 
+  FixedCoefficientDataOnDevice() = default;
   /**
    * @brief Constructor for FixedCoefficientDataOnDevice.
    *
    * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
+  FixedCoefficientDataOnDevice(REAL rate) : rate(rate) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate
@@ -59,7 +60,8 @@ public:
  * @brief Reaction rate data calculation for a fixed rate coefficient reaction.
  * The reaction rate is calculated as rate_coefficient*particle_weight.
  */
-struct FixedCoefficientData : public ReactionDataBase<> {
+struct FixedCoefficientData
+    : public ReactionDataBase<FixedCoefficientDataOnDevice> {
 
   constexpr static auto props = default_properties;
 
@@ -77,28 +79,22 @@ struct FixedCoefficientData : public ReactionDataBase<> {
   FixedCoefficientData(
       REAL rate_coefficient,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase(Properties<REAL>(required_simple_real_props),
-                         properties_map),
-        fixed_coefficient_data_on_device(
-            FixedCoefficientDataOnDevice(rate_coefficient)) {
+      : ReactionDataBase<FixedCoefficientDataOnDevice>(
+            Properties<REAL>(required_simple_real_props), properties_map) {
 
-    this->fixed_coefficient_data_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight,
-                                                    this->properties_map);
+    this->on_device_obj = FixedCoefficientDataOnDevice(rate_coefficient);
+
+    this->index_on_device_object();
   }
 
-private:
-  FixedCoefficientDataOnDevice fixed_coefficient_data_on_device;
-
-public:
   /**
-   * @brief Getter for the SYCL device-specific
-   * struct.
+   * @brief Index the particle weight on the on-device object
    */
+  void index_on_device_object() {
 
-  FixedCoefficientDataOnDevice get_on_device_obj() {
-    return this->fixed_coefficient_data_on_device;
-  }
+    this->on_device_obj->weight_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.weight));
+  };
 };
 }; // namespace VANTAGE::Reactions
 #endif

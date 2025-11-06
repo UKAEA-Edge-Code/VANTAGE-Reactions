@@ -26,6 +26,7 @@ template <size_t ndim, typename CROSS_SECTION>
 struct FilteredMaxwellianOnDevice
     : public ReactionDataBaseOnDevice<ndim, HostAtomicBlockKernelRNG<REAL>> {
 
+  FilteredMaxwellianOnDevice() = default;
   /**
    * @brief Constructor for FilteredMaxwellianOnDevice.
    *
@@ -157,7 +158,8 @@ public:
  */
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
-    : public ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>> {
+    : public ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>,
+                              ndim, HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
 
@@ -184,28 +186,19 @@ struct FilteredMaxwellianSampler
       const REAL &norm_ratio, CROSS_SECTION cross_section,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<ndim, HostAtomicBlockKernelRNG<REAL>>(
+      : ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>, ndim,
+                         HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
-            Properties<REAL>(required_simple_real_props), properties_map),
-        device_obj(FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
-            norm_ratio, cross_section)) {
+            Properties<REAL>(required_simple_real_props), properties_map) {
+    this->on_device_obj = FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
+        norm_ratio, cross_section);
 
     static_assert(std::is_base_of_v<AbstractCrossSection, CROSS_SECTION>,
                   "Template parameter CROSS_SECITON is not derived from "
                   "AbstractCrossSection...");
 
-    this->device_obj.fluid_flow_speed_ind =
-        this->required_real_props.simple_prop_index(props.fluid_flow_speed,
-                                                    this->properties_map);
-    this->device_obj.fluid_temperature_ind =
-        this->required_real_props.simple_prop_index(props.fluid_temperature,
-                                                    this->properties_map);
-    this->device_obj.panic_ind = this->required_int_props.simple_prop_index(
-        props.panic, this->properties_map);
-    this->device_obj.velocity_ind = this->required_real_props.simple_prop_index(
-        props.velocity, this->properties_map);
-
     this->set_rng_kernel(rng_kernel);
+    this->index_on_device_object();
   }
 
   /**
@@ -225,18 +218,26 @@ struct FilteredMaxwellianSampler
       : FilteredMaxwellianSampler(norm_ratio, ConstantRateCrossSection(0.0),
                                   rng_kernel) {}
 
-private:
-  FilteredMaxwellianOnDevice<ndim, CROSS_SECTION> device_obj;
-
-public:
   /**
-   * @brief Getter for the SYCL device-specific
-   * struct.
+   * @brief Index the fluid temperature, flow speed, particle velocity, and the
+   * panic flag on the on-device object
    */
+  void index_on_device_object() {
 
-  FilteredMaxwellianOnDevice<ndim, CROSS_SECTION> get_on_device_obj() {
-    return this->device_obj;
-  }
+    this->on_device_obj->fluid_flow_speed_ind =
+        this->required_real_props.find_index(
+            this->properties_map.at(props.fluid_flow_speed));
+
+    this->on_device_obj->fluid_temperature_ind =
+        this->required_real_props.find_index(
+            this->properties_map.at(props.fluid_temperature));
+
+    this->on_device_obj->panic_ind = this->required_int_props.find_index(
+        this->properties_map.at(props.panic));
+
+    this->on_device_obj->velocity_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.velocity));
+  };
 };
 }; // namespace VANTAGE::Reactions
 #endif
