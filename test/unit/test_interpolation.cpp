@@ -5,10 +5,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/containers/local_array.hpp>
-#include <neso_particles/containers/local_memory_interlaced.hpp>
 #include <reactions/reactions.hpp>
-#include <type_traits>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -114,13 +111,13 @@ diagnostic_output(const int &particle_count_, const int &dim_index_,
 
 TEST(InterpolationTest, INTERP_2D) {
   // Interpolation points
-  REAL fluid_density_interp = 5.2e18;
+  REAL fluid_density_interp = 6.0e18;
   REAL fluid_temp_interp = 1.0e3;
   REAL expected_interp_value = fluid_density_interp * fluid_temp_interp;
   printf("Expected interpolated value: %e\n", expected_interp_value);
 
-  // Initialize a particle group with a single particle with the fluid density
-  // and fluid temperature set to the interpolation values.
+  // Initialize a particle group with the fluid density and fluid temperature
+  // for all particles set to the interpolation values.
   auto particle_group = create_test_particle_group(1e1);
 
   auto npart = particle_group->get_npart_local();
@@ -195,7 +192,7 @@ TEST(InterpolationTest, INTERP_2D) {
         interp_points.at(1) = fluid_temp_interp.at(0);
 
         // Calculation of the indices that will form the "origin" of the
-        // hypercube. These are the smallest indices in each dimension that are
+        // hypercube. These are the smallest indices in each dimension that
         // still have coordinate values that are less than the interpolation
         // values in that dimension.
         origin_indices.at(0) = interp_utils::calc_closest_point_index(
@@ -221,6 +218,7 @@ TEST(InterpolationTest, INTERP_2D) {
                           origin_indices, input_vertices, vertex_func_evals,
                           dims_vec_ptr, ranges_vec_ptr);
 
+        // Loop until the last dimension (down to 0D)
         while (dim_index >= 0) {
           // Contract the hypercube vertices and evaluations, eg. if
           // input_vertices.size() == 2^3 then output_vertices.size() == 2^2, as
