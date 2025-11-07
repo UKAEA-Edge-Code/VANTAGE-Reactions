@@ -484,14 +484,7 @@ public:
   void apply(std::shared_ptr<PARENT> target, double dt,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
 
-    ParticleGroupSharedPtr particle_group;
-
-    if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
-      particle_group = target;
-    } else {
-
-      particle_group = get_particle_group(target);
-    }
+    ParticleGroupSharedPtr particle_group = get_particle_group(target);
 
     this->apply(target, dt, particle_group, controller_mode);
   }
