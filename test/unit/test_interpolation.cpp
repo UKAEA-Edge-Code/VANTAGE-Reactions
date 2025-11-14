@@ -163,13 +163,13 @@ TEST(InterpolationTest, INTERP_2D) {
   auto hypercube_vertices_ptr = hypercube_vertices_buf->ptr;
 
   LocalMemoryInterlaced<REAL> vertex_func_evals_mem(initial_num_points);
-  LocalMemoryInterlaced<size_t> vertex_coord_mem(ndim);
+  LocalMemoryInterlaced<size_t> vertex_coord_mem(initial_num_points * ndim);
   LocalMemoryInterlaced<REAL> interp_points_mem(ndim);
   LocalMemoryInterlaced<int> input_vertices_mem(initial_num_points);
   LocalMemoryInterlaced<int> output_vertices_mem(initial_num_points);
   LocalMemoryInterlaced<REAL> output_evals_mem(initial_num_points);
   LocalMemoryInterlaced<size_t> varying_dim_mem(initial_num_points);
-  LocalMemoryInterlaced<size_t> eval_point_mem(ndim);
+  LocalMemoryInterlaced<size_t> eval_point_mem(initial_num_points * ndim);
 
   auto result_buf = std::make_shared<LocalArray<REAL>>(
       particle_group->sycl_target, npart, 0.0);

@@ -11,58 +11,30 @@
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions::interp_utils {
 
-inline size_t coeff_index(const std::vector<size_t> &indices,
-                          const std::vector<size_t> &dims_vec) {
-  const size_t ndim = indices.size();
+inline std::size_t
+coeff_index_on_device(Access::LocalMemoryInterlaced::Write<std::size_t> indices,
+                      const int &point_index, std::size_t *dims_vec,
+                      const int &ndim) {
+  std::size_t index = indices.at(point_index * ndim + 0);
 
-  size_t index = indices[0];
-
-  size_t dim_mult;
-  for (size_t i = 1; i < ndim; i++) {
+  std::size_t dim_mult;
+  for (int i = 1; i < ndim; i++) {
     dim_mult = 1;
     for (int j = int(i - 1); j >= 0; j--) {
       dim_mult *= dims_vec[j];
     }
-    index += dim_mult * indices[i];
+    index += dim_mult * indices.at(point_index * ndim + i);
   }
 
   return index;
 }
 
-inline size_t coeff_index_on_device(
-    Access::LocalMemoryInterlaced::Write<unsigned long> indices,
-    size_t *dims_vec, const int &ndim) {
-  size_t index = indices.at(0);
+inline std::size_t range_index_on_device(const std::size_t &sub_index,
+                                         const std::size_t &dim_index,
+                                         std::size_t *dims_vec) {
+  std::size_t index = sub_index;
 
-  size_t dim_mult;
-  for (size_t i = 1; i < ndim; i++) {
-    dim_mult = 1;
-    for (int j = int(i - 1); j >= 0; j--) {
-      dim_mult *= dims_vec[j];
-    }
-    index += dim_mult * indices.at(i);
-  }
-
-  return index;
-}
-
-inline size_t range_index(const size_t &sub_index, const size_t &dim_index,
-                          const std::vector<size_t> &dims_vec) {
-
-  size_t index = sub_index;
-
-  for (size_t i = 0; i < dim_index; i++) {
-    index += dims_vec[i];
-  }
-
-  return index;
-}
-
-inline size_t range_index_on_device(const size_t &sub_index,
-                                    const size_t &dim_index, size_t *dims_vec) {
-  size_t index = sub_index;
-
-  for (size_t i = 0; i < dim_index; i++) {
+  for (std::size_t i = 0; i < dim_index; i++) {
     index += dims_vec[i];
   }
 
@@ -111,98 +83,25 @@ inline std::vector<int> construct_initial_hypercube(const int &ndim) {
   return points;
 }
 
-inline std::vector<double> initial_func_eval(
-    const std::vector<double> &func_grid, const std::vector<int> &vertices,
-    const std::vector<size_t> &origin_indices,
-    const std::vector<size_t> &dims_vec, const size_t &dim_index) {
-  int num_points = (1 << (dim_index + 1));
-  size_t ndim = dim_index + 1;
-
-  std::vector<double> vertex_func_evals(num_points);
-  std::vector<size_t> eval_point(ndim);
-
-  for (int i = 0; i < num_points; i++) {
-    for (int j = size_t(dim_index); j >= 0; j--) {
-      eval_point[j] = origin_indices[j] + binary_extract(vertices[i], j);
-    }
-
-    vertex_func_evals[i] = func_grid[coeff_index(eval_point, dims_vec)];
-  }
-
-  return vertex_func_evals;
-}
-
 inline void initial_func_eval_on_device(
     Access::LocalMemoryInterlaced::Write<REAL> vertex_func_evals,
-    Access::LocalMemoryInterlaced::Write<size_t> vertex_coord, REAL *func_grid,
-    int *hypercube_vertices,
-    Access::LocalMemoryInterlaced::Write<size_t> origin_indices,
-    size_t *dims_vec, const int &ndim) {
+    Access::LocalMemoryInterlaced::Write<std::size_t> vertex_coord,
+    REAL *func_grid, int *hypercube_vertices,
+    Access::LocalMemoryInterlaced::Write<std::size_t> origin_indices,
+    std::size_t *dims_vec, const int &ndim) {
   int num_points = (1 << ndim);
 
   for (int i = 0; i < num_points; i++) {
-    for (int j = size_t(ndim) - 1; j >= 0; j--) {
-      vertex_coord.at(j) =
+    for (int j = ndim - 1; j >= 0; j--) {
+      // Strange GPU bug necessitates the oversized vertex_coord otherwise it
+      // would just be of size=ndim and then get overwritten for every vertex.
+      vertex_coord.at(i * ndim + j) =
           origin_indices.at(j) + binary_extract(hypercube_vertices[i], j);
     }
+
     vertex_func_evals.at(i) =
-        func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
+        func_grid[coeff_index_on_device(vertex_coord, i, dims_vec, ndim)];
   }
-}
-
-inline std::tuple<std::vector<int>, std::vector<double>>
-contract_hypercube(const std::vector<double> &interp_points, int dim_index,
-                   const std::vector<int> &points,
-                   const std::vector<size_t> origin_indices,
-                   const std::vector<double> &vertex_func_evals,
-                   const std::vector<double> &ranges_vec,
-                   const std::vector<size_t> &dims_vec) {
-  int num_points = (1 << (dim_index + 1));
-  size_t ndim = dim_index + 1;
-
-  std::vector<size_t> varying_dim(num_points);
-  std::vector<size_t> eval_point(ndim);
-
-  for (int i = 0; i < num_points; i++) {
-    for (int j = size_t(dim_index); j >= 0; j--) {
-      eval_point[j] = origin_indices[j] + binary_extract(points[i], j);
-      // printf("%ld", eval_point[j]);
-    }
-
-    varying_dim[i] = eval_point[dim_index];
-    // printf("\t%e\t%ld", vertex_func_evals[i], varying_dim[i]);
-    // printf("\n");
-  }
-
-  std::vector<double> output_evals(std::size_t(1 << dim_index));
-  std::vector<int> output_points(std::size_t(1 << dim_index));
-
-  size_t vertex_0, vertex_1;
-
-  size_t vertex_out;
-
-  for (int i = 0; i < (1 << dim_index); i++) {
-    // printf("%d\t", i);
-    vertex_0 = varying_dim[i];
-    vertex_1 = (*(varying_dim.end() - (i + 1)));
-
-    double range_val_0 = ranges_vec[range_index(vertex_0, 0, dims_vec)];
-    double range_val_1 = ranges_vec[range_index(vertex_1, 0, dims_vec)];
-
-    double eval_point_0 = vertex_func_evals[i];
-    double eval_point_1 = (*(vertex_func_evals.end() - (i + 1)));
-    // printf("%ld,%e,%e\t%ld,%e,%e\n", vertex_0, range_val_0, eval_point_0,
-    //        vertex_1, range_val_1, eval_point_1);
-
-    output_evals[i] = linear_interp(interp_points[0], range_val_0, range_val_1,
-                                    eval_point_0, eval_point_1);
-
-    vertex_out = points[i];
-
-    output_points[i] = int(vertex_out);
-  }
-
-  return std::make_tuple(output_points, output_evals);
 }
 
 inline void contract_hypercube_on_device(
@@ -210,27 +109,29 @@ inline void contract_hypercube_on_device(
     Access::LocalMemoryInterlaced::Write<REAL> interp_points,
     const int &dim_index,
     Access::LocalMemoryInterlaced::Write<int> input_vertices,
-    Access::LocalMemoryInterlaced::Write<size_t> origin_indices,
+    Access::LocalMemoryInterlaced::Write<std::size_t> origin_indices,
     Access::LocalMemoryInterlaced::Write<REAL> vertex_func_evals,
-    REAL *ranges_vec, size_t *dims_vec,
+    REAL *ranges_vec, std::size_t *dims_vec,
     Access::LocalMemoryInterlaced::Write<int> output_vertices,
     Access::LocalMemoryInterlaced::Write<REAL> output_evals,
-    Access::LocalMemoryInterlaced::Write<size_t> varying_dim,
-    Access::LocalMemoryInterlaced::Write<size_t> eval_point) {
+    Access::LocalMemoryInterlaced::Write<std::size_t> varying_dim,
+    Access::LocalMemoryInterlaced::Write<std::size_t> eval_point) {
   int ndim = dim_index + 1;
   int num_points = (1 << ndim);
   int num_out_points = (1 << dim_index);
 
   for (int i = 0; i < num_points; i++) {
     for (int j = dim_index; j >= 0; j--) {
-      eval_point.at(j) =
+      // Strange GPU bug necessitates the oversized eval_point otherwise it
+      // would just be of size=ndim and then get overwritten for each vertex.
+      eval_point.at(i * ndim + j) =
           origin_indices.at(j) + binary_extract(input_vertices.at(i), j);
     }
 
-    varying_dim.at(i) = eval_point.at(dim_index);
+    varying_dim.at(i) = eval_point.at(i * ndim + dim_index);
   }
 
-  size_t vertex_0, vertex_1;
+  std::size_t vertex_0, vertex_1;
   REAL range_val_0, range_val_1, eval_point_0, eval_point_1;
 
   for (int i = 0; i < num_out_points; i++) {
