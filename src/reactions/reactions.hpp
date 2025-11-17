@@ -40,6 +40,7 @@
 #include "../reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_recombination_kernels.hpp"
+#include "../reactions_lib/reaction_kernels/general_absorption_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/general_linear_scattering_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 
