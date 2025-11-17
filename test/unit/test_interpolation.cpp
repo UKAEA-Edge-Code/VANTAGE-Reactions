@@ -111,8 +111,8 @@ diagnostic_output(const int &particle_count_, const int &dim_index_,
 
 TEST(InterpolationTest, INTERP_2D) {
   // Interpolation points
-  REAL fluid_density_interp = 6.0e18;
-  REAL fluid_temp_interp = 1.0e3;
+  REAL fluid_density_interp = 6.4e18;
+  REAL fluid_temp_interp = 1.9e3;
   REAL expected_interp_value = fluid_density_interp * fluid_temp_interp;
   printf("Expected interpolated value: %e\n", expected_interp_value);
 
@@ -163,13 +163,12 @@ TEST(InterpolationTest, INTERP_2D) {
   auto hypercube_vertices_ptr = hypercube_vertices_buf->ptr;
 
   LocalMemoryInterlaced<REAL> vertex_func_evals_mem(initial_num_points);
-  LocalMemoryInterlaced<size_t> vertex_coord_mem(initial_num_points * ndim);
+  LocalMemoryInterlaced<size_t> vertex_coord_mem(initial_num_points);
   LocalMemoryInterlaced<REAL> interp_points_mem(ndim);
   LocalMemoryInterlaced<int> input_vertices_mem(initial_num_points);
   LocalMemoryInterlaced<int> output_vertices_mem(initial_num_points);
   LocalMemoryInterlaced<REAL> output_evals_mem(initial_num_points);
   LocalMemoryInterlaced<size_t> varying_dim_mem(initial_num_points);
-  LocalMemoryInterlaced<size_t> eval_point_mem(initial_num_points * ndim);
 
   auto result_buf = std::make_shared<LocalArray<REAL>>(
       particle_group->sycl_target, npart, 0.0);
@@ -180,7 +179,7 @@ TEST(InterpolationTest, INTERP_2D) {
       [=](auto particle_index, auto fluid_dens_interp, auto fluid_temp_interp,
           auto origin_indices, auto vertex_func_evals, auto vertex_coord,
           auto interp_points, auto input_vertices, auto output_vertices,
-          auto output_evals, auto varying_dim, auto eval_point, auto result) {
+          auto output_evals, auto varying_dim, auto result) {
         auto particle_count = particle_index.get_loop_linear_index();
 
         // Initial dim_index and num_points values. The variable, dim_index,
@@ -228,7 +227,7 @@ TEST(InterpolationTest, INTERP_2D) {
           interp_utils::contract_hypercube_on_device(
               particle_count, interp_points, dim_index, input_vertices,
               origin_indices, vertex_func_evals, ranges_vec_ptr, dims_vec_ptr,
-              output_vertices, output_evals, varying_dim, eval_point);
+              output_vertices, output_evals, varying_dim, vertex_coord);
 
           // This now accounts for the lower size of output_vertices and
           // output_evals, and makes sure that any loops in future
@@ -257,7 +256,7 @@ TEST(InterpolationTest, INTERP_2D) {
       Access::write(vertex_coord_mem), Access::write(interp_points_mem),
       Access::write(input_vertices_mem), Access::write(output_vertices_mem),
       Access::write(output_evals_mem), Access::write(varying_dim_mem),
-      Access::write(eval_point_mem), Access::write(result_buf));
+      Access::write(result_buf));
 
   interp_loop->execute();
 

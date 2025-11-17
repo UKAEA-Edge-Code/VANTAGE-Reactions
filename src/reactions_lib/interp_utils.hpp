@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <neso_particles.hpp>
+#include <neso_particles/containers/local_memory_interlaced.hpp>
 #include <vector>
 
 #define binary_extract(i, j) ((i >> j) & 1)
@@ -15,7 +16,7 @@ inline std::size_t
 coeff_index_on_device(Access::LocalMemoryInterlaced::Write<std::size_t> indices,
                       const int &point_index, std::size_t *dims_vec,
                       const int &ndim) {
-  std::size_t index = indices.at(point_index * ndim + 0);
+  std::size_t index = indices.at(0);
 
   std::size_t dim_mult;
   for (int i = 1; i < ndim; i++) {
@@ -23,7 +24,7 @@ coeff_index_on_device(Access::LocalMemoryInterlaced::Write<std::size_t> indices,
     for (int j = int(i - 1); j >= 0; j--) {
       dim_mult *= dims_vec[j];
     }
-    index += dim_mult * indices.at(point_index * ndim + i);
+    index += dim_mult * indices.at(i);
   }
 
   return index;
@@ -90,17 +91,21 @@ inline void initial_func_eval_on_device(
     Access::LocalMemoryInterlaced::Write<std::size_t> origin_indices,
     std::size_t *dims_vec, const int &ndim) {
   int num_points = (1 << ndim);
+  int point_index = 0;
+  int vertex_index = 0;
 
-  for (int i = 0; i < num_points; i++) {
-    for (int j = ndim - 1; j >= 0; j--) {
-      // Strange GPU bug necessitates the oversized vertex_coord otherwise it
-      // would just be of size=ndim and then get overwritten for every vertex.
-      vertex_coord.at(i * ndim + j) =
-          origin_indices.at(j) + binary_extract(hypercube_vertices[i], j);
+  for (int i = 0; i < (num_points * ndim); i++) {
+    point_index = i / ndim;
+    vertex_index = (ndim - 1) - (i % ndim);
+
+    vertex_coord.at(vertex_index) =
+        origin_indices.at(vertex_index) +
+        binary_extract(hypercube_vertices[point_index], vertex_index);
+
+    if (i % ndim) {
+      vertex_func_evals.at(point_index) = func_grid[coeff_index_on_device(
+          vertex_coord, point_index, dims_vec, ndim)];
     }
-
-    vertex_func_evals.at(i) =
-        func_grid[coeff_index_on_device(vertex_coord, i, dims_vec, ndim)];
   }
 }
 
@@ -115,20 +120,25 @@ inline void contract_hypercube_on_device(
     Access::LocalMemoryInterlaced::Write<int> output_vertices,
     Access::LocalMemoryInterlaced::Write<REAL> output_evals,
     Access::LocalMemoryInterlaced::Write<std::size_t> varying_dim,
-    Access::LocalMemoryInterlaced::Write<std::size_t> eval_point) {
+    Access::LocalMemoryInterlaced::Write<std::size_t> vertex_coord) {
   int ndim = dim_index + 1;
   int num_points = (1 << ndim);
   int num_out_points = (1 << dim_index);
 
-  for (int i = 0; i < num_points; i++) {
-    for (int j = dim_index; j >= 0; j--) {
-      // Strange GPU bug necessitates the oversized eval_point otherwise it
-      // would just be of size=ndim and then get overwritten for each vertex.
-      eval_point.at(i * ndim + j) =
-          origin_indices.at(j) + binary_extract(input_vertices.at(i), j);
-    }
+  int point_index = 0;
+  int eval_index = 0;
 
-    varying_dim.at(i) = eval_point.at(i * ndim + dim_index);
+  for (int i = 0; i < (num_points * ndim); i++) {
+    point_index = i / ndim;
+    eval_index = (ndim - 1) - (i % ndim);
+
+    vertex_coord.at(eval_index) =
+        origin_indices.at(eval_index) +
+        binary_extract(input_vertices.at(point_index), eval_index);
+
+    if ((ndim > 1) ? (i % ndim) : 1) {
+      varying_dim.at(point_index) = vertex_coord.at(dim_index);
+    }
   }
 
   std::size_t vertex_0, vertex_1;
@@ -149,7 +159,10 @@ inline void contract_hypercube_on_device(
     output_evals.at(i) = linear_interp(interp_points.at(dim_index), range_val_0,
                                        range_val_1, eval_point_0, eval_point_1);
 
+    output_vertices.at(i) = input_vertices.at(i);
+
     // if (particle_count == 0) {
+    //   printf("dim_index: %d\n", dim_index);
     //   printf("interp_point: %e\n", interp_points.at(0));
     //   printf("vertex_0: %ld\n", vertex_0);
     //   printf("vertex_1: %ld\n", vertex_1);
@@ -158,10 +171,9 @@ inline void contract_hypercube_on_device(
     //   printf("eval_point_0: %e\n", eval_point_0);
     //   printf("eval_point_1: %e\n", eval_point_1);
     //   printf("output_eval_%d: %e\n", i, output_evals.at(i));
+    //   printf("output_vertices: %d\n", output_vertices.at(i));
     //   printf("\n");
     // }
-
-    output_vertices.at(i) = input_vertices.at(i);
   }
 }
 
