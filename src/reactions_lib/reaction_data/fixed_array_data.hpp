@@ -65,7 +65,7 @@ struct FixedArrayData
    *
    * @param data REAL-valued array to always return.
    */
-  FixedArrayData(const std::array<REAL, 3> &data) {
+  FixedArrayData(const std::array<REAL, ndim> &data) {
     this->on_device_obj = FixedArrayDataOnDevice(data);
   };
 
