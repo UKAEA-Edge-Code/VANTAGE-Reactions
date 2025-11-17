@@ -82,6 +82,7 @@ TEST(ChargeExchange, simple_beam_exchange) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -173,6 +174,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -273,7 +275,7 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
                   1e-14); // w*m*v^2 / 2
     }
   }
-
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 

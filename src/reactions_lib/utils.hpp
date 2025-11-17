@@ -2,6 +2,7 @@
 #define REACTIONS_UTILS_H
 #include <cassert>
 #include <cmath>
+#include <complex>
 #include <neso_particles.hpp>
 #include <numeric>
 #include <type_traits>
@@ -189,18 +190,39 @@ project_vector(const std::array<REAL, n_dim> &input,
   return output;
 };
 
-// TODO: refine and test
-
+/**
+ * @brief Returns the 3D basis for performing reflections based on an ingoing
+ * velocity vector and a normal vector. Handles both possible orientations of
+ * the normal and produces the following basis:
+ *
+ * result[6-8] - e3: Basis vector normal to the wall, oriented so that the dot
+ * product of it and the velocity is negative, i.e. into the domain
+ *
+ * result[0-2] - e1: Basis vector in the vel - vel dot normal direction
+ *
+ * result[3-5] - e2: e3 x e1
+ *
+ *
+ * @param vel Velocity vector (in standard Cartesian coordinates), assumed going
+ * into the surface
+ * @param normal Normal vector at the surface, assumed to be a unit vector, but
+ * can be either into or out of the surface
+ */
 inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
                                             const std::array<REAL, 3> &normal) {
 
-  auto proj = project_vector(vel, normal);
+  REAL proj_factor = 0.0;
+
+  for (int i = 0; i < 3; i++) {
+
+    proj_factor += vel[i] * normal[i];
+  }
 
   std::array<REAL, 9> result;
 
   for (auto i = 0; i < 3; i++) {
 
-    result[i] = vel[i] - proj[i];
+    result[i] = vel[i] - proj_factor * normal[i];
   }
 
   REAL norm = 0;
@@ -214,16 +236,28 @@ inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
 
     result[i] = result[i] / Kernel::sqrt(norm);
   }
-  result[3] = normal[1] * result[2] - normal[2] * result[1];
-  result[4] = normal[2] * result[0] - normal[0] * result[2];
-  result[5] = normal[0] * result[1] - normal[1] * result[0];
 
-  result[6] = normal[0];
-  result[7] = normal[1];
-  result[8] = normal[2];
+  REAL sign = -sycl::copysign(1.0, proj_factor);
+  result[6] = sign * normal[0];
+  result[7] = sign * normal[1];
+  result[8] = sign * normal[2];
+
+  result[3] = result[7] * result[2] - result[8] * result[1];
+  result[4] = result[8] * result[0] - result[6] * result[2];
+  result[5] = result[6] * result[1] - result[7] * result[0];
+
   return result;
 };
 
+/**
+ * @brief Given spherical coordinates r, theta, and phi, and an orthonormal
+ * basis (flattened in an array) with respect to which the coordinates are
+ * defines, gives the cartesian components of the vector
+ *
+ * @param coords r,theta, phi coordinates
+ * @param basis Flattened rotated cartesian basis with respect to which the
+ * coords are given
+ */
 inline std::array<REAL, 3>
 normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
                           const std::array<REAL, 9> &basis) {
@@ -244,6 +278,7 @@ normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
                 (sintheta * cosphi * basis[i] +
                  sintheta * sinphi * basis[i + 3] + costheta * basis[i + 6]);
   }
+  return result;
 }
 
 } // namespace VANTAGE::Reactions::utils

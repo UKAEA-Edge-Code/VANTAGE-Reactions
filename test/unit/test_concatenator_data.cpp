@@ -44,8 +44,8 @@ TEST(ConcatenatorData, custom_sources) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ConcatenatorData, req_prop_test) {
@@ -90,8 +90,8 @@ TEST(ConcatenatorData, req_prop_test) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(ConcatenatorData, mixed_dim_rng) {
@@ -147,5 +147,6 @@ TEST(ConcatenatorData, mixed_dim_rng) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

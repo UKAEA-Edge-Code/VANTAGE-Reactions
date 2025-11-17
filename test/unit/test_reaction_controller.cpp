@@ -100,6 +100,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
     EXPECT_DOUBLE_EQ(rate, 5.0); //, 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -185,6 +186,8 @@ TEST(ReactionController, multi_reaction_multiple_products) {
     EXPECT_THROW(reaction_controller.apply(particle_group_2, 0.1),
                  std::logic_error);
   }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -268,7 +271,11 @@ TEST(ReactionController, multi_reaction_multi_apply) {
                      reduction->get_cell(icell)->at(0, 0)); //, 1e-12);
   }
 
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
+
+  particle_group_2->sycl_target->free();
   particle_group_2->domain->mesh->free();
 }
 
@@ -325,6 +332,7 @@ TEST(ReactionController, parent_transform) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -375,6 +383,7 @@ TEST(ReactionController, ionisation_reaction) {
 
   EXPECT_EQ(final_particle_num, 0);
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -429,6 +438,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
                      num_parts[icell] * 0.5); //, 1e-10);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -530,6 +540,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   EXPECT_EQ(final_particle_num, 0);
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -610,6 +621,8 @@ TEST(ReactionController, semi_dsmc_test) {
       }
     }
   }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -675,5 +688,7 @@ TEST(ReactionController, surface_mode_test) {
       }
     }
   }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

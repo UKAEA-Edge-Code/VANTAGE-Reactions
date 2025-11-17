@@ -45,7 +45,6 @@ struct SpecularReflectionDataOnDevice
                 &kernel) const {
 
     std::array<REAL, ndim> surface_n;
-    REAL proj_factor = 0.0;
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim; vdim++) {
@@ -72,8 +71,8 @@ struct SpecularReflectionData
 
   constexpr static auto props = default_properties;
 
-  constexpr static std::array<int, 2> required_simple_real_props = {
-      props.velocity, props.boundary_intersection_normal};
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.boundary_intersection_normal};
   /**
    * @brief Constructor for SpecularReflectionData.
    *
@@ -91,7 +90,7 @@ struct SpecularReflectionData
   }
 
   /**
-   * @brief Index the particle velocity and surface normal properties on the
+   * @brief Index the surface normal properties on the
    * on-device object
    */
   void index_on_device_object() {

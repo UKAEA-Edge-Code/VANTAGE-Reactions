@@ -115,6 +115,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_less_than) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -142,6 +143,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_equals) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -173,6 +175,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -208,6 +211,7 @@ TEST(TransformationWrapper, CompositeTransformZeroer) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, CellwiseAccumulator) {
@@ -314,6 +318,7 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
                 scale_2d * 0.2 * num_parts, 1e-10);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
@@ -387,6 +392,7 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
     EXPECT_DOUBLE_EQ(accumulated_2d[cellx]->at(0, 0), 0);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -410,6 +416,7 @@ TEST(TransformationWrapper, CellwiseAccumulatorINT) {
     EXPECT_DOUBLE_EQ(accumulated_1d[cellx]->at(0, 0), num_parts); //, 1e-10);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
@@ -438,5 +445,6 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
                      0.5 * num_parts); //, 1e-10);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
