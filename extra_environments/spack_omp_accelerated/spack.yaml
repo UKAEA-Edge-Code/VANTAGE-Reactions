@@ -5,7 +5,7 @@
 spack:
   # add package specs to the `specs` list
   specs:
-    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=ompaccelerated ^vantage-reactions.googletest
+    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=ompaccelerated ^googletest
 
   view: false
   concretizer:
@@ -13,7 +13,7 @@ spack:
   repos:
     - ${PWD}/Reactions-repo
     - ${PWD}/NESO-Spack
-    - $spack/var/spack/repos/builtin
+    - $spack/package_repos/fncqgg4/repos/spack_repo/builtin
   develop:
     reactions:
       path: ${PWD}
