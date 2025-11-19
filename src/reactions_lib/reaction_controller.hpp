@@ -241,6 +241,36 @@ public:
   }
 
   /**
+   * @brief Apply parent transform on the target group or subgroup
+   *
+   * @param target The ParticleGroup or ParticleSubGroup to apply the transforms
+   * to
+   */
+  template <typename PARENT>
+  void apply_parent_transforms(std::shared_ptr<PARENT> target) {
+
+    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+
+    if (this->reference_particle_group == nullptr) {
+      this->reference_particle_group = particle_group;
+    }
+
+    NESOASSERT(
+        particle_group == this->reference_particle_group,
+        "Particle group passed to apply_parent_transform is not the same as "
+        "recorded reference group.");
+
+    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end();
+         it++) {
+      for (auto tr : this->parent_transform) {
+        auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+        transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
+        transform_buffer->transform(target);
+      }
+    }
+  }
+
+  /**
    * @brief Applies all reactions that have been added prior to calling this
    * function. The reactions are effectively applied at the same time and the
    * result should not depend on the ordering of the reactions. Any reaction
@@ -262,21 +292,14 @@ public:
              ParticleGroupSharedPtr product_group,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
 
-    ParticleGroupSharedPtr particle_group;
-
-    if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
-      particle_group = target;
-    } else {
-
-      particle_group = get_particle_group(target);
-    }
+    ParticleGroupSharedPtr particle_group = get_particle_group(target);
 
     if (this->reference_particle_group == nullptr) {
       this->reference_particle_group = particle_group;
     }
 
     NESOASSERT(particle_group == this->reference_particle_group,
-               "Particle group passed to apply_reactions is not the same as "
+               "Particle group passed to apply is not the same as "
                "recorded reference group.");
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -452,14 +475,10 @@ public:
       }
     }
 
-    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end();
-         it++) {
-      for (auto tr : this->parent_transform) {
-        auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-        transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
-        transform_buffer->transform(target);
-      }
+    if (controller_mode != ControllerMode::surface_mode) {
+      this->apply_parent_transforms(target);
     }
+
     if (this->child_ids.size() > 0) {
       product_group->add_particles_local(child_group);
     }
