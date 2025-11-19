@@ -271,7 +271,6 @@ TEST(ReactionController, multi_reaction_multi_apply) {
                      reduction->get_cell(icell)->at(0, 0)); //, 1e-12);
   }
 
-
   particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 
@@ -656,6 +655,7 @@ TEST(ReactionController, surface_mode_test) {
 
   auto start_npart = particle_group->get_npart_local();
   reaction_controller.apply(particle_group, 1.0, ControllerMode::surface_mode);
+  reaction_controller.apply_parent_transforms(particle_group);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
