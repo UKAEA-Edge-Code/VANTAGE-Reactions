@@ -5,7 +5,7 @@
 spack:
   # add package specs to the `specs` list
   specs:
-    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=ompaccelerated ^googletest
+    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest
 
   view: false
   concretizer:
@@ -22,9 +22,13 @@ spack:
       path: ${PWD}/neso-particles
       spec: neso-particles@working
   packages:
-    all:
+    c:
       require:
-        - spec: "%gcc@11.3:"
+        - gcc
+    cxx:
+      require:
+        - gcc
+    all:
       providers:
-        mpi: [mpich]
+        mpi: [openmpi]
         sycl: [adaptivecpp]
