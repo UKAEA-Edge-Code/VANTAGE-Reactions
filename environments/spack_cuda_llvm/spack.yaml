@@ -13,7 +13,6 @@ spack:
   repos:
     - ${PWD}/Reactions-repo
     - ${PWD}/NESO-Spack
-    - $spack/package_repos/fncqgg4/repos/spack_repo/builtin
   develop:
     reactions:
       path: ${PWD}
