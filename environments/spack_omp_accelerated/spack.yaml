@@ -11,8 +11,8 @@ spack:
   concretizer:
     unify: false
   repos:
-    vantage-reactions: ${PWD}/Reactions-repo
-    neso: ${PWD}/NESO-Spack
+    - ${PWD}/Reactions-repo
+    - ${PWD}/NESO-Spack
   develop:
     reactions:
       path: ${PWD}
