@@ -29,5 +29,4 @@ spack:
         - gcc
     all:
       providers:
-        mpi: [openmpi]
         sycl: [adaptivecpp]
