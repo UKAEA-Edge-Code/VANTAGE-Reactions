@@ -86,5 +86,6 @@ TEST(Recombination, kernel_test) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

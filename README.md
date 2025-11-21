@@ -30,7 +30,11 @@ then execute:
 ```
 docker run --name vantage_reactions -v "$(pwd):/root/Reactions" vantage_reactions_img:latest -c "cd /root/Reactions && source run_tests.sh"
 ```
-
+If there's a failure in the installation of `neso-particles` and/or `reactions` modify `run_tests.sh` and replace `spack install` with:
+```
+spack install -j1
+```
+and try the docker run command again.
 ## Documentation
 To build the documentation ensure the following pre-requisites are installed (via `pip`):
 
@@ -40,12 +44,15 @@ To build the documentation ensure the following pre-requisites are installed (vi
 
 This can be done manually or by running:
 ```
+python -m venv ./docs_venv
+source ./docs_venv/bin/activate
 pip install -U -r $HOME/VANTAGE_Reactions/docs/sphinx/requirements.txt
 ```
 (replace `$HOME/VANTAGE_Reactions` with the name of the directory that the repo was cloned into.)
 
-Then simply run `make` inside the `docs` folder in the repo. The documentation should be contained within:
+Then simply run `make` inside the `docs` folder in the repo (make sure you're inside the python virtual environment `docs_venv`). The documentation should be contained within:
 ```
 $HOME/VANTAGE_Reactions/docs/build/sphinx/html/
 ```
 Start by opening `index.html` in a web browser of your choice.
+To exit the python virtual environment just run `deactivate` in the terminal.

@@ -46,8 +46,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
    * used to remap the syms for the position, weight and velocity properties.
    */
   MergeTransformationStrategy(
-      const std::map<int, std::string> &properties_map = get_default_map())
-      : min_npart_marker(MinimumNPartInCellMarker(3)) {
+      const std::map<int, std::string> &properties_map = get_default_map()) {
 
     NESOWARN(
         map_subset_check(properties_map),
@@ -61,14 +60,15 @@ struct MergeTransformationStrategy : TransformationStrategy {
 
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
-  };
+  }
+
   /**
    * @brief Perform merging on given subgroup. Will remove the subgroup and add
    * 2 particles per cell.
    *
    * @param target_subgroup
    */
-  void transform(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
     auto part_group = target_subgroup->get_particle_group();
     int cell_count = part_group->domain->mesh->get_cell_count();
     bool ndim_check = part_group->domain->mesh->get_ndim() == ndim;
@@ -143,179 +143,192 @@ struct MergeTransformationStrategy : TransformationStrategy {
       reduction_loop->execute();
     }
 
-    // Store the particle counts for each cell to avoid calling get_npart_cell
-    // again.
-    std::vector<int> target_subgroup_npart_cell(cell_count);
+    // Get the number of particles in target_subgroup in a CellDatConst for each
+    // cell.
+    auto cell_dat_target_subgroup_npart_cell =
+        std::make_shared<CellDatConst<int>>(part_group->sycl_target, cell_count,
+                                            1, 1);
+    get_npart_cell(target_subgroup, cell_dat_target_subgroup_npart_cell, 0, 0);
 
-    // Vector to hold the offsets into the ParticleSet we create for the new
-    // particles that hold the merged properties.
-    std::vector<int> particle_set_offsets(cell_count);
-    int current_offset = 0;
+    // Creates a static sub group that selects at most the first two particles
+    // in the target sub group for each cell.
+    auto sub_group_first_two_particles =
+        particle_sub_group_truncate(target_subgroup, 2, true);
+    // Creates a static sub group that discards the first 2 particles in each
+    // cell of the target sub group and selects any remaining particles.
+    auto sub_group_to_remove_particles =
+        particle_sub_group_discard(target_subgroup, 2, true);
 
-    // Vector of cell indices to collect which will form the basis of the new
-    // particles with the merged properties.
-    std::vector<INT> cells_to_extract;
-    std::vector<INT> layers_to_extract;
-    cells_to_extract.reserve(cell_count * 2);
-    layers_to_extract.reserve(cell_count * 2);
+    if constexpr (ndim == 2) {
+      particle_loop(
+          "MergeTransformationStrategy::transform_2D",
+          sub_group_first_two_particles,
+          [=](auto INDEX, auto X, auto W, auto P, auto CDC_s, auto CDC_pos,
+              auto CDC_mom, auto CDC_npart_cell) {
+            if (CDC_npart_cell.at(0, 0) > 2) {
+              REAL merge_pos[ndim];
+              REAL mom_tot[ndim];
+              REAL mom_a[ndim];
+              REAL mom_b[ndim];
+              const REAL wt = CDC_s.at(0, 0);
+              const REAL one_over_wt = 1.0 / wt;
+              const REAL et = CDC_s.at(1, 0);
+              for (int dimx = 0; dimx < ndim; dimx++) {
+                merge_pos[dimx] = CDC_pos.at(dimx, 0) * one_over_wt;
+                mom_tot[dimx] = CDC_mom.at(dimx, 0);
+                mom_a[dimx] = mom_tot[dimx] * one_over_wt;
+                mom_b[dimx] = mom_tot[dimx] * one_over_wt;
+              }
 
-    for (int cx = 0; cx < cell_count; cx++) {
-      const int npart_cell = target_subgroup->get_npart_cell(cx);
-      target_subgroup_npart_cell[cx] = npart_cell;
-      // Only perform merging for those cells where there are more than 2
-      // particles in the subgroup
-      if (npart_cell > 2) {
-        particle_set_offsets[cx] = current_offset;
-        current_offset += 2;
-        cells_to_extract.push_back(cx);
-        cells_to_extract.push_back(cx);
-        layers_to_extract.push_back(0);
-        layers_to_extract.push_back(1);
-      }
+              const REAL pt =
+                  Kernel::sqrt(Kernel::dot_product_2d(mom_tot, mom_tot));
+
+              // et/wt is the momentum**2 for either of the result particles,
+              // and pt/wt is the momentum in the direction of the total
+              // momentum vector so the below is the perpendicular momentum of
+              // the resulting particles
+              const REAL p_perp2 =
+                  Kernel::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
+              const REAL p_perp = Kernel::sqrt(p_perp2);
+
+              // applying the the 2D 90deg rotation matrix [[0 -1][1 0]] to the
+              // total momentum direction and scaling with the perpendicular
+              // momentum
+              const REAL p_perp_over_pt = p_perp / pt;
+              mom_a[0] -= mom_tot[1] * p_perp_over_pt;
+              mom_a[1] += mom_tot[0] * p_perp_over_pt;
+              mom_b[0] += mom_tot[1] * p_perp_over_pt;
+              mom_b[1] -= mom_tot[0] * p_perp_over_pt;
+
+              const auto i = INDEX.loop_layer;
+              X.at(0) = merge_pos[0];
+              X.at(1) = merge_pos[1];
+              W.at(0) = wt * 0.5;
+
+              P.at(0) = (i == 0) ? mom_a[0] : mom_b[0];
+              P.at(1) = (i == 0) ? mom_a[1] : mom_b[1];
+            }
+          },
+          Access::read(ParticleLoopIndex{}), Access::write(this->position),
+          Access::write(this->weight), Access::write(this->momentum),
+          Access::read(cell_dat_reduction_scalars),
+          Access::read(cell_dat_reduction_pos),
+          Access::read(cell_dat_reduction_mom),
+          Access::read(cell_dat_target_subgroup_npart_cell))
+          ->execute();
+
+    } else if constexpr (ndim == 3) {
+
+      particle_loop(
+          "MergeTransformationStrategy::transform_3D",
+          sub_group_first_two_particles,
+          [=](auto INDEX, auto X, auto W, auto P, auto CDC_s, auto CDC_pos,
+              auto CDC_mom, auto CDC_mom_min, auto CDC_mom_max,
+              auto CDC_npart_cell) {
+            if (CDC_npart_cell.at(0, 0) > 2) {
+              REAL merge_pos[ndim];
+              REAL mom_tot[ndim];
+              REAL mom_a[ndim];
+              REAL mom_b[ndim];
+              const REAL wt = CDC_s.at(0, 0);
+              const REAL one_over_wt = 1.0 / wt;
+              const REAL et = CDC_s.at(1, 0);
+              for (int dimx = 0; dimx < ndim; dimx++) {
+                merge_pos[dimx] = CDC_pos.at(dimx, 0) * one_over_wt;
+                mom_tot[dimx] = CDC_mom.at(dimx, 0);
+                mom_a[dimx] = mom_tot[dimx] * one_over_wt;
+                mom_b[dimx] = mom_tot[dimx] * one_over_wt;
+              }
+
+              const REAL pt =
+                  Kernel::sqrt(Kernel::dot_product_3d(mom_tot, mom_tot));
+
+              // et/wt is the momentum**2 for either of the result particles,
+              // and pt/wt is the momentum in the direction of the total
+              // momentum vector so the below is the perpendicular momentum of
+              // the resulting particles
+              const REAL p_perp2 =
+                  Kernel::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
+              const REAL p_perp = Kernel::sqrt(p_perp2);
+
+              REAL mom_cell_diag[3] = {
+                  CDC_mom_max.at(0, 0) - CDC_mom_min.at(0, 0),
+                  CDC_mom_max.at(1, 0) - CDC_mom_min.at(1, 0),
+                  CDC_mom_max.at(2, 0) - CDC_mom_min.at(2, 0)};
+
+              REAL rotation_axis[3] = {0, 0, 0};
+              Kernel::cross_product(mom_tot[0], mom_tot[1], mom_tot[2],
+                                    mom_cell_diag[0], mom_cell_diag[1],
+                                    mom_cell_diag[2], rotation_axis,
+                                    rotation_axis + 1, rotation_axis + 2);
+
+              // the cross product of the total momentum and the momentum space
+              // bounding box diagonal of the subgroup
+              REAL rotation_axis_norm = Kernel::sqrt(
+                  Kernel::dot_product_3d(rotation_axis, rotation_axis));
+
+              const REAL mom_cell_diag_norm = Kernel::sqrt(
+                  Kernel::dot_product_3d(mom_cell_diag, mom_cell_diag));
+
+              if (rotation_axis_norm / (pt * mom_cell_diag_norm) < 1e-10) {
+                mom_cell_diag[0] = -mom_cell_diag[0];
+                Kernel::cross_product(mom_tot[0], mom_tot[1], mom_tot[2],
+                                      mom_cell_diag[0], mom_cell_diag[1],
+                                      mom_cell_diag[2], rotation_axis,
+                                      rotation_axis + 1, rotation_axis + 2);
+                rotation_axis_norm = Kernel::sqrt(
+                    Kernel::dot_product_3d(rotation_axis, rotation_axis));
+              }
+
+              // the 3D 90deg rotation matrix used here is
+              // [[0 -u_3 u_2][u_3 0 -u_1][-u_2 u_1 0]] where u is the rotation
+              // axis this is the cross product matrix of the rotation axis -
+              // hence
+              REAL mom_perp[3] = {0, 0, 0};
+              Kernel::cross_product(rotation_axis[0], rotation_axis[1],
+                                    rotation_axis[2], mom_tot[0], mom_tot[1],
+                                    mom_tot[2], mom_perp, mom_perp + 1,
+                                    mom_perp + 2);
+
+              const REAL scaling_factor = p_perp / (pt * rotation_axis_norm);
+              for (int i = 0; i < 3; i++) {
+                mom_perp[i] *= scaling_factor;
+              }
+
+              for (int i = 0; i < 3; i++) {
+                mom_a[i] += mom_perp[i];
+                mom_b[i] -= mom_perp[i];
+              }
+
+              const auto i = INDEX.loop_layer;
+              X.at(0) = merge_pos[0];
+              X.at(1) = merge_pos[1];
+              X.at(2) = merge_pos[2];
+              W.at(0) = wt * 0.5;
+
+              P.at(0) = (i == 0) ? mom_a[0] : mom_b[0];
+              P.at(1) = (i == 0) ? mom_a[1] : mom_b[1];
+              P.at(2) = (i == 0) ? mom_a[2] : mom_b[2];
+            }
+          },
+          Access::read(ParticleLoopIndex{}), Access::write(this->position),
+          Access::write(this->weight), Access::write(this->momentum),
+          Access::read(cell_dat_reduction_scalars),
+          Access::read(cell_dat_reduction_pos),
+          Access::read(cell_dat_reduction_mom),
+          Access::read(cell_dat_reduction_mom_min),
+          Access::read(cell_dat_reduction_mom_max),
+          Access::read(cell_dat_target_subgroup_npart_cell))
+          ->execute();
     }
 
-    // Extract from the target subgroup the source particles for the merged
-    // particles
-    auto new_particles =
-        target_subgroup->get_particles(cells_to_extract, layers_to_extract);
-
-    auto merge_pos = std::vector<REAL>(ndim);
-    auto mom_tot = std::vector<REAL>(ndim);
-    auto mom_a = std::vector<REAL>(ndim);
-    auto mom_b = std::vector<REAL>(ndim);
-
-    auto cell_dat_reduction_scalars_values =
-        cell_dat_reduction_scalars->get_all_cells();
-    auto cell_dat_reduction_pos_values =
-        cell_dat_reduction_pos->get_all_cells();
-    auto cell_dat_reduction_mom_values =
-        cell_dat_reduction_mom->get_all_cells();
-
-    std::vector<CellData<REAL>> cell_dat_reduction_mom_min_values;
-    std::vector<CellData<REAL>> cell_dat_reduction_mom_max_values;
-    if constexpr (ndim == 3) {
-      cell_dat_reduction_mom_min_values =
-          cell_dat_reduction_mom_min->get_all_cells();
-      cell_dat_reduction_mom_max_values =
-          cell_dat_reduction_mom_max->get_all_cells();
-    }
-
-    for (int cx = 0; cx < cell_count; cx++) {
-
-      // Only perform merging for those cells where there are more than 2
-      // particles in the subgroup
-      if (target_subgroup_npart_cell[cx] > 2) {
-        auto cell_data_scalars = cell_dat_reduction_scalars_values.at(cx);
-        auto cell_data_pos = cell_dat_reduction_pos_values.at(cx);
-        auto cell_data_mom = cell_dat_reduction_mom_values.at(cx);
-
-        REAL wt = cell_data_scalars->at(0, 0);
-        REAL et = cell_data_scalars->at(1, 0);
-        for (int dimx = 0; dimx < ndim; dimx++) {
-          merge_pos[dimx] = cell_data_pos->at(dimx, 0) / wt;
-          mom_tot[dimx] = cell_data_mom->at(dimx, 0);
-          mom_a[dimx] = mom_tot[dimx] / wt;
-          mom_b[dimx] = mom_tot[dimx] / wt;
-        }
-
-        REAL pt = utils::norm2(mom_tot);
-
-        // et/wt is the momentum**2 for either of the result particles, and
-        // pt/wt is the momentum in the direction of the total momentum vector
-        // so the below is the perpendicular momentum of the resulting particles
-        REAL p_perp = std::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
-        p_perp = std::sqrt(p_perp);
-
-        if constexpr (ndim == 2) {
-
-          // applying the the 2D 90deg rotation matrix [[0 -1][1 0]] to the
-          // total momentum direction and scaling with the perpendicular
-          // momentum
-          mom_a[0] -= p_perp * mom_tot[1] / pt;
-          mom_a[1] += p_perp * mom_tot[0] / pt;
-
-          mom_b[0] += p_perp * mom_tot[1] / pt;
-          mom_b[1] -= p_perp * mom_tot[0] / pt;
-        }
-        if constexpr (ndim == 3) {
-          auto cell_data_mom_min = cell_dat_reduction_mom_min_values.at(cx);
-          auto cell_data_mom_max = cell_dat_reduction_mom_max_values.at(cx);
-
-          // we generate the bounding box in momentum space of the subgroup and
-          // set its diagonal
-          std::vector<REAL> mom_cell_diag(3);
-
-          for (int i = 0; i < 3; i++) {
-            mom_cell_diag[i] =
-                cell_data_mom_max->at(i, 0) - cell_data_mom_min->at(i, 0);
-          }
-
-          std::vector<REAL> rotation_axis =
-              utils::cross_product(mom_tot, mom_cell_diag);
-
-          // the cross product of the total momentum and the momentum space
-          // bounding box diagonal of the subgroup
-
-          REAL rotation_axis_norm = utils::norm2(rotation_axis);
-
-          // Handle close to co-linear diagonal and total vector
-
-          if (rotation_axis_norm / (pt * utils::norm2(mom_cell_diag)) < 1e-10) {
-            mom_cell_diag[0] = -mom_cell_diag[0];
-            rotation_axis = utils::cross_product(mom_tot, mom_cell_diag);
-            rotation_axis_norm = utils::norm2(rotation_axis);
-          }
-
-          // the 3D 90deg rotation matrix used here is
-          // [[0 -u_3 u_2][u_3 0 -u_1][-u_2 u_1 0]] where u is the rotation axis
-          // this is the cross product matrix of the rotation axis - hence
-          std::vector<REAL> mom_perp =
-              utils::cross_product(rotation_axis, mom_tot);
-
-          std::transform(mom_perp.begin(), mom_perp.end(), mom_perp.begin(),
-                         std::bind(std::multiplies<REAL>(),
-                                   std::placeholders::_1,
-                                   p_perp / (pt * rotation_axis_norm)));
-          for (int i = 0; i < 3; i++) {
-            mom_a[i] += mom_perp[i];
-            mom_b[i] -= mom_perp[i];
-          }
-        }
-
-        // The index for the first particle in the new particles ParticleSet for
-        // this cell.
-        const int particle_set_index_start = particle_set_offsets[cx];
-
-        // Modify the data in the ParticleSet to be the merged properties.
-        for (int i = particle_set_index_start;
-             i < (particle_set_index_start + 2); i++) {
-          for (int dimx = 0; dimx < ndim; dimx++) {
-            new_particles->at(this->position, i, dimx) = merge_pos[dimx];
-          }
-          new_particles->at(this->weight, i, 0) = wt / 2;
-        }
-        for (int dimx = 0; dimx < ndim; dimx++) {
-          new_particles->at(this->momentum, particle_set_index_start, dimx) =
-              mom_a[dimx];
-          new_particles->at(this->momentum, particle_set_index_start + 1,
-                            dimx) = mom_b[dimx];
-        }
-      }
-    }
-
-    auto to_remove_sub_group =
-        this->min_npart_marker.make_marker_subgroup(target_subgroup);
-    part_group->remove_particles(to_remove_sub_group);
-
-    // Add the particles that are the new particles with the merged properties.
-    part_group->add_particles_local(new_particles);
+    part_group->remove_particles(sub_group_to_remove_particles);
   }
 
 private:
   Sym<REAL> position;
   Sym<REAL> weight;
   Sym<REAL> momentum;
-  MinimumNPartInCellMarker min_npart_marker;
 };
 } // namespace VANTAGE::Reactions
 #endif

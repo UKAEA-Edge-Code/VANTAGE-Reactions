@@ -59,5 +59,6 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
 
   EXPECT_TRUE(panicked(particle_sub_group(particle_group)));
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

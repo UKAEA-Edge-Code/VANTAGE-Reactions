@@ -14,7 +14,8 @@ namespace VANTAGE::Reactions {
  * @tparam ndim The velocity space dimensionality
  */
 template <size_t ndim>
-struct SpecularReflectionDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
+struct SpecularReflectionDataOnDevice
+    : public ReactionDataBaseOnDevice<ndim, DEFAULT_RNG_KERNEL, ndim> {
 
   SpecularReflectionDataOnDevice() = default;
 
@@ -36,27 +37,25 @@ struct SpecularReflectionDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
    * reflected velocities.
    */
   std::array<REAL, ndim>
-  calc_data(const Access::LoopIndex::Read &index,
+  calc_data(const std::array<REAL, ndim> input,
+            const Access::LoopIndex::Read &index,
             const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice<ndim>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
-    std::array<REAL, ndim> k_V;
     std::array<REAL, ndim> surface_n;
-    REAL proj_factor = 0.0;
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim; vdim++) {
-      k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
       surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
     }
 
-    return utils::reflect_vector(k_V, surface_n);
+    return utils::reflect_vector(input, surface_n);
   }
 
 public:
-  int velocity_ind, normal_ind;
+  int normal_ind;
 };
 
 /**
@@ -67,12 +66,13 @@ public:
  */
 template <size_t ndim>
 struct SpecularReflectionData
-    : public ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim> {
+    : public ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim,
+                              DEFAULT_RNG_KERNEL, ndim> {
 
   constexpr static auto props = default_properties;
 
-  constexpr static std::array<int, 2> required_simple_real_props = {
-      props.velocity, props.boundary_intersection_normal};
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.boundary_intersection_normal};
   /**
    * @brief Constructor for SpecularReflectionData.
    *
@@ -81,7 +81,8 @@ struct SpecularReflectionData
    */
   SpecularReflectionData(
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim>(
+      : ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim,
+                         DEFAULT_RNG_KERNEL, ndim>(
             Properties<REAL>(required_simple_real_props), properties_map) {
 
     this->on_device_obj = SpecularReflectionDataOnDevice<ndim>();
@@ -89,13 +90,10 @@ struct SpecularReflectionData
   }
 
   /**
-   * @brief Index the particle velocity and surface normal properties on the
+   * @brief Index the surface normal properties on the
    * on-device object
    */
   void index_on_device_object() {
-
-    this->on_device_obj->velocity_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.velocity));
 
     this->on_device_obj->normal_ind = this->required_real_props.find_index(
         this->properties_map.at(props.boundary_intersection_normal));
