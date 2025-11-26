@@ -24,6 +24,7 @@ struct ConcatenatorDataOnDevice
     : public CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
                                    DATATYPE...> {
 
+  ConcatenatorDataOnDevice() = default;
   ConcatenatorDataOnDevice(DATATYPE... data)
       : CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
                               DATATYPE...>(data...) {};
