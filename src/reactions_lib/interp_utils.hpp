@@ -153,7 +153,7 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
         origin_indices[vertex_index] +
         binary_extract(hypercube_vertices[point_index], vertex_index);
 
-    if (i % ndim) {
+    if ((ndim > 1) ? (i % ndim) : 1) {
       vertex_func_evals[point_index] = func_grid[coeff_index_on_device(
           vertex_coord, point_index, dims_vec, ndim)];
     }

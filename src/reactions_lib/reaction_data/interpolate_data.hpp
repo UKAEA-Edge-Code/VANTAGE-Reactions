@@ -4,12 +4,6 @@
 #include "reactions_lib/interp_utils.hpp"
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/compute_target.hpp>
-#include <neso_particles/containers/local_memory_interlaced.hpp>
-#include <neso_particles/containers/sym_vector.hpp>
-#include <neso_particles/device_buffers.hpp>
-#include <neso_particles/device_functions.hpp>
-#include <neso_particles/loop/particle_loop_index.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -141,7 +135,8 @@ struct InterpolateData
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &ranges_vec,
                   const std::vector<REAL> &grid,
-                  SYCLTargetSharedPtr sycl_target) {
+                  SYCLTargetSharedPtr sycl_target)
+      : ReactionDataBase<InterpolateDataOnDevice<ndim>, ndim>() {
     auto initial_hypercube =
         interp_utils::construct_initial_hypercube(INT(ndim));
 
