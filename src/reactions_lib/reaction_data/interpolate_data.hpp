@@ -92,10 +92,10 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
       // Additionally input_evals and output_evals are scaled down in the
       // same way via linear interpolation.
       interp_utils::contract_hypercube_on_device(
-          current_count, interpolation_points_ptr, dim_index,
-          input_vertices_ptr, origin_indices_ptr, vertex_func_evals_ptr,
-          ranges_vec_buf, dims_vec_buf, output_vertices_ptr, output_evals_ptr,
-          varying_dim_ptr, vertex_coord_ptr);
+          interpolation_points_ptr, dim_index, input_vertices_ptr,
+          origin_indices_ptr, vertex_func_evals_ptr, ranges_vec_buf,
+          dims_vec_buf, output_vertices_ptr, output_evals_ptr, varying_dim_ptr,
+          vertex_coord_ptr);
 
       // This now accounts for the lower size of output_vertices and
       // output_evals, and makes sure that any loops in future
