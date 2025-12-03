@@ -15,6 +15,7 @@
 #include "../reactions_lib/reaction_base.hpp"
 #include "../reactions_lib/reaction_controller.hpp"
 #include "../reactions_lib/reaction_data.hpp"
+#include "../reactions_lib/reaction_data_accumulator.hpp"
 #include "../reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include "../reactions_lib/reaction_kernels.hpp"
 #include "../reactions_lib/transformation_wrapper.hpp"
