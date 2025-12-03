@@ -63,8 +63,8 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
     auto interpolation_points_ptr = interpolation_points.data();
     auto origin_indices_ptr = origin_indices.data();
 
-    auto vertex_func_evals_ptr = &(*vertex_func_evals.begin());
-    auto vertex_coord_ptr = &(*vertex_coord.begin());
+    auto vertex_func_evals_ptr = vertex_func_evals.data();
+    auto vertex_coord_ptr = vertex_coord.data();
 
     auto input_vertices_ptr = input_vertices.data();
     auto output_vertices_ptr = output_vertices.data();
@@ -100,7 +100,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
       // This now accounts for the lower size of output_vertices and
       // output_evals, and makes sure that any loops in future
       // contract_hypercube(...) invocations remain consistent.
-      num_points = 1 << dim_index;
+      num_points = num_points >> 1;
       dim_index--;
 
       // This resets the input_vertices and vertex_func_evals
