@@ -19,18 +19,25 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
             const Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice<ndim>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
-    // Temporary vectors for intermediate calculation (in principle will hold
+    // Temporary arrays for intermediate calculation (in principle will hold
     // unique values for each particle)
-    std::vector<INT> origin_indices(ndim);
+    std::array<INT, ndim> origin_indices;
+    origin_indices.fill(0);
 
-    std::vector<REAL> vertex_func_evals(this->initial_num_points);
-    std::vector<INT> vertex_coord(this->initial_num_points);
+    std::array<REAL, initial_num_points> vertex_func_evals;
+    std::array<INT, initial_num_points> vertex_coord;
+    vertex_func_evals.fill(0.0);
+    vertex_coord.fill(0);
 
-    std::vector<INT> input_vertices(this->initial_num_points);
-    std::vector<INT> output_vertices(this->initial_num_points);
-    std::vector<REAL> output_evals(this->initial_num_points);
+    std::array<INT, initial_num_points> input_vertices;
+    std::array<INT, initial_num_points> output_vertices;
+    std::array<REAL, initial_num_points> output_evals;
+    input_vertices.fill(0);
+    output_vertices.fill(0);
+    output_evals.fill(0.0);
 
-    std::vector<INT> varying_dim(this->initial_num_points);
+    std::array<INT, initial_num_points> varying_dim;
+    varying_dim.fill(0);
 
     // Counters
     int dim_index = ndim - 1;
@@ -57,9 +64,6 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
     }
 
     // Necessary for using the interp_utils functions.
-    // Specifically converting the vectors to pointers prevents std::vector
-    // being in the function signature for any of the interp_utils:: functions
-    // so they should remain trivially copyable.
     auto interpolation_points_ptr = interpolation_points.data();
     auto origin_indices_ptr = origin_indices.data();
 
@@ -97,7 +101,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
           dims_vec_buf, output_vertices_ptr, output_evals_ptr, varying_dim_ptr,
           vertex_coord_ptr);
 
-      // This now accounts for the lower size of output_vertices and
+      // This now accounts for the smaller size of output_vertices and
       // output_evals, and makes sure that any loops in future
       // contract_hypercube(...) invocations remain consistent.
       num_points = num_points >> 1;
