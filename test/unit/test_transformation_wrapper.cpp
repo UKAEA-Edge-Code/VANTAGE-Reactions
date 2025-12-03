@@ -448,3 +448,53 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
   particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
+
+TEST(TransformationWrapper, CellwiseReactionDataAccumulator) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group_marking(N_total);
+
+  auto mock_source1d = ExtractorData<1>(Sym<REAL>("MOCK_SOURCE1D"));
+  auto mock_source2d = ExtractorData<2>(Sym<REAL>("MOCK_SOURCE2D"));
+
+  auto binary_transform_data_1d = mock_source1d * mock_source1d;
+  auto binary_transform_data_2d = mock_source2d * mock_source2d;
+
+  auto accumulator_transform_1d = std::make_shared<
+      CellwiseReactionDataAccumulator<decltype(binary_transform_data_1d)>>(
+      particle_group, binary_transform_data_1d);
+  auto accumulator_transform_2d = std::make_shared<
+      CellwiseReactionDataAccumulator<decltype(binary_transform_data_2d)>>(
+      particle_group, binary_transform_data_2d);
+
+  auto test_wrapper_1d =
+      TransformationWrapper(std::dynamic_pointer_cast<TransformationStrategy>(
+          accumulator_transform_1d));
+  auto test_wrapper_2d =
+      TransformationWrapper(std::dynamic_pointer_cast<TransformationStrategy>(
+          accumulator_transform_2d));
+
+  test_wrapper_1d.transform(particle_group);
+  test_wrapper_2d.transform(particle_group);
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+  auto accumulated_1d = accumulator_transform_1d->get_cell_data();
+  auto accumulated_2d = accumulator_transform_2d->get_cell_data();
+  // The two mock sources have constant values, so we expect those squared and
+  // multiplied by the number of particles in the cell
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto num_parts = particle_group->get_npart_cell(cellx);
+
+    // Kept as EXPECT_NEAR for consistency with accumulated_2d checks
+    EXPECT_NEAR(accumulated_1d[cellx]->at(0, 0), 0.5 * 0.5 * num_parts, 1e-10);
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
+    EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.1 * 0.1 * num_parts, 1e-10);
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
+    EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.2 * 0.2 * num_parts, 1e-10);
+  };
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}

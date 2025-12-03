@@ -38,10 +38,11 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         "Template parameter ReactionData is not derived from "
         "ReactionDataBase...");
 
+    constexpr auto data_dim = this->reaction_data.get_dim();
     this->values = std::make_shared<
         CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>(
         template_group->sycl_target,
-        template_group->domain->mesh->get_cell_count(), this->comp_nums, 1);
+        template_group->domain->mesh->get_cell_count(), data_dim, 1);
 
     this->required_int_sums = this->reaction_data.get_required_int_sym_vector();
     this->required_real_syms =
@@ -74,10 +75,10 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         },
         Access::reduce(this->values, Kernel::plus<REAL>()),
         Access::read(ParticleLoopIndex{}),
-        Access::write(sym_vector<INT>(particle_sub_group,
-                                      this->calculate_rates_int_syms)),
-        Access::read(sym_vector<REAL>(particle_sub_group,
-                                      this->calculate_rates_real_syms)),
+        Access::write(
+            sym_vector<INT>(target_subgroup, this->required_int_sums)),
+        Access::read(
+            sym_vector<REAL>(target_subgroup, this->required_real_syms)),
         Access::read(this->reaction_data.get_rng_kernel()));
 
     loop->execute();
