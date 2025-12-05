@@ -270,7 +270,7 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
    * @brief Constructor for CellwiseDistributor.
    *
    * @param template_group A template particle group used to provide the
-   * CellDatConsts for the dats specified by dat_names.
+   * ParticleDats specified by dat_names for the created CellDatConsts.
    * @param dat_names A vector of strings specifying the names of the dats
    * to be distributed cell-wise.
    */
