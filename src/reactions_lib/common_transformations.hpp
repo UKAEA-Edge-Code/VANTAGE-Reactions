@@ -158,7 +158,7 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * @brief Constructor for CellwiseAccumulator.
    *
    * @param template_group A template particle group used to provide the
-   * CellDatConsts for the dats specified by dat_names.
+   * ParticleDats specified by dat_names for the created CellDatConsts.
    * @param dat_names A vector of strings specifying the names of the dats
    * to be accumulated cell-wise.
    */
