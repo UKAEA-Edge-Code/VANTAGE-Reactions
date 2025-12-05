@@ -85,7 +85,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
 
     // Fill input_vertices vector
     for (int i = 0; i < num_points; i++) {
-      input_vertices.at(i) = hypercube_vertices_buf[i];
+      input_vertices[i] = hypercube_vertices_buf[i];
     }
 
     // Loop until the last dimension (down to 0D)
@@ -109,8 +109,8 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
 
       // This resets the input_vertices and vertex_func_evals
       for (int i = 0; i < num_points; i++) {
-        input_vertices.at(i) = output_vertices.at(i);
-        vertex_func_evals.at(i) = output_evals.at(i);
+        input_vertices[i] = output_vertices[i];
+        vertex_func_evals[i] = output_evals[i];
       }
     }
 
@@ -119,7 +119,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
 
     // Assign to first element of returned array. (See
     // test/unit/test_interpolation.cpp for reasons for the workaround.)
-    calculated_interpolated_vals[0] = output_evals.at(0);
+    calculated_interpolated_vals[0] = output_evals[0];
 
     return calculated_interpolated_vals;
   }

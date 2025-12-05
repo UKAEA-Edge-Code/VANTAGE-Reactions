@@ -967,8 +967,7 @@ TEST(InterpolationTest, REACTION_DATA_5D) {
                                prop_interp_3 * prop_interp_4;
   static constexpr int ndim = 5;
 
-  // Had to reduce this down from 1e5 due to some memory limitation on GPU runs.
-  auto particle_group = create_test_particle_group(1e4);
+  auto particle_group = create_test_particle_group(1e5);
 
   auto sycl_target = particle_group->sycl_target;
 
