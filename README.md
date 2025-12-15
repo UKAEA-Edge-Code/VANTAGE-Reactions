@@ -12,6 +12,10 @@ Features provided by the library are:
 
 This library deals only with the definition and application of particle transformations useful when dealing with reacting particles in particle codes. It is **NOT** a particle code itself. 
 It does not deal with moving the particles around, and is mesh agnostic. It does not define a standard set of reactions/species but provides the tools to do so.
+
+# Documentation
+Documentation can be found here: https://ukaea-edge-code.github.io/VANTAGE-Reactions/
+
 ## Quick-start with docker
 Ensure docker v28.1.1+ is installed on either linux or WSL2 with non-root management enabled. 
 See here for more details: <https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user>.
