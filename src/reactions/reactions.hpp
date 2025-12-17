@@ -1,7 +1,6 @@
 #ifndef REACTIONS_REACTIONS_H
 #define REACTIONS_REACTIONS_H
 
-#include "neso_test_assert.hpp"
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
 #include "../reactions_lib/data_calculator.hpp"
@@ -15,6 +14,7 @@
 #include "../reactions_lib/reaction_kernels.hpp"
 #include "../reactions_lib/transformation_wrapper.hpp"
 #include "../reactions_lib/utils.hpp"
+#include "neso_test_assert.hpp"
 
 #include "../reactions_lib/cross_sections/AMJUEL_fit_cs.hpp"
 #include "../reactions_lib/cross_sections/constant_rate_cs.hpp"

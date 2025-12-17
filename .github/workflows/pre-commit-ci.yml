@@ -24,4 +24,4 @@ jobs:
         working-directory: ./
         run: |
           find src -iname "*.hpp" -o -iname "*.cpp" | xargs pipx run clang-format --style=file -Werror --dry-run -i
-          find test -iname "*.hpp" -o -iname "*.cpp" | xargs pipx run clang-format --style=file -Werror --dry-run -i
+          find test -path "test/unit/example_sources" -prune -iname "*.hpp" -o -iname "*.cpp" | xargs pipx run clang-format --style=file -Werror --dry-run -i

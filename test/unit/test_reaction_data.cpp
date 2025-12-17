@@ -25,10 +25,10 @@ TEST(ReactionData, FixedCoefficientData) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
     auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
 

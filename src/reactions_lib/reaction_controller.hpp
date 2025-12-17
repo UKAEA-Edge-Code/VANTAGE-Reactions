@@ -99,7 +99,7 @@ struct ReactionController {
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector<std::shared_ptr<TransformationWrapper>>{},
-            auto_clean_tot_rate_buffer, properties_map){};
+            auto_clean_tot_rate_buffer, properties_map) {};
 
   /**
    * \overload
@@ -121,7 +121,7 @@ struct ReactionController {
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector{child_transform}, auto_clean_tot_rate_buffer,
-            properties_map){};
+            properties_map) {};
 
   /**
    * \overload
@@ -144,7 +144,7 @@ struct ReactionController {
       const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(std::vector{parent_transform},
                            std::vector{child_transform},
-                           auto_clean_tot_rate_buffer, properties_map){};
+                           auto_clean_tot_rate_buffer, properties_map) {};
 
   /**
    * @brief Function to populate the sub_group_selectors map and
@@ -237,9 +237,8 @@ public:
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
    */
-  void apply(
-      ParticleGroupSharedPtr particle_group, double dt,
-      ControllerMode controller_mode = ControllerMode::standard_mode) {
+  void apply(ParticleGroupSharedPtr particle_group, double dt,
+             ControllerMode controller_mode = ControllerMode::standard_mode) {
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
     // Ensure that the total rate buffer is flushed before the reactions are
