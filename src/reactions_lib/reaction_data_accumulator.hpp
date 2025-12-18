@@ -32,13 +32,13 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
     static_assert(
         std::is_base_of_v<
             ReactionDataBase<typename ReactionData::ON_DEVICE_OBJ_TYPE,
-                             reaction_data.get_dim(),
+                             ReactionData::DIM,
                              typename ReactionData::RNG_KERNEL_TYPE>,
             ReactionData>,
         "Template parameter ReactionData is not derived from "
         "ReactionDataBase...");
 
-    constexpr auto data_dim = this->reaction_data.get_dim();
+    constexpr auto data_dim = ReactionData::DIM;
     this->values = std::make_shared<
         CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>(
         template_group->sycl_target,
@@ -60,7 +60,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
     // TODO: add sycl_target consistency test
 
-    constexpr auto data_dim = this->reaction_data.get_dim();
+    constexpr auto data_dim = ReactionData::DIM;
 
     auto loop = particle_loop(
         "CellwiseReactionDataAccumulator_loop", target_subgroup,
