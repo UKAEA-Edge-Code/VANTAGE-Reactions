@@ -29,7 +29,7 @@ TEST(DataCalculator, custom_sources) {
   for (int i = 0; i < cell_count; i++) {
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                          descendant_particles);
+                        descendant_particles);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;

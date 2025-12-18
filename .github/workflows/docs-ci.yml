@@ -1,0 +1,50 @@
+name: CI-Workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  docs-deploy:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build docs
+        working-directory: ./docs/
+        run: pip install -U -r sphinx/requirements.txt && make
+      - name: Build Website
+        working-directory: ./docs/
+        run: |
+          ls build
+          cp ./redirect_index.html ./build/index.html
+          mkdir -p /tmp/gh-pages
+          cp -r ./build/* /tmp/gh-pages/.
+          touch /tmp/gh-pages/.nojekyll
+          ls /tmp/gh-pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/gh-pages
+      - id: deployment
+        uses: actions/deploy-pages@main

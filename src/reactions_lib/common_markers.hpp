@@ -242,7 +242,7 @@ public:
    *
    * @param min_npart Minimum number of particles in a cell.
    */
-  MinimumNPartInCellMarker(INT min_npart) : min_npart(min_npart){};
+  MinimumNPartInCellMarker(INT min_npart) : min_npart(min_npart) {};
 
   ParticleSubGroupSharedPtr
   make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {

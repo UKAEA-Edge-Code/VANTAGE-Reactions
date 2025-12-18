@@ -1,0 +1,27 @@
+name: Clang Format Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - dev*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  clang_format_check:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run clang-format
+        working-directory: ./
+        run: |
+          find src -iname "*.hpp" -o -iname "*.cpp" | xargs pipx run clang-format --style=file -Werror --dry-run -i
+          find test -path "test/unit/example_sources" -prune -iname "*.hpp" -o -iname "*.cpp" | xargs pipx run clang-format --style=file -Werror --dry-run -i
