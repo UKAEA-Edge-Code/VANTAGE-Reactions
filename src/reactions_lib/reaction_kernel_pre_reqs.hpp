@@ -27,7 +27,7 @@ struct Species {
    * @param id INT value that corresponds to the ID of the species.
    */
   Species(std::string name, REAL mass, REAL charge, INT id)
-      : name(name), mass(mass), charge(charge), id(id){};
+      : name(name), mass(mass), charge(charge), id(id) {};
 
   /**
    * \overload
@@ -35,7 +35,7 @@ struct Species {
    *
    * @param name String defining the name of the species.
    */
-  Species(std::string name) : name(name){};
+  Species(std::string name) : name(name) {};
 
   /**
    * \overload
@@ -44,7 +44,7 @@ struct Species {
    * @param name String defining the name of the species.
    * @param mass REAL value of the mass of the species (in atomic units).
    */
-  Species(std::string name, REAL mass) : name(name), mass(mass){};
+  Species(std::string name, REAL mass) : name(name), mass(mass) {};
 
   /**
    * \overload
@@ -55,7 +55,7 @@ struct Species {
    * @param charge REAL value of the charge of the species (in atomic units).
    */
   Species(std::string name, REAL mass, REAL charge)
-      : name(name), mass(mass), charge(charge){};
+      : name(name), mass(mass), charge(charge) {};
 
 public:
   /**
@@ -163,7 +163,7 @@ template <typename PROP_TYPE> struct Properties {
    * StandardPropertiesEnum (or derived) struct.
    */
   Properties(std::vector<int> simple_props)
-      : Properties(simple_props, std::vector<Species>{}, std::vector<int>{}){};
+      : Properties(simple_props, std::vector<Species>{}, std::vector<int>{}) {};
 
   /**
    * \overload
@@ -177,7 +177,7 @@ template <typename PROP_TYPE> struct Properties {
    * property names.
    */
   Properties(std::vector<Species> species, std::vector<int> species_props)
-      : Properties(std::vector<int>{}, species, species_props){};
+      : Properties(std::vector<int>{}, species, species_props) {};
 
   /**
    * \overload

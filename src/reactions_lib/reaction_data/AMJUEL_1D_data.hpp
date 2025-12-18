@@ -37,7 +37,7 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
                        const std::array<REAL, num_coeffs> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
-        temperature_normalisation(temperature_normalisation), coeffs(coeffs){};
+        temperature_normalisation(temperature_normalisation), coeffs(coeffs) {};
 
   /**
    * @brief Function to calculate the reaction rate for a 1D AMJUEL-based

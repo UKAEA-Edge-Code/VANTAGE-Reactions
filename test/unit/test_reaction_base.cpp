@@ -130,8 +130,8 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->apply(
-          subgroups[reaction], i, i + 1, 0.1, descendant_particles);
+      reactions[reaction]->apply(subgroups[reaction], i, i + 1, 0.1,
+                                 descendant_particles);
     }
 
     auto internal_state =
@@ -204,8 +204,8 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->apply(particle_sub_group, i, i + 1,
-                                                   0.1, descendant_particles);
+      reactions[reaction]->apply(particle_sub_group, i, i + 1, 0.1,
+                                 descendant_particles);
     }
 
     auto internal_state =

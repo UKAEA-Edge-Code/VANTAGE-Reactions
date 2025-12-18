@@ -42,7 +42,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
         density_normalisation(density_normalisation),
-        temperature_normalisation(temperature_normalisation), coeffs(coeffs){};
+        temperature_normalisation(temperature_normalisation), coeffs(coeffs) {};
 
   /**
    * @brief Function to calculate the reaction rate for a 2D AMJUEL-based

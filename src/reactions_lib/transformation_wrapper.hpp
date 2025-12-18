@@ -55,7 +55,7 @@ struct TransformationStrategy {
 
   TransformationStrategy() = default;
 
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup){};
+  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {};
 
   virtual ~TransformationStrategy() = default;
 };

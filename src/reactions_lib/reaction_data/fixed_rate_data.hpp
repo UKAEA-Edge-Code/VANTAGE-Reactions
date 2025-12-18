@@ -16,7 +16,7 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    *
    * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedRateDataOnDevice(const REAL &rate) : rate(rate){};
+  FixedRateDataOnDevice(const REAL &rate) : rate(rate) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction

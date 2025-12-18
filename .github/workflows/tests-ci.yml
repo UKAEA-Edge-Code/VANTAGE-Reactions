@@ -7,11 +7,6 @@ on:
       - main
       - dev*
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -33,14 +28,7 @@ jobs:
           docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
 
   docs:
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,18 +37,3 @@ jobs:
       - name: Build docs
         working-directory: ./docs/
         run: pip install -U -r sphinx/requirements.txt && make
-      - name: Build Website
-        working-directory: ./docs/
-        run: |
-          ls build
-          cp ./redirect_index.html ./build/index.html
-          mkdir -p /tmp/gh-pages
-          cp -r ./build/* /tmp/gh-pages/.
-          touch /tmp/gh-pages/.nojekyll
-          ls /tmp/gh-pages
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: /tmp/gh-pages
-      - id: deployment
-        uses: actions/deploy-pages@main

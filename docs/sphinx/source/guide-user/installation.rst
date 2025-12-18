@@ -7,6 +7,7 @@ Pre-requisites
 
 * gcc 11.3.0+: Tested up to 14.2.0
 * spack v0.23.0+: Tested up to v0.23.1
+* python 3.8+ : Tested up to python 3.12
 
 Spack environment setup
 =======================
@@ -45,7 +46,7 @@ This should let ``spack`` find the pre-existing compiler. If for example, ``gcc-
 
     spack install gcc@11.3.0%gcc@9.4.0
 
-Now it's necessary to remove all the compilers listed in ``spack compilers``, the reasoning for this is that the newly installed compiler will be tied to the ``Reactions`` installation rather than using it system-wide. 
+Now it's necessary to remove all the compilers listed in ``spack compilers``, the reasoning for this is that the newly installed compiler will be tied to the ``Reactions`` installation rather than using it system-wide.
 This can be done using ``spack compiler remove {compiler}``, where ``{compiler}`` is the entry from ``spack compilers`` that is to be removed.
 Then, run the following command:
 ::
@@ -60,14 +61,14 @@ Note the paths listed for the ``gcc`` command (for convenience the path can be s
 Defining external packages (optional)
 =====================================
 
-If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18.1.+) are pre-installed, then they can be designated as external packages that spack will try and use when installing Reactions. 
-This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly. 
+If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18.1.+) are pre-installed, then they can be designated as external packages that spack will try and use when installing Reactions.
+This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly.
 To designate a package as an external one, the path of the root directory of the package must be known, then the following command sets the package as external:
 ::
 
     spack external find --path {path_to_package} {name_of_package}
 
-Note, this must be done outside the Reactions spack environment (for example in the $HOME directory). 
+Note, this must be done outside the Reactions spack environment (for example in the $HOME directory).
 For example, to set ``llvm`` as an external package where it's been installed via a package manager (``apt`` in this case):
 ::
 
@@ -106,7 +107,7 @@ For a standard install (CPU-only, using GCC) run the commands:
 
     spack install
 
-Note if there is a compiler error or out-of-RAM crash when running the command then add ``-j1`` after ``spack install`` and try again. 
+Note if there is a compiler error or out-of-RAM crash when running the command then add ``-j1`` after ``spack install`` and try again.
 
 NOTE - It is recommended to not exceed ``-j2`` if there's less than 16GB of system RAM.
 

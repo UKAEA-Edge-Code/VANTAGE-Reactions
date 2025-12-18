@@ -49,7 +49,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
         temperature_normalisation(temperature_normalisation),
         en_mult_const(std::pow(velocity_normalisation, 2) * mass_amu *
                       1.66053904e-27 / (2 * 1.60217663e-19)),
-        coeffs(coeffs){};
+        coeffs(coeffs) {};
 
   /**
    * @brief Function to calculate the reaction rate for a 2D H.3 AMJUEL-based
