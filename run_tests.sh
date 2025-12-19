@@ -3,4 +3,7 @@
 source /opt/spack/share/spack/setup-env.sh
 spack env activate -p -d .
 spack install
-OMP_NUM_THREADS=1 find build-linux-ubuntu24.04*/*/test/unit/ -name "unit_tests" -exec mpirun -n 1 {} \;
+spack load reactions
+OMP_NUM_THREADS=1 mpirun -n 1 unit_tests
+mkdir coverage_report
+pipx run gcovr build-linux-ubuntu24.04*/*/test/unit/CMakeFiles/unit_tests.dir -r ./src --jacoco-pretty --jacoco coverage_report/coverage.xml
