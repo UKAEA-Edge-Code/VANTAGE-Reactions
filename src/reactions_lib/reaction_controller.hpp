@@ -8,6 +8,9 @@
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/particle_group.hpp>
+#include <neso_particles/particle_sub_group/particle_sub_group_base.hpp>
+#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 
@@ -18,19 +21,31 @@ namespace VANTAGE::Reactions {
  */
 enum class ControllerMode {
 
-  standard_mode, /**< Standard mode, where every reaction is applied on part of
-                    the ingoing particle's weight, with some weight potentially
-                    not participating in any reaction*/
-  semi_dsmc_mode /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
+  standard_mode,  /**< Standard mode, where every reaction is applied on part of
+                     the ingoing particle's weight, with some weight potentially
+                     not participating in any reaction*/
+  semi_dsmc_mode, /**< Semi-deterministic Direct Simulation Monte Carlo (DSMC)
                     method, where MC is used to get which particles go through a
                     reaction, and then all possible reactions are applied to
                     those particles, consuming them completely. */
+  surface_mode    /**< Surface reaction mode, where every reaction is applied to
+                    all particles in the passed subgroup, with 100% of the
+                    weight of each particle participating */
 
 };
 
 /**
  * @brief A reaction controller that orchestrates the application of reactions
- * to a given ParticleGroup.
+ * to a given ParticleGroup or ParticleSubGroup.
+ *
+ * @param parent_transform TransformationWrapper(s) informing how parent
+ * particles are to be handled
+ * @param child_transform TransformationWrapper(s) informing how descendant
+ * products are to be handled
+ * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
+ * Defaults to true.
+ * @param properties_map Optional remapping of default properties (panic flag,
+ * internal_state, and total rate)
  */
 struct ReactionController {
 
@@ -52,7 +67,8 @@ struct ReactionController {
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
       bool auto_clean_tot_rate_buffer = true,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : parent_transform(parent_transform), child_transform(child_transform),
+      : cell_block_size(get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
+        parent_transform(parent_transform), child_transform(child_transform),
         auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
     NESOWARN(
@@ -225,26 +241,72 @@ public:
   }
 
   /**
+   * @brief Apply parent transform on the target group or subgroup
+   *
+   * @param target The ParticleGroup or ParticleSubGroup to apply the transforms
+   * to
+   */
+  template <typename PARENT>
+  void apply_parent_transforms(std::shared_ptr<PARENT> target) {
+
+    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+
+    if (this->reference_particle_group == nullptr) {
+      this->reference_particle_group = particle_group;
+    }
+
+    NESOASSERT(
+        particle_group == this->reference_particle_group,
+        "Particle group passed to apply_parent_transform is not the same as "
+        "recorded reference group.");
+
+    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end();
+         it++) {
+      for (auto tr : this->parent_transform) {
+        auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
+        transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
+        transform_buffer->transform(target);
+      }
+    }
+  }
+
+  /**
    * @brief Applies all reactions that have been added prior to calling this
    * function. The reactions are effectively applied at the same time and the
    * result should not depend on the ordering of the reactions. Any reaction
-   * products are added and they are transformed according to the
-   * child_transform transformation wrapper. Parents are transformed according
-   * to the parent_transform transformation wrapper.
+   * products are added to the designated group (can be different to the parent
+   * group) and they are transformed according to the child_transform
+   * transformation wrapper. Parents are transformed according to the
+   * parent_transform transformation wrapper.
    *
-   * @param particle_group The ParticleGroup to apply the reactions to.
+   * @param target The ParticleGroup or ParticleSubGroup to apply the
+   * reactions to.
    * @param dt The current time step size.
+   * @param product_group The ParticleGroup into which to add the products,
+   * should have the same spec as the parent.
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
    */
-  void apply(ParticleGroupSharedPtr particle_group, double dt,
+  template <typename PARENT>
+  void apply(std::shared_ptr<PARENT> target, double dt,
+             ParticleGroupSharedPtr product_group,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
+
+    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+
+    if (this->reference_particle_group == nullptr) {
+      this->reference_particle_group = particle_group;
+    }
+
+    NESOASSERT(particle_group == this->reference_particle_group,
+               "Particle group passed to apply is not the same as "
+               "recorded reference group.");
     const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
     // Ensure that the total rate buffer is flushed before the reactions are
     // applied
     if (this->auto_clean_tot_rate_buffer) {
-      this->rate_buffer_zeroer->transform(particle_group);
+      this->rate_buffer_zeroer->transform(target);
     }
 
     NESOASSERT(particle_group->contains_dat(this->id_sym, 1),
@@ -275,6 +337,11 @@ public:
 
       break;
 
+    case ControllerMode::surface_mode:
+      use_full_weight = true;
+
+      break;
+
     default:
       break;
     }
@@ -284,10 +351,18 @@ public:
         auto in_states = this->reactions[r]->get_in_states();
 
         for (int in_state : in_states) {
-          this->species_groups.emplace(std::make_pair(
-              in_state,
-              this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  std::make_shared<ParticleSubGroup>(particle_group))));
+
+          if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+            this->species_groups.emplace(std::make_pair(
+                in_state,
+                this->sub_group_selectors[in_state]->make_marker_subgroup(
+                    particle_sub_group(target))));
+          } else {
+
+            this->species_groups[in_state] =
+                this->sub_group_selectors[in_state]->make_marker_subgroup(
+                    particle_sub_group(target));
+          }
         }
 
         switch (controller_mode) {
@@ -295,17 +370,29 @@ public:
         case ControllerMode::semi_dsmc_mode: {
 
           for (int in_state : in_states) {
-            this->reacted_species_groups.emplace(std::make_pair(
-                in_state, this->reacted_marker->make_marker_subgroup(
-                              this->species_groups[in_state])));
+            if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+              this->reacted_species_groups.emplace(std::make_pair(
+                  in_state, this->reacted_marker->make_marker_subgroup(
+                                this->species_groups[in_state])));
+            } else {
+
+              this->reacted_species_groups[in_state] =
+                  this->reacted_marker->make_marker_subgroup(
+                      this->species_groups[in_state]);
+            }
           }
           break;
         }
 
         default: {
           for (int in_state : in_states) {
-            this->reacted_species_groups.emplace(
-                std::make_pair(in_state, this->species_groups[in_state]));
+            if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+              this->reacted_species_groups.emplace(
+                  std::make_pair(in_state, this->species_groups[in_state]));
+            } else {
+              this->reacted_species_groups[in_state] =
+                  this->species_groups[in_state];
+            }
           }
           break;
         }
@@ -332,7 +419,7 @@ public:
 
         // marking loop
         auto loop = particle_loop(
-            "reacted_loop", particle_group,
+            "reacted_loop", target,
             [=](auto index, auto reacted_flag, auto total_reaction_rate,
                 auto kernel) {
               reacted_flag.at(0) =
@@ -348,7 +435,7 @@ public:
 
         loop->execute(i, std::min(i + this->cell_block_size, cell_count));
         rate_buffer_zeroer->transform(
-            particle_group, i, std::min(i + this->cell_block_size, cell_count));
+            target, i, std::min(i + this->cell_block_size, cell_count));
 
         for (int r = 0; r < this->reactions.size(); r++) {
 
@@ -388,18 +475,37 @@ public:
       }
     }
 
-    for (auto it = this->parent_ids.begin(); it != this->parent_ids.end();
-         it++) {
-      for (auto tr : this->parent_transform) {
-        auto transform_buffer = std::make_shared<TransformationWrapper>(*tr);
-        transform_buffer->add_marking_strategy(this->sub_group_selectors[*it]);
-        transform_buffer->transform(particle_group);
-      }
+    if (controller_mode != ControllerMode::surface_mode) {
+      this->apply_parent_transforms(target);
     }
+
     if (this->child_ids.size() > 0) {
-      particle_group->add_particles_local(child_group);
+      product_group->add_particles_local(child_group);
     }
     this->particle_group_temporary->restore(particle_group, child_group);
+  }
+
+  /**
+   * @brief Applies all reactions that have been added prior to calling this
+   * function. The reactions are effectively applied at the same time and the
+   * result should not depend on the ordering of the reactions. Any reaction
+   * products are added and they are transformed according to the
+   * child_transform transformation wrapper. Parents are transformed according
+   * to the parent_transform transformation wrapper.
+   *
+   * @param target The ParticleGroup or ParticleSubGroup to apply the
+   * reactions to.
+   * @param dt The current time step size.
+   * @param controller_mode The mode to run the controller in. Either
+   * standard_mode (default) or semi_dsmc_mode.
+   */
+  template <typename PARENT>
+  void apply(std::shared_ptr<PARENT> target, double dt,
+             ControllerMode controller_mode = ControllerMode::standard_mode) {
+
+    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+
+    this->apply(target, dt, particle_group, controller_mode);
   }
 
   void
@@ -417,6 +523,7 @@ private:
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, ParticleSubGroupSharedPtr> species_groups;
   std::map<int, ParticleSubGroupSharedPtr> reacted_species_groups;
+  ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::set<int> parent_ids;
   std::set<int> child_ids;

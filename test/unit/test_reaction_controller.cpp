@@ -3,6 +3,7 @@
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
+#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
@@ -99,6 +100,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
     EXPECT_DOUBLE_EQ(rate, 5.0); //, 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -144,7 +146,7 @@ TEST(ReactionController, multi_reaction_multiple_products) {
       Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
-  reaction_controller.apply(particle_group, 0.1);
+  reaction_controller.apply(particle_sub_group(particle_group), 0.1);
 
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -178,6 +180,14 @@ TEST(ReactionController, multi_reaction_multiple_products) {
                 reduction->get_cell(icell)->at(0, 0) * (2.0 / 3.0), 1e-12);
   }
 
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+
+    auto particle_group_2 = create_test_particle_group(N_total);
+    EXPECT_THROW(reaction_controller.apply(particle_group_2, 0.1),
+                 std::logic_error);
+  }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -261,7 +271,10 @@ TEST(ReactionController, multi_reaction_multi_apply) {
                      reduction->get_cell(icell)->at(0, 0)); //, 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
+
+  particle_group_2->sycl_target->free();
   particle_group_2->domain->mesh->free();
 }
 
@@ -318,6 +331,7 @@ TEST(ReactionController, parent_transform) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -368,6 +382,7 @@ TEST(ReactionController, ionisation_reaction) {
 
   EXPECT_EQ(final_particle_num, 0);
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -422,6 +437,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
                      num_parts[icell] * 0.5); //, 1e-10);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -523,6 +539,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   EXPECT_EQ(final_particle_num, 0);
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -603,5 +620,75 @@ TEST(ReactionController, semi_dsmc_test) {
       }
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(ReactionController, surface_mode_test) {
+  const int N_total = 1600;
+
+  auto particle_group = create_test_particle_group(N_total);
+
+  auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
+      std::vector<std::shared_ptr<MarkingStrategy>>{
+          make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
+              Sym<REAL>("WEIGHT"), 1.0e-12)},
+      make_transformation_strategy<SimpleRemovalTransformationStrategy>());
+  auto reaction_controller = ReactionController(
+      std::vector<std::shared_ptr<TransformationWrapper>>{test_removal_wrapper},
+      std::vector<std::shared_ptr<TransformationWrapper>>{});
+
+  auto test_reaction_1 = std::make_shared<
+      LinearReactionBase<1, FixedCoefficientData, TestReactionKernels<1>>>(
+      particle_group->sycl_target, 0, std::array<int, 1>{1},
+      FixedCoefficientData(1.0), TestReactionKernels<1>());
+
+  reaction_controller.add_reaction(test_reaction_1);
+
+  auto test_reaction_2 = std::make_shared<
+      LinearReactionBase<1, FixedCoefficientData, TestReactionKernels<1>>>(
+      particle_group->sycl_target, 0, std::array<int, 1>{2},
+      FixedCoefficientData(3.0), TestReactionKernels<1>());
+
+  reaction_controller.add_reaction(test_reaction_2);
+
+  auto start_npart = particle_group->get_npart_local();
+  reaction_controller.apply(particle_group, 1.0, ControllerMode::surface_mode);
+  reaction_controller.apply_parent_transforms(particle_group);
+
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+  for (int i = 0; i < cell_count; i++) {
+
+    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto id = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+
+    const int nrow = weight->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      switch (id->at(rowx, 0)) {
+      case 0:
+
+        EXPECT_TRUE(false); // any remaining particles must have nonzero id
+        break;
+
+      case 1:
+
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0),
+                         0.25); // 1:3 ratio of reactions 1 and 2
+        break;
+
+      case 2:
+
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.75);
+        break;
+
+      default:
+        EXPECT_TRUE(false);
+      }
+    }
+  }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

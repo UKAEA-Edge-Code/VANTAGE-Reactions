@@ -14,6 +14,7 @@ namespace VANTAGE::Reactions {
  */
 struct ConstantRateCrossSection : public AbstractCrossSection {
 
+  ConstantRateCrossSection() = default;
   /**
    * @brief Constructor for ConstantRateCrossSection.
    *

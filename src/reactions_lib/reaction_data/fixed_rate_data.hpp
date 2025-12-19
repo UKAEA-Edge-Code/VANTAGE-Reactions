@@ -11,6 +11,7 @@ namespace VANTAGE::Reactions {
  */
 struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
 
+  FixedRateDataOnDevice() = default;
   /**
    * @brief Constructor for FixedRateDataOnDevice.
    *
@@ -52,26 +53,21 @@ private:
 /**
  * @brief Reaction rate data calculation for a fixed rate reaction.
  */
-struct FixedRateData : public ReactionDataBase<> {
+struct FixedRateData : public ReactionDataBase<FixedRateDataOnDevice> {
 
   /**
    * @brief Constructor for FixedRateData.
    *
    * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedRateData(const REAL &rate)
-      : fixed_rate_data_on_device(FixedRateDataOnDevice(rate)) {}
+  FixedRateData(const REAL &rate) {
+    this->on_device_obj = FixedRateDataOnDevice(rate);
+  };
 
-private:
-  FixedRateDataOnDevice fixed_rate_data_on_device;
-
-public:
   /**
-   * @brief Getter for the SYCL device-specific struct.
+   * @brief No-op since there are no required properties to index
    */
-  FixedRateDataOnDevice get_on_device_obj() {
-    return this->fixed_rate_data_on_device;
-  }
+  void index_on_device_object() {};
 };
 }; // namespace VANTAGE::Reactions
 #endif

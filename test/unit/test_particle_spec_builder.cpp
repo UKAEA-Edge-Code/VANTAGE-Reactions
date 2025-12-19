@@ -99,5 +99,6 @@ TEST(ParticleSpecBuilder, add_particle_spec) {
     EXPECT_EQ(test_particle_spec.contains(prop), true);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

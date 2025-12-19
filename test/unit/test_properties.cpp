@@ -364,7 +364,8 @@ TEST(Properties, properties_map_setting) {
   std::map<int, std::string> test_property_map = {
       {0, "TEST_PROP1"}, {1, "TEST_PROP2"}, {2, "TEST_PROP3"}};
 
-  struct test_reaction_data : ReactionDataBase<> {
+  // Dummy template argument here set to INT
+  struct test_reaction_data : ReactionDataBase<INT> {
     test_reaction_data(std::map<int, std::string> property_map_)
         : ReactionDataBase(property_map_) {}
 
@@ -452,5 +453,39 @@ TEST(Properties, full_use_properties_map) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
+}
+
+// ArgumentNameSet basic tests
+TEST(ArgumentNameSet, indexing) {
+
+  auto int_props_obj = PropertiesTest::int_props;
+
+  auto arg_name_set = ArgumentNameSet(int_props_obj);
+
+  auto int_prop_names = arg_name_set.to_string_vector();
+  for (int i = 0; i < int_prop_names.size(); i++) {
+    auto int_prop_index = arg_name_set.find_index(int_prop_names[i]);
+    EXPECT_EQ(int_prop_index, i);
+  }
+}
+
+// ArgumentNameSet merging tests
+TEST(ArgumentNameSet, merging) {
+
+  auto int_props_obj = PropertiesTest::int_props;
+
+  auto arg_name_set = ArgumentNameSet(int_props_obj);
+
+  auto arg_name_set_2 = arg_name_set;
+
+  arg_name_set.add("test");
+
+  auto merge_set = arg_name_set.merge_with(arg_name_set_2);
+
+  auto names = arg_name_set.to_string_vector();
+  EXPECT_EQ(names.size(), 4);
+
+  EXPECT_NE(std::find(names.begin(), names.end(), "test"), names.end());
 }

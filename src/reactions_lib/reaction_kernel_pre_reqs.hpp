@@ -1,9 +1,11 @@
 #ifndef REACTIONS_REACTION_KERNEL_PRE_REQS_H
 #define REACTIONS_REACTION_KERNEL_PRE_REQS_H
 #include "particle_properties_map.hpp"
+#include "utils.hpp"
 #include <iterator>
 #include <neso_particles.hpp>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <strings.h>
@@ -117,6 +119,19 @@ inline bool operator==(const Species &lhs, const Species &rhs) {
 
   return lhs.get_name() == rhs.get_name() && lhs.has_id() == rhs.has_id();
 }
+
+/**
+ * @brief Generate a species property name from the species and a property name
+ * string in a standardised way
+ *
+ * @param species Species to use
+ * @param property Property name to use
+ * @return Species-specific property name
+ */
+inline std::string species_property(const Species &species,
+                                    const std::string &property) {
+  return species.get_name() + "_" + property;
+};
 
 /**
  * @brief Struct for defining the Properties that a ReactionData or
@@ -499,5 +514,100 @@ private:
   std::vector<int> species_props;
   std::vector<int> all_props;
 };
+
+/**
+ * @brief Wrapper type for holding a set of Sym names that can be derived from
+ * Properties
+ *
+ * @tparam PROP_TYPE INT or REAL, used in constructing the corresponding
+ * SymVector
+ */
+template <typename PROP_TYPE> struct ArgumentNameSet {
+  ArgumentNameSet() = default;
+
+  /**
+   * @brief Constructor for ArgumentNameSet using a Properties object
+   *
+   * @param properties Properties object used to retrieve the names of the
+   * properties
+   * @param properties_map Property map used to map property enums in the
+   * Properties object to strings
+   */
+  ArgumentNameSet(
+      Properties<PROP_TYPE> properties,
+      const std::map<int, std::string> &properties_map = get_default_map()) {
+
+    NESOWARN(
+        map_subset_check(properties_map),
+        "The provided properties_map does not include all the keys from the \
+        default_map (and therefore is not an extension of that map). There \
+        may be inconsitencies with indexing of properties.");
+
+    auto name_vector = properties.get_prop_names(properties_map);
+    this->name_set = std::set(name_vector.begin(), name_vector.end());
+  };
+
+  /**
+   * @brief Merge this set with another
+   *
+   * @param other ArgumentNameSet of the same type to merge with
+   * @return ArgumentNameSet containing union of argument names
+   */
+  ArgumentNameSet<PROP_TYPE>
+  merge_with(const ArgumentNameSet<PROP_TYPE> &other) {
+
+    auto new_set = *this;
+    new_set.name_set.insert(other.name_set.begin(), other.name_set.end());
+
+    return new_set;
+  };
+
+  /**
+   * @brief Add a name directly to the set
+   *
+   * @param elem String representing a Sym name of the corresponding type
+   */
+  void add(std::string elem) { this->name_set.insert(elem); };
+
+  /**
+   * @brief Convert the set into a vector of strings
+   *
+   * @return std::vector<std::string>> containing the names in the set
+   */
+  std::vector<std::string> to_string_vector() {
+
+    return std::vector(this->name_set.begin(), this->name_set.end());
+  };
+
+  /**
+   * @brief Convert the set into a vector of Syms
+   *
+   * @return std::vector of Syms of the corresponding type
+   */
+  std::vector<Sym<PROP_TYPE>> to_sym_vector() {
+
+    return utils::build_sym_vector<PROP_TYPE>(this->to_string_vector());
+  };
+
+  /**
+   * @brief Return the index of the name in the set. Throws an error if the name
+   * isn't in the set
+   *
+   * @param name String to search for in the set
+   * @return Integer index - distance from first element in the set
+   */
+  int find_index(std::string name) {
+
+    auto it = this->name_set.find(name);
+
+    NESOASSERT(it != this->name_set.end(),
+               name + " not found in ArgumentNameSet");
+    return std::distance(this->name_set.begin(), it);
+  };
+
+private:
+  std::set<std::string> name_set;
+};
+
 }; // namespace VANTAGE::Reactions
 #endif

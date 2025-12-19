@@ -146,6 +146,7 @@ TEST(MergeTransformationStrategy, transform_2D) {
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -245,5 +246,6 @@ TEST(MergeTransformationStrategy, transform_3D) {
                 0, 1e-12);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

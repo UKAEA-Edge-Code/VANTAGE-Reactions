@@ -115,6 +115,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_less_than) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -142,6 +143,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_equals) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -173,6 +175,7 @@ TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
     };
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -208,6 +211,68 @@ TEST(TransformationWrapper, CompositeTransformZeroer) {
     };
   };
 
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(TransformationWrapper, CellwiseDistributor) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group_marking(N_total);
+
+  auto distributor_transform = std::make_shared<CellwiseDistributor<REAL>>(
+      particle_group,
+      std::vector<std::string>{"MOCK_SOURCE1D", "MOCK_SOURCE2D"});
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+  auto buffer_1d = distributor_transform->get_cell_data("MOCK_SOURCE1D");
+  auto buffer_2d = distributor_transform->get_cell_data("MOCK_SOURCE2D");
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto num_parts = particle_group->get_npart_cell(cellx);
+
+    EXPECT_DOUBLE_EQ(buffer_1d[cellx]->at(0, 0), 0);
+    EXPECT_DOUBLE_EQ(buffer_2d[cellx]->at(1, 0), 0);
+    EXPECT_DOUBLE_EQ(buffer_2d[cellx]->at(0, 0), 0);
+  };
+
+  auto test_wrapper = TransformationWrapper(
+      std::dynamic_pointer_cast<TransformationStrategy>(distributor_transform));
+
+  // Testing setting new values
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    buffer_1d[cellx]->at(0, 0) = 1.0;
+    buffer_2d[cellx]->at(0, 0) = 2.0;
+    buffer_2d[cellx]->at(1, 0) = 3.0;
+  }
+
+  distributor_transform->set_cell_data("MOCK_SOURCE1D", buffer_1d);
+  distributor_transform->set_cell_data("MOCK_SOURCE2D", buffer_2d);
+  test_wrapper.transform(particle_group);
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto mock_1d = particle_group->get_cell(Sym<REAL>("MOCK_SOURCE1D"), cellx);
+    auto mock_2d = particle_group->get_cell(Sym<REAL>("MOCK_SOURCE2D"), cellx);
+    int nrow = mock_1d->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_DOUBLE_EQ(mock_1d->at(rowx, 0), 1.0);
+      EXPECT_DOUBLE_EQ(mock_2d->at(rowx, 0), 2.0);
+      EXPECT_DOUBLE_EQ(mock_2d->at(rowx, 1), 3.0);
+    };
+  };
+  // Testing out zeroing
+
+  distributor_transform->zero_buffer("MOCK_SOURCE2D");
+  buffer_2d = distributor_transform->get_cell_data("MOCK_SOURCE2D");
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto num_parts = particle_group->get_npart_cell(cellx);
+
+    EXPECT_DOUBLE_EQ(buffer_2d[cellx]->at(1, 0), 0);
+    EXPECT_DOUBLE_EQ(buffer_2d[cellx]->at(0, 0), 0);
+  };
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, CellwiseAccumulator) {
@@ -314,6 +379,7 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
                 scale_2d * 0.2 * num_parts, 1e-10);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
@@ -387,6 +453,7 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
     EXPECT_DOUBLE_EQ(accumulated_2d[cellx]->at(0, 0), 0);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -410,6 +477,7 @@ TEST(TransformationWrapper, CellwiseAccumulatorINT) {
     EXPECT_DOUBLE_EQ(accumulated_1d[cellx]->at(0, 0), num_parts); //, 1e-10);
   };
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
@@ -438,5 +506,56 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
                      0.5 * num_parts); //, 1e-10);
   };
 
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(TransformationWrapper, CellwiseReactionDataAccumulator) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group_marking(N_total);
+
+  auto mock_source1d = ExtractorData<1>(Sym<REAL>("MOCK_SOURCE1D"));
+  auto mock_source2d = ExtractorData<2>(Sym<REAL>("MOCK_SOURCE2D"));
+
+  auto binary_transform_data_1d = mock_source1d * mock_source1d;
+  auto binary_transform_data_2d = mock_source2d * mock_source2d;
+
+  auto accumulator_transform_1d = std::make_shared<
+      CellwiseReactionDataAccumulator<decltype(binary_transform_data_1d)>>(
+      particle_group, binary_transform_data_1d);
+  auto accumulator_transform_2d = std::make_shared<
+      CellwiseReactionDataAccumulator<decltype(binary_transform_data_2d)>>(
+      particle_group, binary_transform_data_2d);
+
+  auto test_wrapper_1d =
+      TransformationWrapper(std::dynamic_pointer_cast<TransformationStrategy>(
+          accumulator_transform_1d));
+  auto test_wrapper_2d =
+      TransformationWrapper(std::dynamic_pointer_cast<TransformationStrategy>(
+          accumulator_transform_2d));
+
+  test_wrapper_1d.transform(particle_group);
+  test_wrapper_2d.transform(particle_group);
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+  auto accumulated_1d = accumulator_transform_1d->get_cell_data();
+  auto accumulated_2d = accumulator_transform_2d->get_cell_data();
+  // The two mock sources have constant values, so we expect those squared and
+  // multiplied by the number of particles in the cell
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto num_parts = particle_group->get_npart_cell(cellx);
+
+    // Kept as EXPECT_NEAR for consistency with accumulated_2d checks
+    EXPECT_NEAR(accumulated_1d[cellx]->at(0, 0), 0.5 * 0.5 * num_parts, 1e-10);
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
+    EXPECT_NEAR(accumulated_2d[cellx]->at(0, 0), 0.1 * 0.1 * num_parts, 1e-10);
+    // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
+    // appropriate.
+    EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.2 * 0.2 * num_parts, 1e-10);
+  };
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

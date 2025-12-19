@@ -2,6 +2,7 @@
 #define REACTIONS_REACTION_BASE_H
 #include "data_calculator.hpp"
 #include "particle_properties_map.hpp"
+#include "profiling_base.hpp"
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
 #include <array>
@@ -21,7 +22,7 @@ namespace VANTAGE::Reactions {
  * ParticleSubGroup and, depending on the reaction, produce and
  * process descendants.
  */
-struct AbstractReaction {
+struct AbstractReaction : ProfilingBase {
   AbstractReaction() = default;
 
   /**
@@ -41,7 +42,8 @@ struct AbstractReaction {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        max_buffer_size(16384 * 256) {
+        max_buffer_size(16384 *
+                        get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
 
     NESOWARN(
         map_subset_check(properties_map),
@@ -63,13 +65,37 @@ public:
    * @brief Virtual functions to be overidden by an implementation in a derived
    * struct.
    */
-  virtual void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
-                               INT cell_idx_start, INT cell_idx_end) {}
+  virtual void calculate_rates_v(ParticleSubGroupSharedPtr particle_sub_group,
+                                 INT cell_idx_start, INT cell_idx_end) {}
 
+  /**
+   *  Specialisations should override calculate_rates_v not calculate_rates.
+   */
+  virtual void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
+                               INT cell_idx_start, INT cell_idx_end) {
+    auto r0 =
+        this->start_profiling_region(particle_sub_group, "calculate_rates");
+    this->calculate_rates_v(particle_sub_group, cell_idx_start, cell_idx_end);
+    this->end_profiling_region(particle_sub_group, r0);
+  }
+
+  virtual void apply_v(ParticleSubGroupSharedPtr particle_sub_group,
+                       INT cell_idx_start, INT cell_idx_end, double dt,
+                       ParticleGroupSharedPtr child_group,
+                       bool full_weight = false) {}
+
+  /**
+   *  Specialisations should override apply_v not apply.
+   */
   virtual void apply(ParticleSubGroupSharedPtr particle_sub_group,
                      INT cell_idx_start, INT cell_idx_end, double dt,
                      ParticleGroupSharedPtr child_group,
-                     bool full_weight = false) {}
+                     bool full_weight = false) {
+    auto r0 = this->start_profiling_region(particle_sub_group, "apply");
+    this->apply_v(particle_sub_group, cell_idx_start, cell_idx_end, dt,
+                  child_group, full_weight);
+    this->end_profiling_region(particle_sub_group, r0);
+  }
 
   virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
 
@@ -201,12 +227,14 @@ struct LinearReactionBase : public AbstractReaction {
     // apply to operate correctly, ReactionData and
     // ReactionKernels have to be derived from ReactionKernelsBase and
     // AbstractReactionKernels respectively
-    static_assert(std::is_base_of_v<
-                      ReactionDataBase<reaction_data.get_dim(),
-                                       typename ReactionData::RNG_KERNEL_TYPE>,
-                      ReactionData>,
-                  "Template parameter ReactionData is not derived from "
-                  "ReactionDataBase...");
+    static_assert(
+        std::is_base_of_v<
+            ReactionDataBase<typename ReactionData::ON_DEVICE_OBJ_TYPE,
+                             reaction_data.get_dim(),
+                             typename ReactionData::RNG_KERNEL_TYPE>,
+            ReactionData>,
+        "Template parameter ReactionData is not derived from "
+        "ReactionDataBase...");
     static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
                   "Template parameter DataCalc is not derived from "
                   "AbstractDataCalculator...");
@@ -222,16 +250,16 @@ struct LinearReactionBase : public AbstractReaction {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
-    calculate_rates_int_syms = utils::build_sym_vector<INT>(
-        reaction_data_buffer.get_required_int_props());
+    this->calculate_rates_int_syms =
+        reaction_data_buffer.get_required_int_sym_vector();
 
-    calculate_rates_real_syms = utils::build_sym_vector<REAL>(
-        reaction_data_buffer.get_required_real_props());
+    this->calculate_rates_real_syms =
+        reaction_data_buffer.get_required_real_sym_vector();
 
-    apply_int_syms = utils::build_sym_vector<INT>(
+    this->apply_int_syms = utils::build_sym_vector<INT>(
         reaction_kernel_buffer.get_required_int_props());
 
-    apply_real_syms = utils::build_sym_vector<REAL>(
+    this->apply_real_syms = utils::build_sym_vector<REAL>(
         reaction_kernel_buffer.get_required_real_props());
 
     auto descendant_matrix_spec =
@@ -286,8 +314,8 @@ struct LinearReactionBase : public AbstractReaction {
    * principle ParticleLoop to calculate reaction rates.
    * @param cell_idx_end The cell id up to which to run the rate loop over
    */
-  void calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
-                       INT cell_idx_start, INT cell_idx_end) override {
+  void calculate_rates_v(ParticleSubGroupSharedPtr particle_sub_group,
+                         INT cell_idx_start, INT cell_idx_end) override {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
@@ -362,9 +390,9 @@ struct LinearReactionBase : public AbstractReaction {
    * @param full_weight If true, will consume the full weight of the particles,
    * regardless of timestep
    */
-  void apply(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx_start,
-             INT cell_idx_end, double dt, ParticleGroupSharedPtr child_group,
-             bool full_weight = false) override {
+  void apply_v(ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx_start,
+               INT cell_idx_end, double dt, ParticleGroupSharedPtr child_group,
+               bool full_weight = false) override {
     auto sycl_target_stored = this->get_sycl_target();
     auto device_rate_buffer = this->get_device_rate_buffer();
     auto device_weight_buffer = this->get_device_weight_buffer();

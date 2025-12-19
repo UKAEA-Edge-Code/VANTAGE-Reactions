@@ -1,17 +1,3 @@
-// Namespace containing required properties
-namespace DUMMY_DATA {
-
-const auto props =
-    default_properties; // Here we use the default properties enum,
-                        // but it could be any user-extended enum
-
-// Here we only specify a single simple real prop
-// This can be done for int props, as well as for species props
-//
-// See below for how this is used
-const std::vector<int> required_simple_real_props = {props.weight};
-} // namespace DUMMY_DATA
-
 // This is the on-device type
 //
 // The function calc_data must be callable from a NESO-Particles
@@ -25,8 +11,7 @@ struct DummyDataOnDevice
                                         // if used (unused here)
                                       > {
   DummyDataOnDevice(REAL rate // Here we just set the fixed coefficient
-                    )
-      : rate(rate){};
+                    );
 
   std::array<REAL, 1> calc_data(
       const Access::LoopIndex::Read
@@ -59,8 +44,19 @@ public:
 
 // This is the host type
 struct DummyData
-    : public ReactionDataBase<1 // The data dimensionality here again
+    : public ReactionDataBase<DummyDataOnDevice, // The on-device type
+                              1 // The data dimensionality here again
                               > {
+
+  // Here we use the default properties enum,
+  // but it could be any user-extended enum
+  constexpr static auto props = default_properties;
+
+  // Here we only specify a single simple real prop
+  // This can be done for int props, as well as for species props
+  //
+  // See below for how this is used
+  constexpr static std::array<int, 1> required_simple_real_props = {props.weight};
 
   DummyData(REAL rate_coefficient,
             std::map<int, std::string> properties_map =
@@ -68,36 +64,30 @@ struct DummyData
             )
       : ReactionDataBase(
             Properties<REAL>(
-                DUMMY_DATA::required_simple_real_props, // This is where the
-                                                        // required data enums
-                                                        // go in
-                std::vector<Species>{},
-                std::vector<int>{}), // Here no Species required properties
-            properties_map),
-        device_object(DummyDataOnDevice(
-            rate_coefficient) // Here we call the device object constructor
-        ) {
+                required_simple_real_props), // This is where the
+                                             // required data enums go in
+                                             // Here no Species required properties
+            properties_map) {
 
-    auto props = DUMMY_DATA::props; // The used property enum
+    this->on_device_obj = DummyDataOnDevice(rate_coefficient);
 
-    // Here we set the weight index by calling the Properties
-    // simple_prop_index() method
-    //
-    // See the Properties class implementation, as well as the reaction data
-    // base classes
-    this->device_object.weight_ind =
-        this->required_real_props.simple_prop_index(
-            props.weight,
-            this->properties_map // Passing the map here to enable remapping
-        );
+    // We need to call the indexing function in the constructor
+    this->index_on_device_object();
   }
 
-private:
-  // The on-device data must live on the host type
-  DummyDataOnDevice device_object;
+  // All ReactionData objects must define this call
+  // It sets the indexes on the contained on-device
+  // object
+  void index_on_device_object(){
 
-public:
-  // We need to provide this accessor so that the object can be retrieved for
-  // use in loops
-  DummyDataOnDevice get_on_device_obj() { return this->device_object; }
+    // Here we set the weight index by calling the ArgumentNameSet
+    // find_index() method - it takes the name of the property it should index
+    //
+    // See the ArgumentNameClass class implementation, as well as the reaction data
+    // base classes
+    this->on_device_obj->weight_ind =
+        this->required_real_props.find_index(
+            this->properties_map.at(props.weight)); // Use the contained
+                                                    // map to get the name
+    }
 };
