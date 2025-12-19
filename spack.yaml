@@ -5,7 +5,7 @@
 spack:
   # add package specs to the `specs` list
   specs:
-    - vantage-reactions.reactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^vantage-reactions.googletest
+    - vantage-reactions.reactions+enable_tests+enable_coverage ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^vantage-reactions.googletest
 
   view: false
   concretizer:
@@ -31,4 +31,3 @@ spack:
     python:
       require:
         - spec: "@3.8:"
-
