@@ -1,3 +1,5 @@
+codecov:
+  disable_default_path_fixes: true
 coverage:
   round: up
   range: 50..100
@@ -8,10 +10,3 @@ coverage:
         enabled: yes
         target: auto
         threshold: "5%"
-
-    patch:
-      default:
-        enabled: false
-    changes:
-      default:
-        enabled: false

@@ -1,3 +1,7 @@
+[![CI-Workflow](https://github.com/UKAEA-Edge-Code/VANTAGE-Reactions/actions/workflows/tests-ci.yml/badge.svg)](https://github.com/UKAEA-Edge-Code/VANTAGE-Reactions/actions/workflows/tests-ci.yml)
+
+[![codecov](https://codecov.io/github/UKAEA-Edge-Code/VANTAGE-Reactions/graph/badge.svg?token=TUWBPLXXWE)](https://codecov.io/github/UKAEA-Edge-Code/VANTAGE-Reactions)
+
 # Edge Code Reactions Library
 
 VANTAGE-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library.
