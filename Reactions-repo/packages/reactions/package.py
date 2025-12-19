@@ -25,6 +25,6 @@ class Reactions(CMakePackage):
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
-        args.append(self.define_from_variant("COVERAGE", "enable_coverage"))
+        args.append(self.define_from_variant("REACTIONS_ENABLE_COVERAGE", "enable_coverage"))
 
         return args

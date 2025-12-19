@@ -1,4 +1,5 @@
 # Contributing to VANTAGE-Reactions
+Disclaimer: These instructions are work-in-progress
 1. If an issue for the contribution does not exist then create one, otherwise either refer to one that has been assigned to you or assign yourself to an open one.
 2. Create a fork of the repo. Do not do this for every issue addresed only the first issue you want to work on, any work on subsequent issues can be conducted on this forked repo (with a branch per issue as outlined in the next step).
 3. Clone the forked repo to your local machine if you haven't already. Create a branch from `main` with the following naming scheme: `${developer_name}/${issue_number}_${short_issue_description}`. Here, `${developer_name}` can be any identifier but for consistency please choose your GitHub username, `${issue_number}` is just the issue number(without `#`). Please keep `${short_issue_description}` brief but clear to avoid excessively long branch names.
@@ -9,3 +10,4 @@
 8. The options on the pull request will need to be decided on a per-case basis in terms of whether to delete the source branch and/or squash the commits upon merging.
 9. Assign a reviewer (someone other than yourself) to review and merge the pull request. Note that merging will be disabled by default if any tests fail.
 10. Upon on opening a pull request to the `main` branch, there will be a few CI checks that are run, in particular the clang-format check will run and fail if your modifications don't conform to the style outlined in `.clang-format` in the repo directory. There is an included `.pre-commit-config.yaml` file that should allow for the use of `pre-commit` locally so that any commits made conform to the formatting standard. Instructions for `pre-commit` setup can be found [here](https://ukaea-edge-code.github.io/VANTAGE-Reactions/sphinx/html/guide-developer/pre-commit-setup.html#installation-of-pre-commit).
+11. The code coverage CI check has a tolerance threshold of 5%, that is to say if the measured code coverage in the CI for your branch is more than 5% lower compared to the existing code coverage metric for the repo then the CI will fail.

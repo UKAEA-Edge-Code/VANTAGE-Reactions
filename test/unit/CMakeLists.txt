@@ -5,7 +5,7 @@ include(GoogleTest)
 
 add_executable(${EXECUTABLE} ${src_unit})
 
-if (COVERAGE)
+if (REACTIONS_ENABLE_COVERAGE)
   set(COVERAGE_LINK gcov)
 endif()
 
