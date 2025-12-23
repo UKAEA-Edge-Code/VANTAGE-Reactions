@@ -7,8 +7,8 @@ Overview
    :glob:
 
    overview/overview
-   overview/marking_transformations
    overview/properties
+   overview/marking_transformations
    overview/reactions
    overview/reaction_controllers
 
