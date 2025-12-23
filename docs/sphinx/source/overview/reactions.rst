@@ -48,12 +48,11 @@ Invoking the rate loop on a reaction object does the following:
 
 #. Calculates the reaction rate and stores it in a local buffer used to apply the reaction using the kernels
 #. Adds the calculated reaction rate to a total reaction rate :class:`ParticleDat` - used in the global management of reaction application
-#. Calculates and stores any :class:`DataCalculator` results for use by the kernels
 
 Reaction kernels and the product loop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With any data required to apply the reaction calculated and stored for some particles, the next step is to apply the reaction, which might involve feedback on fields and the ingoing particle, as well as some specification of product properties following the reaction. This is (semi-)independently specified by choosing a reaction kernel. The only requirement on the data that a kernel might have is that any required data exists, i.e. that the total dimensionality of data conforms with whatever the kernel requires. For example, if a kernel requires 2 sampled velocities, the :class:`DataCalculator` must produce a total of 2 data values per perticle. Other than this requirement, data and kernels are independent. 
+With any rate data required to apply the reaction calculated and stored for some particles, the next step is to apply the reaction, which might involve feedback on fields and the ingoing particle, as well as some specification of product properties following the reaction. This is (semi-)independently specified by choosing a reaction kernel. The only requirement on the data that a kernel might have is that any required data exists, i.e. that the total dimensionality of data conforms with whatever the kernel requires. For example, if a kernel requires 2 sampled velocities, the :class:`DataCalculator` must produce a total of 2 data values per perticle. Other than this requirement, data and kernels are independent. Note that data calculated by the :class:`DataCalculator` is calculated at the time of application of the reaction. This is to avoid unnecessary computations (for example when randomly selecting which particles have reacted we do not want to calculate all of the data for particles that did not react).
 
 Each kernel object consists of four kernel functions, in order to allow for extensibility. These are:
 
@@ -81,27 +80,52 @@ An example with the built-in charge-exchange kernels using fixed values for all 
 Reaction data types
 ===================
 
+As noted above, reaction data objects are used both for reaction rate calculations as well as any other data that might be required for the desired application of reactions.
+
+Broadly, the data can be split up into the following groups:
+
+#. Rate-specific data - data originally intended to be used for various reaction rate calculations, including other size 1 data
+#. Multi-dimensional data - data used for such things as sampling velocities from a distribution
+#. Composite data - data objects that represent compositions of other data objects. These allow for such things as pipeline construction
+#. Surface reaction data - objects designed for calculating various surface interaction data, such as post-reflection velocities
+
 Reactions offers a number of built-in data types. These will be covered here in the following format:
 
-#. Dimensionality - the number of data values produced by the data object per particle
+#. Dimensionality - the number of data values produced by the data object per particle (if the data is a composite and requires a specific dimensionality of input data this will be noted here)
 #. Required properties - all reaction data objects provided by Reactions use the default properties enum and their required properties will be listed (both simple and species properties, where applicable)
 #. Details - any explantion of the calculations done by the data object, e.g. formulae, restrictions, etc.
 #. Example - where the constructor of the object is non-trivial an example of how to construct it is given
 
+Rate-specific and size-1 data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following data objects all return size 1 data, and the majority of them are meant to be used as reaction rate data. 
+
 Fixed rate data
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 #. Dimensionality: 1
 #. Required properties: none
-#. Details: The rate is simply set to a fixed value
+#. Details: The rate is simply set to a fixed value :math:`K`, so that the weight evolution equation (assuming deterministic evolution) is:
+
+.. math::
+
+   \frac{dw}{dt} = -K
+
+
 #. Example: See the example in the previous section
 
 Fixed rate coefficient data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Dimensionality: 1
 #. Required properties: Simple props: weight; Species props: none
-#. Details: Given a coefficient :math:`K`, and a particle weight :math:`w`, the rate is given as :math:`Kw`, with :math:`K` being fixed.
+#. Details: Given a coefficient :math:`k`, and a particle weight :math:`w`, the rate is given as :math:`kw`, with :math:`k` being fixed. Leads to the following deterministic weight evolution equation
+
+.. math::
+
+   \frac{dw}{dt} = -kw
+
 #. Example: 
 
 .. literalinclude:: ../example_sources/example_fixed_coeff.hpp
@@ -109,7 +133,7 @@ Fixed rate coefficient data
    :caption: Constructing a fixed rate coefficient data object
 
 AMJUEL 1D rate fit
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 #. Dimensionality: 1
 #. Required properties: Simple props: fluid_density, fluid_temperature, weight; Species props: none 
@@ -117,14 +141,19 @@ AMJUEL 1D rate fit
 
     .. math:: 
 
-        K=\ln\langle\sigma v\rangle = \sum_{n=0}^N b_n (\ln T)^n
+        k=\ln\langle\sigma v\rangle = \sum_{n=0}^N b_n (\ln T)^n
 
 where the number of coefficients :math:`N` and the coefficients :math:`b_n` are set on construction. 
 The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
 is the particle weight. All normalisation is set in the constructor (see the example).
 The rate is assumed to evolve some quantity :math:`q`, and requires the knowledge of the normalisation of 
 that quantity. For example, if evolving the weight it should be left at 1.0 while if evolving a background 
-energy field (e.g. providing an energy source) it would require the normalisation of the energy density (see below for the assumed normalisation in case of built-in kernels).
+energy field (e.g. providing an energy source) it would require the normalisation of the energy density (see below for the assumed normalisation in case of built-in kernels). When used as the deterministic reaction rate (evolving weight), leads to
+
+
+    .. math::
+
+        \frac{dw}{dt} = -nkw
     
 #. Example: 
 
@@ -133,7 +162,7 @@ energy field (e.g. providing an energy source) it would require the normalisatio
    :caption: Constructing an AMJUEL 1D rate fit
 
 AMJUEL 2D rate fit (n,T)
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Dimensionality: 1
 #. Required properties: Simple props: fluid_density, fluid_temperature, weight; Species props: none 
@@ -141,14 +170,14 @@ AMJUEL 2D rate fit (n,T)
 
     .. math:: 
 
-        K=\ln\langle\sigma v\rangle = \sum_{n=0}^N \sum_{m=0}^M \alpha_{n,m}(\ln \tilde{n})^m (\ln T)^n
+        k=\ln\langle\sigma v\rangle = \sum_{n=0}^N \sum_{m=0}^M \alpha_{n,m}(\ln \tilde{n})^m (\ln T)^n
         
 where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
 :math:`\tilde{n}` is density rescaled to :math:`10^{14} m^{-3}`. Density dependence is dropped below :math:`\tilde{n}=1`, and only the
 :math:`m=0` coefficients are used (this is the Coronal approximation). 
 The LTE limit is not implemented yet (for densities above :math:`10^{22} m^{-3}`). 
 The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
-is the particle weight. Normalisation as in the 1D fit case. 
+is the particle weight. Normalisation and effective deterministic evolution equation as in the 1D fit case. 
 
 #. Example: 
 
@@ -157,7 +186,7 @@ is the particle weight. Normalisation as in the 1D fit case.
    :caption: Constructing an AMJUEL 2D rate fit
 
 AMJUEL 2D rate fit (E,T)
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Dimensionality: 1
 #. Required properties: Simple props: fluid_density, fluid_temperature, fluid_flow_speed, weight, velocity; Species props: none 
@@ -171,7 +200,7 @@ where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients 
 The neutral energy :math:`E` is relative to the fluid flow speed.
 The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
 is the particle weight. Normalisation as in the 1D fit case, with the added normalisation of the velocity and the requirement for
-the neutral energy to be specified in amus. 
+the neutral energy to be specified in amus. Deterministic evolution equation as in the 1D fit case.
 
 #. Example: 
 
@@ -179,8 +208,68 @@ the neutral energy to be specified in amus.
    :language: cpp
    :caption: Constructing an AMJUEL 2D rate fit as a function of neutral energy
 
+Arrhenius data
+^^^^^^^^^^^^^^
+
+#. Dimensionality: 1
+#. Required properties: Simple props: weight, fluid_temperature; Species props: none
+#. Details: Given two coefficients :math:`a` and :math:`b`, returns an Arrhenius form rate :math:`a T^b w`, with :math:`T` being a temperature, and :math:`w` being the particle weight. **NOTE**: for many reactions this will need to be multiplied by one or more densities - see below entries on composite data for how one can do that. Leads to the following deterministic weight evolution equation (assuming no additional density multiplication)
+
+.. math::
+
+   \frac{dw}{dt} = -aT^bw
+
+#. Example: 
+
+[TODO]
+
+Sampler data
+^^^^^^^^^^^^
+
+#. Dimensionality: 1
+#. Required properties: Simple props: none; Species props: none
+#. Details: Returns a sample from the contained random number generater kernel. Not meant to be used as a rate data object. Instead, it was implemented as a way of allowing random sample input to composite data objects.
+#. Example: 
+
+[TODO]
+
+Multi-dimensional data
+~~~~~~~~~~~~~~~~~~~~~~
+
+The following data objects allow for generating multidimensional data, with the most common use case being velocity generation (e.g. post-scattering values), or calculating inputs into composite data objects.
+
+Fixed array data
+^^^^^^^^^^^^^^^^
+
+#. Dimensionality: any
+#. Required properties: Simple props: none; Species props: none
+#. Details: Returns a fixed array of values. Useful for providing fixed inputs to composite data objects.
+#. Example: 
+
+[TODO]
+
+Array lookup data
+^^^^^^^^^^^^^^^^^
+
+#. Dimensionality: any
+#. Required properties: Simple props: custom key (specified by :class:`Sym`); Species props: none
+#. Details: Uses an integer property on the particle as a key for a map, returning arrays based on the value of the property, with the option to specify a default return value if the key isn't in the map. 
+#. Example: 
+
+[TODO]
+
+Extractor data
+^^^^^^^^^^^^^^
+
+#. Dimensionality: variable (up to the dimensionality of the extracted property)
+#. Required properties: Simple props: custom key (specified by :class:`Sym`); Species props: none
+#. Details: Returns the first N components of a given REAL particle property. Useful for providing inputs into composite data objects.
+#. Example: 
+
+[TODO]
+
 Filtered Maxwellian sampler
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Dimensionality: variable - corresponds to fluid flow field dimensionality 
 #. Required properties: Simple props: fluid_temperature, fluid_flow_speed, velocity; Species props: none 
@@ -202,18 +291,18 @@ from a drifting Maxwellian. See below for cross-section objects.
    :caption: Constructing a Maxwellian sampler in two velocity space dimensions
 
 Cross-section objects
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 Currently, cross-section objects are restricted to being used by the above sampler. For that purpose, they can be evaluated at a given relative velocity, and 
 have an associated maximum :math:`\sigma v_{rel}`, used for rejection sampling. 
 
 Constant rate cross-section
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 This is the simplest cross section, with :math:`\sigma v_{rel} = c`. It always accepts all samples. See the above sampler example.  
 
 AMJUEL H.1 cross-section fit
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
 
 These are single parameter fits in lab energy from AMJUEL of the form 
 
@@ -226,6 +315,93 @@ where we convert to the centre-of-mass energy. The coefficients :math:`a_n` can 
 .. literalinclude:: ../example_sources/example_amjuel_cs.hpp
    :language: cpp
    :caption: Example of AMJUEL H.1 fit cross-section object construction
+
+Composite data
+~~~~~~~~~~~~~~
+
+The following data objects all have in common that they contain other data objects, and that they perform all operations on device, i.e. without saving intermediate states in a buffer such as the one used by the :class:`DataCalculator`.
+
+Since the purely composite data objects in this section require particle properties only through their contained objects, that section of the description will be omitted for brevity. 
+
+Concatenator data
+^^^^^^^^^^^^^^^^^
+
+#. Dimensionality: sum of the dimensions of the contained objects
+#. Details: Takes as aruments any number of data objects, evaluates their outputs, and concatenates the result, similarly to the effects of the :class:`DataCalculator`, except fully on device.
+#. Example: 
+
+[TODO]
+
+Pipeline data
+^^^^^^^^^^^^^
+
+#. Dimensionality: the output dimensionality of the final step in the pipeline
+#. Details: Takes as arguments any number of data objects, and passes the outputs from left to right. The data objects must have compatible input/output dimensions (see example). All calculations are performed on device.
+#. Example: 
+
+[TODO]
+
+Array transform data
+^^^^^^^^^^^^^^^^^^^^
+
+The following data objects perform unary or binary transformation on arrays, allowing for composition of simple operations.
+
+Unary array transform data
+--------------------------
+
+
+#. Dimensionality: varies based on the transformation applied - input dimension generally non-zero, so these objects must be part of a pipeline
+#. Details: Allow taking the result of another data objects and applying a unary transformation on it, returning the result. A number of eransformations are implemented - see example below
+#. Example: 
+
+[TODO]
+
+Binary array transform data
+---------------------------
+
+#. Dimensionality: varies based on the transformation applied 
+#. Details: Allows taking two reaction data objects and applying a binary transformation on their result. A number of transformations are implemented - see example below
+#. Example: 
+
+[TODO]
+
+**EXPERIMENTAL** Lambda wrappers
+--------------------------------
+
+Surface reaction data
+~~~~~~~~~~~~~~~~~~~~~
+
+The data objects in this section are specialised for surface reaction uses, meaning that they require surface interaction data to be present on the particles.
+
+Specular reflection data
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. Dimensionality: variable - depends on the velocity dimension (2 or 3). Requires input of the same dimension, representing the ingoing velocities.
+#. Required properties: Simple props: boundary intersection normal; Species props: none
+#. Details: Given a surface normal and an input velocity, reflects the velocity specularly based ont the normal. Should be used as part of a pipeline, allowing for modification of input and output velocities.
+#. Example: 
+
+[TODO]
+
+Spherical basis reflection data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. Dimensionality: 3. Requires input of the same dimension, representing the output velocity in (:math:`v`,:math:`\theta`,:math:`\varphi`), where the first entry is the velocity magnitude, the second the angle with respect to the surface normal, and the third the angle with respect to the initial (pre-reflection) velocity projection onto the surface
+#. Required properties: Simple props: velocity, boundary intersection normal; Species props: none
+#. Details: Given the reflected velocity in spherical coordinates, uses the particle velocity and the surface normal to construct a local basis for reflection. Useful when reflected data is given in terms spherical coordinates (such as from the TRIM database)
+#. Example: 
+
+[TODO]
+
+Cartesian basis reflection data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. Dimensionality: 3. Requires input of the same dimension, representing the output velocity in the Cartesian basis defined by the ingoing velocity and the surface normal. The first two components are parallel to the surface (with the first component in the firection determined by the projection of the ingoing particle velocity). The final component is in the direction the surface normal (directed back into the domain). 
+#. Required properties: Simple props: velocity, boundary intersection normal; Species props: none
+#. Details: Given the velocity and surface normal, determines the local basis and sets the outgoing particle velocity based on the input Cartesian components. Useful when the reflected data is given in Cartesian coordinates (such as for thermal reflection)
+#. Example: 
+
+[TODO]
 
 Reaction kernel types
 =====================
@@ -301,6 +477,12 @@ Base recombination kernels
 .. literalinclude:: ../example_sources/example_recombination_kernels.hpp
    :language: cpp
    :caption: Example of constructing recombination reaction kernels
+
+General absorption kernels
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+General scattering kernels
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Pre-built reactions
 ===================
