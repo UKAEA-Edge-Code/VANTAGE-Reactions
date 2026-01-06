@@ -194,7 +194,7 @@ struct MergeTransformationStrategy : TransformationStrategy {
               // applying the the 2D 90deg rotation matrix [[0 -1][1 0]] to the
               // total momentum direction and scaling with the perpendicular
               // momentum
-              const REAL p_perp_over_pt = p_perp / pt;
+              const REAL p_perp_over_pt = pt != 0.0 ? p_perp / pt : 0.0;
               mom_a[0] -= mom_tot[1] * p_perp_over_pt;
               mom_a[1] += mom_tot[0] * p_perp_over_pt;
               mom_b[0] += mom_tot[1] * p_perp_over_pt;
@@ -270,7 +270,10 @@ struct MergeTransformationStrategy : TransformationStrategy {
               const REAL mom_cell_diag_norm = Kernel::sqrt(
                   Kernel::dot_product_3d(mom_cell_diag, mom_cell_diag));
 
-              if (rotation_axis_norm / (pt * mom_cell_diag_norm) < 1e-10) {
+              // Use short circuit evaluation to mask of the 0/0 that happens if
+              // the momentum is zero.
+              if ((mom_cell_diag_norm != 0.0) &&
+                  (rotation_axis_norm / (pt * mom_cell_diag_norm) < 1e-10)) {
                 mom_cell_diag[0] = -mom_cell_diag[0];
                 Kernel::cross_product(mom_tot[0], mom_tot[1], mom_tot[2],
                                       mom_cell_diag[0], mom_cell_diag[1],
@@ -290,7 +293,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
                                     mom_tot[2], mom_perp, mom_perp + 1,
                                     mom_perp + 2);
 
-              const REAL scaling_factor = p_perp / (pt * rotation_axis_norm);
+              const REAL scaling_factor =
+                  rotation_axis_norm != 0.0 ? p_perp / (pt * rotation_axis_norm)
+                                            : 0.0;
               for (int i = 0; i < 3; i++) {
                 mom_perp[i] *= scaling_factor;
               }
