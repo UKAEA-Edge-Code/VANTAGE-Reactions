@@ -16,8 +16,9 @@ struct AbstractUnaryArrayTransform {
   static const size_t IN_DIM = INPUT_DIM;
   static const size_t OUT_DIM = OUTPUT_DIM;
 
-  virtual std::array<REAL, OUT_DIM>
-  apply(const std::array<REAL, IN_DIM> &input) const {};
+  std::array<REAL, OUT_DIM> apply(const std::array<REAL, IN_DIM> &input) const {
+    return {};
+  };
 };
 
 /**
