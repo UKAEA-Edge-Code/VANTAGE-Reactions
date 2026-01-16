@@ -15,7 +15,7 @@ spack:
     - ${PWD}/NESO-Spack
     - $spack/var/spack/repos/builtin
   develop:
-    reactions:
+    vantagereactions:
       path: ${PWD}
       spec: vantagereactions@working
     neso-particles:
