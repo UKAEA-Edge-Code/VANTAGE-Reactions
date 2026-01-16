@@ -1,6 +1,5 @@
 [![CI-Workflow](https://github.com/UKAEA-Edge-Code/VANTAGE-Reactions/actions/workflows/tests-ci.yml/badge.svg)](https://github.com/UKAEA-Edge-Code/VANTAGE-Reactions/actions/workflows/tests-ci.yml)
-
-[![codecov](https://codecov.io/github/UKAEA-Edge-Code/VANTAGE-Reactions/graph/badge.svg?token=TUWBPLXXWE)](https://codecov.io/github/UKAEA-Edge-Code/VANTAGE-Reactions)
+[![codecov](https://codecov.io/github/ukaea-edge-code/vantage-reactions/branch/gadgil48%2F172_181_code_coverage/graph/badge.svg?token=TUWBPLXXWE)](https://codecov.io/github/ukaea-edge-code/vantage-reactions)
 
 # Edge Code Reactions Library
 
