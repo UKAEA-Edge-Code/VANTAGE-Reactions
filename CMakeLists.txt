@@ -29,7 +29,7 @@ add_subdirectory(src)
 # Set the build type environment variable
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
-option(COVERAGE "Enable coverage analysis." OFF)
+option(REACTIONS_ENABLE_COVERAGE "Enable coverage analysis." OFF)
 if (REACTIONS_ENABLE_TESTS)
   set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
   if (REACTIONS_ENABLE_COVERAGE)
