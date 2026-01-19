@@ -5,13 +5,13 @@
 spack:
   # add package specs to the `specs` list
   specs:
-    - vantage-reactions.vantagereactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest
+    - vantage.vantagereactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest
 
   view: false
   concretizer:
     unify: false
   repos:
-    - ${PWD}/Reactions-repo
+    - ${PWD}/VANTAGE-repo
     - ${PWD}/NESO-Spack
     - $spack/var/spack/repos/builtin
   develop:
