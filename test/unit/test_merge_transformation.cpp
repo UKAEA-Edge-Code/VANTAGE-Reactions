@@ -146,6 +146,73 @@ TEST(MergeTransformationStrategy, transform_2D) {
     EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
   }
 
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(MergeTransformationStrategy, transform_zero_momentum_2D) {
+
+  const INT N_total = 1600;
+
+  auto particle_group = create_test_particle_group_merging(N_total, 2);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_merger = MergeTransformationStrategy<2>();
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto reduction = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 1);
+
+  particle_loop(
+      subgroup,
+      [=](auto V) {
+        for (int dx = 0; dx < 2; dx++) {
+          V.at(dx) = 0.0;
+        }
+      },
+      Access::write(Sym<REAL>("VELOCITY")))
+      ->execute();
+
+  particle_loop(
+      subgroup,
+      [=](auto W, auto P, auto V, auto GA) {
+        GA.fetch_add(0, 0, W[0] * P[0]);
+        GA.fetch_add(1, 0, W[0] * P[1]);
+        GA.fetch_add(2, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
+      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction))
+      ->execute();
+  test_merger.transform(subgroup);
+
+  REAL wt = 100.0;
+
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
+       ncell++) {
+    auto reduction_data = reduction->get_cell(ncell);
+
+    EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
+
+    std::vector<INT> cells = {ncell, ncell};
+    std::vector<INT> layers = {0, 1};
+
+    auto particles = particle_group->get_particles(cells, layers);
+    REAL energy_tot = reduction_data->at(2, 0);
+
+    EXPECT_NEAR(energy_tot, 0.0, 1e-12);
+    for (int i = 0; i < 2; i++) {
+      EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
+                  reduction_data->at(0, 0) / wt, 1e-12);
+      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
+                  reduction_data->at(1, 0) / wt, 1e-12);
+
+      EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), i, 0), 0.0, 1.0e-15);
+      EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), i, 1), 0.0, 1.0e-15);
+    }
+  }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -245,5 +312,93 @@ TEST(MergeTransformationStrategy, transform_3D) {
                 0, 1e-12);
   }
 
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(MergeTransformationStrategy, transform_zero_momentum_3D) {
+
+  const INT N_total = 1600 * 4;
+
+  auto particle_group = create_test_particle_group_merging(N_total, 3);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_merger = MergeTransformationStrategy<3>();
+
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+
+  particle_loop(
+      subgroup,
+      [=](auto V) {
+        for (int dx = 0; dx < 3; dx++) {
+          V.at(dx) = 0.0;
+        }
+      },
+      Access::write(Sym<REAL>("VELOCITY")))
+      ->execute();
+
+  auto reduction = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 7, 1);
+
+  auto red_min = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 1);
+  auto red_max = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 1);
+
+  red_min->fill(1e16);
+  red_max->fill(-1e16);
+  particle_loop(
+      subgroup,
+      [=](auto W, auto P, auto V, auto GA, auto GA_min, auto GA_max) {
+        for (int i = 0; i < 3; i++) {
+          GA.fetch_add(i, 0, W[0] * P[i]);
+          GA.fetch_add(3 + i, 0, W[0] * V[i]);
+          GA.fetch_add(6, 0, W[0] * V[i] * V[i]);
+          GA_min.fetch_min(i, 0, V[i]);
+          GA_max.fetch_max(i, 0, V[i]);
+        }
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
+      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction),
+      Access::min(red_min), Access::max(red_max))
+      ->execute();
+
+  test_merger.transform(subgroup);
+
+  REAL wt = 100.0;
+
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
+       ncell++) {
+    auto reduction_data = reduction->get_cell(ncell);
+    auto reduction_data_min = red_min->get_cell(ncell);
+    auto reduction_data_max = red_max->get_cell(ncell);
+    EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
+
+    std::vector<INT> cells = {ncell, ncell};
+    std::vector<INT> layers = {0, 1};
+
+    auto particles = particle_group->get_particles(cells, layers);
+    REAL energy_tot = reduction_data->at(6, 0);
+    EXPECT_NEAR(energy_tot, 0.0, 1.0e-15);
+    for (int dim = 0; dim < 3; dim++) {
+      EXPECT_NEAR(reduction_data_max->at(dim, 0), 0.0, 1.0e-15);
+      EXPECT_NEAR(reduction_data_min->at(dim, 0), 0.0, 1.0e-15);
+    }
+
+    for (int i = 0; i < 2; i++) {
+
+      EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0),
+                       wt / 2); //, 1e-12);
+      for (int dim = 0; dim < 3; dim++) {
+        // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
+        // appropriate.
+        EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
+                    reduction_data->at(dim, 0) / wt, 1e-12);
+        EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), i, dim), 0.0, 1e-15);
+      }
+    }
+  }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

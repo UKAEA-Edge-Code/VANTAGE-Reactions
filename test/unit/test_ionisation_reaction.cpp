@@ -39,6 +39,6 @@ TEST(IoniseReaction, calc_rate) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }

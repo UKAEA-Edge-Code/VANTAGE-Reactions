@@ -37,6 +37,7 @@ TEST(ReactionData, FixedCoefficientData) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -75,6 +76,7 @@ TEST(ReactionData, AMJUEL2DData) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -125,6 +127,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -166,6 +169,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -183,24 +187,13 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
       get_default_map().at(default_properties.boundary_intersection_point),
       get_default_map().at(default_properties.boundary_intersection_normal)};
 
-  auto test_prop_names = test_data.get_required_real_props();
+  auto test_prop_names = test_data.get_required_real_props().to_string_vector();
 
   ASSERT_EQ(expected_prop_names.size(), test_prop_names.size());
   for (int i = 0; i < test_prop_names.size(); i++) {
-    EXPECT_EQ(expected_prop_names[i], test_prop_names[i]);
-  }
-
-  auto expected_prop_names_ephemeral = std::vector<std::string>{
-      get_default_map().at(default_properties.boundary_intersection_point),
-      get_default_map().at(default_properties.boundary_intersection_normal)};
-
-  auto test_prop_names_ephemeral =
-      test_data.get_required_real_props_ephemeral();
-
-  ASSERT_EQ(expected_prop_names_ephemeral.size(),
-            test_prop_names_ephemeral.size());
-  for (int i = 0; i < test_prop_names_ephemeral.size(); i++) {
-    EXPECT_EQ(expected_prop_names_ephemeral[i], test_prop_names_ephemeral[i]);
+    ASSERT_NE(std::find(test_prop_names.begin(), test_prop_names.end(),
+                        expected_prop_names[i]),
+              test_prop_names.end());
   }
 
   auto test_reaction =
@@ -244,5 +237,40 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
     }
   }
 
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(ReactionData, ArrheniusData) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group(N_total);
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto test_reaction =
+      LinearReactionBase<0, ArrheniusData, TestReactionKernels<0>>(
+          particle_group->sycl_target, 0, std::array<int, 0>{},
+          ArrheniusData(2.0, 1.5), TestReactionKernels<0>());
+
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+  auto descendant_particles = std::make_shared<ParticleGroup>(
+      particle_group->domain, particle_group->get_particle_spec(),
+      particle_group->sycl_target);
+  for (int i = 0; i < cell_count; i++) {
+
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
+                        descendant_particles);
+    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    const int nrow = weight->nrow;
+
+    // The FLUID_TEMPERATURE is 2 for the mock group, so the rate coefficient
+    // should be 2.0* 2**1.5
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 1.0 - 0.1 * 2.0 * std::pow(2, 1.5));
+    }
+  }
+
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

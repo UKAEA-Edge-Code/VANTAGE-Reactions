@@ -4,6 +4,8 @@
 #include <neso_particles.hpp>
 #include <vector>
 
+#include "profiling_base.hpp"
+
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
@@ -14,17 +16,41 @@ namespace VANTAGE::Reactions {
  using some selection criterion.
  *
  */
-struct MarkingStrategy {
+struct MarkingStrategy : ProfilingBase {
 
+  /**
+   * Create the marker sub group.
+   *
+   * @param particle_group Parent `ParticleSubGroup` to create marker sub group
+   * from.
+   * @returns Marker sub group.
+   */
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
     // This function should never actually be called. If it is called and we do
     // not have a return value then the calling function will receive an
     // undefined value. By setting a value we at least know what the returned
     // value is and can pick one that is detectable. By returning a nullptr the
     // calling code will hopefully segfault.
     return nullptr;
-  };
+  }
+
+  /**
+   * Create the marker sub group. Specialisations should override
+   * `make_marker_subgroup_v` instead of this method.
+   *
+   * @param particle_group Parent `ParticleSubGroup` to create marker sub group
+   * from.
+   * @returns Marker sub group.
+   */
+  virtual ParticleSubGroupSharedPtr
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+    auto r0 =
+        this->start_profiling_region(particle_group, "make_marker_subgroup");
+    auto sub_group = this->make_marker_subgroup_v(particle_group);
+    this->end_profiling_region(particle_group, r0);
+    return sub_group;
+  }
 
   virtual ~MarkingStrategy() = default;
 };
@@ -49,13 +75,33 @@ inline std::shared_ptr<MarkingStrategy> make_marking_strategy(ARGS... args) {
  * @brief Abstract base class for transformation strategies. All transformation
  * strategies take a ParticleSubGroupSharedPtr and perform an arbitrary
  * transformation on it.
- *
  */
-struct TransformationStrategy {
+struct TransformationStrategy : ProfilingBase {
 
   TransformationStrategy() = default;
 
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {};
+  /**
+   * This is the method that downstream specialisations of this class should
+   * override. Callers of the transformation strategy should call the
+   * `transform` method.
+   *
+   * @param target_subgroup ParticleSubGroup to be transformed.
+   */
+  virtual void transform_v(ParticleSubGroupSharedPtr target_subgroup) {}
+
+  /**
+   * This is the method which should be called by downstream code to apply a
+   * transformation. This method internall calls `transform_v` to apply the
+   * transformation. To implement a transformation in a specialisation class the
+   * `transform_v` method should be overridden.
+   *
+   * @param target_subgroup ParticleSubGroup to be transformed.
+   */
+  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {
+    auto r0 = this->start_profiling_region(target_subgroup, "transform");
+    this->transform_v(target_subgroup);
+    this->end_profiling_region(target_subgroup, r0);
+  }
 
   virtual ~TransformationStrategy() = default;
 };
@@ -116,44 +162,55 @@ struct TransformationWrapper {
 
   /**
    * @brief Applies the marking and transformation strategies to a given
-   * ParticleGroup, transforming those particles that satisfy some condition.
+   * ParticleGroup or ParticleSubGroup, transforming those particles that
+   * satisfy some condition.
    *
-   * @param target_group ParticleGroup to transform
+   * @param target ParticleGroup or ParticleSubGroup to transform
    */
-  void transform(ParticleGroupSharedPtr target_group) {
+  template <typename PARENT> void transform(std::shared_ptr<PARENT> target) {
 
-    this->transform(target_group, -1);
+    this->transform(target, -1);
   }
 
   /**
    * @brief Applies the marking and transformation strategies to a given
-   * ParticleGroup, transforming those particles that satisfy some condition in
-   * a given cell.
+   * ParticleGroup or ParticleSubGroup, transforming those particles that
+   * satisfy some condition in a given cell.
    *
-   * @param target_group ParticleGroup to transform
+   * @param target ParticleGroup or ParticleSubGroup to transform
    * @param cell_id Local cell id index to restrict the transformation to
    */
-  void transform(ParticleGroupSharedPtr target_group, int cell_id) {
+  template <typename PARENT>
+  void transform(std::shared_ptr<PARENT> target, int cell_id) {
 
-    this->transform(target_group, cell_id, cell_id + 1);
+    this->transform(target, cell_id, cell_id + 1);
   }
   /**
    * @brief Applies the marking and transfomation strategies to a given
    * ParticleGroup, transforming those particle that satisfy some condition in a
    * given block of cells.
    *
-   * @param target_group ParticleGroup to transform
+   * @param target ParticleGroup to transform
    * @param cell_id_start Local cell id block start index to restrict the
    * transformation to
    * @param cell_id_end Local cell id block end index to restrict the
    * transformation to
    */
-  void transform(ParticleGroupSharedPtr target_group, int cell_id_start,
+  template <typename PARENT>
+  void transform(std::shared_ptr<PARENT> target, int cell_id_start,
                  int cell_id_end) {
 
     ParticleSubGroupSharedPtr marker_subgroup;
     if (cell_id_start >= 0) {
-      auto cell_num = target_group->domain->mesh->get_cell_count();
+
+      size_t cell_num;
+
+      if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+        cell_num = target->domain->mesh->get_cell_count();
+      } else {
+
+        cell_num = get_particle_group(target)->domain->mesh->get_cell_count();
+      }
       NESOASSERT(
           cell_id_start < cell_num,
           "Transformation wrapper transform called with cell id out of range");
@@ -163,10 +220,9 @@ struct TransformationWrapper {
       NESOASSERT(cell_id_start < cell_id_end,
                  "Transformation wrapper transform called with cell_id_end not "
                  "strictly greater than cell_id_start");
-      marker_subgroup =
-          particle_sub_group(target_group, cell_id_start, cell_id_end);
+      marker_subgroup = particle_sub_group(target, cell_id_start, cell_id_end);
     } else {
-      marker_subgroup = particle_sub_group(target_group);
+      marker_subgroup = particle_sub_group(target);
     }
 
     for (auto &strat : this->marking_strat) {
@@ -219,8 +275,8 @@ struct MarkingStrategyBase : MarkingStrategy {
       : required_particle_dats_real(required_dats_real_read),
         required_particle_dats_int(required_dats_int_read) {}
 
-  ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_sub_group) override {
+  ParticleSubGroupSharedPtr make_marker_subgroup_v(
+      ParticleSubGroupSharedPtr particle_sub_group) override {
 
     NESOASSERT(particle_sub_group != nullptr,
                "Passing nullptr for particle_sub_group argument!");

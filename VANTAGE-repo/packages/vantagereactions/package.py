@@ -1,6 +1,10 @@
-from spack import *
+# import of package / builder classes
 import os
 import shutil
+
+# import Package API
+from spack.package import *
+from spack_repo.builtin.build_systems.cmake import CMakePackage
 
 
 class Vantagereactions(CMakePackage):
@@ -11,7 +15,6 @@ class Vantagereactions(CMakePackage):
     version("main", branch="main")
     version("working", branch="reactions-base", preferred=True)
 
-    variant("nvcxx", default=False, description="Builds with CUDA CMake flags.")
     variant("enable_tests", default=False, description="Enable tests")
 
     depends_on("mpi", type=("build", "link", "run"))
@@ -19,8 +22,11 @@ class Vantagereactions(CMakePackage):
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
 
-    conflicts("+nvcxx", when="%oneapi", msg="Nvidia compilation can only be used with gcc or clang compilers.")
-
+    # requires(
+    #     "%gcc", "%clang",
+    #     policy="one_of",
+    #     msg="Reactions builds with only gcc or clang."
+    # )
 
     def cmake_args(self):
         args = []

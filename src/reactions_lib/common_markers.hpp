@@ -245,7 +245,7 @@ public:
   MinimumNPartInCellMarker(INT min_npart) : min_npart(min_npart) {};
 
   ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
 
     auto min_npart = this->min_npart;
     auto marker_subgroup = std::make_shared<ParticleSubGroup>(
@@ -289,7 +289,7 @@ public:
   };
 
   ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
 
     auto marker_subgroup = std::make_shared<ParticleSubGroup>(
         particle_group, [=](auto panic) { return panic[0] > 0; },

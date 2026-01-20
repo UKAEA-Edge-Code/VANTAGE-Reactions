@@ -39,6 +39,7 @@ TEST(LinearReactionBase, calc_rate) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -68,6 +69,7 @@ TEST(LinearReactionBase, calc_var_rate) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -147,10 +149,10 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
+  particle_group_2->sycl_target->free();
   particle_group_2->domain->mesh->free();
-  parent_particles->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(LinearReactionBase, single_group_multi_reaction) {
@@ -219,9 +221,8 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
-  parent_particles->domain->mesh->free();
-  descendant_particles->domain->mesh->free();
 }
 
 TEST(LinearReactionBase, device_rate_buffer_reallocation) {
@@ -271,6 +272,7 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
       std::make_shared<ParticleSubGroup>(particle_group), 0, 1);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 60);
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
 
@@ -294,5 +296,6 @@ TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
     EXPECT_THROW((TestDataCalcNdimReaction(particle_group)), std::logic_error);
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

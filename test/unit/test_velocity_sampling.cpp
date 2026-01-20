@@ -40,11 +40,9 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
 
   auto particle_group = create_test_particle_group(1000);
 
-  auto req_int_props_ =
-      utils::build_sym_vector<INT>(sampler.get_required_int_props());
+  auto req_int_props_ = sampler.get_required_int_sym_vector();
 
-  auto req_real_props_ =
-      utils::build_sym_vector<REAL>(sampler.get_required_real_props());
+  auto req_real_props_ = sampler.get_required_real_sym_vector();
 
   particle_loop(
       "vel_sampling_fail_loop", particle_group,
@@ -61,5 +59,6 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
 
   EXPECT_TRUE(panicked(particle_sub_group(particle_group)));
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
