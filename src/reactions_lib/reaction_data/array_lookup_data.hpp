@@ -7,7 +7,7 @@
 #include <neso_particles/compute_target.hpp>
 
 using namespace NESO::Particles;
-namespace Reactions {
+namespace VANTAGE::Reactions {
 
 /**
  * @brief Device reaction data returning an array based on lookup table for
@@ -137,4 +137,4 @@ private:
   Sym<INT> key_sym;
   std::shared_ptr<BlockedBinaryTree<int, std::array<REAL, N>, 8>> lut;
 };
-}; // namespace Reactions
+}; // namespace VANTAGE::Reactions

@@ -2,8 +2,8 @@
 Reactions and their components
 ******************************
 
-What reactions (the abstraction) are
-====================================
+The reaction abstraction
+========================
 
 As noted in the :ref:`Introduction`, we use reactions abstraction to represent the various physical collisional and reactive processes. Here we expand on those ideas and show the components of reactions as well as some examples.
 
@@ -221,17 +221,21 @@ Arrhenius data
 
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_arrhenius.hpp
+   :language: cpp
+   :caption: Constructing an Arrhenius rate data
 
 Sampler data
 ^^^^^^^^^^^^
 
 #. Dimensionality: 1
 #. Required properties: Simple props: none; Species props: none
-#. Details: Returns a sample from the contained random number generater kernel. Not meant to be used as a rate data object. Instead, it was implemented as a way of allowing random sample input to composite data objects.
+#. Details: Returns a sample from the contained random number generator kernel. Not meant to be used as a rate data object. Instead, it was implemented as a way of allowing random sample input to composite data objects.
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_sampler.hpp
+   :language: cpp
+   :caption: Constructing a sampler data object
 
 Multi-dimensional data
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -246,7 +250,9 @@ Fixed array data
 #. Details: Returns a fixed array of values. Useful for providing fixed inputs to composite data objects.
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_fixed_array_data.hpp
+   :language: cpp
+   :caption: Constructing a simple fixed array data object
 
 Array lookup data
 ^^^^^^^^^^^^^^^^^
@@ -256,7 +262,9 @@ Array lookup data
 #. Details: Uses an integer property on the particle as a key for a map, returning arrays based on the value of the property, with the option to specify a default return value if the key isn't in the map. 
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_array_lookup.hpp
+   :language: cpp
+   :caption: Constructing a simple fixed array data object
 
 Extractor data
 ^^^^^^^^^^^^^^
@@ -266,7 +274,9 @@ Extractor data
 #. Details: Returns the first N components of a given REAL particle property. Useful for providing inputs into composite data objects.
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_extractor.hpp
+   :language: cpp
+   :caption: Constructing an extractor data object
 
 Filtered Maxwellian sampler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -330,7 +340,9 @@ Concatenator data
 #. Details: Takes as aruments any number of data objects, evaluates their outputs, and concatenates the result, similarly to the effects of the :class:`DataCalculator`, except fully on device.
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_concatenator.hpp
+   :language: cpp
+   :caption: Example of concatenating two simple data objects
 
 Pipeline data
 ^^^^^^^^^^^^^
@@ -339,7 +351,9 @@ Pipeline data
 #. Details: Takes as arguments any number of data objects, and passes the outputs from left to right. The data objects must have compatible input/output dimensions (see example). All calculations are performed on device.
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_pipeline.hpp
+   :language: cpp
+   :caption: Example of piping a result from one data object into another
 
 Array transform data
 ^^^^^^^^^^^^^^^^^^^^
@@ -351,10 +365,13 @@ Unary array transform data
 
 
 #. Dimensionality: varies based on the transformation applied - input dimension generally non-zero, so these objects must be part of a pipeline
-#. Details: Allow taking the result of another data objects and applying a unary transformation on it, returning the result. A number of eransformations are implemented - see example below
+#. Details: Allow taking the result of another data object and applying a unary transformation on it, returning the result. A number of transformations are implemented - see example below
 #. Example: 
 
-[TODO]
+
+.. literalinclude:: ../example_sources/example_unary_array_transform_data.hpp
+   :language: cpp
+   :caption: Various examples of unary array transform data objects available
 
 Binary array transform data
 ---------------------------
@@ -363,10 +380,26 @@ Binary array transform data
 #. Details: Allows taking two reaction data objects and applying a binary transformation on their result. A number of transformations are implemented - see example below
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_binary_array_transform_data.hpp
+   :language: cpp
+   :caption: Various examples of binary array transform data objects available
 
 **EXPERIMENTAL** Lambda wrappers
---------------------------------
+----------------------------------
+
+The above unary and binary transform data all rely on built-in transforms or standard operators. There are situations in which those do not allow enough flexibility, so VANTAGE-Reactions offers a wrapper for lambda functions that can be used in binary and unary array transform data objects.
+
+.. WARNING::
+   This is an **experimental** feature designed to provide device-copyable lambdas.
+   While it works on some common backends, due to the nature of the
+   workaround, there is **at least one known issue** with the generic adaptivecpp backend! 
+   Future work is planned on adressing this, but the wrappers shouldn't currently be
+   used in production!
+
+
+.. literalinclude:: ../example_sources/example_lambda_wrapper_array_transform_data.hpp
+   :language: cpp
+   :caption: Various examples of the experimental lambda-based array transform data
 
 Surface reaction data
 ~~~~~~~~~~~~~~~~~~~~~
@@ -379,29 +412,32 @@ Specular reflection data
 #. Dimensionality: variable - depends on the velocity dimension (2 or 3). Requires input of the same dimension, representing the ingoing velocities.
 #. Required properties: Simple props: boundary intersection normal; Species props: none
 #. Details: Given a surface normal and an input velocity, reflects the velocity specularly based ont the normal. Should be used as part of a pipeline, allowing for modification of input and output velocities.
-#. Example: 
-
-[TODO]
+#. Example - see pipeline example 
 
 Spherical basis reflection data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#. Dimensionality: 3. Requires input of the same dimension, representing the output velocity in (:math:`v`,:math:`\theta`,:math:`\varphi`), where the first entry is the velocity magnitude, the second the angle with respect to the surface normal, and the third the angle with respect to the initial (pre-reflection) velocity projection onto the surface
+#. Dimensionality: 3. Requires input of the same dimension, representing the output velocity in (:math:`v`, :math:`\theta`, :math:`\varphi`), where the first entry is the velocity magnitude, the second the angle with respect to the surface normal, and the third the angle with respect to the initial (pre-reflection) velocity projection onto the surface
 #. Required properties: Simple props: velocity, boundary intersection normal; Species props: none
-#. Details: Given the reflected velocity in spherical coordinates, uses the particle velocity and the surface normal to construct a local basis for reflection. Useful when reflected data is given in terms spherical coordinates (such as from the TRIM database)
+#. Details: Given the reflected velocity in spherical coordinates, uses the particle velocity and the surface normal to construct a local basis for reflection. Useful when reflected data is given in spherical coordinates (such as from the TRIM database)
 #. Example: 
 
-[TODO]
+
+.. literalinclude:: ../example_sources/example_spherical_basis_reflection.hpp
+   :language: cpp
+   :caption: Constructing a SphericalBasisReflectionData object with fixed post-collision velocities
 
 Cartesian basis reflection data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#. Dimensionality: 3. Requires input of the same dimension, representing the output velocity in the Cartesian basis defined by the ingoing velocity and the surface normal. The first two components are parallel to the surface (with the first component in the firection determined by the projection of the ingoing particle velocity). The final component is in the direction the surface normal (directed back into the domain). 
+#. Dimensionality: 3. Requires input of the same dimension, representing the output velocity in the Cartesian basis defined by the ingoing velocity and the surface normal. The first two components are parallel to the surface (with the first component in the direction determined by the projection of the ingoing particle velocity). The final component is in the direction of the surface normal (directed back into the domain). 
 #. Required properties: Simple props: velocity, boundary intersection normal; Species props: none
 #. Details: Given the velocity and surface normal, determines the local basis and sets the outgoing particle velocity based on the input Cartesian components. Useful when the reflected data is given in Cartesian coordinates (such as for thermal reflection)
 #. Example: 
 
-[TODO]
+.. literalinclude:: ../example_sources/example_cartesian_basis_reflection.hpp
+   :language: cpp
+   :caption: Constructing a CartesianBasisReflectionData object with fixed post-collision velocities
 
 Reaction kernel types
 =====================
@@ -481,8 +517,40 @@ Base recombination kernels
 General absorption kernels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-General scattering kernels
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+#. Overview: These kernels represent a general absorption process, i.e. anything that removes the weight of particles without creating new particles. Unlike ionisation, it only stores the particle, momentum, and energy sources due to the absorbed particle, and not due to any of the particles that might be interacting with it.
+#. Required properties:
+
+   * Parent: Simple props: weight, velocity, source_density, source_energy, source_momentum; Species props: N/A
+
+   * Descendant: N/A; Species props: N/A
+#. Scattering kernel: N/A
+#. Weight kernel:  N/A
+#. Transformation kernel:  N/A
+#. Feedback kernel: The weight is removed from the parent, and together with the velocity of the particle it determines all three sources. **NOTE**: Unlike specific kernels, the sources are not species-specific, which means that property remapping is required. This is particularly important when using these kernels to specify surface processes.
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_general_absorption_kernels.hpp
+   :language: cpp
+   :caption: Example of constructing general absorption kernels
+
+General linear scattering kernels
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Overview: These kernels produce one product, and the velocities of the product are set by the `DataCalculator` values. Sources (momentum and energy) are then calculated based on the parent and product velocities and the reacted weight.
+#. Required properties:
+
+   * Parent: Simple props: weight, velocity, source_energy, source_momentum; Species props: N/A
+
+   * Descendant: internal_state, velocity, weight; Species props: N/A
+#. Scattering kernel: The velocities of the product are set from the values calculated by the `DataCalculator` of the containing reaction
+#. Weight kernel:  All reacted weight is passed onto the product
+#. Transformation kernel:  The product internal_state is set from the outgoing particle ID
+#. Feedback kernel: The weight is removed from the parent, and the momentum and energy sources are calculated using the parent and product velocities. **NOTE**: Unlike specific kernels, the sources are not species-specific, which means that property remapping is required. This is particularly important when using these kernels to specify surface processes.
+#. Example: 
+
+.. literalinclude:: ../example_sources/example_general_linear_scattering_kernels.hpp
+   :language: cpp
+   :caption: Example of constructing general linear scattering kernels and using them to create a specular reflection reaction
 
 Pre-built reactions
 ===================
