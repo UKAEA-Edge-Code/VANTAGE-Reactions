@@ -5,8 +5,8 @@ spack env activate -p -d .
 spack install
 spack load reactions
 OMP_NUM_THREADS=1 mpirun -n 1 unit_tests
+OMP_NUM_THREADS=1 mpirun -n 1 examples
 mkdir -p coverage
-find ./src -name '*.hpp' -exec cp -t ./coverage {} +
 find ./build-linux-ubuntu24.04*/*/test/unit/CMakeFiles/unit_tests.dir -name '*.gcno' -exec cp -t ./coverage {} +
 find ./build-linux-ubuntu24.04*/*/test/unit/CMakeFiles/unit_tests.dir -name '*.gcda' -exec cp -t ./coverage {} +
 cd ./coverage
