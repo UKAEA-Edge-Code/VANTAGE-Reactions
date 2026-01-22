@@ -10,6 +10,8 @@ include(GNUInstallDirs)
 # Produce compile_commands.json for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
+
 # Create interface/Header only library
 add_library(VANTAGE-Reactions INTERFACE)
 add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
@@ -29,8 +31,12 @@ add_subdirectory(src)
 # Set the build type environment variable
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
+option(REACTIONS_ENABLE_COVERAGE "Enable coverage analysis." OFF)
 if (REACTIONS_ENABLE_TESTS)
   set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
+  if (REACTIONS_ENABLE_COVERAGE)
+    set(BUILD_TYPE_COMPILE_FLAGS "${BUILD_TYPE_COMPILE_FLAGS};--coverage")
+  endif()
   add_subdirectory(test)
 endif()
 

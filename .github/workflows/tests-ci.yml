@@ -2,6 +2,10 @@ name: CI-Workflow
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev*
   pull_request:
     branches:
       - main
@@ -26,6 +30,13 @@ jobs:
       - name: unit-tests
         run: |
           docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ github.workspace }}/coverage/lcov_src.txt
+          fail_ci_if_error: true
+          verbose: true
 
   docs:
     runs-on: ubuntu-24.04
