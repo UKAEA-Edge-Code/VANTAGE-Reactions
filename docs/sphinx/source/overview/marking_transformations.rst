@@ -61,6 +61,16 @@ Another common requirement is the accumulation of particle properties cellwise. 
    :language: cpp
    :caption: :class:`CellwiseReactionDataAccumulator` example
 
+Cellwise distributor strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to the requirement for accumulating properties cellwise, there are situations where we want to broadcast one or more property onto all particles in a cell. The `CellwiseDistributor` transformation strategy offers this, working like the inverse of the `CellwiseAccumulator`.
+
+
+.. literalinclude:: ../example_sources/example_cellwise_distributor_strategy.hpp
+   :language: cpp
+   :caption: :class:`CellwiseDistributor` example
+
 Composite Strategy
 ~~~~~~~~~~~~~~~~~~
 

@@ -13,6 +13,7 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_arrhenius.hpp"
 #include "./example_sources/example_binary_array_transform_data.hpp"
 #include "./example_sources/example_cartesian_basis_reflection.hpp"
+#include "./example_sources/example_cellwise_distributor_strategy.hpp"
 #include "./example_sources/example_composite_strategy.hpp"
 #include "./example_sources/example_concatenator.hpp"
 #include "./example_sources/example_custom_properties.hpp"
@@ -86,6 +87,7 @@ TEST(Examples, all) {
   general_absorption_kernels_example();
   general_linear_scattering_kernels_example(particle_group);
   reaction_data_accumulator_strategy_example(particle_group);
+  distributor_strategy_example(particle_group);
 
   particle_group->domain->mesh->free();
 }
