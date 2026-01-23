@@ -7,10 +7,10 @@ from spack.package import *
 from spack_repo.builtin.build_systems.cmake import CMakePackage
 
 
-class Reactions(CMakePackage):
-    """Reactions"""
+class Vantagereactions(CMakePackage):
+    """Vantagereactions"""
 
-    git = "git@github.com:UKAEA-Edge-Code/Reactions.git"
+    git = "git@github.com:UKAEA-Edge-Code/VANTAGE-Reactions.git"
 
     version("main", branch="main")
     version("working", branch="reactions-base", preferred=True)

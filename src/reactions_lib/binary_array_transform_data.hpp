@@ -17,9 +17,11 @@ struct AbstractBinaryArrayTransform {
   static const size_t IN_DIM_2 = INPUT_DIM_2;
   static const size_t OUT_DIM = OUTPUT_DIM;
 
-  virtual std::array<REAL, OUT_DIM>
+  std::array<REAL, OUT_DIM>
   apply(const std::array<REAL, IN_DIM_1> &input_1,
-        const std::array<REAL, IN_DIM_2> &input_2) const {};
+        const std::array<REAL, IN_DIM_2> &input_2) const {
+    return {};
+  };
 };
 
 /**

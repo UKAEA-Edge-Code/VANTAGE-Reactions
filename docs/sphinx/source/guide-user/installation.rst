@@ -7,6 +7,7 @@ Pre-requisites
 
 * gcc 11.3.0+: Tested up to 14.2.0
 * spack v1.0.2
+* python 3.8+ : Tested up to python 3.12
 
 Spack environment setup
 =======================

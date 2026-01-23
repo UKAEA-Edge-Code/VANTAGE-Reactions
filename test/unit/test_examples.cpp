@@ -23,12 +23,12 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_new_reaction_data.hpp"
 #include "./example_sources/example_property_container.hpp"
 #include "./example_sources/example_reaction_controller.hpp"
+#include "./example_sources/example_recombination_kernels.hpp"
+#include "./example_sources/example_recombination_reaction.hpp"
 #include "./example_sources/example_removal_strategy.hpp"
 #include "./example_sources/example_spec_builder.hpp"
 #include "./example_sources/example_transformation_wrapper.hpp"
 #include "./example_sources/example_zeroer_strategy.hpp"
-#include "./example_sources/example_recombination_kernels.hpp"
-#include "./example_sources/example_recombination_reaction.hpp"
 
 TEST(Examples, all) {
 
