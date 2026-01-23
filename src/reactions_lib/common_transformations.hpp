@@ -212,6 +212,28 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
   }
 
   /**
+   * @brief Get the pointer to underlying CellDatConst for given named data
+   *
+   * @param data_name Name of the particle dat to be extracted
+   */
+
+  CellDatConstSharedPtr<T> get_value_pointer(std::string data_name) {
+
+    return this->values[Sym<T>(data_name)];
+  }
+
+  /**
+   * @brief Set the underlying CellDatConst pointer for given named data
+   *
+   * @param data_name Name of the particle dat to be set
+   * @param cell_dat_const_ptr Shared pointer to CellDatConst<T>
+   */
+  void set_cell_data(std::string data_name,
+                     CellDatConstSharedPtr<T> cell_dat_const_ptr) {
+
+    this->values[Sym<T>(data_name)] = cell_dat_const_ptr;
+  }
+  /**
    * @brief Sets cell-wise accumulated data from a standard vector of CellData
    * objects
    *
@@ -323,6 +345,29 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
 
       loop->execute();
     }
+  }
+
+  /**
+   * @brief Get the pointer to underlying CellDatConst for given named data
+   *
+   * @param data_name Name of the particle dat to be extracted
+   */
+
+  CellDatConstSharedPtr<T> get_value_pointer(std::string data_name) {
+
+    return this->values[Sym<T>(data_name)];
+  }
+
+  /**
+   * @brief Set the underlying CellDatConst pointer for given named data
+   *
+   * @param data_name Name of the particle dat to be set
+   * @param cell_dat_const_ptr Shared pointer to CellDatConst<T>
+   */
+  void set_value_pointer(std::string data_name,
+                         CellDatConstSharedPtr<T> cell_dat_const_ptr) {
+
+    this->values[Sym<T>(data_name)] = cell_dat_const_ptr;
   }
 
   /**
@@ -470,6 +515,29 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
   }
 
   /**
+   * @brief Get the pointer to underlying CellDatConst for given named data
+   *
+   * @param data_name Name of the particle dat to be extracted
+   */
+
+  CellDatConstSharedPtr<REAL> get_value_pointer(std::string data_name) {
+
+    return this->values[Sym<T>(data_name)];
+  }
+
+  /**
+   * @brief Set the underlying CellDatConst pointer for given named data
+   *
+   * @param data_name Name of the particle dat to be set
+   * @param cell_dat_const_ptr Shared pointer to CellDatConst<REAL>
+   */
+
+  void set_value_pointer(std::string data_name,
+                         CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
+
+    this->values[Sym<T>(data_name)] = cell_dat_const_ptr;
+  }
+  /**
    * @brief Extract the cell-wise accumulated data as a standard vector of
    * CellData objects
    *
@@ -484,6 +552,28 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
 
     return this->values[Sym<T>(data_name)]->get_all_cells();
   }
+
+  /**
+   * @brief Get the pointer to underlying CellDatConst for accumulated weight
+   *
+   */
+
+  CellDatConstSharedPtr<REAL> get_weight_pointer() {
+
+    return this->weight_buffer;
+  }
+
+  /**
+   * @brief Set the underlying CellDatConst pointer for given named data
+   *
+   * @param cell_dat_const_ptr Shared pointer to CellDatConst<REAL>
+   */
+
+  void set_weight_pointer(CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
+
+    this->weight_buffer = cell_dat_const_ptr;
+  }
+
   /**
    * @brief Extract accumulated weight data in a vector of CellData objects
    *
