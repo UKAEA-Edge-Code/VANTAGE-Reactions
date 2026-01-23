@@ -17,20 +17,23 @@ namespace VANTAGE::Reactions {
  * clamps the value to the last value in the range (effectively flattens the
  * grid out beyond the edges of the dimension).
  */
-template <size_t ndim, INT EXTRAPOLATION_TYPE = 0>
-struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
+template <size_t input_ndim, INT EXTRAPOLATION_TYPE = 0, size_t output_ndim = 1>
+struct InterpolateDataOnDevice
+    : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
+                                      input_ndim> {
   InterpolateDataOnDevice() = default;
 
-  std::array<REAL, ndim>
-  calc_data(const std::array<REAL, ndim> &interpolation_points,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
-            typename ReactionDataBaseOnDevice<ndim>::RNG_KERNEL_TYPE::KernelType
-                &kernel) const {
+  std::array<REAL, output_ndim> calc_data(
+      const std::array<REAL, input_ndim> &interpolation_points,
+      const Access::LoopIndex::Read &index,
+      const Access::SymVector::Write<INT> &req_int_props,
+      const Access::SymVector::Read<REAL> &req_real_props,
+      typename ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
+                                        input_ndim>::RNG_KERNEL_TYPE::KernelType
+          &kernel) const {
     // Temporary arrays for intermediate calculation (in principle will hold
     // unique values for each particle)
-    std::array<INT, ndim> origin_indices;
+    std::array<INT, input_ndim> origin_indices;
     origin_indices.fill(0);
 
     std::array<REAL, initial_num_points> vertex_func_evals;
@@ -49,7 +52,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
     varying_dim.fill(0);
 
     // Counters
-    int dim_index = ndim - 1;
+    int dim_index = input_ndim - 1;
     int num_points = this->initial_num_points;
     auto current_count = index.get_loop_linear_index();
 
@@ -68,7 +71,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
     origin_indices[0] = interp_utils::calc_closest_point_index(
         interpolation_points[0], extended_ranges_vec_buf,
         (dims_vec_buf[0] + 1));
-    for (int i = 1; i < ndim; i++) {
+    for (int i = 1; i < input_ndim; i++) {
       origin_indices[i] = interp_utils::calc_closest_point_index(
           interpolation_points[i],
           extended_ranges_vec_buf + (dims_vec_buf[i - 1] + 2),
@@ -78,11 +81,12 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
     bool constexpr continue_last = (EXTRAPOLATION_TYPE == 0) ? true : false;
     bool constexpr clamp_to_zero = (EXTRAPOLATION_TYPE == 1) ? true : false;
 
-    // TODO: Implement clamp_to_last (currently will return the same value as clamp_to_zero)
+    // TODO: Implement clamp_to_last (currently will return the same value as
+    // clamp_to_zero)
     bool constexpr clamp_to_last = (EXTRAPOLATION_TYPE == 2) ? true : false;
 
     if constexpr (continue_last) {
-      for (int i = 0; i < ndim; i++) {
+      for (int i = 0; i < input_ndim; i++) {
         origin_indices[i] =
             Kernel::min(Kernel::max(origin_indices[i], 1), dims_vec_buf[i] - 1);
       }
@@ -106,7 +110,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
       // the vertices of the hypercube.
       interp_utils::initial_func_eval_on_device(
           vertex_func_evals_ptr, vertex_coord_ptr, grid_buf,
-          hypercube_vertices_buf, origin_indices_ptr, dims_vec_buf, ndim,
+          hypercube_vertices_buf, origin_indices_ptr, dims_vec_buf, input_ndim,
           num_points);
 
       // Fill input_vertices vector
@@ -115,7 +119,7 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
       }
 
       // Loop until the last dimension (down to 0D)
-      while (dim_index >= 0) {
+      while (dim_index >= static_cast<int>(output_ndim - 1)) {
         // Contract the hypercube vertices and evaluations, eg. if
         // input_vertices.size() == 2^3 then output_vertices.size() == 2^2, as
         // in going from a 3D hypercube(cube) to a 2D hypercube(square).
@@ -141,12 +145,14 @@ struct InterpolateDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
       }
     }
 
-    std::array<REAL, ndim> calculated_interpolated_vals;
+    std::array<REAL, output_ndim> calculated_interpolated_vals;
     calculated_interpolated_vals.fill(0.0);
 
     // Assign to first element of returned array. (See
     // test/unit/test_interpolation.cpp for reasons for the workaround.)
-    calculated_interpolated_vals[0] = output_evals[0];
+    for (int i = 0; i < output_ndim; i++) {
+      calculated_interpolated_vals[i] = output_evals[i];
+    }
 
     return calculated_interpolated_vals;
   }
@@ -158,18 +164,21 @@ public:
   REAL *grid_ptr;
   REAL *extended_ranges_vec_ptr;
 
-  static constexpr INT initial_num_points = 1 << ndim;
+  static constexpr INT initial_num_points = 1 << input_ndim;
 };
 
-template <size_t ndim, INT EXTRAPOLATION_TYPE = 0>
+template <size_t input_ndim, INT EXTRAPOLATION_TYPE = 0, size_t output_ndim = 1>
 struct InterpolateData
-    : public ReactionDataBase<InterpolateDataOnDevice<ndim>, ndim> {
+    : public ReactionDataBase<
+          InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE, output_ndim>,
+          output_ndim, DEFAULT_RNG_KERNEL, input_ndim> {
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &ranges_vec,
                   const std::vector<REAL> &grid,
                   SYCLTargetSharedPtr sycl_target)
-      : ReactionDataBase<InterpolateDataOnDevice<ndim, EXTRAPOLATION_TYPE>,
-                         ndim>() {
+      : ReactionDataBase<InterpolateDataOnDevice<
+                             input_ndim, EXTRAPOLATION_TYPE, output_ndim>,
+                         output_ndim, DEFAULT_RNG_KERNEL, input_ndim>() {
     if constexpr ((EXTRAPOLATION_TYPE < 0) || (EXTRAPOLATION_TYPE > 2)) {
       NESOASSERT(false,
                  "Please pass a valid EXTRAPOLATION_TYPE (either 0, 1 or 2) as "
@@ -177,22 +186,22 @@ struct InterpolateData
     }
 
     auto initial_hypercube =
-        interp_utils::construct_initial_hypercube(INT(ndim));
+        interp_utils::construct_initial_hypercube(INT(input_ndim));
 
-    this->on_device_obj = InterpolateDataOnDevice<ndim>();
+    this->on_device_obj = InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE, output_ndim>();
 
     // BufferDevice<REAL> mock setup
     this->dims_vec_buf =
         std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
     this->on_device_obj->dims_vec_ptr = this->dims_vec_buf->ptr;
 
-    std::vector<size_t> extended_dims_vec(ndim);
-    for (size_t idim = 0; idim < ndim; idim++) {
+    std::vector<size_t> extended_dims_vec(input_ndim);
+    for (size_t idim = 0; idim < input_ndim; idim++) {
       extended_dims_vec[idim] = dims_vec[idim] + 2;
     }
 
     std::vector<REAL> extended_ranges_vec;
-    for (size_t idim = 0; idim < ndim; idim++) {
+    for (size_t idim = 0; idim < input_ndim; idim++) {
       int dim_counter = 0;
       extended_ranges_vec.push_back(-INF);
       for (size_t irange = 0; irange < dims_vec[idim]; irange++) {
