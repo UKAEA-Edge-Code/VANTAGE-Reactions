@@ -27,7 +27,9 @@ inline void general_linear_scattering_kernels_example(
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
 
   auto scattering_kernel =
-      LinearScatteringKernels<2 // velocity dat dimensionality
+      LinearScatteringKernels<2,   // velocity dat dimensionality
+                              true // Whether sources should be written to
+                                   // (remapping not required if false)
                               >(projectile_species,      // Scattered species
                                 properties_map.get_map() // Our remapped sources
       );

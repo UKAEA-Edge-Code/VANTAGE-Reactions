@@ -544,7 +544,7 @@ General linear scattering kernels
 #. Scattering kernel: The velocities of the product are set from the values calculated by the `DataCalculator` of the containing reaction
 #. Weight kernel:  All reacted weight is passed onto the product
 #. Transformation kernel:  The product internal_state is set from the outgoing particle ID
-#. Feedback kernel: The weight is removed from the parent, and the momentum and energy sources are calculated using the parent and product velocities. **NOTE**: Unlike specific kernels, the sources are not species-specific, which means that property remapping is required. This is particularly important when using these kernels to specify surface processes.
+#. Feedback kernel: The weight is removed from the parent, and the momentum and energy sources are calculated using the parent and product velocities. **NOTE**: Unlike specific kernels, the sources are not species-specific, which means that property remapping is required. This is particularly important when using these kernels to specify surface processes. The calculation and writing of sources can be turned off using a template argument (see below).
 #. Example: 
 
 .. literalinclude:: ../example_sources/example_general_linear_scattering_kernels.hpp
