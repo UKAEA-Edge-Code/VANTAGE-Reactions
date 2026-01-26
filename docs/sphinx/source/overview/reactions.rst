@@ -91,10 +91,10 @@ Broadly, the data can be split up into the following groups:
 
 Reactions offers a number of built-in data types. These will be covered here in the following format:
 
-#. Dimensionality - the number of data values produced by the data object per particle (if the data is a composite and requires a specific dimensionality of input data this will be noted here)
-#. Required properties - all reaction data objects provided by Reactions use the default properties enum and their required properties will be listed (both simple and species properties, where applicable)
-#. Details - any explantion of the calculations done by the data object, e.g. formulae, restrictions, etc.
-#. Example - where the constructor of the object is non-trivial an example of how to construct it is given
+#. Dimensionality - the number of data values produced by the data object per particle (if the data is a composite and requires a specific dimensionality of input data this will be noted here).
+#. Required properties - all reaction data objects provided by Reactions use the default properties enum and their required properties will be listed (both simple and species properties, where applicable).
+#. Details - any explanation of the calculations done by the data object, e.g. formulae, restrictions, etc.
+#. Example - where the constructor of the object is non-trivial an example of how to construct it is given.
 
 Rate-specific and size-1 data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,10 +108,9 @@ Fixed rate data
 #. Required properties: none
 #. Details: The rate is simply set to a fixed value :math:`K`, so that the weight evolution equation (assuming deterministic evolution) is:
 
-.. math::
-
-   \frac{dw}{dt} = -K
-
+    .. math::
+    
+      \frac{dw}{dt} = -K
 
 #. Example: See the example in the previous section
 
@@ -122,9 +121,9 @@ Fixed rate coefficient data
 #. Required properties: Simple props: weight; Species props: none
 #. Details: Given a coefficient :math:`k`, and a particle weight :math:`w`, the rate is given as :math:`kw`, with :math:`k` being fixed. Leads to the following deterministic weight evolution equation
 
-.. math::
-
-   \frac{dw}{dt} = -kw
+    .. math::
+    
+      \frac{dw}{dt} = -kw
 
 #. Example: 
 
@@ -143,12 +142,12 @@ AMJUEL 1D rate fit
 
         k=\ln\langle\sigma v\rangle = \sum_{n=0}^N b_n (\ln T)^n
 
-where the number of coefficients :math:`N` and the coefficients :math:`b_n` are set on construction. 
-The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
-is the particle weight. All normalisation is set in the constructor (see the example).
-The rate is assumed to evolve some quantity :math:`q`, and requires the knowledge of the normalisation of 
-that quantity. For example, if evolving the weight it should be left at 1.0 while if evolving a background 
-energy field (e.g. providing an energy source) it would require the normalisation of the energy density (see below for the assumed normalisation in case of built-in kernels). When used as the deterministic reaction rate (evolving weight), leads to
+    where the number of coefficients :math:`N` and the coefficients :math:`b_n` are set on construction. 
+    The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
+    is the particle weight. All normalisation is set in the constructor (see the example).
+    The rate is assumed to evolve some quantity :math:`q`, and requires the knowledge of the normalisation of 
+    that quantity. For example, if evolving the weight it should be left at 1.0 while if evolving a background 
+    energy field (e.g. providing an energy source) it would require the normalisation of the energy density (see below for the assumed normalisation in case of built-in kernels). When used as the deterministic reaction rate (evolving weight), leads to
 
 
     .. math::
@@ -172,12 +171,12 @@ AMJUEL 2D rate fit (n,T)
 
         k=\ln\langle\sigma v\rangle = \sum_{n=0}^N \sum_{m=0}^M \alpha_{n,m}(\ln \tilde{n})^m (\ln T)^n
         
-where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
-:math:`\tilde{n}` is density rescaled to :math:`10^{14} m^{-3}`. Density dependence is dropped below :math:`\tilde{n}=1`, and only the
-:math:`m=0` coefficients are used (this is the Coronal approximation). 
-The LTE limit is not implemented yet (for densities above :math:`10^{22} m^{-3}`). 
-The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
-is the particle weight. Normalisation and effective deterministic evolution equation as in the 1D fit case. 
+    where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
+    :math:`\tilde{n}` is density rescaled to :math:`10^{14} m^{-3}`. Density dependence is dropped below :math:`\tilde{n}=1`, and only the
+    :math:`m=0` coefficients are used (this is the Coronal approximation). 
+    The LTE limit is not implemented yet (for densities above :math:`10^{22} m^{-3}`). 
+    The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
+    is the particle weight. Normalisation and effective deterministic evolution equation as in the 1D fit case. 
 
 #. Example: 
 
@@ -196,11 +195,11 @@ AMJUEL 2D rate fit (E,T)
 
         K=\ln\langle\sigma v\rangle = \sum_{n=0}^N \sum_{m=0}^M \alpha_{n,m}(\ln E)^m (\ln T)^n
         
-where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
-The neutral energy :math:`E` is relative to the fluid flow speed.
-The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
-is the particle weight. Normalisation as in the 1D fit case, with the added normalisation of the velocity and the requirement for
-the neutral energy to be specified in amus. Deterministic evolution equation as in the 1D fit case.
+    where the numbers of coefficients :math:`N` and :math:`M`, and the coefficients :math:`\alpha_{n,m}` are set on construction. 
+    The neutral energy :math:`E` is relative to the fluid flow speed.
+    The final output rate is given as :math:`nKw`, where :math:`n` here is the fluid density and :math:`w` 
+    is the particle weight. Normalisation as in the 1D fit case, with the added normalisation of the velocity and the requirement for
+    the neutral energy to be specified in amus. Deterministic evolution equation as in the 1D fit case.
 
 #. Example: 
 
@@ -215,9 +214,9 @@ Arrhenius data
 #. Required properties: Simple props: weight, fluid_temperature; Species props: none
 #. Details: Given two coefficients :math:`a` and :math:`b`, returns an Arrhenius form rate :math:`a T^b w`, with :math:`T` being a temperature, and :math:`w` being the particle weight. **NOTE**: for many reactions this will need to be multiplied by one or more densities - see below entries on composite data for how one can do that. Leads to the following deterministic weight evolution equation (assuming no additional density multiplication)
 
-.. math::
-
-   \frac{dw}{dt} = -aT^bw
+    .. math::
+    
+      \frac{dw}{dt} = -aT^bw
 
 #. Example: 
 
@@ -286,13 +285,13 @@ Filtered Maxwellian sampler
 #. Details: Produces velocity components sampled from a drifting Maxwellian at the local fluid temperature and with local mean fluid flow. 
    Optionally filters the sampled velocities based on an interaction cross section using a rejection method, effectively sampling from
 
-   .. math::
+    .. math::
 
         f(\vec{v}) \propto \sigma(v_{rel}) f_M(\vec{v},\vec{u},T)
 
-where :math:`\sigma(v_{rel})` is the interaction cross-section evaluated at the relative velocity :math:`|\vec{v}-\vec{u}|`, and :math:`\vec{u}`
-and :math:`T` are the fluid flow speed and temperature, respectively. By default, the cross-section is assumed constant, which just leads to sampling 
-from a drifting Maxwellian. See below for cross-section objects.
+    where :math:`\sigma(v_{rel})` is the interaction cross-section evaluated at the relative velocity :math:`|\vec{v}-\vec{u}|`, and :math:`\vec{u}`
+    and :math:`T` are the fluid flow speed and temperature, respectively. By default, the cross-section is assumed constant, which just leads to sampling 
+    from a drifting Maxwellian. See below for cross-section objects.
 
 #. Example:
 
@@ -503,7 +502,7 @@ Base recombination kernels
 
    * Parent: Simple props: weight; Species props: source_density, source_energy, source_momentum
 
-   * Descendant: Simple props: weight, velocitym internal_state; Species props: N/A
+   * Descendant: Simple props: weight, velocity, internal_state; Species props: N/A
 #. Scattering kernel: Sets the product velocities to the pre-calculated velocities from the :class:`DataCalculator` (excluding the first entry) 
 #. Weight kernel:  The product gets the full weight that participated in the reaction
 #. Transformation kernel:  The products internal_state is set to the correct species ID

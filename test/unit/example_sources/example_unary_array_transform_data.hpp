@@ -15,7 +15,7 @@ inline void unary_array_transform_examples() {
   // The two template arguments are the expected input dimension and the
   // polynomial order (1 less than the dimension of the coefficients)
   //
-  // In this case, the elementwise polynomial will be 2x + 1
+  // In this case, the elementwise polynomial will be 1.0*x + 2.0
   auto linear_poly =
       PolynomialArrayTransform<2, 1>(std::array<REAL, 2>{1.0, 2.0});
 

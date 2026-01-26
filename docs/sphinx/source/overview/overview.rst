@@ -26,15 +26,15 @@ Features provided by the library are:
 VANTAGE particle model
 ~~~~~~~~~~~~~~~~~~~~~~
 
-VANTAGE uses a weighted particle model, where paricles are described by their positions, velocities, and weights :math:`w`, with those weights representing a number of physical particles contained with the macro particle. The weights are assumed to be variable. 
+VANTAGE uses a weighted particle model, where particles are described by their positions, velocities, and weights :math:`w`, with those weights representing a number of physical particles contained with the macro particle. The weights are assumed to be variable. 
 
-Particle can also hold other properties, depending on the use case:
+Particles can also hold other properties, depending on the use case:
 
 * Additional state-specifying data (e.g. species index, internal state specification, etc.)
 * Values of various fields evaluated at particle locations (e.g. plasma densities, temperatures, etc.) - **NOTE**: VANTAGE-Reactions does not provide utilities for evaluation and projection of particle properties, which depend on the user's application and mesh choices
 * Source terms/values to be projected from the particles onto the fields (e.g. particle, momentum, energy sources due to reactions)
 
-In order to construct a NESO-Particles :class:`ParticleGroup` compatible with the requirements of the above particle model, VANTAGE-Reactions offers utilities for the specification of :class:`Species` and various particle properties, which are then used in the reaction model
+In order to construct a NESO-Particles :class:`ParticleGroup` compatible with the requirements of the above particle model, VANTAGE-Reactions offers utilities for the specification of :class:`Species` and various particle properties, which are then used in the reaction model.
 
 VANTAGE-Reactions reaction model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

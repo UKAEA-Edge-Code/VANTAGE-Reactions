@@ -12,11 +12,11 @@ inline void cartesian_basis_reflection_example() {
   auto spherical_reflection = CartesianBasisReflectionData();
 
   // The pipeline object will first evaluate the reflected coordinate (fixed
-  // here) and will then pipe this into the reflection kernel.
+  // here) and will then pipe this into the reflection data object.
   //
-  // The reflection kernel will use the particle velocity and the surface normal
-  // to generate the correct post-reflection basis, where the post-reflection
-  // velocity is given with local cartesian coordinates
+  // The reflection data object will use the particle velocity and the surface
+  // normal to generate the correct post-reflection basis, where the
+  // post-reflection velocity is given with local cartesian coordinates
   //
   // NOTE: This will only work with 3-dimensional data
   auto pipeline = pipe(coord_data, spherical_reflection);
