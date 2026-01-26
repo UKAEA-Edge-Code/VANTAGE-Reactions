@@ -47,11 +47,29 @@ VANTAGE-Reactions assumes that particles carry information of their contribution
 Accumulator Strategies
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Another common requirement is the accumulation of particle properties cellwise. This is a requirement for finite volume methods (projection of sources) as well as general particle data analysis (weighted averages of quantities). Two classes of transformation strategies are provided for this use.
+Another common requirement is the accumulation of particle properties cellwise. This is a requirement for finite volume methods (projection of sources) as well as general particle data analysis (weighted averages of quantities). Three classes of transformation strategies are provided for this use:
+
+* `CellwiseAccumulator` - accumulating one or more properties cellwise
+* `WeightedCellwiseAccumulator` - accumulating one or more properties cellwise while weighing them with the particle weights
+* `CellwiseReactionDataAccumulator` - accumulating the result of a reaction data object, for use in cases when the first two are two restrictive
 
 .. literalinclude:: ../example_sources/example_accumulator_strategy.hpp
    :language: cpp
    :caption: :class:`CellwiseAccumulator` and :class:`WeightedCellwiseAccumulator` example
+   
+.. literalinclude:: ../example_sources/example_reaction_data_accumulator_strategy.hpp
+   :language: cpp
+   :caption: :class:`CellwiseReactionDataAccumulator` example
+
+Cellwise distributor strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to the requirement for accumulating properties cellwise, there are situations where we want to broadcast one or more property onto all particles in a cell. The `CellwiseDistributor` transformation strategy offers this, working like the inverse of the `CellwiseAccumulator`.
+
+
+.. literalinclude:: ../example_sources/example_cellwise_distributor_strategy.hpp
+   :language: cpp
+   :caption: :class:`CellwiseDistributor` example
 
 Composite Strategy
 ~~~~~~~~~~~~~~~~~~
