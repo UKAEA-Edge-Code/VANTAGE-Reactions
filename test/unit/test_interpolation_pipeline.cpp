@@ -316,16 +316,14 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-      sycl_target, buffer_size, shape[1]
-    );
+        sycl_target, buffer_size, shape[1]);
     pre_req_data->fill(0);
-    
+
     pipeline_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
-    
+
     auto results_dat = pre_req_data->get();
 
-    for (int ipart = 0; ipart < pre_req_data->index.shape[0];
-         ipart++) {
+    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
       auto dim_size = pre_req_data->index.shape[1];
 
       auto relative_error =

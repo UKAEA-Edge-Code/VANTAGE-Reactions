@@ -56,7 +56,7 @@ struct BinaryArrayTransformDataOnDevice
     static_assert(
         TRANSFORM::IN_DIM_1 == DATATYPE1::DIM &&
             TRANSFORM::IN_DIM_2 == DATATYPE2::DIM,
-        "BinaryArrayTransformDataOnDevice input dimensions do not conform to "
+        "BinaryArrayTransformDataOnDevice input dimensions do not conform "
         "between the supplied transform and the contained data objects");
   };
 

@@ -11,7 +11,7 @@ struct DummyDataOnDevice
                                         // if used (unused here)
                                       > {
   DummyDataOnDevice(REAL rate // Here we just set the fixed coefficient
-                    );
+  );
 
   std::array<REAL, 1> calc_data(
       const Access::LoopIndex::Read
@@ -56,7 +56,8 @@ struct DummyData
   // This can be done for int props, as well as for species props
   //
   // See below for how this is used
-  constexpr static std::array<int, 1> required_simple_real_props = {props.weight};
+  constexpr static std::array<int, 1> required_simple_real_props = {
+      props.weight};
 
   DummyData(REAL rate_coefficient,
             std::map<int, std::string> properties_map =
@@ -66,7 +67,8 @@ struct DummyData
             Properties<REAL>(
                 required_simple_real_props), // This is where the
                                              // required data enums go in
-                                             // Here no Species required properties
+                                             // Here no Species required
+                                             // properties
             properties_map) {
 
     this->on_device_obj = DummyDataOnDevice(rate_coefficient);
@@ -78,16 +80,15 @@ struct DummyData
   // All ReactionData objects must define this call
   // It sets the indexes on the contained on-device
   // object
-  void index_on_device_object(){
+  void index_on_device_object() {
 
     // Here we set the weight index by calling the ArgumentNameSet
     // find_index() method - it takes the name of the property it should index
     //
-    // See the ArgumentNameClass class implementation, as well as the reaction data
-    // base classes
-    this->on_device_obj->weight_ind =
-        this->required_real_props.find_index(
-            this->properties_map.at(props.weight)); // Use the contained
-                                                    // map to get the name
-    }
+    // See the ArgumentNameClass class implementation, as well as the reaction
+    // data base classes
+    this->on_device_obj->weight_ind = this->required_real_props.find_index(
+        this->properties_map.at(props.weight)); // Use the contained
+                                                // map to get the name
+  }
 };

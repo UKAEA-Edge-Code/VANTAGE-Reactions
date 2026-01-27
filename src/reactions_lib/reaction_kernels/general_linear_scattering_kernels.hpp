@@ -14,8 +14,10 @@ namespace VANTAGE::Reactions {
  *
  * @tparam ndim_velocity The number of dimensions for the particle velocity
  * property.
+ * @tparam with_sources If true will attempt to write to source properties
+ * (defaults to true)
  */
-template <int ndim_velocity>
+template <int ndim_velocity, bool with_sources>
 struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   LinearScatteringKernelsOnDevice() = default;
 
@@ -144,25 +146,27 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
                        Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                        double dt) const {
 
-    std::array<REAL, ndim_velocity> k_V_pre, k_V_post;
-    REAL delta_vsquared = 0.0;
+    if constexpr (with_sources) {
+      std::array<REAL, ndim_velocity> k_V_pre, k_V_post;
+      REAL delta_vsquared = 0.0;
 
-    for (int vdim = 0; vdim < ndim_velocity; vdim++) {
-      k_V_pre[vdim] = req_real_props.at(velocity_ind, index, vdim);
-      k_V_post[vdim] = pre_req_data.at(index.get_loop_linear_index(), vdim);
-      delta_vsquared +=
-          k_V_pre[vdim] * k_V_pre[vdim] - k_V_post[vdim] * k_V_post[vdim];
+      for (int vdim = 0; vdim < ndim_velocity; vdim++) {
+        k_V_pre[vdim] = req_real_props.at(velocity_ind, index, vdim);
+        k_V_post[vdim] = pre_req_data.at(index.get_loop_linear_index(), vdim);
+        delta_vsquared +=
+            k_V_pre[vdim] * k_V_pre[vdim] - k_V_post[vdim] * k_V_post[vdim];
+      }
+
+      // SOURCE_MOMENTUM calc
+      for (int sm_dim = 0; sm_dim < ndim_velocity; sm_dim++) {
+        req_real_props.at(this->source_momentum_ind, index, sm_dim) +=
+            this->mass * modified_weight * (k_V_pre[sm_dim] - k_V_post[sm_dim]);
+      }
+
+      // Set SOURCE_ENERGY
+      req_real_props.at(this->source_energy_ind, index, 0) +=
+          modified_weight * this->mass * delta_vsquared * 0.5;
     }
-
-    // SOURCE_MOMENTUM calc
-    for (int sm_dim = 0; sm_dim < ndim_velocity; sm_dim++) {
-      req_real_props.at(this->source_momentum_ind, index, sm_dim) +=
-          this->mass * modified_weight * (k_V_pre[sm_dim] - k_V_post[sm_dim]);
-    }
-
-    // Set SOURCE_ENERGY
-    req_real_props.at(this->source_energy_ind, index, 0) +=
-        modified_weight * this->mass * delta_vsquared * 0.5;
 
     req_real_props.at(this->weight_ind, index, 0) -= modified_weight;
   }
@@ -180,15 +184,18 @@ public:
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
+ * @tparam with_sources If true will track sources (defaults to true)
  */
-template <int ndim_velocity = 2>
+template <int ndim_velocity = 2, bool with_sources = true>
 struct LinearScatteringKernels : public ReactionKernelsBase {
 
   constexpr static auto props = default_properties;
 
-  constexpr static std::array<int, 4> required_simple_real_props = {
-      props.weight, props.velocity, props.source_momentum, props.source_energy};
+  constexpr static std::array<int, 2> required_simple_real_props_with_sources =
+      {props.source_momentum, props.source_energy};
 
+  constexpr static std::array<int, 2> required_simple_real_props = {
+      props.weight, props.velocity};
   constexpr static std::array<int, 1> required_descendant_simple_int_props = {
       props.internal_state};
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
@@ -204,21 +211,26 @@ struct LinearScatteringKernels : public ReactionKernelsBase {
   LinearScatteringKernels(
       const Species &scattered_species,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(Properties<REAL>(required_simple_real_props),
-                            ndim_velocity, properties_map) {
+      : ReactionKernelsBase(
+            (with_sources) ? Properties<REAL>(required_simple_real_props)
+                                 .merge_with(Properties<REAL>(
+                                     required_simple_real_props_with_sources))
+                           : Properties<REAL>(required_simple_real_props),
+            ndim_velocity, properties_map) {
     this->linear_scattering_kernels_on_device.velocity_ind =
 
         this->required_real_props.simple_prop_index(props.velocity,
                                                     this->properties_map);
 
-    this->linear_scattering_kernels_on_device.source_momentum_ind =
-        this->required_real_props.simple_prop_index(props.source_momentum,
-                                                    this->properties_map);
+    if constexpr (with_sources) {
+      this->linear_scattering_kernels_on_device.source_momentum_ind =
+          this->required_real_props.simple_prop_index(props.source_momentum,
+                                                      this->properties_map);
 
-    this->linear_scattering_kernels_on_device.source_energy_ind =
-        this->required_real_props.simple_prop_index(props.source_energy,
-                                                    this->properties_map);
-
+      this->linear_scattering_kernels_on_device.source_energy_ind =
+          this->required_real_props.simple_prop_index(props.source_energy,
+                                                      this->properties_map);
+    }
     this->linear_scattering_kernels_on_device.weight_ind =
         this->required_real_props.simple_prop_index(props.weight,
                                                     this->properties_map);
@@ -246,7 +258,7 @@ struct LinearScatteringKernels : public ReactionKernelsBase {
   };
 
 private:
-  LinearScatteringKernelsOnDevice<ndim_velocity>
+  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources>
       linear_scattering_kernels_on_device;
 
 public:
@@ -254,7 +266,8 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
 
-  LinearScatteringKernelsOnDevice<ndim_velocity> get_on_device_obj() {
+  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources>
+  get_on_device_obj() {
     return this->linear_scattering_kernels_on_device;
   }
 };

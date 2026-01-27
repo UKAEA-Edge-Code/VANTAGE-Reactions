@@ -1,6 +1,6 @@
+#include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
 #include "reactions_lib/reaction_data/interpolate_data.hpp"
-#include "include/mock_interpolation_data.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;

@@ -190,7 +190,6 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
   }
 }
 
-
 /**
  * @brief Function to contract a hypercube down by 1 dimension via linear
  * interpolation.

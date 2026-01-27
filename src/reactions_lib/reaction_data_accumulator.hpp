@@ -85,6 +85,23 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
   }
 
   /**
+   * @brief Get the pointer to underlying CellDatConst object
+   *
+   */
+
+  CellDatConstSharedPtr<REAL> get_value_pointer() { return this->values; }
+
+  /**
+   * @brief Set the underlying CellDatConst pointer for given named data
+   *
+   * @param cell_dat_const_ptr Shared pointer to CellDatConst<REAL>
+   */
+  void set_value_pointer(CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
+
+    this->values = cell_dat_const_ptr;
+  }
+
+  /**
    * @brief Extract the cell-wise accumulated data as a standard vector of
    * CellData objects
    */

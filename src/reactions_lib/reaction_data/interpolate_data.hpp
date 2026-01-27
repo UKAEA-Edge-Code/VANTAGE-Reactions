@@ -176,8 +176,8 @@ struct InterpolateData
                   const std::vector<REAL> &ranges_vec,
                   const std::vector<REAL> &grid,
                   SYCLTargetSharedPtr sycl_target)
-      : ReactionDataBase<InterpolateDataOnDevice<
-                             input_ndim, EXTRAPOLATION_TYPE, output_ndim>,
+      : ReactionDataBase<InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE,
+                                                 output_ndim>,
                          output_ndim, DEFAULT_RNG_KERNEL, input_ndim>() {
     if constexpr ((EXTRAPOLATION_TYPE < 0) || (EXTRAPOLATION_TYPE > 2)) {
       NESOASSERT(false,
@@ -188,7 +188,8 @@ struct InterpolateData
     auto initial_hypercube =
         interp_utils::construct_initial_hypercube(INT(input_ndim));
 
-    this->on_device_obj = InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE, output_ndim>();
+    this->on_device_obj =
+        InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE, output_ndim>();
 
     // BufferDevice<REAL> mock setup
     this->dims_vec_buf =

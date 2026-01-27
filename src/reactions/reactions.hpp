@@ -29,6 +29,7 @@
 #include "../reactions_lib/reaction_data/AMJUEL_1D_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data.hpp"
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data_H3.hpp"
+#include "../reactions_lib/reaction_data/array_lookup_data.hpp"
 #include "../reactions_lib/reaction_data/arrhenius_data.hpp"
 #include "../reactions_lib/reaction_data/cartesian_basis_reflection_data.hpp"
 #include "../reactions_lib/reaction_data/extractor_data.hpp"
