@@ -265,7 +265,7 @@ struct ReactionDataBase {
    * @brief Getter for the SYCL device-specific
    * struct.
    */
-  ON_DEVICE_TYPE get_on_device_obj() {
+  const ON_DEVICE_TYPE &get_on_device_obj() {
 
     NESOASSERT(this->on_device_obj.has_value(),
                "on_device_obj in ReactionDataBase not initialised");

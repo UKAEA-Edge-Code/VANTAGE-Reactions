@@ -1,17 +1,18 @@
 inline void spec_builder_example() {
 
-  // The recommended way of initialising a ParticleSpecBuilder 
-  // is by using the following constructor, which will 
-  // make sure that the properties present satisfy requirements in the 
-  // library 
-  
-  auto particle_spec_builder_default = ParticleSpecBuilder(2 // the dimensionality of the default 
-                                                             // position and velocity props 
-                                                          ); // A map (see below) can additionally i
-                                                             // be passed here to remap
-                                                             // some of the default property Syms
+  // The recommended way of initialising a ParticleSpecBuilder
+  // is by using the following constructor, which will
+  // make sure that the properties present satisfy requirements in the
+  // library
 
-  // Alternatively, if full control is required 
+  auto particle_spec_builder_default =
+      ParticleSpecBuilder(2 // the dimensionality of the default
+                            // position and velocity props
+      );                    // A map (see below) can additionally i
+                            // be passed here to remap
+                            // some of the default property Syms
+
+  // Alternatively, if full control is required
   // a spec builder can be initialised with an existing spec,
   // which will not add any of the default properties.
   // The user is responsible then for ensuring that

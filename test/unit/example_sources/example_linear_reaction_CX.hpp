@@ -104,8 +104,7 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
     //
     // The timestep is used to calculate the total particle weight participating
     // in the reaction as rate * timestep
-    cx_reaction.apply(particle_sub_group, i, i + 1, 0.1,
-                                        product_group);
+    cx_reaction.apply(particle_sub_group, i, i + 1, 0.1, product_group);
   }
 
   return;
