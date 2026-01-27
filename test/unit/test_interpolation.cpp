@@ -92,10 +92,6 @@ TEST(InterpolationTest, REACTION_DATA_1D) {
 
   auto npart = particle_group->get_npart_local();
 
-  // This is a bit of a workaround for the fact that currently I can't use
-  // PipelineData to pass a ConcatenatorData object that contains data from
-  // multiple 1D ExtractorData objects and pass that to an InterpolateData
-  // object.
   particle_group->add_particle_dat(Sym<REAL>("COMBINED_PROP"), ndim);
 
   particle_loop(
@@ -111,17 +107,6 @@ TEST(InterpolationTest, REACTION_DATA_1D) {
   auto ranges_vec = ADAS_values.get_ranges_flat_vec();
   auto grid = ADAS_values.get_coeffs_vec();
 
-  // The input and output ndims being 2  for the InterpolateData (for this
-  // specific unit test) is because PipelineData only presents the output ndims
-  // of the last object in the pipeline when DataCalculator queries the
-  // ndims of the passed PipelineData object. This is fine if either all objects
-  // in the pipeline have the same output ndims OR if the last output ndims is
-  // greater than the output ndims of any preceeding object in the pipeline.
-  // For the current implementation of InterpolateData, I would
-  // prefer input ndim be equal to the dimensionality of the grid.
-  // and output ndim being 1 but this works fine for testing. (I'm just storing
-  // the result in the 0th index of the array returned by
-  // InterpolateData.calc_data and test against that).
   auto extractor_data = ExtractorData<ndim>(Sym<REAL>("COMBINED_PROP"));
   auto interpolator_data =
       InterpolateData<ndim>(dims_vec, ranges_vec, grid, sycl_target);
@@ -214,10 +199,6 @@ TEST(InterpolationTest, REACTION_DATA_2D) {
 
   auto npart = particle_group->get_npart_local();
 
-  // This is a bit of a workaround for the fact that currently I can't use
-  // PipelineData to pass a ConcatenatorData object that contains data from
-  // multiple 1D ExtractorData objects and pass that to an InterpolateData
-  // object.
   particle_group->add_particle_dat(Sym<REAL>("COMBINED_PROP"), ndim);
 
   particle_loop(
@@ -237,17 +218,6 @@ TEST(InterpolationTest, REACTION_DATA_2D) {
   auto ranges_vec = ADAS_values.get_ranges_flat_vec();
   auto grid = ADAS_values.get_coeffs_vec();
 
-  // The input and output ndims being 2  for the InterpolateData (for this
-  // specific unit test) is because PipelineData only presents the output ndims
-  // of the last object in the pipeline when DataCalculator queries the
-  // ndims of the passed PipelineData object. This is fine if either all objects
-  // in the pipeline have the same output ndims OR if the last output ndims is
-  // greater than the output ndims of any preceeding object in the pipeline.
-  // For the current implementation of InterpolateData, I would
-  // prefer input ndim be equal to the dimensionality of the grid.
-  // and output ndim being 1 but this works fine for testing. (I'm just storing
-  // the result in the 0th index of the array returned by
-  // InterpolateData.calc_data and test against that).
   auto extractor_data = ExtractorData<ndim>(Sym<REAL>("COMBINED_PROP"));
   auto interpolator_data =
       InterpolateData<ndim>(dims_vec, ranges_vec, grid, sycl_target);
@@ -337,10 +307,6 @@ TEST(InterpolationTest, REACTION_DATA_3D) {
 
   auto npart = particle_group->get_npart_local();
 
-  // This is a bit of a workaround for the fact that currently I can't use
-  // PipelineData to pass a ConcatenatorData object that contains data from
-  // multiple 1D ExtractorData objects and pass that to an InterpolateData
-  // object.
   particle_group->add_particle_dat(Sym<REAL>("COMBINED_PROP"), ndim);
 
   particle_loop(
@@ -361,17 +327,6 @@ TEST(InterpolationTest, REACTION_DATA_3D) {
   auto ranges_vec = ADAS_values.get_ranges_flat_vec();
   auto grid = ADAS_values.get_coeffs_vec();
 
-  // The input and output ndims being 2  for the InterpolateData (for this
-  // specific unit test) is because PipelineData only presents the output ndims
-  // of the last object in the pipeline when DataCalculator queries the
-  // ndims of the passed PipelineData object. This is fine if either all objects
-  // in the pipeline have the same output ndims OR if the last output ndims is
-  // greater than the output ndims of any preceeding object in the pipeline.
-  // For the current implementation of InterpolateData, I would
-  // prefer input ndim be equal to the dimensionality of the grid.
-  // and output ndim being 1 but this works fine for testing. (I'm just storing
-  // the result in the 0th index of the array returned by
-  // InterpolateData.calc_data and test against that).
   auto extractor_data = ExtractorData<ndim>(Sym<REAL>("COMBINED_PROP"));
   auto interpolator_data =
       InterpolateData<ndim>(dims_vec, ranges_vec, grid, sycl_target);
@@ -463,10 +418,6 @@ TEST(InterpolationTest, REACTION_DATA_4D) {
 
   auto npart = particle_group->get_npart_local();
 
-  // This is a bit of a workaround for the fact that currently I can't use
-  // PipelineData to pass a ConcatenatorData object that contains data from
-  // multiple 1D ExtractorData objects and pass that to an InterpolateData
-  // object.
   particle_group->add_particle_dat(Sym<REAL>("COMBINED_PROP"), ndim);
 
   particle_loop(
@@ -488,17 +439,6 @@ TEST(InterpolationTest, REACTION_DATA_4D) {
   auto ranges_vec = ADAS_values.get_ranges_flat_vec();
   auto grid = ADAS_values.get_coeffs_vec();
 
-  // The input and output ndims being 2  for the InterpolateData (for this
-  // specific unit test) is because PipelineData only presents the output ndims
-  // of the last object in the pipeline when DataCalculator queries the
-  // ndims of the passed PipelineData object. This is fine if either all objects
-  // in the pipeline have the same output ndims OR if the last output ndims is
-  // greater than the output ndims of any preceeding object in the pipeline.
-  // For the current implementation of InterpolateData, I would
-  // prefer input ndim be equal to the dimensionality of the grid.
-  // and output ndim being 1 but this works fine for testing. (I'm just storing
-  // the result in the 0th index of the array returned by
-  // InterpolateData.calc_data and test against that).
   auto extractor_data = ExtractorData<ndim>(Sym<REAL>("COMBINED_PROP"));
   auto interpolator_data =
       InterpolateData<ndim>(dims_vec, ranges_vec, grid, sycl_target);
@@ -598,10 +538,6 @@ TEST(InterpolationTest, REACTION_DATA_5D) {
 
   auto npart = particle_group->get_npart_local();
 
-  // This is a bit of a workaround for the fact that currently I can't use
-  // PipelineData to pass a ConcatenatorData object that contains data from
-  // multiple 1D ExtractorData objects and pass that to an InterpolateData
-  // object.
   particle_group->add_particle_dat(Sym<REAL>("COMBINED_PROP"), ndim);
 
   particle_loop(
@@ -624,17 +560,6 @@ TEST(InterpolationTest, REACTION_DATA_5D) {
   auto ranges_vec = ADAS_values.get_ranges_flat_vec();
   auto grid = ADAS_values.get_coeffs_vec();
 
-  // The input and output ndims being 2  for the InterpolateData (for this
-  // specific unit test) is because PipelineData only presents the output ndims
-  // of the last object in the pipeline when DataCalculator queries the
-  // ndims of the passed PipelineData object. This is fine if either all objects
-  // in the pipeline have the same output ndims OR if the last output ndims is
-  // greater than the output ndims of any preceeding object in the pipeline.
-  // For the current implementation of InterpolateData, I would
-  // prefer input ndim be equal to the dimensionality of the grid.
-  // and output ndim being 1 but this works fine for testing. (I'm just storing
-  // the result in the 0th index of the array returned by
-  // InterpolateData.calc_data and test against that).
   auto extractor_data = ExtractorData<ndim>(Sym<REAL>("COMBINED_PROP"));
   auto interpolator_data =
       InterpolateData<ndim>(dims_vec, ranges_vec, grid, sycl_target);
