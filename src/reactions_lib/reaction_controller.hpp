@@ -5,6 +5,7 @@
 #include "particle_properties_map.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
@@ -90,9 +91,9 @@ struct ReactionController {
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
     this->setup_particle_group_temporary();
-    this->reacted_marker =
-        make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-            this->reacted_flag, 1);
+    this->reacted_marker = make_direct_marking_strategy(
+        "reacted_marker", [=](auto reacted) { return reacted[0] == 1; },
+        Access::read(this->reacted_flag));
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel =
         std::make_shared<HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
@@ -177,9 +178,10 @@ struct ReactionController {
           this->parent_ids.insert(in_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
-              in_state,
-              make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                  this->id_sym, in_state)));
+              in_state, make_direct_marking_strategy(
+                            "species_selector_" + std::to_string(in_state),
+                            [=](auto id) { return id[0] == in_state; },
+                            Access::read(this->id_sym))));
         }
       }
 
@@ -190,9 +192,10 @@ struct ReactionController {
           this->child_ids.insert(out_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
-              out_state,
-              make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                  this->id_sym, out_state)));
+              out_state, make_direct_marking_strategy(
+                             "species_selector_" + std::to_string(out_state),
+                             [=](auto id) { return id[0] == out_state; },
+                             Access::read(this->id_sym))));
         }
       }
     }

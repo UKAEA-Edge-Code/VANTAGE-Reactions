@@ -51,8 +51,9 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
 
   auto remove_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
-              Sym<REAL>(prop_map[default_properties.weight]), 1e-6)},
+          make_direct_marking_strategy(
+              "very_low_weight", [](auto w) { return w[0] < 1e-6; },
+              Access::read(Sym<REAL>("WEIGHT")))},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
   // But will first try merge any children/parents below a higher weight
   // threshold
@@ -62,34 +63,38 @@ inline void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
 
   auto merge_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
-              Sym<REAL>(prop_map[default_properties.weight]), 1e-2)},
+          make_direct_marking_strategy(
+              "low_weight", [](auto w) { return w[0] < 1e-2; },
+              Access::read(Sym<REAL>("WEIGHT")))},
       merge_transform);
 
   auto reaction_controller = ReactionController(
-      std::vector{
-          merge_wrapper,
-          remove_wrapper}, // the order matters! this will first merge parents,
-                           // then remove any remaining small particles
+      std::vector{merge_wrapper,
+                  remove_wrapper}, // the order matters! this will first
+                                   // merge parents, then remove any
+                                   // remaining small particles
       std::vector{merge_wrapper, remove_wrapper}
       // this will do the same to the children
       // before merging them into the parents
   );
 
   reaction_controller.set_cell_block_size(
-      256); // This is the greedy default value, reduce this if memory issues
-            // are found
+      256); // This is the greedy default value, reduce this if memory
+            // issues are found
   reaction_controller.set_max_particles_per_cell(
-      16384); // This is the default maximum (average) number of particles per
-              // cell for the use in reaction data buffers, modify as needed
+      16384); // This is the default maximum (average) number of particles
+              // per cell for the use in reaction data buffers, modify as
+              // needed
 
   // Now we can add the reaction simply
   reaction_controller.add_reaction(cx_reaction);
   reaction_controller.add_reaction(ionise_reaction_1);
   reaction_controller.add_reaction(ionise_reaction_2);
 
-  // We can now request an Euler step of 0.01 time units in standard deterministic mode
-  reaction_controller.apply(particle_group, 0.01, ControllerMode::standard_mode);
+  // We can now request an Euler step of 0.01 time units in standard
+  // deterministic mode
+  reaction_controller.apply(particle_group, 0.01,
+                            ControllerMode::standard_mode);
 
   return;
 }

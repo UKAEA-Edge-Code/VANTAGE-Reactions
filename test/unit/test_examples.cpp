@@ -27,7 +27,6 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_ionisation_kernels.hpp"
 #include "./example_sources/example_lambda_wrapper_array_transform_data.hpp"
 #include "./example_sources/example_linear_reaction_CX.hpp"
-#include "./example_sources/example_marking_strategy.hpp"
 #include "./example_sources/example_maxwellian_sampler.hpp"
 #include "./example_sources/example_merging_strategy.hpp"
 #include "./example_sources/example_new_reaction_data.hpp"
@@ -51,7 +50,6 @@ TEST(Examples, all) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  marking_strategy_example(particle_group);
   removal_strategy_example(particle_group);
   zeroer_strategy_example(particle_group);
   accumulator_strategy_example(particle_group);
