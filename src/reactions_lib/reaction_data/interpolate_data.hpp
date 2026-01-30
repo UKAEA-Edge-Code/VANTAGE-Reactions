@@ -88,22 +88,24 @@ struct InterpolateDataOnDevice
     // clamp_to_zero)
     bool constexpr clamp_to_last = (EXTRAPOLATION_TYPE == 2) ? true : false;
 
-    std::array<bool, input_ndim> out_of_range_over_marker;
-    std::array<bool, input_ndim> out_of_range_under_marker;
-
-    for (int i = 0; i < input_ndim; i++) {
-      out_of_range_over_marker[i] = false;
-      out_of_range_under_marker[i] = false;
-    }
-
+    // Out-of-range clamping handling
     bool out_of_range = false;
     for (int i = 0; i < input_ndim; i++) {
+      auto ranges_stride = (i > 0 ? dims_vec_buf[i - 1] : 0);
+      // check for out-of-range beyond the upper limit of the given dimension.
       if (origin_indices[i] == (extended_dims_vec_buf[i] - 1)) {
-        out_of_range_over_marker[i] = true;
         out_of_range = true;
-      } else if (origin_indices[i] == 0) {
-        out_of_range_under_marker[i] = true;
+        if constexpr (clamp_to_last) {
+          mut_interpolation_points[i] =
+              (ranges_vec_buf + ranges_stride)[dims_vec_buf[i] - 1];
+        }
+      }
+      // check for out-of-range below the lower limit of the given dimension.
+      else if (origin_indices[i] == 0) {
         out_of_range = true;
+        if constexpr (clamp_to_last) {
+          mut_interpolation_points[i] = (ranges_vec_buf + ranges_stride)[0];
+        }
       }
       if (out_of_range) {
         // Handles special case of clamp_to_zero - simply returns
@@ -115,18 +117,7 @@ struct InterpolateDataOnDevice
       }
     }
 
-    if constexpr (clamp_to_last) {
-      for (int i = 0; i < input_ndim; i++) {
-        auto ranges_stride = (i > 0 ? dims_vec_buf[i - 1] : 0);
-        if (out_of_range_over_marker[i]) {
-          mut_interpolation_points[i] =
-              (ranges_vec_buf + ranges_stride)[dims_vec_buf[i] - 1];
-        } else if (out_of_range_under_marker[i]) {
-          mut_interpolation_points[i] = (ranges_vec_buf + ranges_stride)[0];
-        }
-      }
-    }
-
+    // Limit origin_indices to be between the standard dimensional ranges.
     if constexpr (continue_last || clamp_to_last) {
       for (int i = 0; i < input_ndim; i++) {
         origin_indices[i] =
