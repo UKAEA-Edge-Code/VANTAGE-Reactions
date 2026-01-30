@@ -66,8 +66,9 @@ struct MarkingStrategy : ProfilingBase {
  * @return std::shared_ptr<MarkingStrategy>
  */
 template <typename MarkingStrategyDerived, typename... ARGS>
-inline std::shared_ptr<MarkingStrategy> make_marking_strategy(ARGS... args) {
-  auto r = std::make_shared<MarkingStrategyDerived>(args...);
+inline std::shared_ptr<MarkingStrategy> make_marking_strategy(ARGS &&...args) {
+  auto r =
+      std::make_shared<MarkingStrategyDerived>(std::forward<ARGS>(args)...);
   return std::dynamic_pointer_cast<MarkingStrategy>(r);
 }
 
@@ -118,8 +119,9 @@ struct TransformationStrategy : ProfilingBase {
  */
 template <typename TransformationStrategyDerived, typename... ARGS>
 inline std::shared_ptr<TransformationStrategy>
-make_transformation_strategy(ARGS... args) {
-  auto r = std::make_shared<TransformationStrategyDerived>(args...);
+make_transformation_strategy(ARGS &&...args) {
+  auto r = std::make_shared<TransformationStrategyDerived>(
+      std::forward<ARGS>(args)...);
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 }
 
@@ -342,5 +344,41 @@ struct MarkingFunctionWrapperBase {
     return underlying.marking_condition(real_vars, int_vars);
   }
 };
+
+template <typename KERNEL, typename... ARGS>
+struct MarkingStrategyDirect : MarkingStrategy {
+
+  MarkingStrategyDirect() = default;
+
+  MarkingStrategyDirect(KERNEL &&kernel, ARGS &&...args)
+      : stored_args(std::forward_as_tuple(std::forward<ARGS>(args)...)),
+        kernel(std::forward<KERNEL>(kernel)) {}
+
+  ParticleSubGroupSharedPtr
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr target) override {
+
+    NESOASSERT(target != nullptr,
+               "Passing nullptr for particle_sub_group argument!");
+
+    return std::apply(
+        [&](auto &&...args) {
+          return particle_sub_group(target, this->kernel,
+                                    std::forward<decltype(args)>(args)...);
+        },
+        this->stored_args);
+  }
+
+private:
+  std::tuple<ARGS...> stored_args;
+  KERNEL kernel;
+};
+
+template <typename KERNEL, typename... ARGS>
+inline std::shared_ptr<MarkingStrategy>
+make_direct_marking_strategy(KERNEL &&kernel, ARGS &&...args) {
+  auto r = std::make_shared<MarkingStrategyDirect<KERNEL, ARGS...>>(
+      std::forward<KERNEL>(kernel), std::forward<ARGS>(args)...);
+  return std::dynamic_pointer_cast<MarkingStrategy>(r);
+}
 } // namespace VANTAGE::Reactions
 #endif
