@@ -33,6 +33,8 @@ struct InterpolateDataOnDevice
           &kernel) const {
     // Temporary arrays for intermediate calculation (in principle will hold
     // unique values for each particle)
+    std::array<REAL, input_ndim> mut_interpolation_points =
+        interpolation_points;
     std::array<INT, input_ndim> origin_indices;
     origin_indices.fill(0);
 
@@ -63,19 +65,20 @@ struct InterpolateDataOnDevice
     auto dims_vec_buf = this->dims_vec_ptr;
     auto grid_buf = this->grid_ptr;
     auto extended_ranges_vec_buf = this->extended_ranges_vec_ptr;
+    auto extended_dims_vec_buf = this->extended_dims_vec_ptr;
+
+    std::array<REAL, output_ndim> calculated_interpolated_vals;
+    calculated_interpolated_vals.fill(0.0);
 
     // Calculation of the indices that will form the "origin" of the
     // hypercube. These are the smallest indices in each dimension that
     // still have coordinate values that are less than the interpolation
     // values in that dimension.
-    origin_indices[0] = interp_utils::calc_closest_point_index(
-        interpolation_points[0], extended_ranges_vec_buf,
-        (dims_vec_buf[0] + 1));
-    for (int i = 1; i < input_ndim; i++) {
+    for (int i = 0; i < input_ndim; i++) {
+      auto ranges_stride = (i > 0 ? extended_dims_vec_buf[i - 1] : 0);
       origin_indices[i] = interp_utils::calc_closest_point_index(
-          interpolation_points[i],
-          extended_ranges_vec_buf + (dims_vec_buf[i - 1] + 2),
-          (dims_vec_buf[i] + 1));
+          mut_interpolation_points[i], extended_ranges_vec_buf + ranges_stride,
+          extended_dims_vec_buf[i]);
     }
 
     bool constexpr continue_last = (EXTRAPOLATION_TYPE == 0) ? true : false;
@@ -85,71 +88,101 @@ struct InterpolateDataOnDevice
     // clamp_to_zero)
     bool constexpr clamp_to_last = (EXTRAPOLATION_TYPE == 2) ? true : false;
 
-    if constexpr (continue_last) {
-      for (int i = 0; i < input_ndim; i++) {
-        origin_indices[i] =
-            Kernel::min(Kernel::max(origin_indices[i], 1), dims_vec_buf[i] - 1);
-      }
+    std::array<bool, input_ndim> out_of_range_over_marker;
+    std::array<bool, input_ndim> out_of_range_under_marker;
+
+    for (int i = 0; i < input_ndim; i++) {
+      out_of_range_over_marker[i] = false;
+      out_of_range_under_marker[i] = false;
     }
 
-    if constexpr (!clamp_to_zero && !clamp_to_last) {
-      // Necessary for using the interp_utils functions.
-      auto interpolation_points_ptr = interpolation_points.data();
-      auto origin_indices_ptr = origin_indices.data();
-
-      auto vertex_func_evals_ptr = vertex_func_evals.data();
-      auto vertex_coord_ptr = vertex_coord.data();
-
-      auto input_vertices_ptr = input_vertices.data();
-      auto output_vertices_ptr = output_vertices.data();
-      auto output_evals_ptr = output_evals.data();
-
-      auto varying_dim_ptr = varying_dim.data();
-
-      // Initial function evaluation (ie values of the coeffs_vec) based on
-      // the vertices of the hypercube.
-      interp_utils::initial_func_eval_on_device(
-          vertex_func_evals_ptr, vertex_coord_ptr, grid_buf,
-          hypercube_vertices_buf, origin_indices_ptr, dims_vec_buf, input_ndim,
-          num_points);
-
-      // Fill input_vertices vector
-      for (int i = 0; i < num_points; i++) {
-        input_vertices[i] = hypercube_vertices_buf[i];
+    bool out_of_range = false;
+    for (int i = 0; i < input_ndim; i++) {
+      if (origin_indices[i] == (extended_dims_vec_buf[i] - 1)) {
+        out_of_range_over_marker[i] = true;
+        out_of_range = true;
+      } else if (origin_indices[i] == 0) {
+        out_of_range_under_marker[i] = true;
+        out_of_range = true;
       }
-
-      // Loop until the last dimension (down to 0D)
-      while (dim_index >= static_cast<int>(output_ndim - 1)) {
-        // Contract the hypercube vertices and evaluations, eg. if
-        // input_vertices.size() == 2^3 then output_vertices.size() == 2^2, as
-        // in going from a 3D hypercube(cube) to a 2D hypercube(square).
-        // Additionally input_evals and output_evals are scaled down in the
-        // same way via linear interpolation.
-        interp_utils::contract_hypercube_on_device(
-            interpolation_points_ptr, dim_index, input_vertices_ptr,
-            origin_indices_ptr, vertex_func_evals_ptr, ranges_vec_buf,
-            dims_vec_buf, output_vertices_ptr, output_evals_ptr,
-            varying_dim_ptr, vertex_coord_ptr);
-
-        // This now accounts for the smaller size of output_vertices and
-        // output_evals, and makes sure that any loops in future
-        // contract_hypercube(...) invocations remain consistent.
-        num_points = num_points >> 1;
-        dim_index--;
-
-        // This resets the input_vertices and vertex_func_evals
-        for (int i = 0; i < num_points; i++) {
-          input_vertices[i] = output_vertices[i];
-          vertex_func_evals[i] = output_evals[i];
+      if (out_of_range) {
+        // Handles special case of clamp_to_zero - simply returns
+        // zero-filled interpolated values if any interpolation point is out of
+        // the range of allowed points for its dimension.
+        if constexpr (clamp_to_zero) {
+          return calculated_interpolated_vals;
         }
       }
     }
 
-    std::array<REAL, output_ndim> calculated_interpolated_vals;
-    calculated_interpolated_vals.fill(0.0);
+    if constexpr (clamp_to_last) {
+      for (int i = 0; i < input_ndim; i++) {
+        auto ranges_stride = (i > 0 ? dims_vec_buf[i - 1] : 0);
+        if (out_of_range_over_marker[i]) {
+          mut_interpolation_points[i] =
+              (ranges_vec_buf + ranges_stride)[dims_vec_buf[i] - 1];
+        } else if (out_of_range_under_marker[i]) {
+          mut_interpolation_points[i] = (ranges_vec_buf + ranges_stride)[0];
+        }
+      }
+    }
 
-    // Assign to first element of returned array. (See
-    // test/unit/test_interpolation.cpp for reasons for the workaround.)
+    if constexpr (continue_last || clamp_to_last) {
+      for (int i = 0; i < input_ndim; i++) {
+        origin_indices[i] =
+            Kernel::min(Kernel::max(origin_indices[i], 0), dims_vec_buf[i] - 1);
+      }
+    }
+
+    // Necessary for using the interp_utils functions.
+    auto mut_interpolation_points_ptr = mut_interpolation_points.data();
+    auto origin_indices_ptr = origin_indices.data();
+
+    auto vertex_func_evals_ptr = vertex_func_evals.data();
+    auto vertex_coord_ptr = vertex_coord.data();
+
+    auto input_vertices_ptr = input_vertices.data();
+    auto output_vertices_ptr = output_vertices.data();
+    auto output_evals_ptr = output_evals.data();
+
+    auto varying_dim_ptr = varying_dim.data();
+
+    // Initial function evaluation (ie values of the coeffs_vec) based on
+    // the vertices of the hypercube.
+    interp_utils::initial_func_eval_on_device(
+        vertex_func_evals_ptr, vertex_coord_ptr, grid_buf,
+        hypercube_vertices_buf, origin_indices_ptr, dims_vec_buf, input_ndim,
+        num_points);
+
+    // Fill input_vertices vector
+    for (int i = 0; i < num_points; i++) {
+      input_vertices[i] = hypercube_vertices_buf[i];
+    }
+
+    // Loop until the last dimension (down to 0D)
+    while (dim_index >= static_cast<int>(output_ndim - 1)) {
+      // Contract the hypercube vertices and evaluations, eg. if
+      // input_vertices.size() == 2^3 then output_vertices.size() == 2^2, as
+      // in going from a 3D hypercube(cube) to a 2D hypercube(square).
+      interp_utils::contract_hypercube_on_device(
+          mut_interpolation_points_ptr, dim_index, input_vertices_ptr,
+          origin_indices_ptr, vertex_func_evals_ptr, ranges_vec_buf,
+          dims_vec_buf, output_vertices_ptr, output_evals_ptr, varying_dim_ptr,
+          vertex_coord_ptr);
+
+      // This now accounts for the smaller size of output_vertices and
+      // output_evals, and makes sure that any loops in future
+      // contract_hypercube(...) invocations remain consistent.
+      num_points = num_points >> 1;
+      dim_index--;
+
+      // This resets the input_vertices and vertex_func_evals
+      for (int i = 0; i < num_points; i++) {
+        input_vertices[i] = output_vertices[i];
+        vertex_func_evals[i] = output_evals[i];
+      }
+    }
+
     for (int i = 0; i < output_ndim; i++) {
       calculated_interpolated_vals[i] = output_evals[i];
     }
@@ -163,6 +196,7 @@ public:
   REAL *ranges_vec_ptr;
   REAL *grid_ptr;
   REAL *extended_ranges_vec_ptr;
+  size_t *extended_dims_vec_ptr;
 
   static constexpr INT initial_num_points = 1 << input_ndim;
 };
@@ -203,19 +237,23 @@ struct InterpolateData
 
     std::vector<REAL> extended_ranges_vec;
     for (size_t idim = 0; idim < input_ndim; idim++) {
-      int dim_counter = 0;
+      auto ranges_stride = (idim > 0 ? dims_vec[idim - 1] : 0);
       extended_ranges_vec.push_back(-INF);
       for (size_t irange = 0; irange < dims_vec[idim]; irange++) {
-        extended_ranges_vec.push_back(ranges_vec[irange]);
+        extended_ranges_vec.push_back(ranges_vec[irange + ranges_stride]);
       }
       extended_ranges_vec.push_back(INF);
-      dim_counter += extended_dims_vec[idim];
     }
 
     this->extended_ranges_vec_buf =
         std::make_shared<BufferDevice<REAL>>(sycl_target, extended_ranges_vec);
     this->on_device_obj->extended_ranges_vec_ptr =
         this->extended_ranges_vec_buf->ptr;
+
+    this->extended_dims_vec_buf =
+        std::make_shared<BufferDevice<size_t>>(sycl_target, extended_dims_vec);
+    this->on_device_obj->extended_dims_vec_ptr =
+        this->extended_dims_vec_buf->ptr;
 
     this->ranges_vec_buf =
         std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
@@ -233,6 +271,7 @@ struct InterpolateData
   std::shared_ptr<BufferDevice<size_t>> dims_vec_buf;
   std::shared_ptr<BufferDevice<REAL>> ranges_vec_buf;
   std::shared_ptr<BufferDevice<REAL>> extended_ranges_vec_buf;
+  std::shared_ptr<BufferDevice<size_t>> extended_dims_vec_buf;
   std::shared_ptr<BufferDevice<REAL>> grid_buf;
   std::shared_ptr<BufferDevice<INT>> hypercube_vertices_buf;
 };

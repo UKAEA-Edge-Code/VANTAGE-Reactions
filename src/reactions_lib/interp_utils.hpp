@@ -85,7 +85,7 @@ inline std::size_t calc_closest_point_index(const REAL &x_interp,
                                             REAL *dim_range,
                                             const std::size_t &dim_size) {
   std::size_t L = 0;
-  std::size_t R = dim_size - 1;
+  std::size_t R = dim_size;
   std::size_t m;
 
   while ((R - L) > 1) {

@@ -6,6 +6,40 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
+struct coefficient_values_1D_linear {
+private:
+  static constexpr int ndim = 1;
+  static constexpr size_t dim0 = 8;
+
+  // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
+  static constexpr std::array<REAL, dim0> dim0_range = {
+      1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+
+  std::vector<REAL> coeffs_vec;
+  std::vector<REAL> ranges_flat_vec;
+
+public:
+  coefficient_values_1D_linear() {
+    for (int idim0 = 0; idim0 < dim0; idim0++) {
+      this->coeffs_vec.push_back(2 * this->dim0_range[idim0]);
+    }
+
+    std::vector<REAL> dim0_range_vec(this->dim0_range.begin(),
+                                     this->dim0_range.end());
+
+    std::vector<REAL> ranges_flat_vec = dim0_range_vec;
+    this->ranges_flat_vec = ranges_flat_vec;
+  };
+
+  const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
+
+  const std::vector<REAL> &get_ranges_flat_vec() {
+    return this->ranges_flat_vec;
+  }
+
+  std::vector<size_t> get_dims_vec() { return std::vector<size_t>{this->dim0}; }
+};
+
 struct coefficient_values_1D {
 private:
   static constexpr int ndim = 1;

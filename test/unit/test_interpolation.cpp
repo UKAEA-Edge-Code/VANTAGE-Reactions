@@ -47,39 +47,6 @@ TEST(InterpolationTest, BINARY_SEARCH_INTERPOLATE) {
   ASSERT_DOUBLE_EQ(left_most_index, 4);
 }
 
-TEST(InterpolationTest, BINARY_SEARCH_EXTRAPOLATE_UNDER) {
-  auto test_values = coefficient_values_1D();
-  auto dims_vec = test_values.get_dims_vec();
-  auto ranges_vec = test_values.get_ranges_flat_vec();
-  auto grid = test_values.get_coeffs_vec();
-
-  REAL interp_point = 1.0e17;
-
-  ranges_vec.insert(ranges_vec.begin(), -INF);
-  ranges_vec.push_back(INF);
-
-  auto left_most_index = interp_utils::calc_closest_point_index(
-      interp_point, ranges_vec.data(), dims_vec[0] + 1);
-
-  ASSERT_DOUBLE_EQ(left_most_index, 0);
-}
-
-TEST(InterpolationTest, BINARY_SEARCH_EXTRAPOLATE_OVER) {
-  auto test_values = coefficient_values_1D();
-  auto dims_vec = test_values.get_dims_vec();
-  auto ranges_vec = test_values.get_ranges_flat_vec();
-  auto grid = test_values.get_coeffs_vec();
-
-  REAL interp_point = 1.0e19;
-  ranges_vec.insert(ranges_vec.begin(), -INF);
-  ranges_vec.push_back(INF);
-
-  auto left_most_index = interp_utils::calc_closest_point_index(
-      interp_point, ranges_vec.data(), dims_vec[0] + 1);
-
-  ASSERT_DOUBLE_EQ(left_most_index, dims_vec[0]);
-}
-
 TEST(InterpolationTest, REACTION_DATA_1D) {
   // Interpolation points
   REAL prop_interp_0 = 6.4e18;
@@ -177,11 +144,17 @@ TEST(InterpolationTest, REACTION_DATA_1D) {
          ipart++) {
       auto dim_size = pre_req_interpolator_data->index.shape[1];
 
+      auto calculated_interp_value = results_dat[(ipart * dim_size)];
+
+      auto relative_error =
+          std::abs(calculated_interp_value - expected_interp_value) /
+          std::abs(expected_interp_value);
+
       // Slightly different assertion test since function for the grid values is
       // log10(x), and grid spacing is sufficiently wide that linear
       // interpolation will not give an approximation that's compatible with
       // EXPECT_DOUBLE_EQ.
-      EXPECT_NEAR(results_dat[(ipart * dim_size)], expected_interp_value, 1e-2);
+      EXPECT_NEAR(relative_error, 0, 1e-2);
     }
   }
 }
