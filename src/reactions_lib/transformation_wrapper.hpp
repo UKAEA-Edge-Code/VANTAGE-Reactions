@@ -350,9 +350,10 @@ struct MarkingStrategyDirect : MarkingStrategy {
 
   MarkingStrategyDirect() = default;
 
-  MarkingStrategyDirect(KERNEL &&kernel, ARGS &&...args)
+  MarkingStrategyDirect(const std::string &name, KERNEL &&kernel,
+                        ARGS &&...args)
       : stored_args(std::forward_as_tuple(std::forward<ARGS>(args)...)),
-        kernel(std::forward<KERNEL>(kernel)) {}
+        kernel(std::forward<KERNEL>(kernel)), name(name) {}
 
   ParticleSubGroupSharedPtr
   make_marker_subgroup_v(ParticleSubGroupSharedPtr target) override {
@@ -368,17 +369,97 @@ struct MarkingStrategyDirect : MarkingStrategy {
         this->stored_args);
   }
 
+  std::string get_profiling_name() { return this->name; }
+
 private:
+  std::string name;
   std::tuple<ARGS...> stored_args;
   KERNEL kernel;
 };
 
 template <typename KERNEL, typename... ARGS>
 inline std::shared_ptr<MarkingStrategy>
-make_direct_marking_strategy(KERNEL &&kernel, ARGS &&...args) {
+make_direct_marking_strategy(std::string &&name, KERNEL &&kernel,
+                             ARGS &&...args) {
   auto r = std::make_shared<MarkingStrategyDirect<KERNEL, ARGS...>>(
-      std::forward<KERNEL>(kernel), std::forward<ARGS>(args)...);
+      std::forward<std::string>(name), std::forward<KERNEL>(kernel),
+      std::forward<ARGS>(args)...);
   return std::dynamic_pointer_cast<MarkingStrategy>(r);
+}
+
+template <typename KERNEL, typename... ARGS>
+struct TransformationStrategyDirect : TransformationStrategy {
+
+  TransformationStrategyDirect() = default;
+
+  TransformationStrategyDirect(std::string &&name, KERNEL &&kernel,
+                               ARGS &&...args)
+      : loop_name(std::forward<std::string>(name)),
+        stored_args(std::forward_as_tuple(std::forward<ARGS>(args)...)),
+        kernel(std::forward<KERNEL>(kernel)) {}
+
+  void transform_v(ParticleSubGroupSharedPtr target) override {
+
+    NESOASSERT(target != nullptr,
+               "Passing nullptr for particle_sub_group argument!");
+
+    ParticleLoopSharedPtr loop = std::apply(
+        [&](auto &&...args) {
+          return particle_loop(this->loop_name, target, this->kernel,
+                               std::forward<decltype(args)>(args)...);
+        },
+        this->stored_args);
+    loop->execute();
+  }
+
+  std::string get_profiling_name() { return this->loop_name; }
+
+private:
+  std::string loop_name;
+  std::tuple<ARGS...> stored_args;
+  KERNEL kernel;
+};
+
+template <typename KERNEL, typename... ARGS>
+inline std::shared_ptr<TransformationStrategy>
+make_direct_transformation_strategy(std::string &&name, KERNEL &&kernel,
+                                    ARGS &&...args) {
+  auto r = std::make_shared<TransformationStrategyDirect<KERNEL, ARGS...>>(
+      std::forward<std::string>(name), std::forward<KERNEL>(kernel),
+      std::forward<ARGS>(args)...);
+  return std::dynamic_pointer_cast<TransformationStrategy>(r);
+}
+
+template <typename LAMBDA>
+struct TransformationStrategyLambda : TransformationStrategy {
+
+  TransformationStrategyLambda() = default;
+
+  TransformationStrategyLambda(std::string name, LAMBDA &&lambda)
+      : name(name), stored_lambda(std::forward<LAMBDA>(lambda)) {}
+
+  void transform_v(ParticleSubGroupSharedPtr target) override {
+
+    NESOASSERT(target != nullptr,
+               "Passing nullptr for particle_sub_group argument!");
+
+    this->stored_lambda(target);
+  }
+
+  std::string get_profiling_name() { return this->name; }
+
+private:
+  std::string name;
+  LAMBDA stored_lambda;
+};
+
+template <typename LAMBDA>
+inline std::shared_ptr<TransformationStrategy>
+make_lambda_transformation_strategy(std::string &&name, LAMBDA &&lambda) {
+
+  auto r = std::make_shared<TransformationStrategyLambda<LAMBDA>>(
+      std::forward<std::string>(name), std::forward<LAMBDA>(lambda));
+  return std::dynamic_pointer_cast<TransformationStrategy>(r);
 }
 } // namespace VANTAGE::Reactions
 #endif
