@@ -345,11 +345,28 @@ struct MarkingFunctionWrapperBase {
   }
 };
 
+/**
+ * @brief Direct marking strategy, providing an escape hatch to the
+ * NESO-Particles subgroup constructor interface, and acting as a closure in
+ * everything other than the iteration set
+ *
+ * @tparam KERNEL The NESO-Particle subgroup construction lambda kernel, should
+ * return a bool
+ * @tparam ARGS Variadic arguments for the NESO-Particle kernel (access
+ * descriptors)
+ */
 template <typename KERNEL, typename... ARGS>
 struct MarkingStrategyDirect : MarkingStrategy {
 
   MarkingStrategyDirect() = default;
 
+  /**
+   * @brief Constructor for the direct marking strategy
+   *
+   * @param name Name of the marking strategy (for profiling)
+   * @param kernel Body of the NESO-Particles marking function
+   * @param args Accessor arguments for the NP marking function
+   */
   MarkingStrategyDirect(const std::string &name, KERNEL &&kernel,
                         ARGS &&...args)
       : stored_args(std::forward_as_tuple(std::forward<ARGS>(args)...)),
@@ -377,6 +394,10 @@ private:
   KERNEL kernel;
 };
 
+/**
+ * @brief Helper function for constructing a direct MarkingStrategy shared ptr
+ *
+ */
 template <typename KERNEL, typename... ARGS>
 inline std::shared_ptr<MarkingStrategy>
 make_direct_marking_strategy(std::string &&name, KERNEL &&kernel,
@@ -387,11 +408,28 @@ make_direct_marking_strategy(std::string &&name, KERNEL &&kernel,
   return std::dynamic_pointer_cast<MarkingStrategy>(r);
 }
 
+/**
+ * @brief Direct transformation strategy, providing an escape hatch to the
+ * NESO-Particles loop constructor interface, and acting as a closure in
+ * everything other than the iteration set
+ *
+ * @tparam KERNEL The NESO-Particle loop construction lambda kernel
+ * @tparam ARGS Variadic arguments for the NESO-Particle kernel (access
+ * descriptors)
+ */
 template <typename KERNEL, typename... ARGS>
 struct TransformationStrategyDirect : TransformationStrategy {
 
   TransformationStrategyDirect() = default;
 
+  /**
+   * @brief Constructor for the direct transformation strategy
+   *
+   * @param name Name of the transformation strategy - used as the loop name and
+   * for profiling
+   * @param kernel Body of the NESO-Particles loop function
+   * @param args Accessor arguments for the NP loop function
+   */
   TransformationStrategyDirect(std::string &&name, KERNEL &&kernel,
                                ARGS &&...args)
       : loop_name(std::forward<std::string>(name)),
@@ -420,6 +458,10 @@ private:
   KERNEL kernel;
 };
 
+/**
+ * @brief Helper function for construcing a direct transformation strategy
+ *
+ */
 template <typename KERNEL, typename... ARGS>
 inline std::shared_ptr<TransformationStrategy>
 make_direct_transformation_strategy(std::string &&name, KERNEL &&kernel,
@@ -430,11 +472,23 @@ make_direct_transformation_strategy(std::string &&name, KERNEL &&kernel,
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 }
 
+/**
+ * @brief Transformation strategy allowing for an arbitrary lambda function to
+ * be applied to a particle subgroup
+ *
+ * @tparam LAMBDA the function object class
+ */
 template <typename LAMBDA>
 struct TransformationStrategyLambda : TransformationStrategy {
 
   TransformationStrategyLambda() = default;
 
+  /**
+   * @brief TransformationStrategyLambda constructor
+   *
+   * @param name Name of the transformation strategy (for profiling)
+   * @param lambda Function object to be applied to passed particle subgroups
+   */
   TransformationStrategyLambda(std::string name, LAMBDA &&lambda)
       : name(name), stored_lambda(std::forward<LAMBDA>(lambda)) {}
 
@@ -453,6 +507,11 @@ private:
   LAMBDA stored_lambda;
 };
 
+/**
+ * @brief Helper function for constructing TransformationStrategy shared ptrs
+ * from lambda transformation strategies
+ *
+ */
 template <typename LAMBDA>
 inline std::shared_ptr<TransformationStrategy>
 make_lambda_transformation_strategy(std::string &&name, LAMBDA &&lambda) {
