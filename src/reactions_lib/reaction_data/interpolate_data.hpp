@@ -4,6 +4,7 @@
 #include "reactions_lib/interp_utils.hpp"
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/typedefs.hpp>
 #include <vector>
 
 #define INF std::numeric_limits<double>::infinity()
@@ -66,6 +67,8 @@ struct InterpolateDataOnDevice
     auto grid_buf = this->grid_ptr;
     auto extended_ranges_vec_buf = this->extended_ranges_vec_ptr;
     auto extended_dims_vec_buf = this->extended_dims_vec_ptr;
+    auto ranges_strides_buf = this->ranges_strides_ptr;
+    auto extended_ranges_strides_buf = this->extended_ranges_strides_ptr;
 
     std::array<REAL, output_ndim> calculated_interpolated_vals;
     calculated_interpolated_vals.fill(0.0);
@@ -75,42 +78,39 @@ struct InterpolateDataOnDevice
     // still have coordinate values that are less than the interpolation
     // values in that dimension.
     for (int i = 0; i < input_ndim; i++) {
-      auto ranges_stride = (i > 0 ? extended_dims_vec_buf[i - 1] : 0);
       origin_indices[i] = interp_utils::calc_closest_point_index(
-          mut_interpolation_points[i], extended_ranges_vec_buf + ranges_stride,
-          extended_dims_vec_buf[i]);
+          mut_interpolation_points[i],
+          extended_ranges_vec_buf + extended_ranges_strides_buf[i],
+          (dims_vec_buf[i] + 1));
     }
 
     bool constexpr continue_last = (EXTRAPOLATION_TYPE == 0) ? true : false;
     bool constexpr clamp_to_zero = (EXTRAPOLATION_TYPE == 1) ? true : false;
-
-    // TODO: Implement clamp_to_last (currently will return the same value as
-    // clamp_to_zero)
     bool constexpr clamp_to_last = (EXTRAPOLATION_TYPE == 2) ? true : false;
 
     // Out-of-range clamping handling
     bool out_of_range = false;
     for (int i = 0; i < input_ndim; i++) {
-      auto ranges_stride = (i > 0 ? dims_vec_buf[i - 1] : 0);
       // check for out-of-range beyond the upper limit of the given dimension.
-      if (origin_indices[i] == (extended_dims_vec_buf[i] - 1)) {
+      if (origin_indices[i] == (extended_dims_vec_buf[i] - 2)) {
         out_of_range = true;
         if constexpr (clamp_to_last) {
           mut_interpolation_points[i] =
-              (ranges_vec_buf + ranges_stride)[dims_vec_buf[i] - 1];
+              (ranges_vec_buf + ranges_strides_buf[i])[dims_vec_buf[i] - 1];
         }
       }
       // check for out-of-range below the lower limit of the given dimension.
       else if (origin_indices[i] == 0) {
         out_of_range = true;
         if constexpr (clamp_to_last) {
-          mut_interpolation_points[i] = (ranges_vec_buf + ranges_stride)[0];
+          mut_interpolation_points[i] =
+              (ranges_vec_buf + ranges_strides_buf[i])[0];
         }
       }
       if (out_of_range) {
         // Handles special case of clamp_to_zero - simply returns
-        // zero-filled interpolated values if any interpolation point is out of
-        // the range of allowed points for its dimension.
+        // zero-filled interpolated values if any interpolation point is out
+        // of the range of allowed points for its dimension.
         if constexpr (clamp_to_zero) {
           return calculated_interpolated_vals;
         }
@@ -118,11 +118,10 @@ struct InterpolateDataOnDevice
     }
 
     // Limit origin_indices to be between the standard dimensional ranges.
-    if constexpr (continue_last || clamp_to_last) {
-      for (int i = 0; i < input_ndim; i++) {
-        origin_indices[i] =
-            Kernel::min(Kernel::max(origin_indices[i], 0), dims_vec_buf[i] - 1);
-      }
+    for (int i = 0; i < input_ndim; i++) {
+      origin_indices[i]--;
+      origin_indices[i] =
+          Kernel::min(Kernel::max(origin_indices[i], 0), dims_vec_buf[i] - 2);
     }
 
     // Necessary for using the interp_utils functions.
@@ -188,6 +187,8 @@ public:
   REAL *grid_ptr;
   REAL *extended_ranges_vec_ptr;
   size_t *extended_dims_vec_ptr;
+  size_t *ranges_strides_ptr;
+  size_t *extended_ranges_strides_ptr;
 
   static constexpr INT initial_num_points = 1 << input_ndim;
 };
@@ -221,17 +222,23 @@ struct InterpolateData
         std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
     this->on_device_obj->dims_vec_ptr = this->dims_vec_buf->ptr;
 
+    std::vector<size_t> ranges_strides(input_ndim);
     std::vector<size_t> extended_dims_vec(input_ndim);
+    std::vector<size_t> extended_ranges_strides(input_ndim);
     for (size_t idim = 0; idim < input_ndim; idim++) {
       extended_dims_vec[idim] = dims_vec[idim] + 2;
+      for (size_t j = 0; j < idim; j++) {
+        ranges_strides[idim] += dims_vec[j];
+        extended_ranges_strides[idim] += extended_dims_vec[j];
+      }
     }
 
     std::vector<REAL> extended_ranges_vec;
     for (size_t idim = 0; idim < input_ndim; idim++) {
-      auto ranges_stride = (idim > 0 ? dims_vec[idim - 1] : 0);
       extended_ranges_vec.push_back(-INF);
       for (size_t irange = 0; irange < dims_vec[idim]; irange++) {
-        extended_ranges_vec.push_back(ranges_vec[irange + ranges_stride]);
+        extended_ranges_vec.push_back(
+            ranges_vec[irange + ranges_strides[idim]]);
       }
       extended_ranges_vec.push_back(INF);
     }
@@ -250,6 +257,15 @@ struct InterpolateData
         std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
     this->on_device_obj->ranges_vec_ptr = this->ranges_vec_buf->ptr;
 
+    this->ranges_strides_buf =
+        std::make_shared<BufferDevice<size_t>>(sycl_target, ranges_strides);
+    this->on_device_obj->ranges_strides_ptr = this->ranges_strides_buf->ptr;
+
+    this->extended_ranges_strides_buf = std::make_shared<BufferDevice<size_t>>(
+        sycl_target, extended_ranges_strides);
+    this->on_device_obj->extended_ranges_strides_ptr =
+        this->extended_ranges_strides_buf->ptr;
+
     this->grid_buf = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
     this->on_device_obj->grid_ptr = this->grid_buf->ptr;
 
@@ -263,6 +279,8 @@ struct InterpolateData
   std::shared_ptr<BufferDevice<REAL>> ranges_vec_buf;
   std::shared_ptr<BufferDevice<REAL>> extended_ranges_vec_buf;
   std::shared_ptr<BufferDevice<size_t>> extended_dims_vec_buf;
+  std::shared_ptr<BufferDevice<size_t>> ranges_strides_buf;
+  std::shared_ptr<BufferDevice<size_t>> extended_ranges_strides_buf;
   std::shared_ptr<BufferDevice<REAL>> grid_buf;
   std::shared_ptr<BufferDevice<INT>> hypercube_vertices_buf;
 };

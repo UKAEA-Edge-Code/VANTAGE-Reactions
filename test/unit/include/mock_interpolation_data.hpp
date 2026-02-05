@@ -3,6 +3,9 @@
 #include <neso_particles.hpp>
 #include <reactions/reactions.hpp>
 
+#define relative_error(calc_dat, exp_dat)                                      \
+  std::abs(calc_dat - exp_dat) / std::abs(exp_dat)
+
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
@@ -20,8 +23,12 @@ private:
 
 public:
   coefficient_values_1D_linear() {
+    REAL dim0_i = 0.0;
+    REAL val = 0.0;
     for (int idim0 = 0; idim0 < dim0; idim0++) {
-      this->coeffs_vec.push_back(2 * this->dim0_range[idim0]);
+      dim0_i = this->dim0_range[idim0];
+      val = grid_func(dim0_i);
+      this->coeffs_vec.push_back(val);
     }
 
     std::vector<REAL> dim0_range_vec(this->dim0_range.begin(),
@@ -30,6 +37,8 @@ public:
     std::vector<REAL> ranges_flat_vec = dim0_range_vec;
     this->ranges_flat_vec = ranges_flat_vec;
   };
+
+  REAL grid_func(const REAL &dim0_val) { return (2 * dim0_val); }
 
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
@@ -54,8 +63,12 @@ private:
 
 public:
   coefficient_values_1D() {
+    REAL dim0_i = 0.0;
+    REAL val = 0.0;
     for (int idim0 = 0; idim0 < dim0; idim0++) {
-      this->coeffs_vec.push_back(std::log10(this->dim0_range[idim0]));
+      dim0_i = this->dim0_range[idim0];
+      val = grid_func(dim0_i);
+      this->coeffs_vec.push_back(val);
     }
 
     std::vector<REAL> dim0_range_vec(this->dim0_range.begin(),
@@ -64,6 +77,8 @@ public:
     std::vector<REAL> ranges_flat_vec = dim0_range_vec;
     this->ranges_flat_vec = ranges_flat_vec;
   };
+
+  REAL grid_func(const REAL &val) { return std::log10(val); }
 
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
@@ -77,14 +92,14 @@ public:
 struct coefficient_values_2D {
 private:
   static constexpr int ndim = 2;
-  static const size_t ndens_dim = 8;
-  static const size_t ntemp_dim = 10;
+  static const size_t dim0 = 8;
+  static const size_t dim1 = 10;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  static constexpr std::array<REAL, ndens_dim> dens_range = {
+  static constexpr std::array<REAL, dim0> dim0_range = {
       1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
   // Generated with python: numpy.logspace(1, 5, 10)
-  static constexpr std::array<REAL, ntemp_dim> temp_range = {
+  static constexpr std::array<REAL, dim1> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
@@ -94,24 +109,32 @@ private:
 
 public:
   coefficient_values_2D() {
-    REAL temp_i = 0.0;
-    for (int itemp = 0; itemp < ntemp_dim; itemp++) {
-      temp_i = this->temp_range[itemp];
-      for (int idens = 0; idens < ndens_dim; idens++) {
-        this->coeffs_vec.push_back(temp_i * this->dens_range[idens]);
+    REAL dim1_i = 0.0;
+    REAL dim0_i = 0.0;
+    REAL val = 0.0;
+    for (int idim1 = 0; idim1 < dim1; idim1++) {
+      dim1_i = this->dim1_range[idim1];
+      for (int idim0 = 0; idim0 < dim0; idim0++) {
+        dim0_i = this->dim0_range[idim0];
+        val = grid_func(dim0_i, dim1_i);
+        this->coeffs_vec.push_back(val);
       }
     }
 
-    std::vector<REAL> dens_range_vec(this->dens_range.begin(),
-                                     this->dens_range.end());
-    std::vector<REAL> temp_range_vec(this->temp_range.begin(),
-                                     this->temp_range.end());
+    std::vector<REAL> dim0_range_vec(this->dim0_range.begin(),
+                                     this->dim0_range.end());
+    std::vector<REAL> dim1_range_vec(this->dim1_range.begin(),
+                                     this->dim1_range.end());
 
-    std::vector<REAL> ranges_flat_vec = dens_range_vec;
-    ranges_flat_vec.insert(ranges_flat_vec.end(), temp_range_vec.begin(),
-                           temp_range_vec.end());
+    std::vector<REAL> ranges_flat_vec = dim0_range_vec;
+    ranges_flat_vec.insert(ranges_flat_vec.end(), dim1_range_vec.begin(),
+                           dim1_range_vec.end());
     this->ranges_flat_vec = ranges_flat_vec;
   };
+
+  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val) {
+    return (dim0_val * dim1_val);
+  }
 
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
@@ -120,7 +143,7 @@ public:
   }
 
   std::vector<size_t> get_dims_vec() {
-    return std::vector<size_t>{this->ndens_dim, this->ntemp_dim};
+    return std::vector<size_t>{this->dim0, this->dim1};
   }
 };
 
@@ -139,7 +162,8 @@ private:
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
-  // Generated with python: numpy.power(np.linspace(1, 15, 15), 2)*1.5 - 100.0
+  // Generated with python: numpy.power(numpy.linspace(1, 15, 15), 2)*1.5 -
+  // 100.0
   static constexpr std::array<REAL, dim2> dim2_range = {
       -98.5, -94., -86.5, -76., -62.5, -46., -26.5, -4.,
       21.5,  50.,  81.5,  116., 153.5, 194., 237.5};
@@ -151,12 +175,16 @@ public:
   coefficient_values_3D() {
     REAL dim2_i = 0.0;
     REAL dim1_i = 0.0;
+    REAL dim0_i = 0.0;
+    REAL val = 0.0;
     for (int idim2 = 0; idim2 < dim2; idim2++) {
       dim2_i = this->dim2_range[idim2];
       for (int idim1 = 0; idim1 < dim1; idim1++) {
         dim1_i = this->dim1_range[idim1];
         for (int idim0 = 0; idim0 < dim0; idim0++) {
-          this->coeffs_vec.push_back(dim2_i * dim1_i * this->dim0_range[idim0]);
+          dim0_i = this->dim0_range[idim0];
+          val = grid_func(dim0_i, dim1_i, dim2_i);
+          this->coeffs_vec.push_back(val);
         }
       }
     }
@@ -175,6 +203,11 @@ public:
                            dim2_range_vec.end());
     this->ranges_flat_vec = ranges_flat_vec;
   };
+
+  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val,
+                 const REAL &dim2_val) {
+    return (dim0_val * dim1_val * dim2_val);
+  }
 
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
@@ -225,6 +258,8 @@ public:
     REAL dim3_i = 0.0;
     REAL dim2_i = 0.0;
     REAL dim1_i = 0.0;
+    REAL dim0_i = 0.0;
+    REAL val = 0.0;
     for (int idim3 = 0; idim3 < dim3; idim3++) {
       dim3_i = this->dim3_range[idim3];
       for (int idim2 = 0; idim2 < dim2; idim2++) {
@@ -232,8 +267,9 @@ public:
         for (int idim1 = 0; idim1 < dim1; idim1++) {
           dim1_i = this->dim1_range[idim1];
           for (int idim0 = 0; idim0 < dim0; idim0++) {
-            this->coeffs_vec.push_back(dim3_i * dim2_i * dim1_i *
-                                       this->dim0_range[idim0]);
+            dim0_i = this->dim0_range[idim0];
+            val = grid_func(dim0_i, dim1_i, dim2_i, dim3_i);
+            this->coeffs_vec.push_back(val);
           }
         }
       }
@@ -257,6 +293,11 @@ public:
                            dim3_range_vec.end());
     this->ranges_flat_vec = ranges_flat_vec;
   };
+
+  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val,
+                 const REAL &dim2_val, const REAL &dim3_val) {
+    return (dim0_val * dim1_val * dim2_val * dim3_val);
+  }
 
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
@@ -317,6 +358,8 @@ public:
     REAL dim3_i = 0.0;
     REAL dim2_i = 0.0;
     REAL dim1_i = 0.0;
+    REAL dim0_i = 0.0;
+    REAL val = 0.0;
     for (int idim4 = 0; idim4 < dim4; idim4++) {
       dim4_i = this->dim4_range[idim4];
       for (int idim3 = 0; idim3 < dim3; idim3++) {
@@ -326,8 +369,9 @@ public:
           for (int idim1 = 0; idim1 < dim1; idim1++) {
             dim1_i = this->dim1_range[idim1];
             for (int idim0 = 0; idim0 < dim0; idim0++) {
-              this->coeffs_vec.push_back(dim4_i * dim3_i * dim2_i * dim1_i *
-                                         this->dim0_range[idim0]);
+              dim0_i = this->dim0_range[idim0];
+              val = grid_func(dim0_i, dim1_i, dim2_i, dim3_i, dim4_i);
+              this->coeffs_vec.push_back(val);
             }
           }
         }
@@ -356,6 +400,12 @@ public:
                            dim4_range_vec.end());
     this->ranges_flat_vec = ranges_flat_vec;
   };
+
+  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val,
+                 const REAL &dim2_val, const REAL &dim3_val,
+                 const REAL &dim4_val) {
+    return (dim0_val * dim1_val * dim2_val * dim3_val * dim4_val);
+  }
 
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
