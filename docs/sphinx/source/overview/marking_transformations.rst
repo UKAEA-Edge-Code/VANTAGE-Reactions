@@ -13,13 +13,12 @@ In order to accommodate the above, VANTAGE-Reactions offers a uniform interface 
 Marking Strategies
 ==================
 
-A marking strategy is the abstract wrapper class for the creation of NESO-Particles particle subgroups. The below strategies are the two currently implemented.
+A marking strategy is the abstract wrapper class for the creation of NESO-Particles particle subgroups. The main marking strategy is the :class:`MarkingStrategyDirect`, which is effectively a closure for the NESO-Particles subgroup constructor (see below how this enables transformation wrappers).
 
 .. literalinclude:: ../example_sources/example_marking_strategy.hpp
    :language: cpp
-   :caption: Example of several marking strategies
+   :caption: Example of the direct marking strategy
 
-As demonstrated above, marking strategies are composed by applying them one after the other to get particle subgroups where particles respect all conditions.
 
 Transformation Strategies
 =========================
@@ -93,6 +92,15 @@ The implementation of :class:`MergeTransformationStrategy` is available in 2D an
 .. literalinclude:: ../example_sources/example_merging_strategy.hpp
    :language: cpp
    :caption: An example of constructing a merging strategy in 2D
+
+Direct transformation strategies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In cases where the user wants to apply a custom lambda function to a particle subgroup or call a particular :class:`ParticleLoop` as a transformation strategy VANTAGE-Reactions supplies :class:`TransformationStrategyDirect` and :class:`TransformationStrategyLambda`.
+
+.. literalinclude:: ../example_sources/example_direct_transformations.hpp
+   :language: cpp
+   :caption: Examples of the two direct transformation strategies enabling flexibility
 
 Transformation Wrappers
 =======================
