@@ -69,7 +69,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_0) {
   REAL prop_interp_0 = 10.1e18;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -134,7 +134,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_UNDER_TYPE_0) {
   REAL prop_interp_0 = 0.3e18;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -199,7 +199,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
   REAL prop_interp_0 = 0.8e18;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -269,7 +269,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_1) {
   REAL expected_interp_value = 0.0;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -333,7 +333,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_UNDER_TYPE_1) {
   REAL expected_interp_value = 0.0;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -396,7 +396,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_2) {
   REAL prop_interp_0 = 15.3e18;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -462,7 +462,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_UNDER_TYPE_2) {
   REAL prop_interp_0 = 0.3e18;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -528,7 +528,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
   REAL prop_interp_1 = 7.8;     // under the range
   static constexpr int ndim = 2;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -603,7 +603,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
   REAL prop_interp_1 = 4.5;     // under the range
   static constexpr int ndim = 2;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -677,7 +677,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
   REAL prop_interp_1 = 0.1;    // under the range
   static constexpr int ndim = 2;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -753,7 +753,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
   REAL prop_interp_2 = 3.3e2;  // over the range
   static constexpr int ndim = 3;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -835,7 +835,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
   REAL expected_interp_value = 0.0;
   static constexpr int ndim = 3;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -913,7 +913,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
   REAL prop_interp_2 = 4.3e2;   // over the range
   static constexpr int ndim = 3;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 

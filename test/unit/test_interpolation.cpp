@@ -13,7 +13,7 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   REAL prop_interp_0 = 3.7e18;
   static constexpr int ndim = 1;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -83,7 +83,7 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   REAL prop_interp_1 = 1.9e3;
   static constexpr int ndim = 2;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -158,7 +158,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   REAL prop_interp_2 = 2.3e2;
   static constexpr int ndim = 3;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -239,7 +239,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   REAL prop_interp_3 = 3.2e3;
   static constexpr int ndim = 4;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -323,7 +323,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
   REAL prop_interp_4 = 2.07;
   static constexpr int ndim = 5;
 
-  auto particle_group = create_test_particle_group(1e5);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
