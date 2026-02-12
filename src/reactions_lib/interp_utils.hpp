@@ -115,12 +115,30 @@ inline std::size_t calc_closest_point_index(const REAL &x_interp,
  *
  * @return REAL value of the linearly interpolated function value at x_interp.
  */
-inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
-                          const REAL &f0, const REAL &f1) {
-  REAL dfdx = (f1 - f0) / (x1 - x0);
-  REAL c = f0 - (dfdx * x0);
+inline REAL linear_interp(const REAL x_interp, const REAL x0, const REAL x1,
+                          const REAL f0, const REAL f1, bool toprint = false) {
+  // The excessive splitting of operations is due to a failed unit tests on GPU
+  // when using variables whose definitions combine multiple operations.
+  REAL df = f1 - f0;
+  REAL dx = x1 - x0;
+  REAL dfdx = df / dx;
+  REAL dfdx_mul_x0 = dfdx * x0;
+  REAL dfdx_mul_xinterp = dfdx * x_interp;
+  REAL c = f0 - dfdx_mul_x0;
 
-  REAL f_interp = (dfdx * x_interp) + c;
+  REAL f_interp = dfdx_mul_xinterp + c;
+  
+  // if (toprint) {
+  //   printf("df: %.16f\n", df);
+  //   printf("dx: %.16f\n", dx);
+  //   printf("dfdx: %.16f\n", dfdx);
+  //   printf("dfdx_mul_x0: %.16f\n", dfdx_mul_x0);
+  //   printf("dfdx_mul_: %.16f\n", dfdx_mul_x0);
+  //   printf("c: %.16f\n", c);
+  //   printf("f_interp: %.16f\n", f_interp);
+  //   printf("\n");
+  // }
+  
   return f_interp;
 }
 
@@ -221,6 +239,8 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
  * storing the vertices of the hypercube after they've been mapped to the actual
  * region in the dimensions of the grid that are of interest.
  */
+ #define spec_condition (dim_index == 3 && i == 4)
+ 
 inline void contract_hypercube_on_device(
     const REAL *interp_points, const int &dim_index, INT *input_vertices,
     INT *origin_indices, REAL *vertex_func_evals, REAL *ranges_vec,
@@ -260,9 +280,24 @@ inline void contract_hypercube_on_device(
 
     eval_point_0 = vertex_func_evals[i];
     eval_point_1 = vertex_func_evals[num_points - (i + 1)];
+    
+    if (spec_condition) {
+      printf("i: %d\n", i);
+      printf("interp_point: %.16f\n", interp_points[dim_index]);
+      printf("range_val_0: %.16f\n", range_val_0);
+      printf("range_val_1: %.16f\n", range_val_1);
+      printf("eval_point_0: %.16f\n", eval_point_0);
+      printf("eval_point_1: %.16f\n", eval_point_1);
+    }
 
     output_evals[i] = linear_interp(interp_points[dim_index], range_val_0,
                                     range_val_1, eval_point_0, eval_point_1);
+    
+    
+    if (spec_condition) {
+      printf("output_evals: %.16f\n", output_evals[i]);
+      printf("\n");
+    }
 
     output_vertices[i] = input_vertices[i];
   }
