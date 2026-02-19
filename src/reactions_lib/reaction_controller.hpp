@@ -80,6 +80,7 @@ struct ReactionController {
 
     this->id_sym =
         Sym<INT>(properties_map.at(default_properties.internal_state));
+    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
     this->tot_rate_buffer =
         Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->panic_flag = Sym<INT>(properties_map.at(default_properties.panic));
@@ -424,16 +425,16 @@ public:
         auto loop = particle_loop(
             "reacted_loop", target,
             [=](auto index, auto reacted_flag, auto total_reaction_rate,
-                auto kernel) {
+                auto weight, auto kernel) {
               reacted_flag.at(0) =
-                  (1 - Kernel::exp(-total_reaction_rate.at(0) * dt)) >
-                          kernel.at(index, 0)
+                  (1 - Kernel::exp(-total_reaction_rate.at(0) * dt /
+                                   weight[0])) > kernel.at(index, 0)
                       ? 1
                       : 0;
             },
             Access::read(ParticleLoopIndex{}),
             Access::write(this->reacted_flag),
-            Access::read(this->tot_rate_buffer),
+            Access::read(this->tot_rate_buffer), Access::read(this->weight_sym),
             Access::read(this->rng_kernel));
 
         loop->execute(i, std::min(i + this->cell_block_size, cell_count));
@@ -540,6 +541,7 @@ private:
   Sym<INT> panic_flag;
   Sym<INT> reacted_flag;
   Sym<REAL> tot_rate_buffer;
+  Sym<REAL> weight_sym;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
   std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel;
