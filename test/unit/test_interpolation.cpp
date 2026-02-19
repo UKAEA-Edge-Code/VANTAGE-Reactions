@@ -1,6 +1,6 @@
+#include "include/interp_mock_particle_group.hpp"
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
-#include "include/interp_mock_particle_group.hpp"
 #include "reactions_lib/reaction_data/interpolate_data.hpp"
 #include <gtest/gtest.h>
 #include <memory>
@@ -239,7 +239,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   REAL prop_interp_3 = 3.2e3;
   static constexpr int ndim = 4;
 
-  auto particle_group = create_interp_test_particle_group(1e0);
+  auto particle_group = create_test_particle_group(1e3);
 
   auto sycl_target = particle_group->sycl_target;
 
@@ -309,9 +309,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
 
       auto calculated_interp_value = results_dat[ipart * dim_size];
 
-      printf("calculated_interp_value: %.16f\n", calculated_interp_value);
-      printf("expected_interp_value: %.16f\n", expected_interp_value);
-      // EXPECT_DOUBLE_EQ(calculated_interp_value, expected_interp_value);
+      EXPECT_DOUBLE_EQ(calculated_interp_value, expected_interp_value);
     }
   }
 }
