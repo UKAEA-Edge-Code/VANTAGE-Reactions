@@ -7,10 +7,9 @@
 #include <neso_particles/typedefs.hpp>
 #include <vector>
 
-#define INF std::numeric_limits<double>::infinity()
-
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
+constexpr auto INF_DOUBLE = std::numeric_limits<double>::infinity();
 /**
  * @tparam EXTRAPOLATION_TYPE Possible values are [0, 1, 2]. For 0, the
  * extrapolation continues the linear interpolation from the edges of the range.
@@ -37,22 +36,30 @@ struct InterpolateDataOnDevice
     std::array<REAL, input_ndim> mut_interpolation_points =
         interpolation_points;
     std::array<INT, input_ndim> origin_indices;
-    origin_indices.fill(0);
 
     std::array<REAL, initial_num_points> vertex_func_evals;
     std::array<INT, initial_num_points> vertex_coord;
-    vertex_func_evals.fill(0.0);
-    vertex_coord.fill(0);
 
     std::array<INT, initial_num_points> input_vertices;
     std::array<INT, initial_num_points> output_vertices;
     std::array<REAL, initial_num_points> output_evals;
-    input_vertices.fill(0);
-    output_vertices.fill(0);
-    output_evals.fill(0.0);
 
     std::array<INT, initial_num_points> varying_dim;
-    varying_dim.fill(0);
+
+    for (size_t i = 0; i < input_ndim; i++) {
+      origin_indices[i] = 0;
+    }
+
+    for (size_t i = 0; i < initial_num_points; i++) {
+      vertex_func_evals[i] = 0.0;
+      vertex_coord[i] = 0;
+
+      input_vertices[i] = 0;
+      output_vertices[i] = 0;
+      output_evals[i] = 0.0;
+
+      varying_dim[i] = 0;
+    }
 
     // Counters
     int dim_index = input_ndim - 1;
@@ -71,7 +78,10 @@ struct InterpolateDataOnDevice
     auto extended_ranges_strides_buf = this->extended_ranges_strides_ptr;
 
     std::array<REAL, output_ndim> calculated_interpolated_vals;
-    calculated_interpolated_vals.fill(0.0);
+
+    for (size_t i = 0; i < output_ndim; i++) {
+      calculated_interpolated_vals[i] = 0.0;
+    }
 
     // Calculation of the indices that will form the "origin" of the
     // hypercube. These are the smallest indices in each dimension that
@@ -235,12 +245,12 @@ struct InterpolateData
 
     std::vector<REAL> extended_ranges_vec;
     for (size_t idim = 0; idim < input_ndim; idim++) {
-      extended_ranges_vec.push_back(-INF);
+      extended_ranges_vec.push_back(-INF_DOUBLE);
       for (size_t irange = 0; irange < dims_vec[idim]; irange++) {
         extended_ranges_vec.push_back(
             ranges_vec[irange + ranges_strides[idim]]);
       }
-      extended_ranges_vec.push_back(INF);
+      extended_ranges_vec.push_back(INF_DOUBLE);
     }
 
     this->extended_ranges_vec_buf =

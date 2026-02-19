@@ -39,8 +39,8 @@ TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_UNDER) {
 
   REAL interp_point = 1.0e17;
 
-  ranges_vec.insert(ranges_vec.begin(), -INF);
-  ranges_vec.push_back(INF);
+  ranges_vec.insert(ranges_vec.begin(), -INF_DOUBLE);
+  ranges_vec.push_back(INF_DOUBLE);
 
   auto left_most_index = interp_utils::calc_closest_point_index(
       interp_point, ranges_vec.data(), dims_vec[0] + 2);
@@ -55,8 +55,8 @@ TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_OVER) {
   auto grid = test_values.get_coeffs_vec();
 
   REAL interp_point = 1.0e19;
-  ranges_vec.insert(ranges_vec.begin(), -INF);
-  ranges_vec.push_back(INF);
+  ranges_vec.insert(ranges_vec.begin(), -INF_DOUBLE);
+  ranges_vec.push_back(INF_DOUBLE);
 
   auto left_most_index = interp_utils::calc_closest_point_index(
       interp_point, ranges_vec.data(), dims_vec[0] + 2);

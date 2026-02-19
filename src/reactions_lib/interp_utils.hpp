@@ -28,15 +28,11 @@ namespace VANTAGE::Reactions::interp_utils {
  */
 inline INT coeff_index_on_device(INT *indices, size_t *dims_vec,
                                  const int &ndim) {
-  INT index = indices[0];
+  INT index = indices[ndim - 1];
 
-  std::size_t dim_mult;
-  for (int i = 1; i < ndim; i++) {
-    dim_mult = 1;
-    for (int j = int(i - 1); j >= 0; j--) {
-      dim_mult *= dims_vec[j];
-    }
-    index += dim_mult * indices[i];
+  for (int dimx = ndim - 2; dimx >= 0; dimx--) {
+    index *= dims_vec[dimx];
+    index += indices[dimx];
   }
 
   return index;
@@ -191,7 +187,8 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
         origin_indices[vertex_index] +
         binary_extract(hypercube_vertices[point_index], vertex_index);
 
-    if ((ndim > 1) ? (i % ndim) : 1) {
+    // if ((ndim > 1) ? (i % ndim) : 1) {
+    if ((ndim <= 1) || (i % ndim)) {
       vertex_func_evals[point_index] =
           func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
     }
@@ -250,7 +247,8 @@ inline void contract_hypercube_on_device(
         origin_indices[eval_index] +
         binary_extract(input_vertices[point_index], eval_index);
 
-    if ((ndim > 1) ? (i % ndim) : 1) {
+    // if ((ndim > 1) ? (i % ndim) : 1) {
+    if ((ndim <= 1) || (i % ndim)) {
       varying_dim[point_index] = vertex_coord[dim_index];
     }
   }
