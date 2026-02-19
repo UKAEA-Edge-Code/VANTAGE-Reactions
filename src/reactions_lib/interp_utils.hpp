@@ -281,23 +281,23 @@ inline void contract_hypercube_on_device(
     eval_point_0 = vertex_func_evals[i];
     eval_point_1 = vertex_func_evals[num_points - (i + 1)];
     
-    if (spec_condition) {
-      printf("i: %d\n", i);
-      printf("interp_point: %.16f\n", interp_points[dim_index]);
-      printf("range_val_0: %.16f\n", range_val_0);
-      printf("range_val_1: %.16f\n", range_val_1);
-      printf("eval_point_0: %.16f\n", eval_point_0);
-      printf("eval_point_1: %.16f\n", eval_point_1);
-    }
+    // if (spec_condition) {
+    //   printf("i: %d\n", i);
+    //   printf("interp_point: %.16f\n", interp_points[dim_index]);
+    //   printf("range_val_0: %.16f\n", range_val_0);
+    //   printf("range_val_1: %.16f\n", range_val_1);
+    //   printf("eval_point_0: %.16f\n", eval_point_0);
+    //   printf("eval_point_1: %.16f\n", eval_point_1);
+    // }
 
     output_evals[i] = linear_interp(interp_points[dim_index], range_val_0,
                                     range_val_1, eval_point_0, eval_point_1);
     
     
-    if (spec_condition) {
-      printf("output_evals: %.16f\n", output_evals[i]);
-      printf("\n");
-    }
+    // if (spec_condition) {
+    //   printf("output_evals: %.16f\n", output_evals[i]);
+    //   printf("\n");
+    // }
 
     output_vertices[i] = input_vertices[i];
   }

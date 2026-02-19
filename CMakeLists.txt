@@ -22,6 +22,7 @@ find_sycl_if_required()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_acpp_default_targets.cmake)
 get_acpp_default_targets(${ACPP_COMPILER} ACPP_DEFAULT_TARGETS)
+message(STATUS "AdaptiveCpp default targets: ${ACPP_DEFAULT_TARGETS}")
 
 ############################################################
 # Add directories with source files
@@ -35,10 +36,8 @@ option(REACTIONS_ENABLE_TESTS "Build tests." ON)
 if (REACTIONS_ENABLE_TESTS)
   if(ACPP_DEFAULT_TARGETS MATCHES "cuda-nvcxx")
     message(STATUS "Detected cuda-nvcxx target...")
-    unset(CMAKE_BUILD_TYPE CACHE)
-    set(BUILD_TYPE_COMPILE_FLAGS "-O0")
+    # unset(CMAKE_BUILD_TYPE CACHE)
   endif()
-  # set(BUILD_TYPE_COMPILE_FLAGS "-g;-O0")
   add_subdirectory(test)
 endif()
 

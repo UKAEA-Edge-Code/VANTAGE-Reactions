@@ -5,7 +5,8 @@
 spack:
   # add package specs to the `specs` list
   specs:
-    - vantage.vantagereactions+enable_tests ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=cudallvm ^googletest
+    # If there is a failure due to adaptivecpp's guess of the architecture then add cuda_arch variant specifier after compilationflow=cudallvm, eg. for sm90 the adaptivecpp portion of the spec would look like "^neso.adaptivecpp compilationflow=cudallvm cuda_arch=90"
+    - vantage.vantagereactions+enable_tests build_type=RelWithDebInfo ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=cudallvm ^googletest
 
   view: false
   concretizer:
@@ -27,6 +28,10 @@ spack:
     cxx:
       require:
         - gcc
+    # un-comment the cuda requirement specifier and add the version number of the local compatible cuda version after the @
+    # cuda:
+    #   require:
+    #     - "@"
     all:
       providers:
         sycl: [adaptivecpp]
