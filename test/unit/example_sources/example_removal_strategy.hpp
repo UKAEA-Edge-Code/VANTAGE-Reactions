@@ -1,18 +1,8 @@
 inline void removal_strategy_example(ParticleGroupSharedPtr particle_group) {
 
-  // Marking strategies take in ParticleSubgroup shared pointers.
-  // We trivially produce a whole group subgroup pointer:
-  auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
-
-  // As in the marking strategy example we mark low weight particles by first
-  // creating the marking strategy
-  auto mark_low_weight =
-      make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
-          Sym<REAL>("WEIGHT"), 1e-6);
-
-  // And then applying it
-  auto subgroup_low_weight =
-      mark_low_weight->make_marker_subgroup(input_subgroup);
+  auto subgroup_low_weight = particle_sub_group(
+      particle_group, [](auto w) { return w[0] < 1e-6; },
+      Access::read(Sym<REAL>("WEIGHT")));
 
   // The make_transformation_strategy helper function casts concrete
   // transformation strategies into std::shared_ptr<TransformationStrategy>.

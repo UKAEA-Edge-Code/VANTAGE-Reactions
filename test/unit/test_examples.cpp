@@ -19,6 +19,7 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_custom_properties.hpp"
 #include "./example_sources/example_custom_property_map.hpp"
 #include "./example_sources/example_cx_kernel_definition.hpp"
+#include "./example_sources/example_direct_transformations.hpp"
 #include "./example_sources/example_electron_impact_ion.hpp"
 #include "./example_sources/example_extractor.hpp"
 #include "./example_sources/example_fixed_coeff.hpp"
@@ -51,7 +52,6 @@ TEST(Examples, all) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  marking_strategy_example(particle_group);
   removal_strategy_example(particle_group);
   zeroer_strategy_example(particle_group);
   accumulator_strategy_example(particle_group);
@@ -88,6 +88,8 @@ TEST(Examples, all) {
   general_linear_scattering_kernels_example(particle_group);
   reaction_data_accumulator_strategy_example(particle_group);
   distributor_strategy_example(particle_group);
+  direct_marking_example(particle_group);
+  direct_transformation_example(particle_group);
 
   particle_group->domain->mesh->free();
 }

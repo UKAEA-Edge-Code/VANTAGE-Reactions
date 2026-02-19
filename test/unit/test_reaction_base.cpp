@@ -9,7 +9,7 @@ TEST(LinearReactionBase, calc_rate) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(
+  auto particle_subgroup = particle_sub_group(
       particle_group, [=](auto ISTATE) { return (ISTATE[0] == 0); },
       Access::read(Sym<INT>("INTERNAL_STATE")));
 
@@ -24,8 +24,8 @@ TEST(LinearReactionBase, calc_rate) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_subgroup, i, i + 1);
+    test_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -47,15 +47,15 @@ TEST(LinearReactionBase, calc_var_rate) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_subgroup = particle_sub_group(particle_group);
 
   auto test_reaction = TestReactionVarRate(particle_group->sycl_target, 0);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   for (int i = 0; i < cell_count; i++) {
-    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.calculate_rates(particle_subgroup, i, i + 1);
+    test_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
@@ -119,12 +119,10 @@ TEST(LinearReactionBase, split_group_single_reaction) {
     const int nrow = position->nrow;
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      auto sub_group_selector =
-          make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-              Sym<INT>("INTERNAL_STATE"), (reaction + 2));
-      auto particle_sub_group = sub_group_selector->make_marker_subgroup(
-          std::make_shared<ParticleSubGroup>(particle_group));
-      subgroups.push_back(particle_sub_group);
+      auto particle_subgroup = particle_sub_group(
+          particle_group, [=](auto i) { return i[0] == reaction + 2; },
+          Access::read(Sym<INT>("INTERNAL_STATE")));
+      subgroups.push_back(particle_subgroup);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
@@ -160,13 +158,6 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto sub_group_selector =
-      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-          Sym<INT>("INTERNAL_STATE"), 0);
-
-  auto particle_sub_group = sub_group_selector->make_marker_subgroup(
-      std::make_shared<ParticleSubGroup>(particle_group));
-
   auto test_reaction1 =
       TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
 
@@ -198,15 +189,14 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto particle_sub_group =
-        std::make_shared<ParticleSubGroup>(particle_group);
+    auto particle_subgroup = particle_sub_group(particle_group);
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->calculate_rates(particle_sub_group, i, i + 1);
+      reactions[reaction]->calculate_rates(particle_subgroup, i, i + 1);
     }
 
     for (int reaction = 0; reaction < num_reactions; reaction++) {
-      reactions[reaction]->apply(particle_sub_group, i, i + 1, 0.1,
+      reactions[reaction]->apply(particle_subgroup, i, i + 1, 0.1,
                                  descendant_particles);
     }
 
@@ -250,8 +240,8 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   auto test_reaction = TestDeviceRateBufferReaction(particle_group);
 
   // Starting particle number in cell #0: 100
-  test_reaction.blockwise_flush_buffer(
-      std::make_shared<ParticleSubGroup>(particle_group), 0, 1);
+  test_reaction.blockwise_flush_buffer(particle_sub_group(particle_group), 0,
+                                       1);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 200);
 
   // Subtract 70 particles
@@ -268,8 +258,8 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   particle_group->remove_particles(cells.size(), cells, layers);
 
   // Check resize of device_rate_buffer to n_part_cell*2 = 60
-  test_reaction.blockwise_flush_buffer(
-      std::make_shared<ParticleSubGroup>(particle_group), 0, 1);
+  test_reaction.blockwise_flush_buffer(particle_sub_group(particle_group), 0,
+                                       1);
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 60);
 
   particle_group->sycl_target->free();

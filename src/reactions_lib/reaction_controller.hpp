@@ -5,6 +5,7 @@
 #include "particle_properties_map.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <neso_particles.hpp>
@@ -79,6 +80,7 @@ struct ReactionController {
 
     this->id_sym =
         Sym<INT>(properties_map.at(default_properties.internal_state));
+    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
     this->tot_rate_buffer =
         Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->panic_flag = Sym<INT>(properties_map.at(default_properties.panic));
@@ -90,9 +92,9 @@ struct ReactionController {
     this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
     this->setup_particle_group_temporary();
-    this->reacted_marker =
-        make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-            this->reacted_flag, 1);
+    this->reacted_marker = make_direct_marking_strategy(
+        "reacted_marker", [=](auto reacted) { return reacted[0] == 1; },
+        Access::read(this->reacted_flag));
     auto rng_lambda = [&]() -> REAL { return 0; };
     this->rng_kernel =
         std::make_shared<HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
@@ -177,9 +179,10 @@ struct ReactionController {
           this->parent_ids.insert(in_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
-              in_state,
-              make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                  this->id_sym, in_state)));
+              in_state, make_direct_marking_strategy(
+                            "species_selector_" + std::to_string(in_state),
+                            [=](auto id) { return id[0] == in_state; },
+                            Access::read(this->id_sym))));
         }
       }
 
@@ -190,9 +193,10 @@ struct ReactionController {
           this->child_ids.insert(out_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
-              out_state,
-              make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-                  this->id_sym, out_state)));
+              out_state, make_direct_marking_strategy(
+                             "species_selector_" + std::to_string(out_state),
+                             [=](auto id) { return id[0] == out_state; },
+                             Access::read(this->id_sym))));
         }
       }
     }
@@ -421,16 +425,16 @@ public:
         auto loop = particle_loop(
             "reacted_loop", target,
             [=](auto index, auto reacted_flag, auto total_reaction_rate,
-                auto kernel) {
+                auto weight, auto kernel) {
               reacted_flag.at(0) =
-                  (1 - Kernel::exp(-total_reaction_rate.at(0) * dt)) >
-                          kernel.at(index, 0)
+                  (1 - Kernel::exp(-total_reaction_rate.at(0) * dt /
+                                   weight[0])) > kernel.at(index, 0)
                       ? 1
                       : 0;
             },
             Access::read(ParticleLoopIndex{}),
             Access::write(this->reacted_flag),
-            Access::read(this->tot_rate_buffer),
+            Access::read(this->tot_rate_buffer), Access::read(this->weight_sym),
             Access::read(this->rng_kernel));
 
         loop->execute(i, std::min(i + this->cell_block_size, cell_count));
@@ -537,6 +541,7 @@ private:
   Sym<INT> panic_flag;
   Sym<INT> reacted_flag;
   Sym<REAL> tot_rate_buffer;
+  Sym<REAL> weight_sym;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
   std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel;
