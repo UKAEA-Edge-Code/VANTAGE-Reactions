@@ -91,94 +91,6 @@ auto create_test_particle_group_marking(int N_total)
   return particle_group;
 }
 
-TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_less_than) {
-  const int N_total = 1000;
-
-  auto particle_group = create_test_particle_group_marking(N_total);
-
-  auto test_wrapper = TransformationWrapper(
-      std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
-              Sym<REAL>("WEIGHT"), 0.5)},
-      make_transformation_strategy<SimpleRemovalTransformationStrategy>());
-
-  test_wrapper.transform(particle_group);
-
-  auto num_cells = particle_group->domain->mesh->get_cell_count();
-
-  for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
-    int nrow = W->nrow;
-
-    for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(W->at(rowx, 0), 1.0);
-    };
-  };
-
-  particle_group->sycl_target->free();
-  particle_group->domain->mesh->free();
-}
-
-TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_equals) {
-  const int N_total = 1000;
-
-  auto particle_group = create_test_particle_group_marking(N_total);
-
-  auto test_wrapper = TransformationWrapper(
-      std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-              Sym<INT>("ID"), 1)},
-      make_transformation_strategy<SimpleRemovalTransformationStrategy>());
-
-  test_wrapper.transform(particle_group);
-
-  auto num_cells = particle_group->domain->mesh->get_cell_count();
-
-  for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto id = particle_group->get_cell(Sym<INT>("ID"), cellx);
-    int nrow = id->nrow;
-
-    for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(id->at(rowx, 0), 2);
-    };
-  };
-
-  particle_group->sycl_target->free();
-  particle_group->domain->mesh->free();
-}
-
-TEST(TransformationWrapper, SimpleRemovalTransformationStrategy_compose) {
-  const int N_total = 1000;
-
-  auto particle_group = create_test_particle_group_marking(N_total);
-
-  auto test_wrapper = TransformationWrapper(
-      std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-              Sym<INT>("ID"), 1)},
-      make_transformation_strategy<SimpleRemovalTransformationStrategy>());
-  test_wrapper.add_marking_strategy(
-      make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
-          Sym<REAL>("WEIGHT"), 0.5));
-  test_wrapper.transform(particle_group);
-
-  auto num_cells = particle_group->domain->mesh->get_cell_count();
-
-  for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto id = particle_group->get_cell(Sym<INT>("ID"), cellx);
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
-    int nrow = id->nrow;
-
-    for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_EQ(id->at(rowx, 0), 2);
-      EXPECT_DOUBLE_EQ(W->at(rowx, 0), 1.0);
-    };
-  };
-
-  particle_group->sycl_target->free();
-  particle_group->domain->mesh->free();
-}
-
 TEST(TransformationWrapper, CompositeTransformZeroer) {
   const int N_total = 1000;
 
@@ -554,6 +466,72 @@ TEST(TransformationWrapper, CellwiseReactionDataAccumulator) {
     // Result can be out by as much as ULP=8 so EXPECT_DOUBLE_EQ is not
     // appropriate.
     EXPECT_NEAR(accumulated_2d[cellx]->at(1, 0), 0.2 * 0.2 * num_parts, 1e-10);
+  };
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(TransformationWrapper, direct_marker_lambda) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group_marking(N_total);
+
+  auto lambda_marker = [](auto w) { return w[0] < 0.5; };
+  auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+
+  auto lambda_remove = [](auto target) {
+    target->get_particle_group()->remove_particles(target);
+  };
+  auto test_wrapper = TransformationWrapper(
+      std::vector<std::shared_ptr<MarkingStrategy>>{
+          make_direct_marking_strategy("less_than_05", lambda_marker,
+                                       accessor)},
+      make_lambda_transformation_strategy("remove", lambda_remove));
+
+  test_wrapper.transform(particle_group);
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), cellx);
+    int nrow = W->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_DOUBLE_EQ(W->at(rowx, 0), 1.0);
+    };
+  };
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(TransformationWrapper, direct_marker_transform) {
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group_marking(N_total);
+
+  auto lambda_marker = [](auto i) { return i[0] == 2; };
+  auto accessor = Access::read(Sym<INT>("ID"));
+  auto accessor_write = Access::write(Sym<INT>("ID"));
+
+  auto lambda_set = [](auto i) { i.at(0) = 1; };
+  auto test_wrapper = TransformationWrapper(
+      std::vector<std::shared_ptr<MarkingStrategy>>{
+          make_direct_marking_strategy("equals_2", lambda_marker, accessor)},
+      make_direct_transformation_strategy("set_1", lambda_set, accessor_write));
+
+  test_wrapper.transform(particle_group);
+
+  auto num_cells = particle_group->domain->mesh->get_cell_count();
+
+  for (int cellx = 0; cellx < num_cells; cellx++) {
+    auto id = particle_group->get_cell(Sym<INT>("ID"), cellx);
+    int nrow = id->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_EQ(id->at(rowx, 0), 1);
+    };
   };
 
   particle_group->sycl_target->free();

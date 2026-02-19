@@ -10,23 +10,17 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
   // All reactions are applied to a subgroup. Here we intend to apply the
   // reaction only to those particles with ID = 0, since those are the
   // projectiles
-  //
-  // We use the following marking strategy, but avoid hardcoding the internal
-  // state ID by using the default map
 
   auto prop_map = get_default_map();
 
-  auto mark_id_zero = make_marking_strategy<
-      ComparisonMarkerSingle<INT, EqualsComp>>(
-      Sym<INT>(
-          prop_map[default_properties.internal_state]), // this will result in
-                                                        // "INTERNAL_STATE" when
-                                                        // using the default map
-      projectile_species.get_id()); // projectile species internal state id = 0
-
+  auto spec_id =
+      projectile_species.get_id(); // projectile species internal state id = 0
   // The resulting subgroup will have only particles with ID=0
+  // using the default properties name for the internal state
   auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
-  auto particle_sub_group = mark_id_zero->make_marker_subgroup(input_subgroup);
+  auto particle_subgroup = particle_sub_group(
+      particle_group, [=](auto id) { return id[0] == spec_id; },
+      Access::read(Sym<INT>(prop_map[default_properties.internal_state])));
 
   // For this example, we will use the FixedRateData reaction data class
   // it simply sets the rate to a fixed number
@@ -97,14 +91,14 @@ inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
     // This is the rate loop, here the reaction rates are calculated,
     // they are added to a total reaction rate, and the DataCalculator
     // performs any calculations in needs to
-    cx_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    cx_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
     // For the product loop, the reaction needs to know the timestep (here
     // arbitrarily set to 0.1) and the product group
     //
     // The timestep is used to calculate the total particle weight participating
     // in the reaction as rate * timestep
-    cx_reaction.apply(particle_sub_group, i, i + 1, 0.1, product_group);
+    cx_reaction.apply(particle_subgroup, i, i + 1, 0.1, product_group);
   }
 
   return;

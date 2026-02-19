@@ -1,37 +1,21 @@
-inline void marking_strategy_example(ParticleGroupSharedPtr particle_group) {
+inline void direct_marking_example(ParticleGroupSharedPtr particle_group) {
 
-  // Marking strategies take in ParticleSubgroup shared pointers.
-  // We trivially produce a whole group subgroup pointer:
-  auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+  // Here we create a marking strategy marking low weight particles
+  auto marking_strategy = make_direct_marking_strategy(
+      "test_strategy", // Name of the strategy for profiling purposes
+      [](auto w) { return w[0] < 1e-6; }, // Marking kernel
+      Access::read(Sym<REAL>("WEIGHT"))   // Accessors for the kernel
+  );
 
-  // To make a marking strategy that will mark all particles with the
-  // real-valued particle dat "WEIGHT" < 1e-6 we use the ComparisonMarkerSingle
-  // strategy, comparing a single REAL value with a less-than comparison
-  // function (LessThanComp is a simple device-safe wrapper)
-  //
-  // The make_marking_strategy helper function casts marking strategies into
-  // a std::shared_ptr<MarkingStrategy>.
-  //
-  // The first argument in the case of the ComparisonMarkersSingle strategy is
-  // the single ParticleDat name (as a NESO-Particles Sym) and the second is the
-  // fixed value these dats will be compared against.
-  auto mark_low_weight =
-      make_marking_strategy<ComparisonMarkerSingle<REAL, LessThanComp>>(
-          Sym<REAL>("WEIGHT"), 1e-6);
+  // The subgroup can then be created as follows from another subgroup
 
-  // Here we make a new marking strategy, which will mark all particles with
-  // ID=0
-  auto mark_id_zero =
-      make_marking_strategy<ComparisonMarkerSingle<INT, EqualsComp>>(
-          Sym<INT>("ID"), 0);
+  auto subgroup_low_weight = marking_strategy->make_marker_subgroup(
+      particle_sub_group(particle_group));
 
-  // The resulting subgroup will have only particles with ID=0
-  auto subgroup_only_id_zero =
-      mark_id_zero->make_marker_subgroup(input_subgroup);
-
-  // The following subgroup will have only particles with ID=0 and WEIGHT<1e-6
-  auto subgroup_id_zero_and_low_weight =
-      mark_low_weight->make_marker_subgroup(subgroup_only_id_zero);
+  // Contrast the above with the full constructor call from NESO-Particles
+  auto subgroup_low_weight_from_NP = particle_sub_group(
+      particle_group, [](auto w) { return w[0] < 1e-6; },
+      Access::read(Sym<REAL>("WEIGHT")));
 
   return;
 }
