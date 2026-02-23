@@ -1,10 +1,6 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
-#include <cassert>
-#include <cmath>
-#include <cstddef>
 #include <neso_particles.hpp>
-#include <neso_particles/containers/local_memory_interlaced.hpp>
 #include <vector>
 
 #define binary_extract(i, j) ((i >> j) & 1)
@@ -13,11 +9,8 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions::interp_utils {
 
 /**
- * @brief Helper function to calculate the index on a contiguous grid array from
- * multiple indices (in each dimension). For example in 2D, grid[5][4] for a
- * 8x10 grid: coeff_index_on_devices(indices = {5, 4}, dims_vec = {8, 10}, ndim
- * = 2)
- * -> (5 + (4 * 8)) = 37
+ * @brief Helper function to calculate the index on a contiguous row-major grid
+ * array from multiple indices (in each dimension).
  *
  * @param indices Pointer to a vector that contains the indices to access grid
  * data
@@ -40,10 +33,8 @@ inline INT coeff_index_on_device(INT *indices, size_t *dims_vec,
 
 /**
  * @brief Similar to coeff_index_on_device in that it returns an index on a
- * contiguous array containing the ranges of each dimension of relevance for the
- * interpolation. For example in 2D, for an 8x10 grid there's a 18 element
- * arrays containing the values of ranges for each dimension (such as the
- * x-values(8) and y-values9(10)).
+ * contiguous row-major array containing the ranges of each dimension of
+ * relevance for the interpolation.
  *
  * @param sub_index The index for the specific dimension of interest
  * @param dim_index The index of the dimension itself, as in for the 2nd
@@ -85,7 +76,7 @@ inline std::size_t calc_closest_point_index(const REAL &x_interp,
   std::size_t m;
 
   while ((R - L) > 1) {
-    m = ((L + R) / 2);
+    m = L + ((R - L) / 2);
     if (dim_range[m] < x_interp) {
       L = m;
     } else if (dim_range[m] > x_interp) {
@@ -187,7 +178,6 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
         origin_indices[vertex_index] +
         binary_extract(hypercube_vertices[point_index], vertex_index);
 
-    // if ((ndim > 1) ? (i % ndim) : 1) {
     if ((ndim <= 1) || (i % ndim)) {
       vertex_func_evals[point_index] =
           func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
@@ -247,7 +237,6 @@ inline void contract_hypercube_on_device(
         origin_indices[eval_index] +
         binary_extract(input_vertices[point_index], eval_index);
 
-    // if ((ndim > 1) ? (i % ndim) : 1) {
     if ((ndim <= 1) || (i % ndim)) {
       varying_dim[point_index] = vertex_coord[dim_index];
     }

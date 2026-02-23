@@ -1,8 +1,6 @@
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
-#include "reactions_lib/reaction_data/interpolate_data.hpp"
 #include <gtest/gtest.h>
-#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
@@ -93,9 +91,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_0) {
   auto expected_interp_value = coeffs_data.grid_func(prop_interp_0);
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrpolation_type = 0;
-  auto interpolator_data = InterpolateData<ndim, extrpolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::continue_linear;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -158,9 +156,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_UNDER_TYPE_0) {
   auto expected_interp_value = coeffs_data.grid_func(prop_interp_0);
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrapolation_type = 0;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::continue_linear;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -223,9 +221,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
   auto expected_interp_value = coeffs_data.grid_func(prop_interp_0);
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrapolation_type = 0;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::continue_linear;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -291,9 +289,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_1) {
   auto grid = coeffs_data.get_coeffs_vec();
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrapolation_type = 1;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_zero;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -355,9 +353,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_UNDER_TYPE_1) {
   auto grid = coeffs_data.get_coeffs_vec();
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrapolation_type = 1;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_zero;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -421,9 +419,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_2) {
       coeffs_data.grid_func(ranges_vec[dims_vec[0] - 1]);
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrapolation_type = 2;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_edge;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -486,9 +484,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_UNDER_TYPE_2) {
   REAL expected_interp_value = coeffs_data.grid_func(ranges_vec[0]);
 
   auto prop0_extract = extract<1>("PROP0");
-  static constexpr int extrapolation_type = 2;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_edge;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
 
@@ -561,9 +559,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
   auto prop1_extract = extract<1>("PROP1");
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
-  static constexpr int extrapolation_type = 0; // continue_last
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::continue_linear;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
 
@@ -635,9 +633,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
   auto prop1_extract = extract<1>("PROP1");
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
-  static constexpr int extrapolation_type = 1; // clamp_to_zero
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_zero;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
 
@@ -710,9 +708,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
   auto prop1_extract = extract<1>("PROP1");
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
-  static constexpr int extrapolation_type = 2; // clamp_to_last
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_edge;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
 
@@ -791,9 +789,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
   auto concatenator =
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
-  static constexpr int extrapolation_type = 0;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::continue_linear;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
 
@@ -870,9 +868,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
   auto concatenator =
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
-  static constexpr int extrapolation_type = 1;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_zero;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
 
@@ -952,9 +950,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
   auto concatenator =
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
-  static constexpr int extrapolation_type = 2;
-  auto interpolator_data = InterpolateData<ndim, extrapolation_type>(
-      dims_vec, ranges_vec, grid, sycl_target);
+  auto extrapolation_type = ExtrapolationType::clamp_to_edge;
+  auto interpolator_data = InterpolateData<ndim>(
+      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
 

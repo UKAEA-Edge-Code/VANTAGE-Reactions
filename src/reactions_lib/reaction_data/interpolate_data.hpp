@@ -4,12 +4,14 @@
 #include "reactions_lib/interp_utils.hpp"
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 constexpr auto INF_DOUBLE = std::numeric_limits<double>::infinity();
+
+enum class ExtrapolationType { continue_linear, clamp_to_zero, clamp_to_edge };
+
 /**
  * @tparam EXTRAPOLATION_TYPE Possible values are [0, 1, 2]. For 0, the
  * extrapolation continues the linear interpolation from the edges of the range.
@@ -17,11 +19,24 @@ constexpr auto INF_DOUBLE = std::numeric_limits<double>::infinity();
  * clamps the value to the last value in the range (effectively flattens the
  * grid out beyond the edges of the dimension).
  */
-template <size_t input_ndim, INT EXTRAPOLATION_TYPE = 0, size_t output_ndim = 1>
+template <size_t input_ndim, size_t output_ndim = 1>
 struct InterpolateDataOnDevice
     : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
                                       input_ndim> {
-  InterpolateDataOnDevice() = default;
+  InterpolateDataOnDevice(ExtrapolationType extrapolation_type =
+                              ExtrapolationType::continue_linear) {
+    switch (extrapolation_type) {
+    case VANTAGE::Reactions::ExtrapolationType::continue_linear:
+      this->continue_linear = true;
+      break;
+    case VANTAGE::Reactions::ExtrapolationType::clamp_to_zero:
+      this->clamp_to_zero = true;
+      break;
+    case VANTAGE::Reactions::ExtrapolationType::clamp_to_edge:
+      this->clamp_to_edge = true;
+      break;
+    }
+  };
 
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, input_ndim> &interpolation_points,
@@ -94,37 +109,33 @@ struct InterpolateDataOnDevice
           (dims_vec_buf[i] + 1));
     }
 
-    bool constexpr continue_last = (EXTRAPOLATION_TYPE == 0) ? true : false;
-    bool constexpr clamp_to_zero = (EXTRAPOLATION_TYPE == 1) ? true : false;
-    bool constexpr clamp_to_last = (EXTRAPOLATION_TYPE == 2) ? true : false;
-
     // Out-of-range clamping handling
     bool out_of_range = false;
+    bool above_range = false;
+    bool below_range = false;
+
+    REAL above_clamp_to_edge = 0.0;
+    REAL below_clamp_to_edge = 0.0;
+
+    bool out_of_range_clamp_to_zero = false;
+
     for (int i = 0; i < input_ndim; i++) {
-      // check for out-of-range beyond the upper limit of the given dimension.
-      if (origin_indices[i] == (extended_dims_vec_buf[i] - 2)) {
-        out_of_range = true;
-        if constexpr (clamp_to_last) {
-          mut_interpolation_points[i] =
-              (ranges_vec_buf + ranges_strides_buf[i])[dims_vec_buf[i] - 1];
-        }
-      }
-      // check for out-of-range below the lower limit of the given dimension.
-      else if (origin_indices[i] == 0) {
-        out_of_range = true;
-        if constexpr (clamp_to_last) {
-          mut_interpolation_points[i] =
-              (ranges_vec_buf + ranges_strides_buf[i])[0];
-        }
-      }
-      if (out_of_range) {
-        // Handles special case of clamp_to_zero - simply returns
-        // zero-filled interpolated values if any interpolation point is out
-        // of the range of allowed points for its dimension.
-        if constexpr (clamp_to_zero) {
-          return calculated_interpolated_vals;
-        }
-      }
+      above_range = (origin_indices[i] == (extended_dims_vec_buf[i] - 2));
+      below_range = (origin_indices[i] == 0);
+
+      out_of_range = (above_range || below_range);
+
+      above_clamp_to_edge =
+          (ranges_vec_buf + ranges_strides_buf[i])[dims_vec_buf[i] - 1];
+      below_clamp_to_edge = (ranges_vec_buf + ranges_strides_buf[i])[0];
+
+      mut_interpolation_points[i] = (above_range && this->clamp_to_edge)
+                                        ? above_clamp_to_edge
+                                        : ((below_range && this->clamp_to_edge)
+                                               ? below_clamp_to_edge
+                                               : mut_interpolation_points[i]);
+
+      out_of_range_clamp_to_zero = (out_of_range && this->clamp_to_zero);
     }
 
     // Limit origin_indices to be between the standard dimensional ranges.
@@ -184,7 +195,9 @@ struct InterpolateDataOnDevice
     }
 
     for (int i = 0; i < output_ndim; i++) {
-      calculated_interpolated_vals[i] = output_evals[i];
+      calculated_interpolated_vals[i] = out_of_range_clamp_to_zero
+                                            ? calculated_interpolated_vals[i]
+                                            : output_evals[i];
     }
 
     return calculated_interpolated_vals;
@@ -201,31 +214,27 @@ public:
   size_t *extended_ranges_strides_ptr;
 
   static constexpr INT initial_num_points = 1 << input_ndim;
+
+  bool continue_linear = false;
+  bool clamp_to_zero = false;
+  bool clamp_to_edge = false;
 };
 
-template <size_t input_ndim, INT EXTRAPOLATION_TYPE = 0, size_t output_ndim = 1>
+template <size_t input_ndim, size_t output_ndim = 1>
 struct InterpolateData
-    : public ReactionDataBase<
-          InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE, output_ndim>,
-          output_ndim, DEFAULT_RNG_KERNEL, input_ndim> {
-  InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<REAL> &ranges_vec,
-                  const std::vector<REAL> &grid,
-                  SYCLTargetSharedPtr sycl_target)
-      : ReactionDataBase<InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE,
-                                                 output_ndim>,
+    : public ReactionDataBase<InterpolateDataOnDevice<input_ndim, output_ndim>,
+                              output_ndim, DEFAULT_RNG_KERNEL, input_ndim> {
+  InterpolateData(
+      const std::vector<size_t> &dims_vec, const std::vector<REAL> &ranges_vec,
+      const std::vector<REAL> &grid, SYCLTargetSharedPtr sycl_target,
+      ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
+      : ReactionDataBase<InterpolateDataOnDevice<input_ndim, output_ndim>,
                          output_ndim, DEFAULT_RNG_KERNEL, input_ndim>() {
-    if constexpr ((EXTRAPOLATION_TYPE < 0) || (EXTRAPOLATION_TYPE > 2)) {
-      NESOASSERT(false,
-                 "Please pass a valid EXTRAPOLATION_TYPE (either 0, 1 or 2) as "
-                 "template to the InterpolateData constructor.");
-    }
-
     auto initial_hypercube =
         interp_utils::construct_initial_hypercube(INT(input_ndim));
 
     this->on_device_obj =
-        InterpolateDataOnDevice<input_ndim, EXTRAPOLATION_TYPE, output_ndim>();
+        InterpolateDataOnDevice<input_ndim, output_ndim>(extrapolation_type);
 
     // BufferDevice<REAL> mock setup
     this->dims_vec_buf =
