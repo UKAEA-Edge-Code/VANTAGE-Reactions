@@ -227,8 +227,8 @@ template <typename PROP_TYPE> struct Properties {
    */
   template <size_t N>
   Properties(const std::array<int, N> &simple_props)
-      : Properties(simple_props, std::vector<Species>{},
-                   std::array<int, 0>{}){};
+      : Properties(simple_props, std::vector<Species>{}, std::array<int, 0>{}) {
+        };
 
   /**
    * \overload
@@ -247,7 +247,7 @@ template <typename PROP_TYPE> struct Properties {
   template <size_t M>
   Properties(std::vector<Species> species,
              const std::array<int, M> &species_props)
-      : Properties(std::array<int, 0>{}, species, species_props){};
+      : Properties(std::array<int, 0>{}, species, species_props) {};
 
   /**
    * @brief Merge with another property, taking care of duplicates. The
