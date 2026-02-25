@@ -3,6 +3,10 @@
 #include <neso_particles.hpp>
 #include <vector>
 
+/**
+ * Helper macro that extracts the value of the binary representation of i at
+ * position j (in the binary representation of i).
+ */
 #define binary_extract(i, j) ((i >> j) & 1)
 
 using namespace NESO::Particles;
@@ -194,22 +198,20 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
  * @param dim_index Since this function is called multiple times, this counter
  * keeps track of the progress, it can be thought of as: ndim-1 where ndim is
  * the current dimensionality of the hypercube.
- * @param input_vertices Pointer to a vector that contains
+ * @param hypercube_vertices Pointer to a vector that contains
  * the vertices of the hypercube pre-contraction.
  * @param origin_indices Pointer to a vector containing the
  * indices that will form the (0,0) point of the hypercube (that is to say, the
  * largest indices in each dimension that are still smaller than the desired
  * interpolation point).
  * @param vertex_func_evals Pointer to a vector that
- * contains the function evaluations at input_vertices.
+ * contains the function evaluations at initial vertices.
  * @param ranges_vec Pointer to a vector containing a
  * contiguous array containing the ranges of each dimension of relevance for the
  * interpolation.
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
- * @param output_vertices Pointer to a vector that
- * contains the vertices of the hypercube post-contraction.
  * @param output_evals Pointer to a vector that contains
- * the function evaluations at output_vertices.
+ * the function evaluations at contracted vertices.
  * @param varying_dim Pointer to a vector used for storing
  * the vertices whose coordinates vary in the dimension to be contracted.
  * @param vertex_coord Pointer to a vector used for
@@ -217,11 +219,12 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
  * region in the dimensions of the grid that are of interest.
  */
 
-inline void contract_hypercube_on_device(
-    const REAL *interp_points, const int &dim_index, INT *input_vertices,
-    INT *origin_indices, REAL *vertex_func_evals, REAL *ranges_vec,
-    std::size_t *dims_vec, INT *output_vertices, REAL *output_evals,
-    INT *varying_dim, INT *vertex_coord) {
+inline void
+contract_hypercube_on_device(const REAL *interp_points, const int &dim_index,
+                             INT *hypercube_vertices, INT *origin_indices,
+                             REAL *vertex_func_evals, REAL *ranges_vec,
+                             std::size_t *dims_vec, REAL *output_evals,
+                             INT *varying_dim, INT *vertex_coord) {
   int ndim = dim_index + 1;
   int num_points = (1 << ndim);
   int num_out_points = (1 << dim_index);
@@ -235,7 +238,7 @@ inline void contract_hypercube_on_device(
 
     vertex_coord[eval_index] =
         origin_indices[eval_index] +
-        binary_extract(input_vertices[point_index], eval_index);
+        binary_extract(hypercube_vertices[point_index], eval_index);
 
     if ((ndim <= 1) || (i % ndim)) {
       varying_dim[point_index] = vertex_coord[dim_index];
@@ -249,18 +252,16 @@ inline void contract_hypercube_on_device(
     vertex_0 = varying_dim[i];
     vertex_1 = varying_dim[num_points - (i + 1)];
 
-    range_val_0 =
+    range_val_0 = // x0
         ranges_vec[range_index_on_device(vertex_0, dim_index, dims_vec)];
-    range_val_1 =
+    range_val_1 = // x1
         ranges_vec[range_index_on_device(vertex_1, dim_index, dims_vec)];
 
-    eval_point_0 = vertex_func_evals[i];
-    eval_point_1 = vertex_func_evals[num_points - (i + 1)];
+    eval_point_0 = vertex_func_evals[i];                    // f0
+    eval_point_1 = vertex_func_evals[num_points - (i + 1)]; // f1
 
     output_evals[i] = linear_interp(interp_points[dim_index], range_val_0,
                                     range_val_1, eval_point_0, eval_point_1);
-
-    output_vertices[i] = input_vertices[i];
   }
 }
 

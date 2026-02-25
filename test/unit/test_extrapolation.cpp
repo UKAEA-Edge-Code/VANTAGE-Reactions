@@ -1,5 +1,6 @@
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
+#include "reactions_lib/reaction_data/interpolate_data.hpp"
 #include <gtest/gtest.h>
 
 using namespace NESO::Particles;
@@ -37,8 +38,8 @@ TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_UNDER) {
 
   REAL interp_point = 1.0e17;
 
-  ranges_vec.insert(ranges_vec.begin(), -INF_DOUBLE);
-  ranges_vec.push_back(INF_DOUBLE);
+  ranges_vec.insert(ranges_vec.begin(), -INF_INTERP_DOUBLE);
+  ranges_vec.push_back(INF_INTERP_DOUBLE);
 
   auto left_most_index = interp_utils::calc_closest_point_index(
       interp_point, ranges_vec.data(), dims_vec[0] + 2);
@@ -53,8 +54,8 @@ TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_OVER) {
   auto grid = test_values.get_coeffs_vec();
 
   REAL interp_point = 1.0e19;
-  ranges_vec.insert(ranges_vec.begin(), -INF_DOUBLE);
-  ranges_vec.push_back(INF_DOUBLE);
+  ranges_vec.insert(ranges_vec.begin(), -INF_INTERP_DOUBLE);
+  ranges_vec.push_back(INF_INTERP_DOUBLE);
 
   auto left_most_index = interp_utils::calc_closest_point_index(
       interp_point, ranges_vec.data(), dims_vec[0] + 2);
