@@ -171,21 +171,14 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
                                         INT *origin_indices, size_t *dims_vec,
                                         const int &ndim,
                                         const int &num_points) {
-  int point_index = 0;
-  int vertex_index = 0;
-
-  for (int i = 0; i < (num_points * ndim); i++) {
-    point_index = i / ndim;
-    vertex_index = (ndim - 1) - (i % ndim);
-
-    vertex_coord[vertex_index] =
-        origin_indices[vertex_index] +
-        binary_extract(hypercube_vertices[point_index], vertex_index);
-
-    if ((ndim <= 1) || (i % ndim)) {
-      vertex_func_evals[point_index] =
-          func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
+  for (int point_index = 0; point_index < num_points; point_index++) {
+    for (int vertex_index = 0; vertex_index < ndim; vertex_index++) {
+      vertex_coord[vertex_index] =
+          origin_indices[vertex_index] +
+          binary_extract(hypercube_vertices[point_index], vertex_index);
     }
+    vertex_func_evals[point_index] =
+        func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
   }
 }
 
@@ -229,20 +222,13 @@ contract_hypercube_on_device(const REAL *interp_points, const int &dim_index,
   int num_points = (1 << ndim);
   int num_out_points = (1 << dim_index);
 
-  int point_index = 0;
-  int eval_index = 0;
-
-  for (int i = 0; i < (num_points * ndim); i++) {
-    point_index = i / ndim;
-    eval_index = (ndim - 1) - (i % ndim);
-
-    vertex_coord[eval_index] =
-        origin_indices[eval_index] +
-        binary_extract(hypercube_vertices[point_index], eval_index);
-
-    if ((ndim <= 1) || (i % ndim)) {
-      varying_dim[point_index] = vertex_coord[dim_index];
+  for (int point_index = 0; point_index < num_points; point_index++) {
+    for (int eval_index = 0; eval_index < ndim; eval_index++) {
+      vertex_coord[eval_index] =
+          origin_indices[eval_index] +
+          binary_extract(hypercube_vertices[point_index], eval_index);
     }
+    varying_dim[point_index] = vertex_coord[dim_index];
   }
 
   INT vertex_0, vertex_1;
