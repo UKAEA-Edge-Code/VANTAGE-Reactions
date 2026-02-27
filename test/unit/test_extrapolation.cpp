@@ -40,8 +40,8 @@ TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_UNDER) {
   ranges_vec.insert(ranges_vec.begin(), -INF_INTERP_DOUBLE);
   ranges_vec.push_back(INF_INTERP_DOUBLE);
 
-  auto left_most_index = interp_utils::calc_closest_point_index(
-      interp_point, ranges_vec.data(), dims_vec[0] + 2);
+  auto left_most_index = interp_utils::calc_floor_point_index(
+      interp_point, ranges_vec.data(), dims_vec[0] + 1);
 
   EXPECT_DOUBLE_EQ(left_most_index, 0);
 }
@@ -56,10 +56,10 @@ TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_OVER) {
   ranges_vec.insert(ranges_vec.begin(), -INF_INTERP_DOUBLE);
   ranges_vec.push_back(INF_INTERP_DOUBLE);
 
-  auto left_most_index = interp_utils::calc_closest_point_index(
-      interp_point, ranges_vec.data(), dims_vec[0] + 2);
+  auto left_most_index = interp_utils::calc_floor_point_index(
+      interp_point, ranges_vec.data(), dims_vec[0] + 1);
 
-  EXPECT_DOUBLE_EQ(left_most_index, dims_vec[0] + 1);
+  EXPECT_DOUBLE_EQ(left_most_index, dims_vec[0]);
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_1D_LINEAR_OVER_TYPE_0) {

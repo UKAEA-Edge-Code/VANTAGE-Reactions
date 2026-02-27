@@ -100,8 +100,8 @@ struct InterpolateDataOnDevice
   std::array<REAL, 1> calc_data(
       const std::array<REAL, input_ndim> &interpolation_points,
       const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       typename ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL,
                                         input_ndim>::RNG_KERNEL_TYPE::KernelType
           &kernel) const {
@@ -129,21 +129,8 @@ struct InterpolateDataOnDevice
       varying_dim[i] = 0;
     }
 
-    // Counters
-    int dim_index = input_ndim - 1;
-    int num_points = this->initial_num_points;
-    auto current_count = index.get_loop_linear_index();
-
-    // This seems to be necessary to correctly retrieve the values in the
-    // BufferDevice ptrs
-    auto hypercube_vertices_ptr = this->d_hypercube_vertices;
-    auto ranges_vec_ptr = this->d_ranges_vec;
-    auto dims_vec_ptr = this->d_dims_vec;
-    auto grid_ptr = this->d_grid;
-    auto extended_ranges_vec_ptr = this->d_extended_ranges_vec;
-    auto extended_dims_vec_ptr = this->d_extended_dims_vec;
-    auto ranges_strides_ptr = this->d_ranges_strides;
-    auto extended_ranges_strides_ptr = this->d_extended_ranges_strides;
+    // Counter
+    INT num_points = this->initial_num_points;
 
     // Array of length 1 to maintain compatibility with pipelining interface for
     // ReactionData objects.
@@ -154,11 +141,11 @@ struct InterpolateDataOnDevice
     // hypercube. These are the smallest indices in each dimension that
     // still have coordinate values that are less than the interpolation
     // values in that dimension.
-    for (int i = 0; i < input_ndim; i++) {
-      origin_indices[i] = interp_utils::calc_closest_point_index(
+    for (size_t i = 0; i < input_ndim; i++) {
+      origin_indices[i] = interp_utils::calc_floor_point_index(
           mut_interpolation_points[i],
-          extended_ranges_vec_ptr + extended_ranges_strides_ptr[i],
-          (dims_vec_ptr[i] + 1));
+          this->d_extended_ranges_vec + this->d_extended_ranges_strides[i],
+          this->d_extended_dims_vec[i] - 1);
     }
 
     // Out-of-range clamping handling
@@ -171,15 +158,15 @@ struct InterpolateDataOnDevice
 
     bool out_of_range_clamp_to_zero = false;
 
-    for (int i = 0; i < input_ndim; i++) {
-      above_range = (origin_indices[i] == (extended_dims_vec_ptr[i] - 2));
+    for (size_t i = 0; i < input_ndim; i++) {
+      above_range = (origin_indices[i] == (this->d_extended_dims_vec[i] - 2));
       below_range = (origin_indices[i] == 0);
 
       out_of_range = (above_range || below_range);
 
-      above_clamp_to_edge =
-          (ranges_vec_ptr + ranges_strides_ptr[i])[dims_vec_ptr[i] - 1];
-      below_clamp_to_edge = (ranges_vec_ptr + ranges_strides_ptr[i])[0];
+      above_clamp_to_edge = this->d_ranges_vec[this->d_dims_vec[i] - 1 +
+                                               this->d_ranges_strides[i]];
+      below_clamp_to_edge = this->d_ranges_vec[this->d_ranges_strides[i]];
 
       mut_interpolation_points[i] = (above_range && this->clamp_to_edge)
                                         ? above_clamp_to_edge
@@ -191,10 +178,14 @@ struct InterpolateDataOnDevice
     }
 
     // Limit origin_indices to be between the standard dimensional ranges.
-    for (int i = 0; i < input_ndim; i++) {
+    // Note that the upper limit is set by this->d_dims_vec[i] - 2 since that
+    // represents the penultimate element in the standard dimensional range
+    // which is the last left-most index that can be selected such that the
+    // linear gradient can be calculated.
+    for (size_t i = 0; i < input_ndim; i++) {
       origin_indices[i]--;
-      origin_indices[i] =
-          Kernel::min(Kernel::max(origin_indices[i], 0), dims_vec_ptr[i] - 2);
+      origin_indices[i] = Kernel::min(Kernel::max(origin_indices[i], 0),
+                                      this->d_dims_vec[i] - 2);
     }
 
     // Necessary for using the interp_utils functions.
@@ -210,27 +201,30 @@ struct InterpolateDataOnDevice
     // Initial function evaluation (ie values of the coeffs_vec) based on
     // the vertices of the hypercube.
     interp_utils::initial_func_eval_on_device(
-        vertex_func_evals_ptr, vertex_coord_ptr, grid_ptr,
-        hypercube_vertices_ptr, origin_indices_ptr, dims_vec_ptr, input_ndim,
-        num_points);
+        vertex_func_evals_ptr, vertex_coord_ptr, this->d_grid,
+        this->d_hypercube_vertices, origin_indices_ptr, this->d_dims_vec,
+        input_ndim, num_points);
 
     // Loop until the last dimension (down to 0D)
-    while (dim_index >= 0) {
+    // Note that despite the dim_index = input_ndim assignment, the loop
+    // actually starts at dim_index = (input_ndim - 1) , as desired, due to the
+    // decrement and store during the first check against 0.
+    for (size_t dim_index = input_ndim; dim_index-- > 0;) {
       // Contract the hypercube vertices and evaluations by performing linear
       // interpolation on the current dimension (denoted by dim_index). The
       // contraction is expressed by the reduction in the length of the
       // output_evals (ie. for 3D to 2D, the vertex_func_evals would be of
       // length 8 and output_evals would be of length 4).
       interp_utils::contract_hypercube_on_device(
-          mut_interpolation_points_ptr, dim_index, hypercube_vertices_ptr,
-          origin_indices_ptr, vertex_func_evals_ptr, ranges_vec_ptr,
-          dims_vec_ptr, output_evals_ptr, varying_dim_ptr, vertex_coord_ptr);
+          mut_interpolation_points_ptr, dim_index, this->d_hypercube_vertices,
+          origin_indices_ptr, vertex_func_evals_ptr, this->d_ranges_vec,
+          this->d_dims_vec, output_evals_ptr, varying_dim_ptr,
+          vertex_coord_ptr);
 
       // This now accounts for the smaller size of output_evals, and makes sure
       // that any loops in future contract_hypercube(...) invocations remain
       // consistent.
       num_points = num_points >> 1;
-      dim_index--;
 
       // Reset vertex_func_evals for the next contraction
       for (int i = 0; i < num_points; i++) {
@@ -273,7 +267,7 @@ struct InterpolateData
       : ReactionDataBase<InterpolateDataOnDevice<input_ndim>, 1,
                          DEFAULT_RNG_KERNEL, input_ndim>() {
     auto initial_hypercube =
-        interp_utils::construct_initial_hypercube(INT(input_ndim));
+        interp_utils::construct_initial_hypercube(input_ndim);
 
     this->on_device_obj =
         InterpolateDataOnDevice<input_ndim>(extrapolation_type);

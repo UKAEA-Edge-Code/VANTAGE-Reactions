@@ -3,21 +3,20 @@
 #include <neso_particles.hpp>
 #include <vector>
 
+using namespace NESO::Particles;
+namespace VANTAGE::Reactions::interp_utils {
 /**
  * Helper macro that extracts the value of the binary representation of i at
  * position j (in the binary representation of i).
  */
 #define binary_extract(i, j) ((i >> j) & 1)
 
-using namespace NESO::Particles;
-namespace VANTAGE::Reactions::interp_utils {
-
 /**
  * @brief Helper function to calculate the index on a contiguous row-major grid
- * array from multiple indices (in each dimension).
+ * array where the indices run from fastest index to slowest index.
  *
  * @param indices Pointer to a vector that contains the indices to access grid
- * data
+ * data (an index for each dimension of the non-flattened array).
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  * @param ndim The number of dimensions
  *
@@ -42,17 +41,16 @@ inline INT coeff_index_on_device(INT *indices, size_t *dims_vec,
  *
  * @param sub_index The index for the specific dimension of interest
  * @param dim_index The index of the dimension itself, as in for the 2nd
- * dimension of a 4D grid, the dim_index=3
+ * dimension of a 4D grid, the dim_index=2
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  *
  * @return std::size_t that specifies the index on a contiguous ranges array.
  */
-inline std::size_t range_index_on_device(const std::size_t &sub_index,
-                                         const std::size_t &dim_index,
-                                         std::size_t *dims_vec) {
-  std::size_t index = sub_index;
+inline size_t range_index_on_device(const size_t &sub_index,
+                                    const size_t &dim_index, size_t *dims_vec) {
+  size_t index = sub_index;
 
-  for (std::size_t i = 0; i < dim_index; i++) {
+  for (size_t i = 0; i < dim_index; i++) {
     index += dims_vec[i];
   }
 
@@ -67,17 +65,16 @@ inline std::size_t range_index_on_device(const std::size_t &sub_index,
  * @param x_interp Value of the interpolation point for a given dimension
  * @param dim_range Pointer to a vector containing the range of values for a
  * given dimension.
- * @param dim_size The number of points in each dimension.
+ * @param last_index The last index in the range of the given dimension.
  *
  * @return std::size_t The index on a given dimension that is the closest to
  * x_interp.
  */
-inline std::size_t calc_closest_point_index(const REAL &x_interp,
-                                            REAL *dim_range,
-                                            const std::size_t &dim_size) {
-  std::size_t L = 0;
-  std::size_t R = dim_size;
-  std::size_t m;
+inline size_t calc_floor_point_index(const REAL &x_interp, REAL *dim_range,
+                                     const size_t &last_index) {
+  size_t L = 0;
+  size_t R = last_index;
+  size_t m;
 
   while ((R - L) > 1) {
     m = L + ((R - L) / 2);
@@ -91,7 +88,7 @@ inline std::size_t calc_closest_point_index(const REAL &x_interp,
     }
   }
 
-  return R == (dim_size - 1) ? R : L;
+  return L;
 }
 
 /**
@@ -128,7 +125,7 @@ inline REAL linear_interp(const REAL x_interp, const REAL x0, const REAL x1,
  * of N-Dimensional hypercube. The points are integers but the binary
  * representations denote the normalised vertices. For example in 2D: 0, 1, 3, 2
  * where the binary representations would be: 00, 01, 11, 10 which would
- * correspond to (0, 0), (0, 1), (1, 1), (1, 0).
+ * correspond to the vertices (0, 0), (0, 1), (1, 1), (1, 0).
  *
  * @param ndim The number of dimensions.
  *
@@ -164,6 +161,8 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * interpolation point).
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  * @param ndim The number of dimensions.
+ * @param num_points The number of vertices needed for the hypercube
+ * representation
  */
 inline void initial_func_eval_on_device(REAL *vertex_func_evals,
                                         INT *vertex_coord, REAL *func_grid,
@@ -171,8 +170,8 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
                                         INT *origin_indices, size_t *dims_vec,
                                         const int &ndim,
                                         const int &num_points) {
-  for (int point_index = 0; point_index < num_points; point_index++) {
-    for (int vertex_index = 0; vertex_index < ndim; vertex_index++) {
+  for (size_t point_index = 0; point_index < num_points; point_index++) {
+    for (size_t vertex_index = 0; vertex_index < ndim; vertex_index++) {
       vertex_coord[vertex_index] =
           origin_indices[vertex_index] +
           binary_extract(hypercube_vertices[point_index], vertex_index);
@@ -212,18 +211,16 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
  * region in the dimensions of the grid that are of interest.
  */
 
-inline void
-contract_hypercube_on_device(const REAL *interp_points, const int &dim_index,
-                             INT *hypercube_vertices, INT *origin_indices,
-                             REAL *vertex_func_evals, REAL *ranges_vec,
-                             std::size_t *dims_vec, REAL *output_evals,
-                             INT *varying_dim, INT *vertex_coord) {
-  int ndim = dim_index + 1;
-  int num_points = (1 << ndim);
-  int num_out_points = (1 << dim_index);
+inline void contract_hypercube_on_device(
+    const REAL *interp_points, const size_t &dim_index, INT *hypercube_vertices,
+    INT *origin_indices, REAL *vertex_func_evals, REAL *ranges_vec,
+    size_t *dims_vec, REAL *output_evals, INT *varying_dim, INT *vertex_coord) {
+  size_t ndim = dim_index + 1;
+  size_t num_points = (1 << ndim);
+  size_t num_out_points = (1 << dim_index);
 
-  for (int point_index = 0; point_index < num_points; point_index++) {
-    for (int eval_index = 0; eval_index < ndim; eval_index++) {
+  for (size_t point_index = 0; point_index < num_points; point_index++) {
+    for (size_t eval_index = 0; eval_index < ndim; eval_index++) {
       vertex_coord[eval_index] =
           origin_indices[eval_index] +
           binary_extract(hypercube_vertices[point_index], eval_index);
@@ -234,7 +231,7 @@ contract_hypercube_on_device(const REAL *interp_points, const int &dim_index,
   INT vertex_0, vertex_1;
   REAL range_val_0, range_val_1, eval_point_0, eval_point_1;
 
-  for (int i = 0; i < num_out_points; i++) {
+  for (size_t i = 0; i < num_out_points; i++) {
     vertex_0 = varying_dim[i];
     vertex_1 = varying_dim[num_points - (i + 1)];
 
