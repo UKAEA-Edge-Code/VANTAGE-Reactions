@@ -5,30 +5,6 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
-inline void
-diagnostic_output(const int &particle_count_, const int &dim_index_,
-                  const int &num_points_,
-                  Access::LocalMemoryInterlaced::Write<size_t> origin_indices_,
-                  Access::LocalMemoryInterlaced::Write<int> vertices_,
-                  Access::LocalMemoryInterlaced::Write<REAL> func_evals_,
-                  size_t *dims_vec_ptr_, REAL *ranges_vec_ptr_) {
-  for (int i = 0; i < num_points_; i++) {
-    if (particle_count_ == 0) {
-      for (int j = dim_index_; j >= 0; j--) {
-        size_t temp_binary_repr =
-            origin_indices_.at(j) + binary_extract(vertices_.at(i), j);
-        REAL ranges_val = ranges_vec_ptr_[interp_utils::range_index_on_device(
-            temp_binary_repr, size_t(j), dims_vec_ptr_)];
-        printf("%ld, %e\t", temp_binary_repr, ranges_val);
-      }
-      printf("%e\n", func_evals_.at(i));
-    }
-  }
-  if (particle_count_ == 0) {
-    printf("\n");
-  }
-};
-
 TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_UNDER) {
   auto test_values = coefficient_values_1D();
   auto dims_vec = test_values.get_dims_vec();

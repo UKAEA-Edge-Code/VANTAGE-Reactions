@@ -9,7 +9,9 @@ namespace VANTAGE::Reactions::interp_utils {
  * Helper macro that extracts the value of the binary representation of i at
  * position j (in the binary representation of i).
  */
-#define binary_extract(i, j) ((i >> j) & 1)
+template <typename T> inline T binary_extract(const T &i, const size_t &j) {
+  return ((i >> j) & 1);
+}
 
 /**
  * @brief Helper function to calculate the index on a contiguous row-major grid
