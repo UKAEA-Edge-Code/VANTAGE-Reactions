@@ -240,14 +240,14 @@ struct InterpolateDataOnDevice
   }
 
 public:
-  INT *d_hypercube_vertices;
-  size_t *d_dims_vec;
-  REAL *d_ranges_vec;
-  REAL *d_grid;
-  REAL *d_extended_ranges_vec;
-  size_t *d_extended_dims_vec;
-  size_t *d_ranges_strides;
-  size_t *d_extended_ranges_strides;
+  INT const *d_hypercube_vertices;
+  size_t const *d_dims_vec;
+  REAL const *d_ranges_vec;
+  REAL const *d_grid;
+  REAL const *d_extended_ranges_vec;
+  size_t const *d_extended_dims_vec;
+  size_t const *d_ranges_strides;
+  size_t const *d_extended_ranges_strides;
 
   static constexpr INT initial_num_points = 1 << input_ndim;
 

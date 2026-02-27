@@ -22,7 +22,7 @@ namespace VANTAGE::Reactions::interp_utils {
  *
  * @return std::size_t that specifies the index on a contiguous grid array
  */
-inline INT coeff_index_on_device(INT *indices, size_t *dims_vec,
+inline INT coeff_index_on_device(INT const *indices, size_t const *dims_vec,
                                  const int &ndim) {
   INT index = indices[ndim - 1];
 
@@ -47,7 +47,8 @@ inline INT coeff_index_on_device(INT *indices, size_t *dims_vec,
  * @return std::size_t that specifies the index on a contiguous ranges array.
  */
 inline size_t range_index_on_device(const size_t &sub_index,
-                                    const size_t &dim_index, size_t *dims_vec) {
+                                    const size_t &dim_index,
+                                    size_t const *dims_vec) {
   size_t index = sub_index;
 
   for (size_t i = 0; i < dim_index; i++) {
@@ -70,7 +71,8 @@ inline size_t range_index_on_device(const size_t &sub_index,
  * @return std::size_t The index on a given dimension that is the closest to
  * x_interp.
  */
-inline size_t calc_floor_point_index(const REAL &x_interp, REAL *dim_range,
+inline size_t calc_floor_point_index(const REAL &x_interp,
+                                     REAL const *dim_range,
                                      const size_t &last_index) {
   size_t L = 0;
   size_t R = last_index;
@@ -164,12 +166,10 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * @param num_points The number of vertices needed for the hypercube
  * representation
  */
-inline void initial_func_eval_on_device(REAL *vertex_func_evals,
-                                        INT *vertex_coord, REAL *func_grid,
-                                        INT *hypercube_vertices,
-                                        INT *origin_indices, size_t *dims_vec,
-                                        const int &ndim,
-                                        const int &num_points) {
+inline void initial_func_eval_on_device(
+    REAL *vertex_func_evals, INT *vertex_coord, REAL const *func_grid,
+    INT const *hypercube_vertices, INT const *origin_indices,
+    size_t const *dims_vec, const int &ndim, const int &num_points) {
   for (size_t point_index = 0; point_index < num_points; point_index++) {
     for (size_t vertex_index = 0; vertex_index < ndim; vertex_index++) {
       vertex_coord[vertex_index] =
@@ -212,9 +212,11 @@ inline void initial_func_eval_on_device(REAL *vertex_func_evals,
  */
 
 inline void contract_hypercube_on_device(
-    const REAL *interp_points, const size_t &dim_index, INT *hypercube_vertices,
-    INT *origin_indices, REAL *vertex_func_evals, REAL *ranges_vec,
-    size_t *dims_vec, REAL *output_evals, INT *varying_dim, INT *vertex_coord) {
+    const REAL *interp_points, const size_t &dim_index,
+    INT const *hypercube_vertices, const INT *origin_indices,
+    const REAL *vertex_func_evals, REAL const *ranges_vec,
+    size_t const *dims_vec, REAL *output_evals, INT *varying_dim,
+    INT *vertex_coord) {
   size_t ndim = dim_index + 1;
   size_t num_points = (1 << ndim);
   size_t num_out_points = (1 << dim_index);
