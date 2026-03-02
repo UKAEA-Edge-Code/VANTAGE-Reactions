@@ -405,3 +405,104 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
   particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
+
+TEST(VranicMergeTransform, transform_3D_simple_grouping) {
+
+  const INT N_total = 1600 * 4;
+
+  auto particle_group = create_vranic_test_particle_group(N_total, 3);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_merger = make_vranic_merging_strategy<3, 2>(particle_group);
+
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+
+  particle_loop(
+      "set_grouping", subgroup,
+      [=](auto grouping_index, auto velocity) {
+        grouping_index[0] = 1 ? velocity[0] > 0 : 0;
+      },
+      Access::write(Sym<INT>("REACTIONS_GROUPING_INDEX")),
+      Access::read(Sym<REAL>("VELOCITY")))
+      ->execute();
+
+  auto reduction = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 8, 2);
+
+  auto red_min = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 2);
+  auto red_max = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 3, 2);
+
+  red_min->fill(1e16);
+  red_max->fill(-1e16);
+  particle_loop(
+      subgroup,
+      [=](auto W, auto P, auto V, auto GA, auto GA_min, auto GA_max,
+          auto grouping_index) {
+        for (int i = 0; i < 3; i++) {
+          GA.fetch_add(i, grouping_index[0], W[0] * P[i]);
+          GA.fetch_add(3 + i, grouping_index[0], W[0] * V[i]);
+          GA.fetch_add(6, grouping_index[0], W[0] * V[i] * V[i]);
+          GA_min.fetch_min(i, grouping_index[0], V[i]);
+          GA_max.fetch_max(i, grouping_index[0], V[i]);
+        }
+        GA.fetch_add(7, grouping_index[0], W[0]);
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
+      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction),
+      Access::min(red_min), Access::max(red_max),
+      Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
+      ->execute();
+
+  test_merger.transform(subgroup);
+
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
+       ncell++) {
+    auto reduction_data = reduction->get_cell(ncell);
+    auto reduction_data_min = red_min->get_cell(ncell);
+    auto reduction_data_max = red_max->get_cell(ncell);
+    EXPECT_EQ(particle_group->get_npart_cell(ncell), 4);
+
+    std::vector<INT> cells = {ncell, ncell, ncell, ncell};
+    std::vector<INT> layers = {0, 1, 2, 3};
+
+    auto particles = particle_group->get_particles(cells, layers);
+    for (auto group = 0; group < 1; group++) {
+      REAL energy_tot = reduction_data->at(6, group);
+      REAL wt = reduction_data->at(7, group);
+      REAL energy_merged = 0;
+
+      std::vector<REAL> tot_mom_merged = {0, 0, 0};
+      for (int i = 0; i < 4; i++) {
+        if (particles->at(Sym<INT>("REACTIONS_GROUPING_INDEX"), i, 0) ==
+            group) {
+
+          EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0),
+                           wt / 2); //, 1e-12);
+          for (int dim = 0; dim < 3; dim++) {
+            // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
+            // appropriate.
+            EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
+                        reduction_data->at(dim, group) / wt, 1e-12);
+            energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, dim) *
+                             particles->at(Sym<REAL>("VELOCITY"), i, dim);
+            tot_mom_merged[dim] += particles->at(Sym<REAL>("VELOCITY"), i, dim);
+          }
+        }
+      }
+      // Result can be out by as much as ULP=5 so EXPECT_DOUBLE_EQ is not
+      // appropriate.
+      EXPECT_NEAR(energy_merged * wt / 2, energy_tot, 1e-12);
+      for (int dim = 0; dim < 3; dim++) {
+        // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
+        // appropriate.
+        EXPECT_NEAR(tot_mom_merged[dim],
+                    reduction_data->at(3 + dim, group) * 2 / wt, 1e-12);
+      }
+    }
+  }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
