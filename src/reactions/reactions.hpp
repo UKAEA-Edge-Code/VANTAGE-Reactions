@@ -9,6 +9,7 @@
 #include "../reactions_lib/concatenator_data.hpp"
 #include "../reactions_lib/data_calculator.hpp"
 #include "../reactions_lib/merge_transformation.hpp"
+#include "../reactions_lib/merging_base.hpp"
 #include "../reactions_lib/particle_properties_map.hpp"
 #include "../reactions_lib/particle_spec_builder.hpp"
 #include "../reactions_lib/pipeline_data.hpp"
@@ -50,4 +51,7 @@
 
 #include "../reactions_lib/derived_reactions/electron_impact_ionisation.hpp"
 #include "../reactions_lib/derived_reactions/recombination_reaction.hpp"
+
+#include "../reactions_lib/merging_kernels/vranic_merging_kernels.hpp"
+
 #endif
