@@ -134,11 +134,11 @@ protected:
   std::map<int, std::string> properties_map;
 };
 
-template <size_t num_merging_groups, typename MERGE_KERNEL>
-struct MergeStrategy : TransformationStrategy {
+template <typename MERGE_KERNEL> struct MergeStrategy : TransformationStrategy {
 
   MergeStrategy(
       ParticleGroupSharedPtr template_group, MERGE_KERNEL merge_kernels,
+      size_t num_merging_groups,
       const std::map<int, std::string> &properties_map = get_default_map())
       : merge_kernels(merge_kernels) {
 
@@ -161,12 +161,12 @@ struct MergeStrategy : TransformationStrategy {
         num_merging_groups);
 
     this->min_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
-        template_group->sycl_target, cell_count, reduction_dim,
-        num_merging_groups);
+        template_group->sycl_target, cell_count,
+        this->merge_kernels.get_reduction_min_dim(), num_merging_groups);
 
     this->max_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
-        template_group->sycl_target, cell_count, reduction_dim,
-        num_merging_groups);
+        template_group->sycl_target, cell_count,
+        this->merge_kernels.get_reduction_max_dim(), num_merging_groups);
     this->num_part_cell_dats = std::make_shared<CellDatConst<INT>>(
         template_group->sycl_target, cell_count, num_merging_groups, 1);
   }

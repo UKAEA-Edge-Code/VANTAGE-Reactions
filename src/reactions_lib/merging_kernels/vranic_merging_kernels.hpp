@@ -223,15 +223,14 @@ struct VranicMergingKernels : MergingKernelBase<2, 2 * ndim + 2, ndim, ndim,
   }
 };
 
-template <size_t ndim, size_t num_merging_groups>
-MergeStrategy<num_merging_groups, VranicMergingKernels<ndim>>
-make_vranic_merging_strategy(
-    ParticleGroupSharedPtr template_group,
+template <size_t ndim>
+MergeStrategy<VranicMergingKernels<ndim>> make_vranic_merging_strategy(
+    ParticleGroupSharedPtr template_group, size_t num_merging_groups,
     const std::map<int, std::string> &properties_map = get_default_map()) {
 
-  return MergeStrategy<num_merging_groups, VranicMergingKernels<ndim>>(
+  return MergeStrategy<VranicMergingKernels<ndim>>(
       template_group, VranicMergingKernels<ndim>(properties_map),
-      properties_map);
+      num_merging_groups, properties_map);
 };
 }; // namespace VANTAGE::Reactions
 #endif

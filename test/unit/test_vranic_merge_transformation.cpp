@@ -93,7 +93,7 @@ TEST(VranicMergeTransform, transform_2D) {
   auto particle_group = create_vranic_test_particle_group(N_total, 2);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = make_vranic_merging_strategy<2, 1>(particle_group);
+  auto test_merger = make_vranic_merging_strategy<2>(particle_group, 1);
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -161,7 +161,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
   auto particle_group = create_vranic_test_particle_group(N_total, 2);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = make_vranic_merging_strategy<2, 1>(particle_group);
+  auto test_merger = make_vranic_merging_strategy<2>(particle_group, 1);
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
@@ -227,7 +227,7 @@ TEST(VranicMergeTransform, transform_3D) {
   auto particle_group = create_vranic_test_particle_group(N_total, 3);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = make_vranic_merging_strategy<3, 1>(particle_group);
+  auto test_merger = make_vranic_merging_strategy<3>(particle_group, 1);
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -327,7 +327,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
   auto particle_group = create_vranic_test_particle_group(N_total, 3);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = make_vranic_merging_strategy<3, 1>(particle_group);
+  auto test_merger = make_vranic_merging_strategy<3>(particle_group, 1);
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
   particle_loop(
@@ -413,7 +413,7 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
   auto particle_group = create_vranic_test_particle_group(N_total, 3);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_merger = make_vranic_merging_strategy<3, 2>(particle_group);
+  auto test_merger = make_vranic_merging_strategy<3>(particle_group, 2);
 
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
