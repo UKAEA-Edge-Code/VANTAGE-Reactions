@@ -98,19 +98,17 @@ TEST(VranicMergeTransform, transform_2D) {
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 5, 1);
+      particle_group->sycl_target, cell_count, 3, 1);
 
   particle_loop(
       subgroup,
-      [=](auto W, auto P, auto V, auto GA) {
-        GA.fetch_add(0, 0, W[0] * P[0]);
-        GA.fetch_add(1, 0, W[0] * P[1]);
-        GA.fetch_add(2, 0, W[0] * V[0]);
-        GA.fetch_add(3, 0, W[0] * V[1]);
-        GA.fetch_add(4, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
+      [=](auto W, auto V, auto GA) {
+        GA.fetch_add(0, 0, W[0] * V[0]);
+        GA.fetch_add(1, 0, W[0] * V[1]);
+        GA.fetch_add(2, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
-      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction))
       ->execute();
   test_merger.transform(subgroup);
 
@@ -126,14 +124,10 @@ TEST(VranicMergeTransform, transform_2D) {
     std::vector<INT> layers = {0, 1};
 
     auto particles = particle_group->get_particles(cells, layers);
-    REAL energy_tot = reduction_data->at(4, 0);
+    REAL energy_tot = reduction_data->at(2, 0);
     REAL energy_merged = 0;
     for (int i = 0; i < 2; i++) {
       EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
-                  reduction_data->at(0, 0) / wt, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
-                  reduction_data->at(1, 0) / wt, 1e-12);
       energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, 0) *
                            particles->at(Sym<REAL>("VELOCITY"), i, 0) +
                        particles->at(Sym<REAL>("VELOCITY"), i, 1) *
@@ -143,7 +137,7 @@ TEST(VranicMergeTransform, transform_2D) {
       // appropriate.
       EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), 0, i) +
                       particles->at(Sym<REAL>("VELOCITY"), 1, i),
-                  reduction_data->at(2 + i, 0) * 2 / wt, 1e-12);
+                  reduction_data->at(i, 0) * 2 / wt, 1e-12);
     }
     // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
     // appropriate.
@@ -165,7 +159,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 3, 1);
+      particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(
       subgroup,
@@ -179,13 +173,11 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
 
   particle_loop(
       subgroup,
-      [=](auto W, auto P, auto V, auto GA) {
-        GA.fetch_add(0, 0, W[0] * P[0]);
-        GA.fetch_add(1, 0, W[0] * P[1]);
-        GA.fetch_add(2, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
+      [=](auto W, auto V, auto GA) {
+        GA.fetch_add(0, 0, W[0] * (V[0] * V[0] + V[1] * V[1]));
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
-      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction))
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction))
       ->execute();
   test_merger.transform(subgroup);
 
@@ -206,10 +198,6 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
     EXPECT_NEAR(energy_tot, 0.0, 1e-12);
     for (int i = 0; i < 2; i++) {
       EXPECT_NEAR(particles->at(Sym<REAL>("WEIGHT"), i, 0), wt / 2, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 0),
-                  reduction_data->at(0, 0) / wt, 1e-12);
-      EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, 1),
-                  reduction_data->at(1, 0) / wt, 1e-12);
 
       EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), i, 0), 0.0, 1.0e-15);
       EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), i, 1), 0.0, 1.0e-15);
@@ -232,7 +220,7 @@ TEST(VranicMergeTransform, transform_3D) {
   auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 7, 1);
+      particle_group->sycl_target, cell_count, 4, 1);
 
   auto red_min = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 3, 1);
@@ -243,18 +231,16 @@ TEST(VranicMergeTransform, transform_3D) {
   red_max->fill(-1e16);
   particle_loop(
       subgroup,
-      [=](auto W, auto P, auto V, auto GA, auto GA_min, auto GA_max) {
+      [=](auto W, auto V, auto GA, auto GA_min, auto GA_max) {
         for (int i = 0; i < 3; i++) {
-          GA.fetch_add(i, 0, W[0] * P[i]);
-          GA.fetch_add(3 + i, 0, W[0] * V[i]);
-          GA.fetch_add(6, 0, W[0] * V[i] * V[i]);
+          GA.fetch_add(i, 0, W[0] * V[i]);
+          GA.fetch_add(3, 0, W[0] * V[i] * V[i]);
           GA_min.fetch_min(i, 0, V[i]);
           GA_max.fetch_max(i, 0, V[i]);
         }
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
-      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction),
-      Access::min(red_min), Access::max(red_max))
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction), Access::min(red_min), Access::max(red_max))
       ->execute();
 
   test_merger.transform(subgroup);
@@ -272,7 +258,7 @@ TEST(VranicMergeTransform, transform_3D) {
     std::vector<INT> layers = {0, 1};
 
     auto particles = particle_group->get_particles(cells, layers);
-    REAL energy_tot = reduction_data->at(6, 0);
+    REAL energy_tot = reduction_data->at(3, 0);
     REAL energy_merged = 0;
     std::vector<REAL> diag(3);
     std::vector<REAL> mom_a(3);
@@ -288,10 +274,6 @@ TEST(VranicMergeTransform, transform_3D) {
       EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0),
                        wt / 2); //, 1e-12);
       for (int dim = 0; dim < 3; dim++) {
-        // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
-        // appropriate.
-        EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
-                    reduction_data->at(dim, 0) / wt, 1e-12);
         energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, dim) *
                          particles->at(Sym<REAL>("VELOCITY"), i, dim);
         tot_mom_merged[dim] += particles->at(Sym<REAL>("VELOCITY"), i, dim);
@@ -303,7 +285,7 @@ TEST(VranicMergeTransform, transform_3D) {
     for (int dim = 0; dim < 3; dim++) {
       // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
       // appropriate.
-      EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(3 + dim, 0) * 2 / wt,
+      EXPECT_NEAR(tot_mom_merged[dim], reduction_data->at(dim, 0) * 2 / wt,
                   1e-12);
     }
 
@@ -341,7 +323,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
       ->execute();
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 7, 1);
+      particle_group->sycl_target, cell_count, 4, 1);
 
   auto red_min = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 3, 1);
@@ -352,18 +334,16 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
   red_max->fill(-1e16);
   particle_loop(
       subgroup,
-      [=](auto W, auto P, auto V, auto GA, auto GA_min, auto GA_max) {
+      [=](auto W, auto V, auto GA, auto GA_min, auto GA_max) {
         for (int i = 0; i < 3; i++) {
-          GA.fetch_add(i, 0, W[0] * P[i]);
-          GA.fetch_add(3 + i, 0, W[0] * V[i]);
-          GA.fetch_add(6, 0, W[0] * V[i] * V[i]);
+          GA.fetch_add(i, 0, W[0] * V[i]);
+          GA.fetch_add(3, 0, W[0] * V[i] * V[i]);
           GA_min.fetch_min(i, 0, V[i]);
           GA_max.fetch_max(i, 0, V[i]);
         }
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
-      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction),
-      Access::min(red_min), Access::max(red_max))
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction), Access::min(red_min), Access::max(red_max))
       ->execute();
 
   test_merger.transform(subgroup);
@@ -381,7 +361,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
     std::vector<INT> layers = {0, 1};
 
     auto particles = particle_group->get_particles(cells, layers);
-    REAL energy_tot = reduction_data->at(6, 0);
+    REAL energy_tot = reduction_data->at(3, 0);
     EXPECT_NEAR(energy_tot, 0.0, 1.0e-15);
     for (int dim = 0; dim < 3; dim++) {
       EXPECT_NEAR(reduction_data_max->at(dim, 0), 0.0, 1.0e-15);
@@ -395,8 +375,6 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
       for (int dim = 0; dim < 3; dim++) {
         // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
         // appropriate.
-        EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
-                    reduction_data->at(dim, 0) / wt, 1e-12);
         EXPECT_NEAR(particles->at(Sym<REAL>("VELOCITY"), i, dim), 0.0, 1e-15);
       }
     }
@@ -427,31 +405,19 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
       ->execute();
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 8, 2);
+      particle_group->sycl_target, cell_count, 5, 2);
 
-  auto red_min = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 3, 2);
-  auto red_max = std::make_shared<CellDatConst<REAL>>(
-      particle_group->sycl_target, cell_count, 3, 2);
-
-  red_min->fill(1e16);
-  red_max->fill(-1e16);
   particle_loop(
       subgroup,
-      [=](auto W, auto P, auto V, auto GA, auto GA_min, auto GA_max,
-          auto grouping_index) {
+      [=](auto W, auto V, auto GA, auto grouping_index) {
         for (int i = 0; i < 3; i++) {
-          GA.fetch_add(i, grouping_index[0], W[0] * P[i]);
-          GA.fetch_add(3 + i, grouping_index[0], W[0] * V[i]);
-          GA.fetch_add(6, grouping_index[0], W[0] * V[i] * V[i]);
-          GA_min.fetch_min(i, grouping_index[0], V[i]);
-          GA_max.fetch_max(i, grouping_index[0], V[i]);
+          GA.fetch_add(i, grouping_index[0], W[0] * V[i]);
+          GA.fetch_add(3, grouping_index[0], W[0] * V[i] * V[i]);
         }
-        GA.fetch_add(7, grouping_index[0], W[0]);
+        GA.fetch_add(4, grouping_index[0], W[0]);
       },
-      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("POSITION")),
-      Access::read(Sym<REAL>("VELOCITY")), Access::add(reduction),
-      Access::min(red_min), Access::max(red_max),
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction),
       Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
       ->execute();
 
@@ -460,8 +426,6 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
   for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
        ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
-    auto reduction_data_min = red_min->get_cell(ncell);
-    auto reduction_data_max = red_max->get_cell(ncell);
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 4);
 
     std::vector<INT> cells = {ncell, ncell, ncell, ncell};
@@ -469,8 +433,8 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
 
     auto particles = particle_group->get_particles(cells, layers);
     for (auto group = 0; group < 1; group++) {
-      REAL energy_tot = reduction_data->at(6, group);
-      REAL wt = reduction_data->at(7, group);
+      REAL energy_tot = reduction_data->at(3, group);
+      REAL wt = reduction_data->at(4, group);
       REAL energy_merged = 0;
 
       std::vector<REAL> tot_mom_merged = {0, 0, 0};
@@ -481,10 +445,6 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
           EXPECT_DOUBLE_EQ(particles->at(Sym<REAL>("WEIGHT"), i, 0),
                            wt / 2); //, 1e-12);
           for (int dim = 0; dim < 3; dim++) {
-            // Result can be out by as much as ULP=7 so EXPECT_DOUBLE_EQ is not
-            // appropriate.
-            EXPECT_NEAR(particles->at(Sym<REAL>("POSITION"), i, dim),
-                        reduction_data->at(dim, group) / wt, 1e-12);
             energy_merged += particles->at(Sym<REAL>("VELOCITY"), i, dim) *
                              particles->at(Sym<REAL>("VELOCITY"), i, dim);
             tot_mom_merged[dim] += particles->at(Sym<REAL>("VELOCITY"), i, dim);
@@ -498,7 +458,81 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
         // Result can be out by as much as ULP>10 so EXPECT_DOUBLE_EQ is not
         // appropriate.
         EXPECT_NEAR(tot_mom_merged[dim],
-                    reduction_data->at(3 + dim, group) * 2 / wt, 1e-12);
+                    reduction_data->at(dim, group) * 2 / wt, 1e-12);
+      }
+    }
+  }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(UniformVelocityBin, utility_function) {
+
+  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, -4.5), 1);
+  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, 1.0), 6);
+  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, 100.0), 11);
+  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, -100.0), 0);
+}
+
+TEST(VranicMergeTransform, transform_3D_velocity_binning) {
+
+  const INT N_total = 1600 * 4;
+
+  auto particle_group = create_vranic_test_particle_group(N_total, 3);
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  auto test_merger =
+      make_vranic_merging_strategy<3>(particle_group, 12 * 12 * 12);
+
+  auto subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto velocity_bin = uniform_velocity_bin_transform<3>(
+      std::array<REAL, 3>{3.0, 3.0, 3.0}, std::array<INT, 3>{10, 10, 10},
+      Sym<INT>("REACTIONS_GROUPING_INDEX"), Sym<REAL>("VELOCITY"));
+
+  auto reduction = std::make_shared<CellDatConst<REAL>>(
+      particle_group->sycl_target, cell_count, 5, 12 * 12 * 12);
+
+  velocity_bin->transform(subgroup);
+  particle_loop(
+      subgroup,
+      [=](auto W, auto V, auto GA, auto grouping_index) {
+        for (int i = 0; i < 3; i++) {
+          GA.fetch_add(i, grouping_index[0], W[0] * V[i]);
+          GA.fetch_add(3, grouping_index[0], W[0] * V[i] * V[i]);
+        }
+        GA.fetch_add(4, grouping_index[0], W[0]);
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction),
+      Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
+      ->execute();
+
+  test_merger.transform(subgroup);
+
+  particle_loop(
+      subgroup,
+      [=](auto W, auto V, auto GA, auto grouping_index) {
+        for (int i = 0; i < 3; i++) {
+          GA.fetch_add(i, grouping_index[0], -W[0] * V[i]);
+          GA.fetch_add(3, grouping_index[0], -W[0] * V[i] * V[i]);
+        }
+        GA.fetch_add(4, grouping_index[0], -W[0]);
+      },
+      Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
+      Access::add(reduction),
+      Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
+      ->execute();
+
+  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
+       ncell++) {
+    auto reduction_data = reduction->get_cell(ncell);
+
+    for (auto group = 0; group < 12 * 12 * 12; group++) {
+      for (auto i = 0; i < 5; i++) {
+
+        EXPECT_NEAR(reduction_data->at(i, group), 0, 1e-12);
       }
     }
   }

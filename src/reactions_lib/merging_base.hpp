@@ -36,15 +36,12 @@ struct ReductionKernelOnDeviceBase {
 
   ReductionKernelOnDeviceBase() = default;
 
-  void
-  reduce(const Access::SymVector::Read<INT> &req_int_props,
-         const Access::SymVector::Read<REAL> &req_real_props,
-         Access::CellDatConst::Reduction<REAL, Kernel::plus<REAL>> &reduction,
-         Access::CellDatConst::Reduction<REAL, Kernel::minimum<REAL>>
-             &reduction_min,
-         Access::CellDatConst::Reduction<REAL, Kernel::maximum<REAL>>
-             &reduction_max,
-         const size_t &reduction_idx) const {
+  void reduce(const Access::SymVector::Read<INT> &req_int_props,
+              const Access::SymVector::Read<REAL> &req_real_props,
+              Access::CellDatConst::Add<REAL> &reduction,
+              Access::CellDatConst::Min<REAL> &reduction_min,
+              Access::CellDatConst::Max<REAL> &reduction_max,
+              const size_t &reduction_idx) const {
     return;
   }
 };
@@ -181,6 +178,7 @@ template <typename MERGE_KERNEL> struct MergeStrategy : TransformationStrategy {
 
     auto reduction_obj = this->merge_kernels.get_reduction_kernel_on_device();
 
+    const size_t num_merged_particles = this->merge_kernels.get_merge_dim();
     this->reduction_cell_dats->fill(0.0);
     this->num_part_cell_dats->fill(0);
     this->min_reduction_cell_dats->fill(std::numeric_limits<REAL>::max());
@@ -189,7 +187,7 @@ template <typename MERGE_KERNEL> struct MergeStrategy : TransformationStrategy {
         "merge_reduction_loop", target_subgroup,
         [=](auto req_int_props, auto req_real_props, auto reduction_cell_dat,
             auto min_reduction_cell_dat, auto max_reduction_cell_dat,
-            auto npart_merging_group, auto merging_group_index,
+            auto merging_group_index, auto npart_merging_group,
             auto linear_index) {
           reduction_obj.reduce(req_int_props, req_real_props,
                                reduction_cell_dat, min_reduction_cell_dat,
@@ -203,11 +201,11 @@ template <typename MERGE_KERNEL> struct MergeStrategy : TransformationStrategy {
         Access::read(sym_vector<REAL>(
             target_subgroup,
             this->merge_kernels.get_required_real_sym_vector())),
-        Access::reduce(this->reduction_cell_dats, Kernel::plus<REAL>()),
-        Access::reduce(this->min_reduction_cell_dats, Kernel::minimum<REAL>()),
-        Access::reduce(this->max_reduction_cell_dats, Kernel::maximum<REAL>()),
-        Access::add(this->num_part_cell_dats),
+        Access::add(this->reduction_cell_dats),
+        Access::min(this->min_reduction_cell_dats),
+        Access::max(this->max_reduction_cell_dats),
         Access::read(this->group_index_sym),
+        Access::add(this->num_part_cell_dats),
         Access::write(this->linear_index_sym));
 
     reduction_loop->execute();
@@ -216,8 +214,6 @@ template <typename MERGE_KERNEL> struct MergeStrategy : TransformationStrategy {
                                               this->num_part_cell_dats);
 
     auto merge_obj = this->merge_kernels.get_merging_kernel_on_device();
-
-    const size_t num_merged_particles = this->merge_kernels.get_merge_dim();
 
     auto sub_group_to_merge = static_particle_sub_group(
         target_subgroup,

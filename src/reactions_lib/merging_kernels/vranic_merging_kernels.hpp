@@ -21,7 +21,6 @@ struct VranicMergingOnDevice : MergingKernelOnDeviceBase {
              Access::CellDatConst::Read<REAL> &reduction_max,
              const size_t &reduction_idx, const size_t &merge_idx) const {
 
-    REAL merge_pos[ndim];
     REAL mom_tot[ndim];
     REAL mom_a[ndim];
     REAL mom_b[ndim];
@@ -29,8 +28,7 @@ struct VranicMergingOnDevice : MergingKernelOnDeviceBase {
     const REAL one_over_wt = 1.0 / wt;
     const REAL et = reduction.at(1, reduction_idx);
     for (int dimx = 0; dimx < ndim; dimx++) {
-      merge_pos[dimx] = reduction.at(2 + dimx, reduction_idx) * one_over_wt;
-      mom_tot[dimx] = reduction.at(2 + ndim + dimx, reduction_idx);
+      mom_tot[dimx] = reduction.at(2 + dimx, reduction_idx);
       mom_a[dimx] = mom_tot[dimx] * one_over_wt;
       mom_b[dimx] = mom_tot[dimx] * one_over_wt;
     }
@@ -124,7 +122,6 @@ struct VranicMergingOnDevice : MergingKernelOnDeviceBase {
 
     req_real_props.at(this->weight_ind, 0) = wt * 0.5;
     for (int dimx = 0; dimx < ndim; dimx++) {
-      req_real_props.at(this->position_ind, dimx) = merge_pos[dimx];
 
       req_real_props.at(velocity_ind, dimx) =
           (merge_idx == 0) ? mom_a[dimx] : mom_b[dimx];
@@ -133,7 +130,7 @@ struct VranicMergingOnDevice : MergingKernelOnDeviceBase {
   }
 
 public:
-  int position_ind, weight_ind, velocity_ind;
+  int weight_ind, velocity_ind;
 };
 
 template <size_t ndim>
@@ -141,52 +138,46 @@ struct VranicReductionOnDevice : ReductionKernelOnDeviceBase {
 
   VranicReductionOnDevice() = default;
 
-  void
-  reduce(const Access::SymVector::Read<INT> &req_int_props,
-         const Access::SymVector::Read<REAL> &req_real_props,
-         Access::CellDatConst::Reduction<REAL, Kernel::plus<REAL>> &reduction,
-         Access::CellDatConst::Reduction<REAL, Kernel::minimum<REAL>>
-             &reduction_min,
-         Access::CellDatConst::Reduction<REAL, Kernel::maximum<REAL>>
-             &reduction_max,
-         const size_t &reduction_idx) const {
+  void reduce(const Access::SymVector::Read<INT> &req_int_props,
+              const Access::SymVector::Read<REAL> &req_real_props,
+              Access::CellDatConst::Add<REAL> &reduction,
+              Access::CellDatConst::Min<REAL> &reduction_min,
+              Access::CellDatConst::Max<REAL> &reduction_max,
+              const size_t &reduction_idx) const {
 
     auto weight = req_real_props.at(this->weight_ind, 0);
     REAL vel;
-    REAL pos;
-    reduction.combine(0, reduction_idx, weight);
+    reduction.fetch_add(0, reduction_idx, weight);
     for (int i = 0; i < ndim; i++) {
       vel = req_real_props.at(this->velocity_ind, i);
-      pos = req_real_props.at(this->position_ind, i);
-      reduction.combine(1, reduction_idx, weight * vel * vel);
-      reduction.combine(2 + i, reduction_idx, weight * pos);
-      reduction.combine(2 + ndim + i, reduction_idx, weight * vel);
+      reduction.fetch_add(1, reduction_idx, weight * vel * vel);
+      reduction.fetch_add(2 + i, reduction_idx, weight * vel);
 
       if constexpr (ndim > 2) {
-        reduction_min.combine(i, reduction_idx, vel);
-        reduction_max.combine(i, reduction_idx, vel);
+        reduction_min.fetch_min(i, reduction_idx, vel);
+        reduction_max.fetch_max(i, reduction_idx, vel);
       }
     }
     return;
   }
 
 public:
-  int position_ind, weight_ind, velocity_ind;
+  int weight_ind, velocity_ind;
 };
 
 template <size_t ndim>
-struct VranicMergingKernels : MergingKernelBase<2, 2 * ndim + 2, ndim, ndim,
-                                                VranicReductionOnDevice<ndim>,
-                                                VranicMergingOnDevice<ndim>> {
+struct VranicMergingKernels
+    : MergingKernelBase<2, ndim + 2, ndim, ndim, VranicReductionOnDevice<ndim>,
+                        VranicMergingOnDevice<ndim>> {
 
   constexpr static auto props = default_properties;
 
-  constexpr static std::array<int, 3> required_simple_real_props = {
-      props.weight, props.velocity, props.position};
+  constexpr static std::array<int, 2> required_simple_real_props = {
+      props.weight, props.velocity};
 
   VranicMergingKernels(
       std::map<int, std::string> properties_map = get_default_map())
-      : MergingKernelBase<2, 2 * ndim + 2, ndim, ndim,
+      : MergingKernelBase<2, ndim + 2, ndim, ndim,
                           VranicReductionOnDevice<ndim>,
                           VranicMergingOnDevice<ndim>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
@@ -197,10 +188,6 @@ struct VranicMergingKernels : MergingKernelBase<2, 2 * ndim + 2, ndim, ndim,
     this->merging_on_device_obj = VranicMergingOnDevice<ndim>();
     this->reduction_on_device_obj = VranicReductionOnDevice<ndim>();
 
-    this->merging_on_device_obj->position_ind =
-        this->required_real_props.find_index(
-            this->properties_map.at(props.position));
-
     this->merging_on_device_obj->velocity_ind =
         this->required_real_props.find_index(
             this->properties_map.at(props.velocity));
@@ -208,10 +195,6 @@ struct VranicMergingKernels : MergingKernelBase<2, 2 * ndim + 2, ndim, ndim,
     this->merging_on_device_obj->weight_ind =
         this->required_real_props.find_index(
             this->properties_map.at(props.weight));
-
-    this->reduction_on_device_obj->position_ind =
-        this->required_real_props.find_index(
-            this->properties_map.at(props.position));
 
     this->reduction_on_device_obj->velocity_ind =
         this->required_real_props.find_index(

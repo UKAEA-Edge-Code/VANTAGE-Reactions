@@ -281,5 +281,14 @@ normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
   return result;
 }
 
+inline size_t bin_uniform_1d(const REAL &inverse_2L, const INT &n_cells,
+                             const REAL &position) {
+
+  return Kernel::max(
+      Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),
+                  n_cells + 1),
+      0);
+}
+
 } // namespace VANTAGE::Reactions::utils
 #endif
