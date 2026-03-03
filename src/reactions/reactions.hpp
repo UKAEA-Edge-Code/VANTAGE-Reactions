@@ -31,6 +31,7 @@
 #include "../reactions_lib/reaction_data/AMJUEL_2D_data_H3.hpp"
 #include "../reactions_lib/reaction_data/arrhenius_data.hpp"
 #include "../reactions_lib/reaction_data/cartesian_basis_reflection_data.hpp"
+#include "../reactions_lib/reaction_data/component_data.hpp"
 #include "../reactions_lib/reaction_data/extractor_data.hpp"
 #include "../reactions_lib/reaction_data/filtered_maxwellian_sampler.hpp"
 #include "../reactions_lib/reaction_data/fixed_array_data.hpp"
