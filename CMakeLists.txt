@@ -20,10 +20,6 @@ find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
 find_sycl_if_required()
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_acpp_default_targets.cmake)
-get_acpp_default_targets(${ACPP_COMPILER} ACPP_DEFAULT_TARGETS)
-message(STATUS "AdaptiveCpp default targets: ${ACPP_DEFAULT_TARGETS}")
-
 ############################################################
 # Add directories with source files
 ############################################################
@@ -35,13 +31,6 @@ add_subdirectory(src)
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
 
 if (REACTIONS_ENABLE_TESTS)
-
-  if(ACPP_DEFAULT_TARGETS MATCHES "cuda-nvcxx")
-    message(STATUS "Detected cuda-nvcxx target...")
-  else()
-    set(BUILD_TYPE_COMPILE_FLAGS "-frounding-math")
-  endif()
-
   add_subdirectory(test)
 endif()
 

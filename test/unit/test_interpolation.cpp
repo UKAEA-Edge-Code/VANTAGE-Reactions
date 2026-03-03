@@ -231,7 +231,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
 
 TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   // Interpolation points
-  REAL prop_interp_0 = 6.4e8;
+  REAL prop_interp_0 = 6.4e18;
   REAL prop_interp_1 = 1.9e3;
   REAL prop_interp_2 = 2.3e2;
   REAL prop_interp_3 = 3.2e3;
