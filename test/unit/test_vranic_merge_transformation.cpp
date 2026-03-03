@@ -110,7 +110,7 @@ TEST(VranicMergeTransform, transform_2D) {
       Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
       Access::add(reduction))
       ->execute();
-  test_merger.transform(subgroup);
+  test_merger->transform(subgroup);
 
   REAL wt = 100.0;
 
@@ -179,7 +179,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
       Access::read(Sym<REAL>("WEIGHT")), Access::read(Sym<REAL>("VELOCITY")),
       Access::add(reduction))
       ->execute();
-  test_merger.transform(subgroup);
+  test_merger->transform(subgroup);
 
   REAL wt = 100.0;
 
@@ -243,7 +243,7 @@ TEST(VranicMergeTransform, transform_3D) {
       Access::add(reduction), Access::min(red_min), Access::max(red_max))
       ->execute();
 
-  test_merger.transform(subgroup);
+  test_merger->transform(subgroup);
 
   REAL wt = 100.0;
 
@@ -346,7 +346,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
       Access::add(reduction), Access::min(red_min), Access::max(red_max))
       ->execute();
 
-  test_merger.transform(subgroup);
+  test_merger->transform(subgroup);
 
   REAL wt = 100.0;
 
@@ -421,7 +421,7 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
       Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
       ->execute();
 
-  test_merger.transform(subgroup);
+  test_merger->transform(subgroup);
 
   for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
        ncell++) {
@@ -509,7 +509,7 @@ TEST(VranicMergeTransform, transform_3D_velocity_binning) {
       Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
       ->execute();
 
-  test_merger.transform(subgroup);
+  test_merger->transform(subgroup);
 
   particle_loop(
       subgroup,

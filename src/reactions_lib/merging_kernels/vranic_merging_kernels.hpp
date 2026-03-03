@@ -207,13 +207,14 @@ struct VranicMergingKernels
 };
 
 template <size_t ndim>
-MergeStrategy<VranicMergingKernels<ndim>> make_vranic_merging_strategy(
+inline std::shared_ptr<TransformationStrategy> make_vranic_merging_strategy(
     ParticleGroupSharedPtr template_group, size_t num_merging_groups,
     const std::map<int, std::string> &properties_map = get_default_map()) {
 
-  return MergeStrategy<VranicMergingKernels<ndim>>(
+  auto r = std::make_shared<MergeStrategy<VranicMergingKernels<ndim>>>(
       template_group, VranicMergingKernels<ndim>(properties_map),
       num_merging_groups, properties_map);
+  return std::dynamic_pointer_cast<TransformationStrategy>(r);
 };
 }; // namespace VANTAGE::Reactions
 #endif
