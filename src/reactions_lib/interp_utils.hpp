@@ -114,14 +114,10 @@ inline REAL linear_interp(const REAL x_interp, const REAL x0, const REAL x1,
   // multiple operations.
   REAL df = f1 - f0;
   REAL dx = x1 - x0;
-  REAL dfdx = df / dx;
-  REAL dfdx_mul_x0 = dfdx * x0;
-  REAL dfdx_mul_xinterp = dfdx * x_interp;
-  REAL c = f0 - dfdx_mul_x0;
+  REAL dfdx = dx != 0.0f ? (df / dx) : 0.0;
+  REAL c = f0 - (dfdx * x0);
 
-  REAL f_interp = dfdx_mul_xinterp + c;
-
-  return f_interp;
+  return (dfdx * x_interp) + c;
 }
 
 /**
@@ -201,7 +197,7 @@ inline void initial_func_eval_on_device(
  * @param vertex_func_evals Pointer to a vector that
  * contains the function evaluations at initial vertices.
  * @param ranges_vec Pointer to a vector containing a
- * contiguous array containing the ranges of each dimension of relevance for the
+ * contiguous array of the ranges of each dimension of relevance for the
  * interpolation.
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  * @param output_evals Pointer to a vector that contains

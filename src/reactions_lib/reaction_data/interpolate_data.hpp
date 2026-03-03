@@ -1,68 +1,77 @@
 /**
- * InterpolateData and InterpolateDataOnDevice, correspond to class definitions
- * corresponding to implementations of an interpolation algorithm. A description
- * of the algorithm can be found here:
+ * The following host and device classes provide a method of interpolating
+ * values on an ND grid. The algorithm used follows the method described in:
  * https://www.nas.nasa.gov/assets/nas/pdf/staff/Murman_S_apnum_jun13.pdf
- * Specifically Figure 2 provides a good illustration of how the algorithm
+ *
+ * In short, the algorithm finds where the interpolation points lie in the
+ * discretized ND space that the grid is defined on. It then proceeds to
+ * construct a hypercube around the interpolation points. The grid values at
+ * each vertex of the hypercube are retrieved. With the vertex positions and
+ * grid points, a recursive contraction of the hypercube, 1 dimension at a time,
+ * is performed. The final interpolated function evaluation is returned (within
+ * a 1D array for compatibility with ReactionDataBaseOnDevice).
+ *
+ * An illustrative example of contracting from 3D to 0D is shown here.
+ * Each vertex is 1 index apart so if V1 is defined as an origin (0,0,0) then
+ * V2 is (1,0,0), V3 is (0,1,0), etc. all the way to V8 being (1,1,1). This way
+ * only the location of the origin point in the ND space is needed to find the
+ * locations of the rest of the vertices. After contraction to 2D, P1 is now the
+ * "origin" at (0,0) and P3 is (1,1). This quadritlateral can be thought of as a
+ * slice of the preceding 3D hypercube around the point (x). Figure 2 of the
+ * provided Murman paper provides another illustration of how the algorithm
  * works.
  *
- * The interface is primarily meant to be through the construction of the
- * InterpolateData object and the usage of calc_data from the
- * InterpolateDataOnDevice object where appropriate. The construction of the
- * InterpolateData object provides most of the information that is needed.
+ *       V7-----------V8
+ *      /|           / |
+ *     V5-----------V6 |
+ *     | |    (x)    | |
+ *     | V3----------|V4
+ *     |/            |/
+ *     V1-----------V2
  *
- * 3 primary components are needed: dims_vec, ranges_vec and grid.
- * - dims_vec: 1D size_t vector of length ndim that specifies the number of
- * points of each of the dimensions of grid.
- * - ranges_vec: 1D REAL flattened vector that contains the range of values for
- * each dimension of grid.
- * - grid: 1D REAL flattened vector that contains all of
- * the pre-computed function evaluations typically loaded in from an external
- * source like ADAS (pre-processing from ND to 1D prior to passing to
- * InterpolateData is currently left to the user). Optionally it is possible for
- * the user to define how they wish to deal with extrapolations (by passing one
- * of the options defined in ExtrapolationType).
+ *            |
+ *            |
+ *            v
  *
- * The on-host object construction mostly just sets up the necessary data for
- * the on-device object. There is an additionaly processing step to calculate
- * the initial hypercube. This is just a series of vertices of an N-Dimensional
- * hypercube (where N is the number of dimensions of the grid that's suppplied).
- * Note that the hypercube vertices produced don't actually have any direct
- * mapping onto the values of the dimensions of the grid (ie. the x-values or
- * y-values), rather it can be thought of as a stencil to be used with the
- * origin_indices array that's calculated in InterpolateDataOnDevice.calc_data.
- * More details on the construct_initial_hypercube can be found in the docstring
- * in interp_utils.hpp.
+ *     P4-----------P3
+ *      |           |
+ *      |    (x)    |
+ *      |           |
+ *     P1-----------P2
  *
- * In calc_data in the InterpolateDataOnDevice class, firstly, there's a good
- * deal of setup that creates the temporary arrays used for storing intermediate
- * values.
+ *            |
+ *            |
+ *            v
  *
- * Next, the origin_indices array is filled. This array contains the indices
- * that form the "origin" of the hypercube that will be used for the
- * interpolation. For example, if the interpolation points are x=3.7 and y=4.9
- * and the grid dimensions are defined as running from 0-10 with a spacing of 1
- * in both x and y then the origin indices will be 3, 4 and will be used in
- * conjunction with the d_hypercube_vertices to construct a 2D hypercube(square)
- * that has vertex coordinates of (3, 4), (3, 5), (4, 5), (4, 4) in that order.
- * Note that the actual ranges for the dimensions used in this calculation are
- * the "extended" versions which are padded with -INF_DOUBLE below their lower
- * bounds and +INF_DOUBLE above their upper bounds. This is for the sake of
- * aiding in extrapolation handling and is reset after extrapolation handling.
+ *            L2
+ *            |
+ *           (x)
+ *            |
+ *            L1
  *
- * Processing related to extrapolation scenarios is performed next, the exact
- * behaviour will depend on the user choice at the construction of the
- * InterpolateData object.
+ *            |
+ *            |
+ *            v
  *
- * Now that the origin indices for the hypercube in question have been
- * calculated, the next step is to calculate the function values at each of
- * those vertices with initial_func_eval_on_device. The results are stored in
- * vertex_func_evals. The coordinates of the vertices (origin_indices combined
- * with the hypercube vertices stencil) are also stored in vertex_coords.
+ *           (x)
  *
- * Finally a loop is performed that counts down from the number of dimensions
- * down to 0D and contracts the hypercube that's defined by vertex_coords and
- * vertex_func_evals.
+ * The underlying maths of the contraction (simplified here) is:
+ * f(P1) = linear_interp(x(0), V1, V5, f(V1), f(V5))
+ * f(P4) = linear_interp(x(0), V3, V7, f(V3), f(V7))
+ * f(P2) = linear_interp(x(0), V2, V6, f(V2), f(V6))
+ * f(P3) = linear_interp(x(0), V4, V8, f(V4), f(V8))
+ *
+ * then
+ *
+ * f(L1) = linear_interp(x(1), P1, P2, f(P1), f(P2))
+ * f(L2) = linear_interp(x(1), P4, P3, f(P4), f(P3))
+ *
+ * finally
+ *
+ * f(x) = linear_interp(x(2), L1, L2, f(L1), f(L2))
+ *
+ * Note x(0), x(1) and x(2) simply refers to the components of the 3D vector x
+ * corresponding to the dimension that's being contracted.
  */
 
 #ifndef REACTIONS_INTERPOLATE_DATA_H
@@ -77,11 +86,30 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 constexpr auto INF_INTERP_DOUBLE = std::numeric_limits<double>::infinity();
 
+/**
+ * @brief Enum class containing possible modes for extrapolation for
+ * InterpolateData.
+ */
 enum class ExtrapolationType { continue_linear, clamp_to_zero, clamp_to_edge };
 
+/**
+ * @brief On device: ReactionData calculating an interpolated function
+ * evaluation given a set of interpolation points (provided on-device by the
+ * particles on a per-particle basis) and a pre-calculated grid of function
+ * evaluations.
+ *
+ * @tparam input_ndim The number of dimensions that correspond to the number of
+ * interpolation points.
+ */
 template <size_t input_ndim>
 struct InterpolateDataOnDevice
     : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
+  /**
+   * @brief Constructor for InterpolateDataOnDevice.
+   *
+   * @param extrapolation_type The extrapolation type to fall back on if
+   * interpolation is not possible for a set of points.
+   */
   InterpolateDataOnDevice(ExtrapolationType extrapolation_type =
                               ExtrapolationType::continue_linear) {
     switch (extrapolation_type) {
@@ -97,9 +125,30 @@ struct InterpolateDataOnDevice
     }
   };
 
+  /**
+   * @brief Function to calculate interpolated function evaluations.
+   *
+   * @param interpolation_points An array containing the interpolation points at
+   * which a function evaluation is desired (for example the points may be
+   * provided by the values of properties on a particle for which calc_data is
+   * being run).
+   * @param index Read-only accessor to a loop index for a ParticleLoop
+   * inside which calc_data is called. Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for the reaction rate calculation.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for the reaction rate calculation.
+   * @param kernel The random number generator kernel potentially used in the
+   * calculation
+   *
+   * @return A REAL-valued array of size 1 that contains the interpolated
+   * function evaluation at the given interpolation points.
+   */
   std::array<REAL, 1> calc_data(
       const std::array<REAL, input_ndim> &interpolation_points,
-      const Access::LoopIndex::Read &index,
+      [[maybe_unused]] const Access::LoopIndex::Read &index,
       [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       typename ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL,
@@ -140,7 +189,13 @@ struct InterpolateDataOnDevice
     // Calculation of the indices that will form the "origin" of the
     // hypercube. These are the smallest indices in each dimension that
     // still have coordinate values that are less than the interpolation
-    // values in that dimension.
+    // values in that dimension (ie. to the left of the interpolation point in
+    // every dimension).
+    // Note that the actual ranges for the dimensions used in this calculation
+    // are the "extended" versions which are padded with -INF_INTERP_DOUBLE
+    // below their lower bounds and +INF_INTERP_DOUBLE above their upper bounds.
+    // This is for the sake of aiding in extrapolation handling and is reset
+    // after extrapolation handling.
     for (size_t i = 0; i < input_ndim; i++) {
       origin_indices[i] = interp_utils::calc_floor_point_index(
           mut_interpolation_points[i],
@@ -198,8 +253,8 @@ struct InterpolateDataOnDevice
     auto output_evals_ptr = output_evals.data();
     auto varying_dim_ptr = varying_dim.data();
 
-    // Initial function evaluation (ie values of the coeffs_vec) based on
-    // the vertices of the hypercube.
+    // Initial function evaluation (ie values of the coeffs_vec) based on the
+    // origin_indices and the vertices of the hypercube.
     interp_utils::initial_func_eval_on_device(
         vertex_func_evals_ptr, vertex_coord_ptr, this->d_grid,
         this->d_hypercube_vertices, origin_indices_ptr, this->d_dims_vec,
@@ -210,6 +265,7 @@ struct InterpolateDataOnDevice
     // actually starts at dim_index = (input_ndim - 1) , as desired, due to the
     // decrement and store during the first check against 0.
     for (size_t dim_index = input_ndim; dim_index-- > 0;) {
+
       // Contract the hypercube vertices and evaluations by performing linear
       // interpolation on the current dimension (denoted by dim_index). The
       // contraction is expressed by the reduction in the length of the
@@ -232,6 +288,8 @@ struct InterpolateDataOnDevice
       }
     }
 
+    // Return either 0 or vertex_func_evals[0] depending on the
+    // out_of_range_clamp_to_zero boolean value.
     calculated_interpolated_vals[0] = out_of_range_clamp_to_zero
                                           ? calculated_interpolated_vals[0]
                                           : vertex_func_evals[0];
@@ -256,16 +314,58 @@ public:
   bool clamp_to_edge = false;
 };
 
+/**
+ * @brief ReactionData calculating an interpolated function evaluation given a
+ * set of interpolation points (provided on-device by the particles on a
+ * per-particle basis) and a pre-calculated grid of function evaluations.
+ *
+ * @tparam input_ndim The number of dimensions that correspond to the number of
+ * interpolation points.
+ */
+
 template <size_t input_ndim>
 struct InterpolateData
     : public ReactionDataBase<InterpolateDataOnDevice<input_ndim>, 1,
                               DEFAULT_RNG_KERNEL, input_ndim> {
+  /**
+   * @brief Constructor for InterpolateData
+   *
+   * @param dims_vec A vector containing the lengths of each dimension that
+   * defines the grid of pre-computed values.
+   * @param ranges_vec A vector that contains the range of values for
+   * each axis that defines the grid of pre-computed values. The values in
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
+   * @param grid A contiguous row-major vector that contains the pre-computed
+   * function evaluations on a grid of input_ndim dimensions. The flattening of
+   * this data follows the standard C-style flattening of multi-dimensional data
+   * into a 1D array. An explanation of this flattening can be found either:
+   * https://en.wikipedia.org/wiki/Array_(data_structure)#Multidimensional_arrays
+   * or
+   * https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
+   * @param sycl_target SYCL target pointer used to interface with
+   * NESO-Particles routines
+   * @param extrapolation_type The extrapolation type to fall back on if
+   * interpolation is not possible for a set of points. Either continue_linear,
+   * clamp_to_zero or clamp_to_edge.
+   */
   InterpolateData(
       const std::vector<size_t> &dims_vec, const std::vector<REAL> &ranges_vec,
       const std::vector<REAL> &grid, SYCLTargetSharedPtr sycl_target,
       ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
       : ReactionDataBase<InterpolateDataOnDevice<input_ndim>, 1,
                          DEFAULT_RNG_KERNEL, input_ndim>() {
+
+    /**
+     * A series of vertices of an N-Dimensional
+     * hypercube are constructed here. Note that the hypercube vertices produced
+     * don't actually have any direct mapping onto the values of the dimensions
+     * of the grid (ie. the x-values or y-values), rather it can be thought of
+     * as a stencil to be used with the origin_indices array that's calculated
+     * in InterpolateDataOnDevice.calc_data. More details on the
+     * construct_initial_hypercube can be found in the docstring in
+     * interp_utils.hpp.
+     */
     auto initial_hypercube =
         interp_utils::construct_initial_hypercube(input_ndim);
 

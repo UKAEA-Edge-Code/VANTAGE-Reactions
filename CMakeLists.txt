@@ -33,11 +33,15 @@ add_subdirectory(src)
 # Set the build type environment variable
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
+
 if (REACTIONS_ENABLE_TESTS)
+
   if(ACPP_DEFAULT_TARGETS MATCHES "cuda-nvcxx")
     message(STATUS "Detected cuda-nvcxx target...")
-    # unset(CMAKE_BUILD_TYPE CACHE)
+  else()
+    set(BUILD_TYPE_COMPILE_FLAGS "-frounding-math")
   endif()
+
   add_subdirectory(test)
 endif()
 
