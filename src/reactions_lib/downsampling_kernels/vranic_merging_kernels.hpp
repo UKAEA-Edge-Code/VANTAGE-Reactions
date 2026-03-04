@@ -1,7 +1,7 @@
 #ifndef REACTIONS_VRANIC_MERGING_H
 #define REACTIONS_VRANIC_MERGING_H
 
-#include "reactions_lib/merging_base.hpp"
+#include "reactions_lib/downsampling_base.hpp"
 #include <cmath>
 #include <neso_particles.hpp>
 
@@ -10,16 +10,20 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 template <size_t ndim>
-struct VranicMergingOnDevice : MergingKernelOnDeviceBase {
+struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
 
   VranicMergingOnDevice() = default;
 
-  void merge(const Access::SymVector::Write<INT> &req_int_props,
-             const Access::SymVector::Write<REAL> &req_real_props,
-             Access::CellDatConst::Read<REAL> &reduction,
-             Access::CellDatConst::Read<REAL> &reduction_min,
-             Access::CellDatConst::Read<REAL> &reduction_max,
-             const size_t &reduction_idx, const size_t &merge_idx) const {
+  void
+  apply(const Access::LoopIndex::Read &index,
+        const Access::SymVector::Write<INT> &req_int_props,
+        const Access::SymVector::Write<REAL> &req_real_props,
+        Access::CellDatConst::Read<REAL> &reduction,
+        Access::CellDatConst::Read<REAL> &reduction_min,
+        Access::CellDatConst::Read<REAL> &reduction_max,
+        const size_t &reduction_idx, const size_t &linear_idx,
+        typename DownsamplingKernelOnDeviceBase<2>::RNG_KERNEL_TYPE::KernelType
+            &rng_kernel) const {
 
     REAL mom_tot[ndim];
     REAL mom_a[ndim];
@@ -124,7 +128,7 @@ struct VranicMergingOnDevice : MergingKernelOnDeviceBase {
     for (int dimx = 0; dimx < ndim; dimx++) {
 
       req_real_props.at(velocity_ind, dimx) =
-          (merge_idx == 0) ? mom_a[dimx] : mom_b[dimx];
+          (linear_idx == 0) ? mom_a[dimx] : mom_b[dimx];
     }
     return;
   }
@@ -134,7 +138,8 @@ public:
 };
 
 template <size_t ndim>
-struct VranicReductionOnDevice : ReductionKernelOnDeviceBase {
+struct VranicReductionOnDevice
+    : ReductionKernelOnDeviceBase<ndim + 2, ndim, ndim> {
 
   VranicReductionOnDevice() = default;
 
@@ -167,8 +172,9 @@ public:
 
 template <size_t ndim>
 struct VranicMergingKernels
-    : MergingKernelBase<2, ndim + 2, ndim, ndim, VranicReductionOnDevice<ndim>,
-                        VranicMergingOnDevice<ndim>> {
+    : DownsamplingKernelBase<DownsamplingMode::merging,
+                             VranicReductionOnDevice<ndim>,
+                             VranicMergingOnDevice<ndim>> {
 
   constexpr static auto props = default_properties;
 
@@ -177,22 +183,22 @@ struct VranicMergingKernels
 
   VranicMergingKernels(
       std::map<int, std::string> properties_map = get_default_map())
-      : MergingKernelBase<2, ndim + 2, ndim, ndim,
-                          VranicReductionOnDevice<ndim>,
-                          VranicMergingOnDevice<ndim>>(
+      : DownsamplingKernelBase<DownsamplingMode::merging,
+                               VranicReductionOnDevice<ndim>,
+                               VranicMergingOnDevice<ndim>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
 
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D ndim supported for Vranic merging strategy");
 
-    this->merging_on_device_obj = VranicMergingOnDevice<ndim>();
+    this->downsampling_on_device_obj = VranicMergingOnDevice<ndim>();
     this->reduction_on_device_obj = VranicReductionOnDevice<ndim>();
 
-    this->merging_on_device_obj->velocity_ind =
+    this->downsampling_on_device_obj->velocity_ind =
         this->required_real_props.find_index(
             this->properties_map.at(props.velocity));
 
-    this->merging_on_device_obj->weight_ind =
+    this->downsampling_on_device_obj->weight_ind =
         this->required_real_props.find_index(
             this->properties_map.at(props.weight));
 
@@ -211,7 +217,7 @@ inline std::shared_ptr<TransformationStrategy> make_vranic_merging_strategy(
     ParticleGroupSharedPtr template_group, size_t num_merging_groups,
     const std::map<int, std::string> &properties_map = get_default_map()) {
 
-  auto r = std::make_shared<MergeStrategy<VranicMergingKernels<ndim>>>(
+  auto r = std::make_shared<DownsamplingStrategy<VranicMergingKernels<ndim>>>(
       template_group, VranicMergingKernels<ndim>(properties_map),
       num_merging_groups, properties_map);
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
