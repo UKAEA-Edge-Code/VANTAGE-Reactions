@@ -114,8 +114,7 @@ TEST(VranicMergeTransform, transform_2D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
-       ncell++) {
+  for (int ncell = 0; ncell < cell_count; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
 
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
@@ -183,8 +182,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
-       ncell++) {
+  for (int ncell = 0; ncell < cell_count; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
 
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 2);
@@ -193,7 +191,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
     std::vector<INT> layers = {0, 1};
 
     auto particles = particle_group->get_particles(cells, layers);
-    REAL energy_tot = reduction_data->at(2, 0);
+    REAL energy_tot = reduction_data->at(0, 0);
 
     EXPECT_NEAR(energy_tot, 0.0, 1e-12);
     for (int i = 0; i < 2; i++) {
@@ -247,8 +245,7 @@ TEST(VranicMergeTransform, transform_3D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
-       ncell++) {
+  for (int ncell = 0; ncell < cell_count; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
     auto reduction_data_min = red_min->get_cell(ncell);
     auto reduction_data_max = red_max->get_cell(ncell);
@@ -350,8 +347,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
 
   REAL wt = 100.0;
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
-       ncell++) {
+  for (int ncell = 0; ncell < cell_count; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
     auto reduction_data_min = red_min->get_cell(ncell);
     auto reduction_data_max = red_max->get_cell(ncell);
@@ -423,8 +419,7 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
 
   test_merger->transform(subgroup);
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
-       ncell++) {
+  for (int ncell = 0; ncell < cell_count; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
     EXPECT_EQ(particle_group->get_npart_cell(ncell), 4);
 
@@ -525,8 +520,7 @@ TEST(VranicMergeTransform, transform_3D_velocity_binning) {
       Access::read(Sym<INT>("REACTIONS_GROUPING_INDEX")))
       ->execute();
 
-  for (int ncell = 0; ncell < particle_group->domain->mesh->get_cell_count();
-       ncell++) {
+  for (int ncell = 0; ncell < cell_count; ncell++) {
     auto reduction_data = reduction->get_cell(ncell);
 
     for (auto group = 0; group < 12 * 12 * 12; group++) {

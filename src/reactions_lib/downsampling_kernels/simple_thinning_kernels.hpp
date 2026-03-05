@@ -29,7 +29,7 @@ struct SimpleThinningOnDevice
         rng_kernel.at(index, 0, &is_kernel_valid) < 1 - this->thinning_ratio;
     req_int_props.at(this->panic_ind, 0) += is_kernel_valid ? 1 : 0;
     req_real_props.at(this->weight_ind, 0) *=
-        inverse_thinning_ratio ? accepted : 0;
+        accepted ? 0 : this->inverse_thinning_ratio;
     return;
   }
 
@@ -52,6 +52,7 @@ struct SimpleThinningKernels
 
   SimpleThinningKernels(
       REAL thinning_ratio,
+      std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
       : DownsamplingKernelBase<DownsamplingMode::thinning,
                                ReductionKernelOnDeviceBase<0, 0, 0>,
@@ -59,6 +60,7 @@ struct SimpleThinningKernels
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
 
+    this->set_rng_kernel(rng_kernel);
     this->downsampling_on_device_obj = SimpleThinningOnDevice(thinning_ratio);
     this->reduction_on_device_obj = ReductionKernelOnDeviceBase<0, 0, 0>();
 
@@ -72,14 +74,15 @@ struct SimpleThinningKernels
   }
 };
 
-template <size_t ndim>
 inline std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
     ParticleGroupSharedPtr template_group, size_t num_thinning_groups,
     REAL thinning_ratio,
+    std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel,
     const std::map<int, std::string> &properties_map = get_default_map()) {
 
   auto r = std::make_shared<DownsamplingStrategy<SimpleThinningKernels>>(
-      template_group, SimpleThinningKernels(thinning_ratio, properties_map),
+      template_group,
+      SimpleThinningKernels(thinning_ratio, rng_kernel, properties_map),
       num_thinning_groups, properties_map);
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 };
