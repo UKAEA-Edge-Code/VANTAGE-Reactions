@@ -32,6 +32,7 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func = coeffs_data.get_grid_func();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -51,7 +52,7 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
       particle_group,
       [=](auto index, auto prop0, auto expected_value, auto kernel) {
         prop0.at(0) = kernel.at(index, 0);
-        expected_value.at(0) = coeffs_data.grid_func(prop0.at(0));
+        expected_value.at(0) = grid_func(prop0.at(0));
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")),
@@ -91,11 +92,9 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
       auto calculated_interpolation_value = results_dat[ipart * 2];
       auto expected_interpolation_value = results_dat[(ipart * 2) + 1];
 
-      // Using EXPECT_NEAR instead of EXPECT_DOUBLE_EQ since the grid function
-      // is log_10(x).
       auto rel_error = relative_error(expected_interpolation_value,
                                       calculated_interpolation_value);
-      EXPECT_NEAR(rel_error, 0.0, 1e-2);
+      EXPECT_NEAR(rel_error, 0.0, INTERPOLATION_TOLERANCE);
     }
   }
 }
@@ -123,6 +122,7 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func = coeffs_data.get_grid_func();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -153,7 +153,7 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
           auto kernel1) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
-        expected_value.at(0) = coeffs_data.grid_func(prop0.at(0), prop1.at(0));
+        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0));
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")),
@@ -227,6 +227,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func = coeffs_data.get_grid_func();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -262,8 +263,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
         prop2.at(0) = kernel2.at(index, 0);
-        expected_value.at(0) =
-            coeffs_data.grid_func(prop0.at(0), prop1.at(0), prop2.at(0));
+        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0), prop2.at(0));
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),
@@ -341,6 +341,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func = coeffs_data.get_grid_func();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -382,8 +383,8 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
         prop1.at(0) = kernel1.at(index, 0);
         prop2.at(0) = kernel2.at(index, 0);
         prop3.at(0) = kernel3.at(index, 0);
-        expected_value.at(0) = coeffs_data.grid_func(prop0.at(0), prop1.at(0),
-                                                     prop2.at(0), prop3.at(0));
+        expected_value.at(0) =
+            grid_func(prop0.at(0), prop1.at(0), prop2.at(0), prop3.at(0));
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),
@@ -464,6 +465,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func = coeffs_data.get_grid_func();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -510,8 +512,8 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
         prop2.at(0) = kernel2.at(index, 0);
         prop3.at(0) = kernel3.at(index, 0);
         prop4.at(0) = kernel4.at(index, 0);
-        expected_value.at(0) = coeffs_data.grid_func(
-            prop0.at(0), prop1.at(0), prop2.at(0), prop3.at(0), prop4.at(0));
+        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0), prop2.at(0),
+                                         prop3.at(0), prop4.at(0));
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),

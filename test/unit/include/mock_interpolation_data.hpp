@@ -32,36 +32,6 @@ public:
   const std::vector<REAL> &get_upper_bounds() { return this->upper_bounds; }
 };
 
-struct coefficient_values_1D_linear : abstract_coefficient_values {
-private:
-  static constexpr int ndim = 1;
-  static constexpr size_t dim0 = 8;
-
-  // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
-
-public:
-  coefficient_values_1D_linear() : abstract_coefficient_values() {
-    REAL dim0_i = 0.0;
-    REAL val = 0.0;
-    for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-      dim0_i = this->dim0_range[idim0];
-      val = this->grid_func(dim0_i);
-      this->coeffs_vec.push_back(val);
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-
-    this->lower_bounds.push_back(this->dim0_range[0]);
-    this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-  };
-
-  REAL grid_func(const REAL &dim0_val) const { return (2 * dim0_val); }
-};
-
 struct coefficient_values_1D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 1;
@@ -71,8 +41,15 @@ private:
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
                                   5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
 
+  static constexpr auto grid_func_lambda = [](const REAL &dim0_val) {
+    return (2 * dim0_val);
+  };
+
+  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+
 public:
-  coefficient_values_1D() : abstract_coefficient_values() {
+  coefficient_values_1D()
+      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
     REAL dim0_i = 0.0;
     REAL val = 0.0;
     for (int idim0 = 0; idim0 < this->dim0; idim0++) {
@@ -89,14 +66,14 @@ public:
     this->dims_vec.push_back(this->dim0);
   };
 
-  REAL grid_func(const REAL &val) const { return std::log10(val); }
+  auto get_grid_func() const { return this->grid_func; }
 };
 
 struct coefficient_values_2D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 2;
-  static const size_t dim0 = 8;
-  static const size_t dim1 = 10;
+  static constexpr size_t dim0 = 8;
+  static constexpr size_t dim1 = 10;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
@@ -107,8 +84,16 @@ private:
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
 
+  static constexpr auto grid_func_lambda = [](const REAL &dim0_val,
+                                              const REAL &dim1_val) {
+    return (dim0_val * dim1_val);
+  };
+
+  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+
 public:
-  coefficient_values_2D() : abstract_coefficient_values() {
+  coefficient_values_2D()
+      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
     REAL dim1_i = 0.0;
     REAL dim0_i = 0.0;
     REAL val = 0.0;
@@ -136,9 +121,7 @@ public:
     this->dims_vec.push_back(this->dim1);
   };
 
-  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val) const {
-    return (dim0_val * dim1_val);
-  }
+  auto get_grid_func() const { return this->grid_func; }
 };
 
 struct coefficient_values_3D : abstract_coefficient_values {
@@ -162,8 +145,16 @@ private:
                                   -46.,  -26.5, -4.,   21.5, 50.,
                                   81.5,  116.,  153.5, 194., 237.5};
 
+  static constexpr auto grid_func_lambda =
+      [](const REAL &dim0_val, const REAL &dim1_val, const REAL &dim2_val) {
+        return (dim0_val * dim1_val * dim2_val);
+      };
+
+  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+
 public:
-  coefficient_values_3D() : abstract_coefficient_values() {
+  coefficient_values_3D()
+      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
     REAL dim2_i = 0.0;
     REAL dim1_i = 0.0;
     REAL dim0_i = 0.0;
@@ -201,10 +192,7 @@ public:
     this->dims_vec.push_back(this->dim2);
   };
 
-  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val,
-                 const REAL &dim2_val) const {
-    return (dim0_val * dim1_val * dim2_val);
-  }
+  auto get_grid_func() const { return this->grid_func; }
 };
 
 struct coefficient_values_4D : abstract_coefficient_values {
@@ -237,8 +225,17 @@ private:
       1.36887451e+09, 4.10805608e+09, 1.23284674e+10, 3.69983041e+10,
       1.11033632e+11, 3.33217094e+11, 1.00000000e+12};
 
+  static constexpr auto grid_func_lambda =
+      [](const REAL &dim0_val, const REAL &dim1_val, const REAL &dim2_val,
+         const REAL &dim3_val) {
+        return (dim0_val * dim1_val * dim2_val * dim3_val);
+      };
+
+  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+
 public:
-  coefficient_values_4D() : abstract_coefficient_values() {
+  coefficient_values_4D()
+      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
     REAL dim3_i = 0.0;
     REAL dim2_i = 0.0;
     REAL dim1_i = 0.0;
@@ -286,10 +283,7 @@ public:
     this->dims_vec.push_back(this->dim3);
   };
 
-  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val,
-                 const REAL &dim2_val, const REAL &dim3_val) const {
-    return (dim0_val * dim1_val * dim2_val * dim3_val);
-  }
+  auto get_grid_func() const { return this->grid_func; }
 };
 
 struct coefficient_values_5D : abstract_coefficient_values {
@@ -331,8 +325,17 @@ private:
       2.4118647,  2.47809326, 2.54614043, 2.61605614, 2.68789169, 2.76169981,
       2.83753467, 2.91545191, 2.99550872, 3.07776385, 3.16227766};
 
+  static constexpr auto grid_func_lambda =
+      [](const REAL &dim0_val, const REAL &dim1_val, const REAL &dim2_val,
+         const REAL &dim3_val, const REAL &dim4_val) {
+        return (dim0_val * dim1_val * dim2_val * dim3_val * dim4_val);
+      };
+
+  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+
 public:
-  coefficient_values_5D() : abstract_coefficient_values() {
+  coefficient_values_5D()
+      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
     REAL dim4_i = 0.0;
     REAL dim3_i = 0.0;
     REAL dim2_i = 0.0;
@@ -390,11 +393,7 @@ public:
     this->dims_vec.push_back(this->dim4);
   };
 
-  REAL grid_func(const REAL &dim0_val, const REAL &dim1_val,
-                 const REAL &dim2_val, const REAL &dim3_val,
-                 const REAL &dim4_val) const {
-    return (dim0_val * dim1_val * dim2_val * dim3_val * dim4_val);
-  }
+  auto get_grid_func() const { return this->grid_func; }
 };
 
 #endif
