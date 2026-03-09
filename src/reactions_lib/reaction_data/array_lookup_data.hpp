@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REACTIONS_ARRAY_LOOKUP_DATA_H
+#define REACTIONS_ARRAY_LOOKUP_DATA_H
 #include "../reaction_data.hpp"
 #include "reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 #include <array>
@@ -138,3 +139,5 @@ private:
   std::shared_ptr<BlockedBinaryTree<int, std::array<REAL, N>, 8>> lut;
 };
 }; // namespace VANTAGE::Reactions
+
+#endif

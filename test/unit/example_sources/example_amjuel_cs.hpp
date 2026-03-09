@@ -19,9 +19,9 @@ inline void amjuel_h1_cs_example() {
       >(1e6,  // velocity normalisation
         1e-4, // cross-section normalisation in m^2
         reduced_mass_amu,
-        coeffs,   // Bulk fit coefficients
-        l_coeffs, // Left asymptote coefficients - set to std::array<REAL,0>{}
-                  // if no left asymptote
+        coeffs,    // Bulk fit coefficients
+        l_coeffs,  // Left asymptote coefficients - set to std::array<REAL,0>{}
+                   // if no left asymptote
         r_coeffs,  // Right asymptote coefficents - set to std::array<REAL,0>{}
                    // if no right asymptote
         E_lab_min, // Left asymptote energy threshold - ignored if l_coeffs of
