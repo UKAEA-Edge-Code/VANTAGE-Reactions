@@ -50,9 +50,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -102,8 +100,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::continue_linear;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -120,7 +119,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        sycl_target, buffer_size, shape);
+        particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
 
     concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
@@ -137,6 +136,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
       EXPECT_NEAR(rel_error, 0.0, EXTRAPOLATION_TOLERANCE);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
@@ -144,9 +146,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -196,8 +196,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::continue_linear;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -214,7 +215,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        sycl_target, buffer_size, shape);
+        particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
 
     concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
@@ -231,6 +232,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
       EXPECT_NEAR(rel_error, 0.0, EXTRAPOLATION_TOLERANCE);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
@@ -238,9 +242,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -289,8 +291,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -307,7 +310,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        sycl_target, buffer_size, shape);
+        particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
 
     concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
@@ -323,6 +326,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
@@ -330,9 +336,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -381,8 +385,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -399,7 +404,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        sycl_target, buffer_size, shape);
+        particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
 
     concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
@@ -415,6 +420,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
@@ -422,9 +430,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -476,8 +482,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -494,7 +501,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        sycl_target, buffer_size, shape);
+        particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
 
     concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
@@ -510,6 +517,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
@@ -517,9 +527,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -571,8 +579,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -589,7 +598,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        sycl_target, buffer_size, shape);
+        particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
 
     concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
@@ -605,6 +614,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
@@ -612,9 +624,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -678,8 +688,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
   auto extrapolation_type = ExtrapolationType::continue_linear;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -713,6 +724,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
       EXPECT_NEAR(rel_error, 0.0, EXTRAPOLATION_TOLERANCE);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
@@ -720,9 +734,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -785,8 +797,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -819,6 +832,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
@@ -826,9 +842,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -896,8 +910,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -930,6 +945,9 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
@@ -937,9 +955,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -1013,8 +1029,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
   auto extrapolation_type = ExtrapolationType::continue_linear;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -1048,6 +1065,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
       EXPECT_NEAR(rel_error, 0.0, EXTRAPOLATION_TOLERANCE);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
@@ -1055,9 +1075,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -1130,8 +1148,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -1164,6 +1183,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
 
 TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
@@ -1171,9 +1193,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
 
   auto particle_group = create_test_particle_group(1e3);
 
-  auto sycl_target = particle_group->sycl_target;
-
-  const int rank = sycl_target->comm_pair.rank_parent;
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
   auto npart = particle_group->get_npart_local();
 
@@ -1252,8 +1272,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
-  auto interpolator_data = InterpolateData<ndim>(
-      dims_vec, ranges_vec, grid, sycl_target, extrapolation_type);
+  auto interpolator_data =
+      InterpolateData<ndim>(dims_vec, ranges_vec, grid,
+                            particle_group->sycl_target, extrapolation_type);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_EXTRAPOLATION_VALUE");
@@ -1286,4 +1307,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
                        expected_extrapolation_value);
     }
   }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
 }
