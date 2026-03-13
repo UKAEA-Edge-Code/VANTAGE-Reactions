@@ -22,13 +22,17 @@ template <typename T> inline T binary_extract(const T &i, const size_t &j) {
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  * @param ndim The number of dimensions
  *
- * @return std::size_t that specifies the index on a contiguous grid array
+ * @return size_t that specifies the index on a contiguous grid array
  */
-inline INT coeff_index_on_device(INT const *indices, size_t const *dims_vec,
-                                 const int &ndim) {
-  INT index = indices[ndim - 1];
+inline size_t coeff_index_on_device(size_t const *indices,
+                                    size_t const *dims_vec,
+                                    const size_t &ndim) {
+  size_t index = indices[ndim - 1];
 
-  for (int dimx = ndim - 2; dimx >= 0; dimx--) {
+  // slight re-factor to avoid underflow errors with size_t.
+  size_t dimx = ndim - 1;
+  while (dimx > 0) {
+    --dimx;
     index *= dims_vec[dimx];
     index += indices[dimx];
   }
@@ -46,7 +50,7 @@ inline INT coeff_index_on_device(INT const *indices, size_t const *dims_vec,
  * dimension of a 4D grid, the dim_index=2
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  *
- * @return std::size_t that specifies the index on a contiguous ranges array.
+ * @return size_t that specifies the index on a contiguous ranges array.
  */
 inline size_t range_index_on_device(const size_t &sub_index,
                                     const size_t &dim_index,
@@ -70,7 +74,7 @@ inline size_t range_index_on_device(const size_t &sub_index,
  * given dimension.
  * @param last_index The last index in the range of the given dimension.
  *
- * @return std::size_t The index on a given dimension that is the closest to
+ * @return size_t The index on a given dimension that is the closest to
  * x_interp.
  */
 inline size_t calc_floor_point_index(const REAL &x_interp,
@@ -132,11 +136,11 @@ inline REAL linear_interp(const REAL x_interp, const REAL x0, const REAL x1,
  * @return std::vector<INT> That contains the points denoting the vertices of
  * the hypercube.
  */
-inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
-  int total_num = 1 << ndim;
-  std::vector<INT> points(total_num);
+inline std::vector<size_t> construct_initial_hypercube(const size_t &ndim) {
+  size_t total_num = 1 << ndim;
+  std::vector<size_t> points(total_num);
 
-  for (int i = 0; i < total_num; i++) {
+  for (size_t i = 0; i < total_num; i++) {
     points[i] = (i ^ (i >> 1));
   }
 
@@ -165,9 +169,9 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * representation
  */
 inline void initial_func_eval_on_device(
-    REAL *vertex_func_evals, INT *vertex_coord, REAL const *func_grid,
-    INT const *hypercube_vertices, INT const *origin_indices,
-    size_t const *dims_vec, const int &ndim, const int &num_points) {
+    REAL *vertex_func_evals, size_t *vertex_coord, REAL const *func_grid,
+    size_t const *hypercube_vertices, size_t const *origin_indices,
+    size_t const *dims_vec, const size_t &ndim, const size_t &num_points) {
   for (size_t point_index = 0; point_index < num_points; point_index++) {
     for (size_t vertex_index = 0; vertex_index < ndim; vertex_index++) {
       vertex_coord[vertex_index] =
@@ -211,10 +215,10 @@ inline void initial_func_eval_on_device(
 
 inline void contract_hypercube_on_device(
     const REAL *interp_points, const size_t &dim_index,
-    INT const *hypercube_vertices, const INT *origin_indices,
+    size_t const *hypercube_vertices, const size_t *origin_indices,
     const REAL *vertex_func_evals, REAL const *ranges_vec,
-    size_t const *dims_vec, REAL *output_evals, INT *varying_dim,
-    INT *vertex_coord) {
+    size_t const *dims_vec, REAL *output_evals, size_t *varying_dim,
+    size_t *vertex_coord) {
   size_t ndim = dim_index + 1;
   size_t num_points = (1 << ndim);
   size_t num_out_points = (1 << dim_index);
@@ -228,7 +232,7 @@ inline void contract_hypercube_on_device(
     varying_dim[point_index] = vertex_coord[dim_index];
   }
 
-  INT vertex_0, vertex_1;
+  size_t vertex_0, vertex_1;
   REAL range_val_0, range_val_1, eval_point_0, eval_point_1;
 
   for (size_t i = 0; i < num_out_points; i++) {

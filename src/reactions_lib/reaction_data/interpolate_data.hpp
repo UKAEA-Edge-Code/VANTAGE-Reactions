@@ -158,13 +158,13 @@ struct InterpolateDataOnDevice
     // unique values for each particle)
     std::array<REAL, input_ndim> mut_interpolation_points =
         interpolation_points;
-    std::array<INT, input_ndim> origin_indices;
+    std::array<size_t, input_ndim> origin_indices;
 
     std::array<REAL, initial_num_points> vertex_func_evals;
-    std::array<INT, initial_num_points> vertex_coord;
+    std::array<size_t, initial_num_points> vertex_coord;
 
     std::array<REAL, initial_num_points> output_evals;
-    std::array<INT, initial_num_points> varying_dim;
+    std::array<size_t, initial_num_points> varying_dim;
 
     for (size_t i = 0; i < input_ndim; i++) {
       origin_indices[i] = 0;
@@ -179,7 +179,7 @@ struct InterpolateDataOnDevice
     }
 
     // Counter
-    INT num_points = this->initial_num_points;
+    size_t num_points = this->initial_num_points;
 
     // Array of length 1 to maintain compatibility with pipelining interface for
     // ReactionData objects.
@@ -238,7 +238,7 @@ struct InterpolateDataOnDevice
     // which is the last left-most index that can be selected such that the
     // linear gradient can be calculated.
     for (size_t i = 0; i < input_ndim; i++) {
-      origin_indices[i]--;
+      origin_indices[i] -= (origin_indices[i] > 0) ? 1 : 0;
       origin_indices[i] = Kernel::min(Kernel::max(origin_indices[i], 0),
                                       this->d_dims_vec[i] - 2);
     }
@@ -283,7 +283,7 @@ struct InterpolateDataOnDevice
       num_points = num_points >> 1;
 
       // Reset vertex_func_evals for the next contraction
-      for (int i = 0; i < num_points; i++) {
+      for (size_t i = 0; i < num_points; i++) {
         vertex_func_evals[i] = output_evals[i];
       }
     }
@@ -298,7 +298,7 @@ struct InterpolateDataOnDevice
   }
 
 public:
-  INT const *d_hypercube_vertices;
+  size_t const *d_hypercube_vertices;
   size_t const *d_dims_vec;
   REAL const *d_ranges_vec;
   REAL const *d_grid;
@@ -307,7 +307,7 @@ public:
   size_t const *d_ranges_strides;
   size_t const *d_extended_ranges_strides;
 
-  static constexpr INT initial_num_points = 1 << input_ndim;
+  static constexpr size_t initial_num_points = 1 << input_ndim;
 
   bool continue_linear = false;
   bool clamp_to_zero = false;
@@ -424,7 +424,7 @@ struct InterpolateData
     this->on_device_obj->d_grid = this->h_grid->ptr;
 
     this->h_hypercube_vertices =
-        std::make_shared<BufferDevice<INT>>(sycl_target, initial_hypercube);
+        std::make_shared<BufferDevice<size_t>>(sycl_target, initial_hypercube);
     this->on_device_obj->d_hypercube_vertices = this->h_hypercube_vertices->ptr;
   };
 
@@ -435,7 +435,7 @@ struct InterpolateData
   std::shared_ptr<BufferDevice<size_t>> h_ranges_strides;
   std::shared_ptr<BufferDevice<size_t>> h_extended_ranges_strides;
   std::shared_ptr<BufferDevice<REAL>> h_grid;
-  std::shared_ptr<BufferDevice<INT>> h_hypercube_vertices;
+  std::shared_ptr<BufferDevice<size_t>> h_hypercube_vertices;
 };
 }; // namespace VANTAGE::Reactions
 #endif
