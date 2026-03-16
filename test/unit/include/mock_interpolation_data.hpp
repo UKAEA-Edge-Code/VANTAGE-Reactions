@@ -16,7 +16,7 @@ protected:
   std::vector<REAL> ranges_flat_vec;
   std::vector<REAL> lower_bounds;
   std::vector<REAL> upper_bounds;
-  std::vector<size_t> dims_vec;
+  std::vector<INT> dims_vec;
 
 public:
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
@@ -25,7 +25,7 @@ public:
     return this->ranges_flat_vec;
   }
 
-  const std::vector<size_t> &get_dims_vec() { return this->dims_vec; }
+  const std::vector<INT> &get_dims_vec() { return this->dims_vec; }
 
   const std::vector<REAL> &get_lower_bounds() { return this->lower_bounds; }
 
@@ -35,7 +35,7 @@ public:
 struct coefficient_values_1D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 1;
-  static constexpr size_t dim0 = 8;
+  static constexpr INT dim0 = 8;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
@@ -72,8 +72,8 @@ public:
 struct coefficient_values_2D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 2;
-  static constexpr size_t dim0 = 8;
-  static constexpr size_t dim1 = 10;
+  static constexpr INT dim0 = 8;
+  static constexpr INT dim1 = 10;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
@@ -127,9 +127,9 @@ public:
 struct coefficient_values_3D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 3;
-  static constexpr size_t dim0 = 8;
-  static constexpr size_t dim1 = 10;
-  static constexpr size_t dim2 = 15;
+  static constexpr INT dim0 = 8;
+  static constexpr INT dim1 = 10;
+  static constexpr INT dim2 = 15;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
@@ -198,10 +198,10 @@ public:
 struct coefficient_values_4D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 4;
-  static constexpr size_t dim0 = 8;
-  static constexpr size_t dim1 = 10;
-  static constexpr size_t dim2 = 15;
-  static constexpr size_t dim3 = 23;
+  static constexpr INT dim0 = 8;
+  static constexpr INT dim1 = 10;
+  static constexpr INT dim2 = 15;
+  static constexpr INT dim3 = 23;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
@@ -289,11 +289,11 @@ public:
 struct coefficient_values_5D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 5;
-  static constexpr size_t dim0 = 8;
-  static constexpr size_t dim1 = 10;
-  static constexpr size_t dim2 = 15;
-  static constexpr size_t dim3 = 23;
-  static constexpr size_t dim4 = 35;
+  static constexpr INT dim0 = 8;
+  static constexpr INT dim1 = 10;
+  static constexpr INT dim2 = 15;
+  static constexpr INT dim3 = 23;
+  static constexpr INT dim4 = 35;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
