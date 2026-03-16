@@ -77,7 +77,7 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
@@ -182,7 +182,7 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
@@ -296,7 +296,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
@@ -420,7 +420,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
@@ -553,7 +553,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 

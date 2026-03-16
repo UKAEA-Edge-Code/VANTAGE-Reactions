@@ -117,7 +117,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -213,7 +213,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -308,7 +308,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -402,7 +402,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -499,7 +499,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -596,7 +596,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -705,7 +705,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -814,7 +814,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -927,7 +927,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -1046,7 +1046,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -1165,7 +1165,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
@@ -1289,7 +1289,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
   for (int i = 0; i < cell_count; i++) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
-    size_t buffer_size = n_part_cell;
+    INT buffer_size = n_part_cell;
     auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     pre_req_data->fill(0);
