@@ -9,6 +9,29 @@ using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
+/**
+ * Implementation of simplified merging algorithm from M. Vranic et
+ * al. Computer Physics Communications 191 2015.
+ *
+ * The assumption is that all particles being merged are of the same species,
+ * i.e. have the same mass and that they are non-relativistic.
+ *
+ * Particles are merged group-wise and cell-wise into 2 particles. The
+ * properties modified are the positions, weights, and momenta/velocities. Other
+ * properties are sampled from 2 other particles in the passed subgroup, i.e.
+ * things like cell or particle ids will be copied consistently, but there is no
+ * reduction of other real quantities. This means that those values will be
+ * lost, so this algorithm should be called only AFTER they are no longer
+ * needed.
+ *
+ */
+
+/**
+ * @brief The on-device merging object, setting the values of post-merge
+ * properties on each of the remaining 2 particles
+ *
+ * @tparam ndim The dimensionality of the velocity space
+ */
 template <size_t ndim>
 struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
 
@@ -83,7 +106,7 @@ struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
                             rotation_axis + 2);
 
       // the cross product of the total momentum and the momentum space
-      // bounding box diagonal of the subgroup
+      // bounding box diagonal of the downsampling group
       REAL rotation_axis_norm =
           Kernel::sqrt(Kernel::dot_product_3d(rotation_axis, rotation_axis));
 
@@ -137,6 +160,15 @@ public:
   int weight_ind, velocity_ind;
 };
 
+/**
+ * @brief The reduction kernels for the Vranic merging algorithm. They will
+ * calculate the total momentum and energy of the particles in each downsampling
+ * cell, as well as the minimum and maximum values of the particle velocities in
+ * each direction - to be used to generate bounding boxes in the above merging
+ * algorithm
+ *
+ * @tparam ndim The dimensionality of the velocity space
+ */
 template <size_t ndim>
 struct VranicReductionOnDevice
     : ReductionKernelOnDeviceBase<ndim + 2, ndim, ndim> {
@@ -170,6 +202,13 @@ public:
   int weight_ind, velocity_ind;
 };
 
+/**
+ * @brief Host-side Vranic merging algorithm kernels
+ *
+ * Required properties are the particle weights and velocity
+ *
+ * @tparam ndim The dimensionality of the velocity space
+ */
 template <size_t ndim>
 struct VranicMergingKernels
     : DownsamplingKernelBase<DownsamplingMode::merging,
@@ -212,6 +251,16 @@ struct VranicMergingKernels
   }
 };
 
+/**
+ * @brief Helper function for generating a Vranic merging strategy
+ *
+ * @param template_group The template group sharing the domain and sycl target
+ * of the particle group to which the transformation strategy is to be applied
+ * @param num_merging_groups The number of merging groups, i.e. velocity space
+ * bins or other downsampling group types
+ * @param properties_map (Optional) A std::map<int, std::string> object to be
+ * used when remapping property names
+ */
 template <size_t ndim>
 inline std::shared_ptr<TransformationStrategy> make_vranic_merging_strategy(
     ParticleGroupSharedPtr template_group, size_t num_merging_groups,

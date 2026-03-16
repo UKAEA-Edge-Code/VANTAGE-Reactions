@@ -281,6 +281,14 @@ normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
   return result;
 }
 
+/**
+ * @brief Bin into equal sized cartesian 1D cells
+ *
+ * @param inverse_2L 1/(2*total_length_of_domain)
+ * @param n_cells Number of cells on the 1D grid
+ * @param position The position of the point to be binned
+ * @return Index of the point being binned on 1D grid
+ */
 inline size_t bin_uniform_1d(const REAL &inverse_2L, const INT &n_cells,
                              const REAL &position) {
 
