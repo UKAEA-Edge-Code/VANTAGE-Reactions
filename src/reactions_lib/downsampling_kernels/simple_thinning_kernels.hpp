@@ -75,15 +75,14 @@ struct SimpleThinningKernels
 };
 
 inline std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
-    ParticleGroupSharedPtr template_group, size_t num_thinning_groups,
-    REAL thinning_ratio,
+    ParticleGroupSharedPtr template_group, REAL thinning_ratio,
     std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel,
     const std::map<int, std::string> &properties_map = get_default_map()) {
 
   auto r = std::make_shared<DownsamplingStrategy<SimpleThinningKernels>>(
       template_group,
-      SimpleThinningKernels(thinning_ratio, rng_kernel, properties_map),
-      num_thinning_groups, properties_map);
+      SimpleThinningKernels(thinning_ratio, rng_kernel, properties_map), 1,
+      properties_map);
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 };
 }; // namespace VANTAGE::Reactions

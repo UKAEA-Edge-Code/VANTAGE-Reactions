@@ -17,7 +17,7 @@ TEST(SimpleThinningTransform, deterministic_rng_test) {
       NESO::Particles::host_per_particle_block_rng<REAL>(rng_lambda, 1);
 
   auto test_thinner =
-      make_simple_thinning_strategy(particle_group, 1, 0.5, rng_kernel);
+      make_simple_thinning_strategy(particle_group, 0.5, rng_kernel);
 
   auto subgroup = particle_sub_group(particle_group);
 
@@ -34,7 +34,7 @@ TEST(SimpleThinningTransform, deterministic_rng_test) {
   }
 
   auto test_thinner_all_remove =
-      make_simple_thinning_strategy(particle_group, 1, 0.01, rng_kernel);
+      make_simple_thinning_strategy(particle_group, 0.01, rng_kernel);
 
   test_thinner_all_remove->transform(subgroup);
   EXPECT_EQ(particle_group->get_npart_local(), 0);
