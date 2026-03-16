@@ -18,10 +18,47 @@ using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
+/**
+ *
+ * The general idea of downsampling is that we might want to reduce the number
+ * of particles while maintaining some properties of the ensemble, such as
+ * conserving various moments either on average or deterministically.
+ *
+ * In general, these algorithms have the following structure:
+ *
+ * 1. Reduction - (Optional) Reduce some number of quantities across the
+ * particle ensemble, such as weight, momentum, energy, etc.
+ * 2. Downsampling - Change the properties of the particles such that some
+ * particles are effectively marked for removal while others have their
+ * properties set based on the downsampling algorthm (such as merging or
+ * thinning)
+ * 3. Remove particles with 0 weight or otherwise marked for removal
+ *
+ * The above algorithm is assumed to be applied for each downsampling group
+ * separately, and the downsampling algorithms assume that particles are grouped
+ * before the application of the downsampling. An example of downsampling is
+ * velocity/phase space binning.
+ *
+ *
+ * The number of downsampling groups determines the size of the CellDatConsts
+ * used to store the group-wise particle property reductions, so all mentions
+ * below of reduction dimensionalities or indices refer to these individual
+ * downsampling groups.
+ *
+ */
+
 using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
 
 enum class DownsamplingMode { merging, thinning };
 
+/**
+ * @brief Base on-device downsampling kernel, meant to apply the downsampling
+ * transformation on each particle on-device
+ *
+ * @tparam downsampling_dim The downsampling dimensionality, e.g.
+ * post-downsampling number of particles or other measure
+ * @tparam RNG_TYPE Type of rng kernel, if needed
+ */
 template <size_t downsampling_dim, typename RNG_TYPE = DEFAULT_RNG_KERNEL>
 struct DownsamplingKernelOnDeviceBase {
 
@@ -29,6 +66,23 @@ struct DownsamplingKernelOnDeviceBase {
   using RNG_KERNEL_TYPE = RNG_TYPE;
   DownsamplingKernelOnDeviceBase() = default;
 
+  /**
+   * @brief Apply the downsampling algorithm, assuming reduction has happened
+   * prior to the application
+   *
+   * @param index LoopIndex accessor used for linear indexing
+   * @param req_int_props SymVector Write access to required integer properties
+   * @param req_real_props SymVector Write access to required real properties
+   * @param reduction Read access to additive cellwise reduction data
+   * @param reduction_min Read access to cellwise min reduction data
+   * @param reduction_max Read access to cellwise max reduction data
+   * @param reduction_idx Index determining which downsampling/reduction group
+   * the particle belongs to, in principle used to access the corresponding
+   * column of the reduction data
+   * @param linear_idx Linear index determining which of the post-downsampling
+   * particles the current particle is
+   * @param rng_kernel RNG kernel access, if required
+   */
   void apply(const Access::LoopIndex::Read &index,
              const Access::SymVector::Write<INT> &req_int_props,
              const Access::SymVector::Write<REAL> &req_real_props,
@@ -40,6 +94,14 @@ struct DownsamplingKernelOnDeviceBase {
     return;
   }
 
+  /**
+   * @brief Apply the downsampling algorithm, assuming no reductions are needed
+   *
+   * @param index LoopIndex accessor used for linear indexing
+   * @param req_int_props SymVector Write access to required integer properties
+   * @param req_real_props SymVector Write access to required real properties
+   * @param rng_kernel RNG kernel access, if required
+   */
   void apply_no_red(const Access::LoopIndex::Read &index,
                     const Access::SymVector::Write<INT> &req_int_props,
                     const Access::SymVector::Write<REAL> &req_real_props,
@@ -48,6 +110,14 @@ struct DownsamplingKernelOnDeviceBase {
   }
 };
 
+/**
+ * @brief Base on-device reduction kernel, responsible for performing reduction
+ * operations on particle data needed in downsampling algorithms
+ *
+ * @tparam reduction_plus_dim Number of additive reduction quantities
+ * @tparam reduction_min_dim Number of max reduction quantities
+ * @tparam reduction_max_dim Number of min reduction quantities
+ */
 template <size_t reduction_plus_dim, size_t reduction_min_dim,
           size_t reduction_max_dim>
 struct ReductionKernelOnDeviceBase {
@@ -59,6 +129,19 @@ struct ReductionKernelOnDeviceBase {
       reduction_min_dim + reduction_max_dim + reduction_plus_dim;
   ReductionKernelOnDeviceBase() = default;
 
+  /**
+   * @brief Calculate the contributions to the various reduction quantities
+   * needed for downsampling
+   *
+   * @param req_int_props SymVector Read access to required integer properties
+   * @param req_real_props SymVector Read access to required real properties
+   * @param reduction Add access to additive cellwise reduction data
+   * @param reduction_min Min access to cellwise min reduction data
+   * @param reduction_max Max access to cellwise max reduction data
+   * @param reduction_idx Index determining which downsampling/reduction group
+   * the particle belongs to, in principle used to access the corresponding
+   * column of the reduction data
+   */
   void reduce(const Access::SymVector::Read<INT> &req_int_props,
               const Access::SymVector::Read<REAL> &req_real_props,
               Access::CellDatConst::Add<REAL> &reduction,
@@ -68,12 +151,36 @@ struct ReductionKernelOnDeviceBase {
     return;
   }
 };
+
+/**
+ * @brief Base host type for downsampling kernels, containing the on-device
+ * reduction and sampling kernels
+ *
+ * @tparam mode The downsampling mode of the kernel, determining downstream
+ * behaviour (e.g. merging vs thinning etc.)
+ * @tparam REDUCTION_KERNEL_ON_DEVICE On device object type responsible for the
+ * calculation of the various reduction quantities needed for downsampling
+ * algorithms
+ * @tparam DOWNSAMPLING_KERNEL_ON_DEVICE On device object type responsible for
+ * the application of the downsampling algorithm in conjunction with any
+ * calculated reduced quantities
+ */
 template <DownsamplingMode mode, typename REDUCTION_KERNEL_ON_DEVICE,
           typename DOWNSAMPLING_KERNEL_ON_DEVICE>
 struct DownsamplingKernelBase {
   using RNG_TYPE = typename DOWNSAMPLING_KERNEL_ON_DEVICE::RNG_KERNEL_TYPE;
   const static DownsamplingMode DOWNSAMPLING_MODE = mode;
 
+  /**
+   * @brief Base host-side downsampling kernel type constructor
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names
+   */
   DownsamplingKernelBase(
       Properties<INT> required_int_props, Properties<REAL> required_real_props,
       std::map<int, std::string> properties_map = get_default_map())
@@ -96,10 +203,9 @@ struct DownsamplingKernelBase {
    * properties.
    *
    * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * regarding the required REAL-based properties
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * used when remapping property names
    */
   DownsamplingKernelBase(
       Properties<REAL> required_real_props,
@@ -155,6 +261,13 @@ struct DownsamplingKernelBase {
     return this->reduction_on_device_obj.value();
   }
 
+  /**
+   * @brief Perform any operations required before the application of the
+   * downsampling
+   *
+   * @param reductions Additive reduction values
+   * @param pre_num_parts The number of particles per cell
+   */
   virtual void pre_calculate(CellDatConstSharedPtr<REAL> reductions,
                              CellDatConstSharedPtr<INT> pre_num_parts) {
     return;
@@ -174,9 +287,31 @@ protected:
   std::shared_ptr<RNG_TYPE> rng_kernel;
 };
 
+/**
+ * @brief Transformation strategy performing downsampling based on the contained
+ * downsampling kernels
+ *
+ * @tparam DOWNSAMPLING_KERNEL Host-side downsampling kernel type, determining
+ * the reduction and downsampling application algorithms
+ */
 template <typename DOWNSAMPLING_KERNEL>
 struct DownsamplingStrategy : TransformationStrategy {
 
+  /**
+   * @brief DownsamplingStrategy constructor
+   *
+   * @param template_group Particle group with the same domain and sycl_target
+   * as the group this strategy is to be applied to
+   * @param downsampling_kernels The kernels containing the reduction and
+   * downsampling strategy algorithms
+   * @param num_downsampling_groups The number of distinct downsampling groups
+   * (such as velocity/phase space bins) - determines the dimensionality of the
+   * CellDatConst objects storing cell-wise and downsampling group-wise
+   * reductions of the properties needed for the downsampling algorithm
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names, in particular the grouping index,
+   * linear index, and particle weights
+   */
   DownsamplingStrategy(
       ParticleGroupSharedPtr template_group,
       DOWNSAMPLING_KERNEL downsampling_kernels, size_t num_downsampling_groups,
@@ -202,6 +337,8 @@ struct DownsamplingStrategy : TransformationStrategy {
     constexpr size_t tot_reduction_dim =
         this->downsampling_kernels.get_total_reduction_dim();
 
+    // We only need to allocate reduction quantities if there are any reductions
+    // needed
     if constexpr (tot_reduction_dim > 0) {
       this->reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
           template_group->sycl_target, cell_count, reduction_dim,
@@ -218,6 +355,9 @@ struct DownsamplingStrategy : TransformationStrategy {
           num_downsampling_groups);
     }
 
+    // We only need to track the number of particles in the mergining mode
+    // because it selects the first N particles to set to the post-merging
+    // properties
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
       this->num_part_cell_dats = std::make_shared<CellDatConst<INT>>(
@@ -226,7 +366,7 @@ struct DownsamplingStrategy : TransformationStrategy {
   }
 
   /**
-   * @brief Perform merging on given subgroup
+   * @brief Perform downsampling on given subgroup
    *
    * @param target_subgroup
    */
@@ -243,6 +383,9 @@ struct DownsamplingStrategy : TransformationStrategy {
 
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
+
+      // When merging we assume we will always need to perform some reductions,
+      // since all merging algorithms attempt to conserve at least some moments
       this->reduction_cell_dats->fill(0.0);
       this->num_part_cell_dats->fill(0);
       this->min_reduction_cell_dats->fill(std::numeric_limits<REAL>::max());
@@ -280,6 +423,8 @@ struct DownsamplingStrategy : TransformationStrategy {
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE !=
                       DownsamplingMode::merging &&
                   tot_reduction_dim > 0) {
+      // When not merging, we assume we only need to perform reduction if
+      // tot_reduction_dim > 0
       particle_loop(
           "thinning_reduction_loop", target_subgroup,
           [=](auto req_int_props, auto req_real_props, auto reduction_cell_dat,
@@ -309,6 +454,10 @@ struct DownsamplingStrategy : TransformationStrategy {
     switch (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE) {
 
     case DownsamplingMode::merging: {
+
+      // When merging we first select the first num_downsampled_particles, i.e.
+      // the post-merging number of particles, for each of the downsampling
+      // groups
       auto sub_group_to_merge = static_particle_sub_group(
           target_subgroup,
           [=](auto linear_index) {
@@ -316,6 +465,10 @@ struct DownsamplingStrategy : TransformationStrategy {
           },
           Access::read(this->linear_index_sym));
 
+      // Then we apply the merging loop by going through the first
+      // num_downsampled_particles in each downsampling group, and if there are
+      // enough particles in the corresponding group we set the properties of
+      // the particles to the post-merge values
       particle_loop(
           "DownsamplingTransform::merge_loop", sub_group_to_merge,
           [=](auto loop_index, auto req_int_props, auto req_real_props,
@@ -347,6 +500,7 @@ struct DownsamplingStrategy : TransformationStrategy {
           Access::read(this->downsampling_kernels.get_rng_kernel()))
           ->execute();
 
+      // Finally, all of the remaining particles are removed
       auto sub_group_to_remove_particles = static_particle_sub_group(
           target_subgroup,
           [=](auto linear_index) {
@@ -359,6 +513,12 @@ struct DownsamplingStrategy : TransformationStrategy {
     }
     case DownsamplingMode::thinning: {
 
+      // With thinning we might have algorithms that do not have any reduction
+      // requirements so we dispatch two different kinds of loops
+      //
+      // Note that unlike the merging loop, the thinning loop is applied on the
+      // whole subgroup, with the assumption that any thinned particles will
+      // have their weights set to 0
       if constexpr (tot_reduction_dim > 0) {
         particle_loop(
             "DownsamplingTransform::thinning_loop", target_subgroup,
@@ -391,6 +551,7 @@ struct DownsamplingStrategy : TransformationStrategy {
             target_subgroup,
             [=](auto loop_index, auto req_int_props, auto req_real_props,
                 auto rng_kernel) {
+              // The no-reduction version of the thinning application
               downsampling_obj.apply_no_red(loop_index, req_int_props,
                                             req_real_props, rng_kernel);
             },
