@@ -386,7 +386,7 @@ struct MarkingStrategyDirect : MarkingStrategy {
         this->stored_args);
   }
 
-  std::string get_profiling_name() { return this->name; }
+  virtual std::string get_profiling_name() override { return this->name; }
 
 private:
   std::string name;
@@ -450,7 +450,7 @@ struct TransformationStrategyDirect : TransformationStrategy {
     loop->execute();
   }
 
-  std::string get_profiling_name() { return this->loop_name; }
+  virtual std::string get_profiling_name() override { return this->loop_name; }
 
 private:
   std::string loop_name;
@@ -500,7 +500,7 @@ struct TransformationStrategyLambda : TransformationStrategy {
     this->stored_lambda(target);
   }
 
-  std::string get_profiling_name() { return this->name; }
+  virtual std::string get_profiling_name() override { return this->name; }
 
 private:
   std::string name;
