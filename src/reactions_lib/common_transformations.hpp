@@ -631,7 +631,7 @@ private:
  *
  * @param global_extents std::array holding the total extents of the core
  * binning cells in each direction, assumed symmetric around 0, i.e. binning
- * into the region (L/2,L/2]
+ * into the region (-L/2,L/2]
  * @param n_cells The number of core binning cells in each direction, the total
  * in each direction including the guard cells being 2 greater than this
  * @param bin_sym The Sym representing the linear bin index - binning is done in

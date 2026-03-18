@@ -13,8 +13,7 @@ TEST(SimpleThinningTransform, deterministic_rng_test) {
 
   auto rng_lambda = [&]() -> REAL { return 0.6; };
 
-  auto rng_kernel =
-      NESO::Particles::host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
 
   auto test_thinner =
       make_simple_thinning_strategy(particle_group, 0.5, rng_kernel);
