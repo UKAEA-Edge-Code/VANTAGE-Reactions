@@ -62,7 +62,7 @@ enum class DownsamplingMode { merging, thinning };
 template <size_t downsampling_dim, typename RNG_TYPE = DEFAULT_RNG_KERNEL>
 struct DownsamplingKernelOnDeviceBase {
 
-  static const size_t DOWNSAMPLING_DIM = downsampling_dim;
+  static inline const size_t DOWNSAMPLING_DIM = downsampling_dim;
   using RNG_KERNEL_TYPE = RNG_TYPE;
   DownsamplingKernelOnDeviceBase() = default;
 
@@ -122,10 +122,10 @@ template <size_t reduction_plus_dim, size_t reduction_min_dim,
           size_t reduction_max_dim>
 struct ReductionKernelOnDeviceBase {
 
-  static const size_t REDUCTION_PLUS_DIM = reduction_plus_dim;
-  static const size_t REDUCTION_MIN_DIM = reduction_min_dim;
-  static const size_t REDUCTION_MAX_DIM = reduction_max_dim;
-  static const size_t TOTAL_REDUCTION_DIM =
+  static inline const size_t REDUCTION_PLUS_DIM = reduction_plus_dim;
+  static inline const size_t REDUCTION_MIN_DIM = reduction_min_dim;
+  static inline const size_t REDUCTION_MAX_DIM = reduction_max_dim;
+  static inline const size_t TOTAL_REDUCTION_DIM =
       reduction_min_dim + reduction_max_dim + reduction_plus_dim;
   ReductionKernelOnDeviceBase() = default;
 
@@ -170,6 +170,17 @@ template <DownsamplingMode mode, typename REDUCTION_KERNEL_ON_DEVICE,
 struct DownsamplingKernelBase {
   using RNG_TYPE = typename DOWNSAMPLING_KERNEL_ON_DEVICE::RNG_KERNEL_TYPE;
   const static DownsamplingMode DOWNSAMPLING_MODE = mode;
+
+  const inline static size_t DOWNSAMPLING_DIM =
+      DOWNSAMPLING_KERNEL_ON_DEVICE::DOWNSAMPLING_DIM;
+  const inline static size_t REDUCTION_PLUS_DIM =
+      REDUCTION_KERNEL_ON_DEVICE::REDUCTION_PLUS_DIM;
+  const inline static size_t REDUCTION_MIN_DIM =
+      REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MIN_DIM;
+  const inline static size_t REDUCTION_MAX_DIM =
+      REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MAX_DIM;
+  const inline static size_t TOTAL_REDUCTION_DIM =
+      REDUCTION_KERNEL_ON_DEVICE::TOTAL_REDUCTION_DIM;
 
   /**
    * @brief Base host-side downsampling kernel type constructor
@@ -227,22 +238,6 @@ struct DownsamplingKernelBase {
    */
   std::vector<Sym<REAL>> get_required_real_sym_vector() {
     return this->required_real_props.to_sym_vector();
-  }
-
-  static constexpr size_t get_downsampling_dim() {
-    return DOWNSAMPLING_KERNEL_ON_DEVICE::DOWNSAMPLING_DIM;
-  }
-  static constexpr size_t get_reduction_plus_dim() {
-    return REDUCTION_KERNEL_ON_DEVICE::REDUCTION_PLUS_DIM;
-  }
-  static constexpr size_t get_reduction_min_dim() {
-    return REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MIN_DIM;
-  }
-  static constexpr size_t get_reduction_max_dim() {
-    return REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MAX_DIM;
-  }
-  static constexpr size_t get_total_reduction_dim() {
-    return REDUCTION_KERNEL_ON_DEVICE::TOTAL_REDUCTION_DIM;
   }
 
   DOWNSAMPLING_KERNEL_ON_DEVICE get_downsampling_kernel_on_device() {
@@ -332,30 +327,24 @@ struct DownsamplingStrategy : TransformationStrategy {
     this->linear_index_sym =
         Sym<INT>(properties_map.at(default_properties.linear_index));
     int cell_count = template_group->domain->mesh->get_cell_count();
-    const size_t reduction_dim =
-        this->downsampling_kernels.get_reduction_plus_dim();
-    constexpr size_t tot_reduction_dim =
-        this->downsampling_kernels.get_total_reduction_dim();
 
     // We only need to allocate reduction quantities if there are any reductions
     // needed
-    if constexpr (tot_reduction_dim > 0) {
+    if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
       this->reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
-          template_group->sycl_target, cell_count, reduction_dim,
-          num_downsampling_groups);
+          template_group->sycl_target, cell_count,
+          DOWNSAMPLING_KERNEL::REDUCTION_PLUS_DIM, num_downsampling_groups);
 
       this->min_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
-          this->downsampling_kernels.get_reduction_min_dim(),
-          num_downsampling_groups);
+          DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM, num_downsampling_groups);
 
       this->max_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
-          this->downsampling_kernels.get_reduction_max_dim(),
-          num_downsampling_groups);
+          DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM, num_downsampling_groups);
     }
 
-    // We only need to track the number of particles in the mergining mode
+    // We only need to track the number of particles in the merging mode
     // because it selects the first N particles to set to the post-merging
     // properties
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
@@ -375,11 +364,6 @@ struct DownsamplingStrategy : TransformationStrategy {
 
     auto reduction_obj =
         this->downsampling_kernels.get_reduction_kernel_on_device();
-
-    const size_t num_downsampled_particles =
-        this->downsampling_kernels.get_downsampling_dim();
-    constexpr size_t tot_reduction_dim =
-        this->downsampling_kernels.get_total_reduction_dim();
 
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
@@ -422,7 +406,7 @@ struct DownsamplingStrategy : TransformationStrategy {
 
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE !=
                       DownsamplingMode::merging &&
-                  tot_reduction_dim > 0) {
+                  DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
       // When not merging, we assume we only need to perform reduction if
       // tot_reduction_dim > 0
       particle_loop(
@@ -455,18 +439,18 @@ struct DownsamplingStrategy : TransformationStrategy {
 
     case DownsamplingMode::merging: {
 
-      // When merging we first select the first num_downsampled_particles, i.e.
+      // When merging we first select the first DOWNSAMPLING_DIM, i.e.
       // the post-merging number of particles, for each of the downsampling
       // groups
       auto sub_group_to_merge = static_particle_sub_group(
           target_subgroup,
           [=](auto linear_index) {
-            return linear_index[0] < num_downsampled_particles;
+            return linear_index[0] < DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM;
           },
           Access::read(this->linear_index_sym));
 
       // Then we apply the merging loop by going through the first
-      // num_downsampled_particles in each downsampling group, and if there are
+      // DOWNSAMPLING_DIM in each downsampling group, and if there are
       // enough particles in the corresponding group we set the properties of
       // the particles to the post-merge values
       particle_loop(
@@ -477,7 +461,7 @@ struct DownsamplingStrategy : TransformationStrategy {
               auto downsampling_group_index, auto linear_index,
               auto rng_kernel) {
             if (n_part_group.at(downsampling_group_index[0], 0) >
-                num_downsampled_particles) {
+                DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM) {
               downsampling_obj.apply(
                   loop_index, req_int_props, req_real_props, reduction_cell_dat,
                   min_reduction_cell_dat, max_reduction_cell_dat,
@@ -504,7 +488,7 @@ struct DownsamplingStrategy : TransformationStrategy {
       auto sub_group_to_remove_particles = static_particle_sub_group(
           target_subgroup,
           [=](auto linear_index) {
-            return linear_index[0] >= num_downsampled_particles;
+            return linear_index[0] >= DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM;
           },
           Access::read(this->linear_index_sym));
 
@@ -519,7 +503,7 @@ struct DownsamplingStrategy : TransformationStrategy {
       // Note that unlike the merging loop, the thinning loop is applied on the
       // whole subgroup, with the assumption that any thinned particles will
       // have their weights set to 0
-      if constexpr (tot_reduction_dim > 0) {
+      if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
         particle_loop(
             "DownsamplingTransform::thinning_loop", target_subgroup,
             [=](auto loop_index, auto req_int_props, auto req_real_props,
