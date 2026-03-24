@@ -66,7 +66,7 @@ public:
  */
 struct SimpleThinningKernels
     : DownsamplingKernelBase<DownsamplingMode::thinning,
-                             ReductionKernelOnDeviceBase<0, 0, 0>,
+                             DownsamplingReductionKernelOnDeviceBase<0, 0, 0>,
                              SimpleThinningOnDevice> {
 
   constexpr static auto props = default_properties;
@@ -91,14 +91,15 @@ struct SimpleThinningKernels
       std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
       : DownsamplingKernelBase<DownsamplingMode::thinning,
-                               ReductionKernelOnDeviceBase<0, 0, 0>,
+                               DownsamplingReductionKernelOnDeviceBase<0, 0, 0>,
                                SimpleThinningOnDevice>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
 
     this->set_rng_kernel(rng_kernel);
     this->downsampling_on_device_obj = SimpleThinningOnDevice(thinning_ratio);
-    this->reduction_on_device_obj = ReductionKernelOnDeviceBase<0, 0, 0>();
+    this->reduction_on_device_obj =
+        DownsamplingReductionKernelOnDeviceBase<0, 0, 0>();
 
     this->downsampling_on_device_obj->weight_ind =
         this->required_real_props.find_index(

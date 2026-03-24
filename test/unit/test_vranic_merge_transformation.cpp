@@ -464,10 +464,10 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
 
 TEST(UniformVelocityBin, utility_function) {
 
-  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, -4.5), 1);
-  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, 1.0), 6);
-  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, 100.0), 11);
-  EXPECT_EQ(utils::bin_uniform_1d(0.1, 10, -100.0), 0);
+  EXPECT_EQ(utils::bin_uniform_symmetric_guard_1d(0.1, 10, -4.5), 1);
+  EXPECT_EQ(utils::bin_uniform_symmetric_guard_1d(0.1, 10, 1.0), 6);
+  EXPECT_EQ(utils::bin_uniform_symmetric_guard_1d(0.1, 10, 100.0), 11);
+  EXPECT_EQ(utils::bin_uniform_symmetric_guard_1d(0.1, 10, -100.0), 0);
 }
 
 TEST(VranicMergeTransform, transform_3D_velocity_binning) {

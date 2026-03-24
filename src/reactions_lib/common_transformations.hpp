@@ -662,9 +662,10 @@ uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
 
         for (auto dim = 0; dim < ndim; dim++) {
 
-          bin_index[0] += utils::bin_uniform_1d(k_inverse_extents[dim],
-                                                n_cells[dim], position[dim]) *
-                          k_offsets[dim];
+          bin_index[0] +=
+              utils::bin_uniform_symmetric_guard_1d(
+                  k_inverse_extents[dim], n_cells[dim], position[dim]) *
+              k_offsets[dim];
         }
       },
       Access::read(velocity_sym), Access::write(bin_sym));

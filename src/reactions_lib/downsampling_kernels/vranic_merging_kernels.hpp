@@ -171,7 +171,7 @@ public:
  */
 template <size_t ndim>
 struct VranicReductionOnDevice
-    : ReductionKernelOnDeviceBase<ndim + 2, ndim, ndim> {
+    : DownsamplingReductionKernelOnDeviceBase<ndim + 2, ndim, ndim> {
 
   VranicReductionOnDevice() = default;
 

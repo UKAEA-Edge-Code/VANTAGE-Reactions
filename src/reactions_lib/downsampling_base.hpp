@@ -49,6 +49,18 @@ namespace VANTAGE::Reactions {
 
 using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
 
+/**
+ * Downsampling modes:
+ *
+ * 1. merging - always requires reduction strategies, with the post-merge
+ * particles being the the first downsampling_dim particles, and all of the rest
+ * are discarded
+ *
+ * 2. thinning - does not require reduction strategies, but can use them, and
+ * performs the thinning transformation on all particles, removing those whose
+ * weight is set to 0 during the process
+ *
+ */
 enum class DownsamplingMode { merging, thinning };
 
 /**
@@ -62,7 +74,7 @@ enum class DownsamplingMode { merging, thinning };
 template <size_t downsampling_dim, typename RNG_TYPE = DEFAULT_RNG_KERNEL>
 struct DownsamplingKernelOnDeviceBase {
 
-  static inline const size_t DOWNSAMPLING_DIM = downsampling_dim;
+  static inline constexpr size_t DOWNSAMPLING_DIM = downsampling_dim;
   using RNG_KERNEL_TYPE = RNG_TYPE;
   DownsamplingKernelOnDeviceBase() = default;
 
@@ -120,14 +132,14 @@ struct DownsamplingKernelOnDeviceBase {
  */
 template <size_t reduction_plus_dim, size_t reduction_min_dim,
           size_t reduction_max_dim>
-struct ReductionKernelOnDeviceBase {
+struct DownsamplingReductionKernelOnDeviceBase {
 
-  static inline const size_t REDUCTION_PLUS_DIM = reduction_plus_dim;
-  static inline const size_t REDUCTION_MIN_DIM = reduction_min_dim;
-  static inline const size_t REDUCTION_MAX_DIM = reduction_max_dim;
-  static inline const size_t TOTAL_REDUCTION_DIM =
+  static inline constexpr size_t REDUCTION_PLUS_DIM = reduction_plus_dim;
+  static inline constexpr size_t REDUCTION_MIN_DIM = reduction_min_dim;
+  static inline constexpr size_t REDUCTION_MAX_DIM = reduction_max_dim;
+  static inline constexpr size_t TOTAL_REDUCTION_DIM =
       reduction_min_dim + reduction_max_dim + reduction_plus_dim;
-  ReductionKernelOnDeviceBase() = default;
+  DownsamplingReductionKernelOnDeviceBase() = default;
 
   /**
    * @brief Calculate the contributions to the various reduction quantities
@@ -169,17 +181,17 @@ template <DownsamplingMode mode, typename REDUCTION_KERNEL_ON_DEVICE,
           typename DOWNSAMPLING_KERNEL_ON_DEVICE>
 struct DownsamplingKernelBase {
   using RNG_TYPE = typename DOWNSAMPLING_KERNEL_ON_DEVICE::RNG_KERNEL_TYPE;
-  const static DownsamplingMode DOWNSAMPLING_MODE = mode;
+  static const DownsamplingMode DOWNSAMPLING_MODE = mode;
 
-  const inline static size_t DOWNSAMPLING_DIM =
+  static inline constexpr size_t DOWNSAMPLING_DIM =
       DOWNSAMPLING_KERNEL_ON_DEVICE::DOWNSAMPLING_DIM;
-  const inline static size_t REDUCTION_PLUS_DIM =
+  static inline constexpr size_t REDUCTION_PLUS_DIM =
       REDUCTION_KERNEL_ON_DEVICE::REDUCTION_PLUS_DIM;
-  const inline static size_t REDUCTION_MIN_DIM =
+  static inline constexpr size_t REDUCTION_MIN_DIM =
       REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MIN_DIM;
-  const inline static size_t REDUCTION_MAX_DIM =
+  static inline constexpr size_t REDUCTION_MAX_DIM =
       REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MAX_DIM;
-  const inline static size_t TOTAL_REDUCTION_DIM =
+  static inline constexpr size_t TOTAL_REDUCTION_DIM =
       REDUCTION_KERNEL_ON_DEVICE::TOTAL_REDUCTION_DIM;
 
   /**
