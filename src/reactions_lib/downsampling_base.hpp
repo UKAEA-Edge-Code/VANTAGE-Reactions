@@ -53,7 +53,7 @@ using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
  * Downsampling modes:
  *
  * 1. merging - always requires reduction strategies, with the post-merge
- * particles being the the first downsampling_dim particles, and all of the rest
+ * particles being the first downsampling_dim particles, and all of the rest
  * are discarded
  *
  * 2. thinning - does not require reduction strategies, but can use them, and

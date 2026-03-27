@@ -394,7 +394,7 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
   particle_loop(
       "set_grouping", subgroup,
       [=](auto grouping_index, auto velocity) {
-        grouping_index[0] = 1 ? velocity[0] > 0 : 0;
+        grouping_index[0] = velocity[0] > 0 ? 1 : 0;
       },
       Access::write(Sym<INT>("REACTIONS_GROUPING_INDEX")),
       Access::read(Sym<REAL>("VELOCITY")))

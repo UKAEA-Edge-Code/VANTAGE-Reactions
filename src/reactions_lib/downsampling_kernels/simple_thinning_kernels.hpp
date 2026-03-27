@@ -25,6 +25,12 @@ struct SimpleThinningOnDevice
 
   SimpleThinningOnDevice() = default;
 
+  /**
+   * @brief Constructor for SimpleThinningOnDevice object
+   *
+   * @param thinning_ratio The probability of the particle being kept and its
+   * weight increased by 1/thinning_ratio
+   */
   SimpleThinningOnDevice(REAL thinning_ratio)
       : inverse_thinning_ratio(1 / thinning_ratio),
         thinning_ratio(thinning_ratio) {};

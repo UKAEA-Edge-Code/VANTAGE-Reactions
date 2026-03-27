@@ -37,6 +37,23 @@ struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
 
   VranicMergingOnDevice() = default;
 
+  /**
+   * @brief Apply the merging algorithm, assuming reduction has happened
+   * prior to the application
+   *
+   * @param index LoopIndex accessor used for linear indexing
+   * @param req_int_props SymVector Write access to required integer properties
+   * @param req_real_props SymVector Write access to required real properties
+   * @param reduction Read access to additive cellwise reduction data
+   * @param reduction_min Read access to cellwise min reduction data
+   * @param reduction_max Read access to cellwise max reduction data
+   * @param reduction_idx Index determining which downsampling/reduction group
+   * the particle belongs to, in principle used to access the corresponding
+   * column of the reduction data
+   * @param linear_idx Linear index determining which of the post-downsampling
+   * particles the current particle is
+   * @param rng_kernel RNG kernel access, if required
+   */
   void
   apply(const Access::LoopIndex::Read &index,
         const Access::SymVector::Write<INT> &req_int_props,
@@ -175,6 +192,18 @@ struct VranicReductionOnDevice
 
   VranicReductionOnDevice() = default;
 
+  /**
+   * @brief Reduce the weight, momentum, and energy of the particles
+   *
+   * @param req_int_props SymVector Read access to required integer properties
+   * @param req_real_props SymVector Read access to required real properties
+   * @param reduction Add access to additive cellwise reduction data
+   * @param reduction_min Min access to cellwise min reduction data
+   * @param reduction_max Max access to cellwise max reduction data
+   * @param reduction_idx Index determining which downsampling/reduction group
+   * the particle belongs to, in principle used to access the corresponding
+   * column of the reduction data
+   */
   void reduce(const Access::SymVector::Read<INT> &req_int_props,
               const Access::SymVector::Read<REAL> &req_real_props,
               Access::CellDatConst::Add<REAL> &reduction,
@@ -220,6 +249,12 @@ struct VranicMergingKernels
   constexpr static std::array<int, 2> required_simple_real_props = {
       props.weight, props.velocity};
 
+  /**
+   * @brief Constructor for host-side VranicMergingKernels object
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names - here weight and velocity
+   */
   VranicMergingKernels(
       std::map<int, std::string> properties_map = get_default_map())
       : DownsamplingKernelBase<DownsamplingMode::merging,
