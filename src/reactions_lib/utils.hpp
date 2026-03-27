@@ -281,5 +281,28 @@ normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
   return result;
 }
 
+/**
+ * @brief Bin into equal sized cartesian 1D cells, assuming the following:
+ *
+ * 1. The Cartesian domain is (-L,L]
+ * 2. Particles with positions less than -L or greater than L are binned in
+ * guard cells, resulting in n_cells+2 bins (0 is the left guard cell, n_cells+1
+ * the right)
+ *
+ * @param inverse_2L 1/(2*total_length_of_domain)
+ * @param n_cells Number of cells on the 1D grid
+ * @param position The position of the point to be binned
+ * @return Index of the point being binned on 1D grid
+ */
+inline size_t bin_uniform_symmetric_guard_1d(const REAL &inverse_2L,
+                                             const INT &n_cells,
+                                             const REAL &position) {
+
+  return Kernel::max(
+      Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),
+                  n_cells + 1),
+      0);
+}
+
 } // namespace VANTAGE::Reactions::utils
 #endif

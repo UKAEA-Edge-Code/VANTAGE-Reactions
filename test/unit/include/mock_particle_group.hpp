@@ -40,6 +40,8 @@ inline auto create_test_particle_group(int N_total)
       ParticleProp(Sym<REAL>("VELOCITY"), ndim),
       ParticleProp(Sym<INT>("CELL_ID"), 1, true),
       ParticleProp(Sym<INT>("REACTIONS_PANIC_FLAG"), 1),
+      ParticleProp(Sym<INT>("REACTIONS_GROUPING_INDEX"), 1),
+      ParticleProp(Sym<INT>("REACTIONS_LINEAR_INDEX"), 1),
       ParticleProp(Sym<INT>("PARTICLE_REACTED_FLAG"), 1),
       ParticleProp(Sym<INT>("ID"), 1),
       ParticleProp(Sym<REAL>("TOT_REACTION_RATE"), 1),

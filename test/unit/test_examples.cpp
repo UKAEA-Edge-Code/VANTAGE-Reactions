@@ -40,10 +40,13 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_recombination_reaction.hpp"
 #include "./example_sources/example_removal_strategy.hpp"
 #include "./example_sources/example_sampler.hpp"
+#include "./example_sources/example_simple_thinning_strategy.hpp"
 #include "./example_sources/example_spec_builder.hpp"
 #include "./example_sources/example_spherical_basis_reflection.hpp"
 #include "./example_sources/example_transformation_wrapper.hpp"
 #include "./example_sources/example_unary_array_transform_data.hpp"
+#include "./example_sources/example_uniform_velocity_binning.hpp"
+#include "./example_sources/example_vranic_merging_strategy.hpp"
 #include "./example_sources/example_zeroer_strategy.hpp"
 
 TEST(Examples, all) {
@@ -90,6 +93,12 @@ TEST(Examples, all) {
   distributor_strategy_example(particle_group);
   direct_marking_example(particle_group);
   direct_transformation_example(particle_group);
+
+  particle_group->add_particle_dat(Sym<INT>("REACTIONS_GROUPING_INDEX"), 1);
+  particle_group->add_particle_dat(Sym<INT>("REACTIONS_LINEAR_INDEX"), 1);
+  vranic_merging_strategy_example(particle_group);
+  simple_thinning_strategy_example(particle_group);
+  uniform_velocity_binning_example(particle_group);
 
   particle_group->domain->mesh->free();
 }

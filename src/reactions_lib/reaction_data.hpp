@@ -124,7 +124,7 @@ struct ReactionDataBase {
 
   /**
    * \overload
-   * @brief Constructor for ReactionDataBase that sets not required properties.
+   * @brief Constructor for ReactionDataBase that sets no required properties.
    *
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and

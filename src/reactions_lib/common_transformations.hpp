@@ -1,9 +1,9 @@
 #ifndef REACTIONS_COMMON_TRANSFORMATIONS_H
 #define REACTIONS_COMMON_TRANSFORMATIONS_H
 #include "transformation_wrapper.hpp"
+#include "utils.hpp"
 #include <memory>
 #include <neso_particles.hpp>
-#include <utility>
 
 using namespace NESO::Particles;
 
@@ -621,5 +621,55 @@ private:
   std::string weight_sym_name;
   std::shared_ptr<CellDatConst<REAL>> weight_buffer;
 };
+
+/**
+ * @brief Helper function generating a transformation binning particles in
+ * uniform velocity bins. Each of the directions has two guard cells, which will
+ * bin any particles outside of the main binning region. For example, if there
+ * is only one binning cell in each direction this results in 27 total binning
+ * cells - 3^3.
+ *
+ * @param global_extents std::array holding the total extents of the core
+ * binning cells in each direction, assumed symmetric around 0, i.e. binning
+ * into the region (-L/2,L/2]
+ * @param n_cells The number of core binning cells in each direction, the total
+ * in each direction including the guard cells being 2 greater than this
+ * @param bin_sym The Sym representing the linear bin index - binning is done in
+ * the x,y,z order
+ * @param velocity_sym The velocity sym
+ */
+template <size_t ndim>
+inline auto
+uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
+                               std::array<INT, ndim> n_cells, Sym<INT> bin_sym,
+                               Sym<REAL> velocity_sym) {
+
+  std::array<REAL, ndim> k_inverse_extents;
+  std::array<INT, ndim> k_offsets;
+
+  INT prod = 1;
+  for (auto i = 0; i < ndim; i++) {
+
+    k_offsets[i] = prod;
+    prod *= n_cells[i] + 2;
+    k_inverse_extents[i] = 1 / global_extents[i];
+  }
+
+  return make_direct_transformation_strategy(
+      "velocity_bin",
+      [=](auto position, auto bin_index) {
+        bin_index[0] = 0;
+
+        for (auto dim = 0; dim < ndim; dim++) {
+
+          bin_index[0] +=
+              utils::bin_uniform_symmetric_guard_1d(
+                  k_inverse_extents[dim], n_cells[dim], position[dim]) *
+              k_offsets[dim];
+        }
+      },
+      Access::read(velocity_sym), Access::write(bin_sym));
+}
+
 } // namespace VANTAGE::Reactions
 #endif
