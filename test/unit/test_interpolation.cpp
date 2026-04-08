@@ -24,13 +24,14 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
                                    1);
 
   // Setup the mock data.
-  auto coeffs_data = coefficient_values_1D();
+  auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -61,16 +62,16 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
 
   auto prop0_extract = extract<1>("PROP0");
 
-  auto interpolator_data = InterpolateData<ndim>(dims_vec, ranges_vec, grid,
-                                                 particle_group->sycl_target);
+  auto interpolator_data =
+      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
+          dims_vec, ranges_vec, grid, particle_group->sycl_target,
+          grid_func_data);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
 
-  auto concat_interpolation_expect =
-      ConcatenatorData(pipeline, extract_expected_value);
-
-  auto concat_data_calc = DataCalculator(concat_interpolation_expect);
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -78,17 +79,30 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
+    calc_pre_req_data->fill(0.0);
 
-    concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
+    shape = expect_data_calc.get_data_size();
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+    expect_pre_req_data->fill(0.0);
 
-    auto results_dat = pre_req_data->get();
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
 
-    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
-      // due to interleaving
-      auto calculated_interpolation_value = results_dat[ipart * 2];
-      auto expected_interpolation_value = results_dat[(ipart * 2) + 1];
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto calc_results_dat = calc_pre_req_data->get();
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    EXPECT_EQ(calc_pre_req_data->index.shape[0], n_part_cell);
+    EXPECT_EQ(expect_pre_req_data->index.shape[0], n_part_cell);
+
+    for (int ipart = 0; ipart < calc_pre_req_data->index.shape[0]; ipart++) {
+      auto calculated_interpolation_value = calc_results_dat[ipart];
+      auto expected_interpolation_value = expect_results_dat[ipart];
 
       auto rel_error = relative_error(expected_interpolation_value,
                                       calculated_interpolation_value);
@@ -115,13 +129,14 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
                                    1);
 
   // Setup the mock data.
-  auto coeffs_data = coefficient_values_2D();
+  auto coeffs_data = coefficient_values_2D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -166,16 +181,16 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   auto prop1_extract = extract<1>("PROP1");
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
-  auto interpolator_data = InterpolateData<ndim>(dims_vec, ranges_vec, grid,
-                                                 particle_group->sycl_target);
+  auto interpolator_data =
+      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
+          dims_vec, ranges_vec, grid, particle_group->sycl_target,
+          grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
 
-  auto concat_interpolation_expect =
-      ConcatenatorData(pipeline, extract_expected_value);
-
-  auto concat_data_calc = DataCalculator(concat_interpolation_expect);
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -183,17 +198,29 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
-    concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
 
-    auto results_dat = pre_req_data->get();
+    auto calc_results_dat = calc_pre_req_data->get();
 
-    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
-      // due to interleaving
-      auto calculated_interpolation_value = results_dat[ipart * 2];
-      auto expected_interpolation_value = results_dat[(ipart * 2) + 1];
+    shape = expect_data_calc.get_data_size();
+    n_part_cell = particle_sub_group->get_npart_cell(i);
+    buffer_size = n_part_cell;
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    for (int ipart = 0; ipart < calc_pre_req_data->index.shape[0]; ipart++) {
+
+      auto calculated_interpolation_value = calc_results_dat[ipart];
+      auto expected_interpolation_value = expect_results_dat[ipart];
 
       auto rel_error = relative_error(expected_interpolation_value,
                                       calculated_interpolation_value);
@@ -221,13 +248,14 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
                                    1);
 
   // Setup the mock data.
-  auto coeffs_data = coefficient_values_3D();
+  auto coeffs_data = coefficient_values_3D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -280,16 +308,16 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   auto concatenator =
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
-  auto interpolator_data = InterpolateData<ndim>(dims_vec, ranges_vec, grid,
-                                                 particle_group->sycl_target);
+  auto interpolator_data =
+      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
+          dims_vec, ranges_vec, grid, particle_group->sycl_target,
+          grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
 
-  auto concat_interpolation_expect =
-      ConcatenatorData(pipeline, extract_expected_value);
-
-  auto concat_data_calc = DataCalculator(concat_interpolation_expect);
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -297,17 +325,29 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
-    concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
 
-    auto results_dat = pre_req_data->get();
+    auto calc_results_dat = calc_pre_req_data->get();
 
-    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
-      // due to interleaving
-      auto calculated_interpolation_value = results_dat[ipart * 2];
-      auto expected_interpolation_value = results_dat[(ipart * 2) + 1];
+    shape = expect_data_calc.get_data_size();
+    n_part_cell = particle_sub_group->get_npart_cell(i);
+    buffer_size = n_part_cell;
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    for (int ipart = 0; ipart < calc_pre_req_data->index.shape[0]; ipart++) {
+
+      auto calculated_interpolation_value = calc_results_dat[ipart];
+      auto expected_interpolation_value = expect_results_dat[ipart];
 
       auto rel_error = relative_error(expected_interpolation_value,
                                       calculated_interpolation_value);
@@ -336,13 +376,14 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
                                    1);
 
   // Setup the mock data.
-  auto coeffs_data = coefficient_values_4D();
+  auto coeffs_data = coefficient_values_4D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -404,16 +445,16 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract,
                                        prop2_extract, prop3_extract);
 
-  auto interpolator_data = InterpolateData<ndim>(dims_vec, ranges_vec, grid,
-                                                 particle_group->sycl_target);
+  auto interpolator_data =
+      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
+          dims_vec, ranges_vec, grid, particle_group->sycl_target,
+          grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
 
-  auto concat_interpolation_expect =
-      ConcatenatorData(pipeline, extract_expected_value);
-
-  auto concat_data_calc = DataCalculator(concat_interpolation_expect);
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -421,17 +462,29 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
-    concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
 
-    auto results_dat = pre_req_data->get();
+    auto calc_results_dat = calc_pre_req_data->get();
 
-    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
-      // due to interleaving
-      auto calculated_interpolation_value = results_dat[ipart * 2];
-      auto expected_interpolation_value = results_dat[(ipart * 2) + 1];
+    shape = expect_data_calc.get_data_size();
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    EXPECT_EQ(n_part_cell, calc_pre_req_data->index.shape[0]);
+    EXPECT_EQ(n_part_cell, expect_pre_req_data->index.shape[0]);
+
+    for (int ipart = 0; ipart < n_part_cell; ipart++) {
+      auto calculated_interpolation_value = calc_results_dat[ipart];
+      auto expected_interpolation_value = expect_results_dat[ipart];
 
       auto rel_error = relative_error(expected_interpolation_value,
                                       calculated_interpolation_value);
@@ -461,13 +514,14 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
                                    1);
 
   // Setup the mock data.
-  auto coeffs_data = coefficient_values_5D();
+  auto coeffs_data = coefficient_values_5D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
   std::mt19937 rng = std::mt19937(52234126 + rank);
@@ -537,16 +591,16 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract,
                        prop3_extract, prop4_extract);
 
-  auto interpolator_data = InterpolateData<ndim>(dims_vec, ranges_vec, grid,
-                                                 particle_group->sycl_target);
+  auto interpolator_data =
+      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
+          dims_vec, ranges_vec, grid, particle_group->sycl_target,
+          grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
 
-  auto concat_interpolation_expect =
-      ConcatenatorData(pipeline, extract_expected_value);
-
-  auto concat_data_calc = DataCalculator(concat_interpolation_expect);
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
 
@@ -554,21 +608,381 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
-    concat_data_calc.fill_buffer(pre_req_data, particle_sub_group, i, i + 1);
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
 
-    auto results_dat = pre_req_data->get();
+    auto calc_results_dat = calc_pre_req_data->get();
 
-    for (int ipart = 0; ipart < pre_req_data->index.shape[0]; ipart++) {
-      // due to interleaving
-      auto calculated_interpolation_value = results_dat[ipart * 2];
-      auto expected_interpolation_value = results_dat[(ipart * 2) + 1];
+    shape = expect_data_calc.get_data_size();
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    EXPECT_EQ(n_part_cell, calc_pre_req_data->index.shape[0]);
+    EXPECT_EQ(n_part_cell, expect_pre_req_data->index.shape[0]);
+
+    for (int ipart = 0; ipart < n_part_cell; ipart++) {
+
+      auto calculated_interpolation_value = calc_results_dat[ipart];
+      auto expected_interpolation_value = expect_results_dat[ipart];
 
       auto rel_error = relative_error(expected_interpolation_value,
                                       calculated_interpolation_value);
       EXPECT_NEAR(rel_error, 0.0, INTERPOLATION_TOLERANCE);
+    }
+  }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
+  static constexpr int ndim = 2;
+  static constexpr int trim_dims = 3;
+
+  auto particle_group = create_test_particle_group(1e3);
+
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
+
+  auto npart = particle_group->get_npart_local();
+
+  particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
+  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_dims);
+  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
+                                   trim_dims);
+
+  // Setup the mock data.
+  auto coeffs_data = trim_coefficient_values(particle_group->sycl_target);
+  auto dims_vec = coeffs_data.get_dims_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
+  auto grid = coeffs_data.get_coeffs_vec();
+  auto lower_bounds = coeffs_data.get_lower_bounds();
+  auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
+  auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
+
+  std::array<size_t, ndim> dims_arr;
+  for (int i = 0; i < ndim; i++) {
+    dims_arr[i] = dims_vec[i];
+  }
+
+  std::array<INT, trim_dims> trim_dims_arr;
+  for (int i = 0; i < trim_dims; i++) {
+    trim_dims_arr[i] = trim_dims_vec[i];
+  }
+
+  auto grid_func_data_on_device = grid_func_data.get_on_device_obj();
+
+  // Random number generator kernel
+  std::mt19937 rng = std::mt19937(52234126 + rank);
+  std::uniform_int_distribution<INT> uniform_dist_0(0, dims_vec[0] - 1);
+  std::uniform_int_distribution<INT> uniform_dist_1(0, dims_vec[1] - 1);
+  std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
+
+  auto rng_lambda_wrapper_int = [&](std::uniform_int_distribution<INT> &dist) {
+    auto rng_lambda = [&]() -> INT {
+      INT rng_sample = 0.0;
+      do {
+        rng_sample = dist(rng);
+      } while (rng_sample == 0.0);
+      return rng_sample;
+    };
+    return rng_lambda;
+  };
+
+  auto rng_lambda_wrapper_real =
+      [&](std::uniform_real_distribution<REAL> &dist) {
+        auto rng_lambda = [&]() -> REAL {
+          REAL rng_sample = 0.0;
+          do {
+            rng_sample = dist(rng);
+          } while (rng_sample == 0.0);
+          return rng_sample;
+        };
+        return rng_lambda;
+      };
+
+  auto rng_kernel0 = host_per_particle_block_rng<INT>(
+      rng_lambda_wrapper_int(uniform_dist_0), 1);
+  auto rng_kernel1 = host_per_particle_block_rng<INT>(
+      rng_lambda_wrapper_int(uniform_dist_1), 1);
+  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2), trim_dims);
+
+  auto grid_req_int_props = grid_func_data.get_required_int_sym_vector();
+  auto grid_req_real_props = grid_func_data.get_required_real_sym_vector();
+  auto grid_kernel = grid_func_data.get_rng_kernel();
+
+  particle_loop(
+      particle_group,
+      [=](auto index, auto props, auto expected_value, auto trim_indices,
+          auto grid_int_props, auto grid_real_props, auto grid_kernel,
+          auto prop0_kernel, auto prop1_kernel, auto trim_kernel) {
+        auto index0 = prop0_kernel.at(index, 0);
+        auto index1 = prop1_kernel.at(index, 0);
+
+        auto indices = std::array<INT, ndim>{static_cast<INT>(index0),
+                                             static_cast<INT>(index1)};
+
+        auto dims_ptr = dims_arr.data();
+        auto trim_dims_ptr = trim_dims_arr.data();
+
+        props.at(0) = ranges_vec[index0];
+        props.at(1) = ranges_vec[dims_ptr[0] + index1];
+
+        trim_indices.at(0) = trim_kernel.at(index, 0);
+        trim_indices.at(1) = trim_kernel.at(index, 1);
+        trim_indices.at(2) = trim_kernel.at(index, 2);
+
+        std::array<REAL, trim_dims> trim_indices_part = {
+            trim_indices.at(0), trim_indices.at(1), trim_indices.at(2)};
+
+        auto normalized_trim_indices = interp_utils::normalized_to_coords(
+            trim_indices_part, trim_dims_ptr);
+
+        std::array<REAL, trim_dims> result = grid_func_data_on_device.calc_data(
+            std::array<INT, 1 + trim_dims>{interp_utils::coeff_index_on_device(
+                                               indices.data(), dims_ptr, ndim),
+                                           normalized_trim_indices[0],
+                                           normalized_trim_indices[1],
+                                           normalized_trim_indices[2]},
+            index, grid_int_props, grid_real_props, grid_kernel);
+
+        expected_value.at(0) = result[0];
+        expected_value.at(1) = result[1];
+        expected_value.at(2) = result[2];
+      },
+      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
+      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")),
+      Access::write(Sym<REAL>("TRIM_INDICES")),
+      Access::write(sym_vector<INT>(particle_group, grid_req_int_props)),
+      Access::read(sym_vector<REAL>(particle_group, grid_req_real_props)),
+      Access::read(grid_kernel), Access::read(rng_kernel0),
+      Access::read(rng_kernel1), Access::read(trim_rng_kernel))
+      ->execute();
+
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto props_extract = extract<ndim>("PROPS");
+
+  auto trim_extract = extract<trim_dims>("TRIM_INDICES");
+
+  auto concatenator = ConcatenatorData(props_extract, trim_extract);
+
+  auto interpolator_data = InterpolateData<trim_dims, ndim, REAL, REAL,
+                                           decltype(grid_func_data), trim_dims>(
+      dims_vec, ranges_vec, grid, particle_group->sycl_target, grid_func_data,
+      ExtrapolationType::continue_linear, trim_dims_vec);
+
+  auto pipeline = pipe(concatenator, interpolator_data);
+  auto extract_expected_value =
+      extract<trim_dims>("EXPECTED_INTERPOLATION_VALUE");
+
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
+
+  const int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  for (int i = 0; i < cell_count; i++) {
+    auto shape = concat_data_calc.get_data_size();
+    auto n_part_cell = particle_sub_group->get_npart_cell(i);
+    size_t buffer_size = n_part_cell;
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    shape = expect_data_calc.get_data_size();
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto calc_results_dat = calc_pre_req_data->get();
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    REAL calculated_interpolation_value;
+    REAL expected_interpolation_value;
+
+    EXPECT_EQ(calc_pre_req_data->index.shape[0], n_part_cell);
+    EXPECT_EQ(expect_pre_req_data->index.shape[0], n_part_cell);
+
+    for (int ipart = 0; ipart < n_part_cell; ipart++) {
+      for (int icomp = 0; icomp < trim_dims; icomp++) {
+        calculated_interpolation_value =
+            calc_results_dat[(ipart * trim_dims) + icomp];
+        expected_interpolation_value =
+            expect_results_dat[(ipart * trim_dims) + icomp];
+
+        EXPECT_DOUBLE_EQ(calculated_interpolation_value,
+                         expected_interpolation_value);
+      }
+    }
+  }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
+
+TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
+  static constexpr int ndim = 2;
+  static constexpr int trim_dims = 3;
+
+  auto particle_group = create_test_particle_group(1e3);
+
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
+
+  auto npart = particle_group->get_npart_local();
+
+  particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
+  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_dims);
+  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
+                                   trim_dims);
+
+  // Setup the mock data.
+  auto coeffs_data = trim_coefficient_values(particle_group->sycl_target);
+  auto dims_vec = coeffs_data.get_dims_vec();
+  auto dims_vec_ptr = dims_vec.data();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
+  auto grid = coeffs_data.get_coeffs_vec();
+  auto lower_bounds = coeffs_data.get_lower_bounds();
+  auto upper_bounds = coeffs_data.get_upper_bounds();
+  auto grid_func = coeffs_data.get_grid_func();
+  auto grid_func_data = coeffs_data.get_grid_func_data();
+  auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
+  std::array<INT, trim_dims> trim_dims_arr;
+  for (int i = 0; i < trim_dims; i++) {
+    trim_dims_arr[i] = trim_dims_vec[i];
+  }
+
+  auto grid_func_data_on_device = grid_func_data.get_on_device_obj();
+
+  // Random number generator kernel
+  std::mt19937 rng = std::mt19937(52234126 + rank);
+  std::uniform_real_distribution<REAL> uniform_dist_0(lower_bounds[0],
+                                                      upper_bounds[0]);
+  std::uniform_real_distribution<REAL> uniform_dist_1(lower_bounds[1],
+                                                      upper_bounds[1]);
+  std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
+
+  auto rng_lambda_wrapper_real =
+      [&](std::uniform_real_distribution<REAL> &dist) {
+        auto rng_lambda = [&]() -> REAL {
+          REAL rng_sample = 0.0;
+          do {
+            rng_sample = dist(rng);
+          } while (rng_sample == 0.0);
+          return rng_sample;
+        };
+        return rng_lambda;
+      };
+
+  auto rng_kernel0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0), 1);
+  auto rng_kernel1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1), 1);
+  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2), trim_dims);
+
+  particle_loop(
+      particle_group,
+      [=](auto index, auto props, auto expected_value, auto trim_indices,
+          auto prop0_kernel, auto prop1_kernel, auto trim_kernel) {
+        auto trim_dims_ptr = trim_dims_arr.data();
+
+        props.at(0) = prop0_kernel.at(index, 0);
+        props.at(1) = prop1_kernel.at(index, 0);
+
+        trim_indices.at(0) = trim_kernel.at(index, 0);
+        trim_indices.at(1) = trim_kernel.at(index, 1);
+        trim_indices.at(2) = trim_kernel.at(index, 2);
+
+        std::array<REAL, trim_dims> trim_indices_part = {
+            trim_indices.at(0), trim_indices.at(1), trim_indices.at(2)};
+
+        auto normalized_trim_indices = interp_utils::normalized_to_coords(
+            trim_indices_part, trim_dims_ptr);
+
+        std::array<REAL, trim_dims> result = grid_func(
+            props.at(0), props.at(1), normalized_trim_indices, trim_dims_arr);
+
+        expected_value.at(0) = result[0];
+        expected_value.at(1) = result[1];
+        expected_value.at(2) = result[2];
+      },
+      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
+      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")),
+      Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(rng_kernel0),
+      Access::read(rng_kernel1), Access::read(trim_rng_kernel))
+      ->execute();
+
+  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+
+  auto props_extract = extract<ndim>("PROPS");
+
+  auto trim_extract = extract<trim_dims>("TRIM_INDICES");
+
+  auto concatenator = ConcatenatorData(props_extract, trim_extract);
+
+  auto interpolator_data = InterpolateData<trim_dims, ndim, REAL, REAL,
+                                           decltype(grid_func_data), trim_dims>(
+      dims_vec, ranges_vec, grid, particle_group->sycl_target, grid_func_data,
+      ExtrapolationType::continue_linear, trim_dims_vec);
+
+  auto pipeline = pipe(concatenator, interpolator_data);
+  auto extract_expected_value =
+      extract<trim_dims>("EXPECTED_INTERPOLATION_VALUE");
+
+  auto concat_data_calc = DataCalculator(pipeline);
+  auto expect_data_calc = DataCalculator(extract_expected_value);
+
+  const int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  for (int i = 0; i < cell_count; i++) {
+    auto shape = concat_data_calc.get_data_size();
+    auto n_part_cell = particle_sub_group->get_npart_cell(i);
+    size_t buffer_size = n_part_cell;
+    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    shape = expect_data_calc.get_data_size();
+    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        particle_group->sycl_target, buffer_size, shape);
+
+    concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    expect_data_calc.fill_buffer(expect_pre_req_data, particle_sub_group, i,
+                                 i + 1);
+
+    auto calc_results_dat = calc_pre_req_data->get();
+    auto expect_results_dat = expect_pre_req_data->get();
+
+    REAL calculated_interpolation_value;
+    REAL expected_interpolation_value;
+
+    EXPECT_EQ(calc_pre_req_data->index.shape[0], n_part_cell);
+    EXPECT_EQ(expect_pre_req_data->index.shape[0], n_part_cell);
+
+    for (int ipart = 0; ipart < n_part_cell; ipart++) {
+      for (int icomp = 0; icomp < trim_dims; icomp++) {
+        calculated_interpolation_value =
+            calc_results_dat[(ipart * trim_dims) + icomp];
+        expected_interpolation_value =
+            expect_results_dat[(ipart * trim_dims) + icomp];
+
+        EXPECT_DOUBLE_EQ(calculated_interpolation_value,
+                         expected_interpolation_value);
+      }
     }
   }
 

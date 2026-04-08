@@ -1,6 +1,7 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
 #include <neso_particles.hpp>
+#include <neso_particles/loop/particle_loop_index.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -143,6 +144,24 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
   return points;
 }
 
+template <size_t... Is, size_t rng_ndim>
+constexpr std::array<INT, rng_ndim>
+normalized_to_coords_impl(const std::array<double, rng_ndim> &u,
+                          INT const *dims,
+                          std::index_sequence<Is...>) noexcept {
+  return {(static_cast<INT>(u[Is] * dims[Is]) < dims[Is]
+               ? static_cast<INT>(u[Is] * dims[Is])
+               : dims[Is] - 1)...};
+}
+
+template <size_t rng_ndim>
+constexpr std::array<INT, rng_ndim>
+normalized_to_coords(const std::array<double, rng_ndim> &u,
+                     INT const *dims) noexcept {
+  return normalized_to_coords_impl(u, dims,
+                                   std::make_index_sequence<rng_ndim>{});
+}
+
 /**
  * Function to calculate the initial function values on the vertices of the
  * hypercube.
@@ -164,18 +183,49 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * @param num_points The number of vertices needed for the hypercube
  * representation
  */
+
+template <typename DATATYPE, int output_ndim, int rng_ndim>
 inline void initial_func_eval_on_device(
-    REAL *vertex_func_evals, INT *vertex_coord, REAL const *func_grid,
+    REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
     INT const *hypercube_vertices, INT const *origin_indices,
-    size_t const *dims_vec, const int &ndim, const int &num_points) {
+    size_t const *dims_vec, const int &ndim, const int &num_points,
+    const std::array<REAL, rng_ndim> &trim_indices, INT const *trim_dims,
+    const Access::LoopIndex::Read &index,
+    const Access::SymVector::Write<INT> &req_int_props,
+    const Access::SymVector::Read<REAL> &req_real_props,
+    typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
+        KernelType &rng_kernel) {
+
+  std::array<REAL, output_ndim> grid_func_output;
+  for (size_t idim = 0; idim < output_ndim; idim++)
+    grid_func_output[idim] = 0.0;
+
+  std::array<INT, 1 + rng_ndim> grid_func_input;
+  for (int idim = 0; idim < (1 + rng_ndim); idim++) {
+    grid_func_input[idim] = 0;
+  }
+
   for (size_t point_index = 0; point_index < num_points; point_index++) {
     for (size_t vertex_index = 0; vertex_index < ndim; vertex_index++) {
       vertex_coord[vertex_index] =
           origin_indices[vertex_index] +
           binary_extract(hypercube_vertices[point_index], vertex_index);
     }
-    vertex_func_evals[point_index] =
-        func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
+
+    grid_func_input[0] = coeff_index_on_device(vertex_coord, dims_vec, ndim);
+    auto trim_int_indices = normalized_to_coords(trim_indices, trim_dims);
+    for (int i = 0; i < rng_ndim; i++) {
+      grid_func_input[1 + i] = trim_int_indices[i];
+    }
+
+    grid_func_output =
+        grid_func_data.calc_data(grid_func_input, index, req_int_props,
+                                 req_real_props, rng_kernel.template get<0>());
+
+    for (size_t idim = 0; idim < output_ndim; idim++) {
+      vertex_func_evals[(point_index * output_ndim) + idim] =
+          grid_func_output[idim];
+    }
   }
 }
 
@@ -183,6 +233,7 @@ inline void initial_func_eval_on_device(
  * @brief Function to contract a hypercube down by 1 dimension via linear
  * interpolation.
  *
+ * @tparam output_ndim Number of output dimensions of output_evals.
  * @param interp_points Pointer to a vector that contains
  * the interpolation points in each dimension.
  * @param dim_index Since this function is called multiple times, this counter
@@ -208,7 +259,7 @@ inline void initial_func_eval_on_device(
  * storing the vertices of the hypercube after they've been mapped to the actual
  * region in the dimensions of the grid that are of interest.
  */
-
+template <int output_ndim>
 inline void contract_hypercube_on_device(
     const REAL *interp_points, const size_t &dim_index,
     INT const *hypercube_vertices, const INT *origin_indices,
@@ -240,11 +291,15 @@ inline void contract_hypercube_on_device(
     range_val_1 = // x1
         ranges_vec[range_index_on_device(vertex_1, dim_index, dims_vec)];
 
-    eval_point_0 = vertex_func_evals[i];                    // f0
-    eval_point_1 = vertex_func_evals[num_points - (i + 1)]; // f1
+    for (size_t idim = 0; idim < output_ndim; idim++) {
+      eval_point_0 = vertex_func_evals[(i * output_ndim) + idim]; // f0
+      eval_point_1 = vertex_func_evals[((num_points - (i + 1)) * output_ndim) +
+                                       idim]; // f1
 
-    output_evals[i] = linear_interp(interp_points[dim_index], range_val_0,
-                                    range_val_1, eval_point_0, eval_point_1);
+      output_evals[(i * output_ndim) + idim] =
+          linear_interp(interp_points[dim_index], range_val_0, range_val_1,
+                        eval_point_0, eval_point_1);
+    }
   }
 }
 
