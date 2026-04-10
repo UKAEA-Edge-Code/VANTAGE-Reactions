@@ -2,12 +2,13 @@
 #define REACTIONS_INTERP_UTILS_H
 #include <neso_particles.hpp>
 #include <neso_particles/loop/particle_loop_index.hpp>
+#include <neso_particles/typedefs.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions::interp_utils {
 /**
- * Helper macro that extracts the value of the binary representation of i at
+ * Helper function that extracts the value of the binary representation of i at
  * position j (in the binary representation of i).
  */
 template <typename T> inline T binary_extract(const T &i, const size_t &j) {
@@ -144,13 +145,33 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
   return points;
 }
 
-template <size_t rng_ndim>
-inline std::array<INT, rng_ndim>
-normalized_to_coords(const std::array<REAL, rng_ndim> &u,
-                     const std::array<INT, rng_ndim> &dims) {
-  std::array<INT, rng_ndim> coords{};
+/**
+ * @brief Function to convert REAL-valued (between 0.0 and 1.0) elements of an
+ * input array, u, into INT-valued indices that lie between 0 and an upper limit
+ * defined by the elements of dims. For example with u = {0.1, 0.7, 0.3} and
+ * dims = {4, 6, 9} the output coords would be: {0, 4, 2}
+ *
+ * @tparam sub_index_ndim The size of the u array, the dims array and the output
+ * from the function.
+ * @param u REAL-valued array of size sub_index_ndim that contains the values
+ * (between 0.0 and 1.0) that are to be converted to indices.
+ * @param dims INT-valued array of size sub_index_ndim that contains values that
+ * define the upper limits for the results.
+ */
+template <size_t sub_index_ndim>
+inline std::array<INT, sub_index_ndim>
+normalized_to_coords(const std::array<REAL, sub_index_ndim> &u,
+                     const std::array<INT, sub_index_ndim> &dims) {
+  // for (size_t i = 0; i < sub_index_ndim; i++) {
+  //   NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
+  //              "Input array, u, must have values between 0.0 and "
+  //              "1.0.");
+  //   NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
+  // }
 
-  for (size_t i = 0; i < rng_ndim; ++i) {
+  std::array<INT, sub_index_ndim> coords{};
+
+  for (size_t i = 0; i < sub_index_ndim; ++i) {
     const INT x = static_cast<INT>(u[i] * dims[i]);
     coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
   }
@@ -162,11 +183,17 @@ normalized_to_coords(const std::array<REAL, rng_ndim> &u,
  * Function to calculate the initial function values on the vertices of the
  * hypercube.
  *
+ * @tparam DATATYPE ReactionDataBaseOnDevice derived type corresponding to the
+ * grid-function evaluation reaction data.
+ * @tparam output_ndim Number of dimensions of the output of the grid-function
+ * evaluation.
+ * @tparam sub_index_ndim Number of sub-index dimensions.
  * @param vertex_func_evals Pointer to a vector to fill
  * with function evaluations.
  * @param vertex_coord Pointer to a vector to fill with
  * locations of the vertices of the hypercube.
- * @param func_grid Pointer to a contiguous array containing the ND grid data.
+ * @param grid_func_data DATATYPE object that defines the grid-function
+ * evaluation.
  * @param hypercube_vertices Pointer to a vector containing the vertices of the
  * hypercube (integers whose binary representations give the normalised
  * positions of the vertices).
@@ -178,14 +205,28 @@ normalized_to_coords(const std::array<REAL, rng_ndim> &u,
  * @param ndim The number of dimensions.
  * @param num_points The number of vertices needed for the hypercube
  * representation
+ * @param sub_indices Pointer to an array containing the sub-indices that are
+ * needed for grid-function evaluation (eg. for TRIM data).
+ * @param sub_dims Pointer to an array containing the size of the dimensions for
+ * each sub-index.
+ * @param index Read-only accessor to a loop index for a ParticleLoop
+ * inside which calc_data is called. Access using either
+ * index.get_loop_linear_index(), index.get_local_linear_index(),
+ * index.get_sub_linear_index() as required.
+ * @param req_int_props Vector of symbols for integer-valued properties that
+ * need to be used for the reaction data calculation.
+ * @param req_real_props Vector of symbols for real-valued properties that
+ * need to be used for the reaction data calculation.
+ * @param rng_kernel The random number generator kernel potentially used in
+ * the calculation
  */
 
-template <typename DATATYPE, int output_ndim, int rng_ndim>
+template <typename DATATYPE, int output_ndim, int sub_index_ndim>
 inline void initial_func_eval_on_device(
     REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
     INT const *hypercube_vertices, INT const *origin_indices,
     size_t const *dims_vec, const int &ndim, const int &num_points,
-    const std::array<REAL, rng_ndim> &trim_indices, INT const *trim_dims,
+    REAL const *sub_indices, INT const *sub_dims,
     const Access::LoopIndex::Read &index,
     const Access::SymVector::Write<INT> &req_int_props,
     const Access::SymVector::Read<REAL> &req_real_props,
@@ -196,8 +237,8 @@ inline void initial_func_eval_on_device(
   for (size_t idim = 0; idim < output_ndim; idim++)
     grid_func_output[idim] = 0.0;
 
-  std::array<INT, 1 + rng_ndim> grid_func_input;
-  for (int idim = 0; idim < (1 + rng_ndim); idim++) {
+  std::array<INT, 1 + sub_index_ndim> grid_func_input;
+  for (int idim = 0; idim < (1 + sub_index_ndim); idim++) {
     grid_func_input[idim] = 0;
   }
 
@@ -209,12 +250,18 @@ inline void initial_func_eval_on_device(
     }
 
     grid_func_input[0] = coeff_index_on_device(vertex_coord, dims_vec, ndim);
-    std::array<INT, rng_ndim> trim_dims_arr;
-    for (int i = 0; i < rng_ndim; i++)
-      trim_dims_arr[i] = trim_dims[i];
-    auto trim_int_indices = normalized_to_coords(trim_indices, trim_dims_arr);
-    for (int i = 0; i < rng_ndim; i++) {
-      grid_func_input[1 + i] = trim_int_indices[i];
+
+    std::array<REAL, sub_index_ndim> sub_indices_arr;
+    std::array<INT, sub_index_ndim> sub_dims_arr;
+    for (int i = 0; i < sub_index_ndim; i++) {
+      sub_indices_arr[i] = sub_indices[i];
+      sub_dims_arr[i] = sub_dims[i];
+    }
+
+    auto sub_int_indices = normalized_to_coords(sub_indices_arr, sub_dims_arr);
+
+    for (int i = 0; i < sub_index_ndim; i++) {
+      grid_func_input[1 + i] = sub_int_indices[i];
     }
 
     grid_func_output =

@@ -1,12 +1,7 @@
-#include "include/mock_debug_particle_group.hpp"
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
 #include "include/test_vantage_reactions_utils.hpp"
-#include "reactions_lib/interp_utils.hpp"
-#include <algorithm>
 #include <gtest/gtest.h>
-#include <memory>
-#include <random>
 
 #define INTERPOLATION_TOLERANCE 1e-14
 
@@ -65,10 +60,8 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
 
   auto prop0_extract = extract<1>("PROP0");
 
-  auto interpolator_data =
-      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
-          dims_vec, ranges_vec, grid, particle_group->sycl_target,
-          grid_func_data);
+  auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -184,10 +177,8 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   auto prop1_extract = extract<1>("PROP1");
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
-  auto interpolator_data =
-      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
-          dims_vec, ranges_vec, grid, particle_group->sycl_target,
-          grid_func_data);
+  auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -311,10 +302,8 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   auto concatenator =
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
-  auto interpolator_data =
-      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
-          dims_vec, ranges_vec, grid, particle_group->sycl_target,
-          grid_func_data);
+  auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -448,10 +437,8 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract,
                                        prop2_extract, prop3_extract);
 
-  auto interpolator_data =
-      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
-          dims_vec, ranges_vec, grid, particle_group->sycl_target,
-          grid_func_data);
+  auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -594,10 +581,8 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract,
                        prop3_extract, prop4_extract);
 
-  auto interpolator_data =
-      InterpolateData<1, ndim, REAL, REAL, decltype(grid_func_data)>(
-          dims_vec, ranges_vec, grid, particle_group->sycl_target,
-          grid_func_data);
+  auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -748,10 +733,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
   auto concatenator = ConcatenatorData(props_extract, trim_extract);
 
-  auto interpolator_data = InterpolateData<trim_ndim, ndim, REAL, REAL,
-                                           decltype(grid_func_data), trim_ndim>(
-      dims_vec, ranges_vec, grid, particle_group->sycl_target, grid_func_data,
-      ExtrapolationType::continue_linear, trim_dims_vec);
+  auto interpolator_data =
+      InterpolateData<trim_ndim, ndim, decltype(grid_func_data), trim_ndim>(
+          dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data,
+          ExtrapolationType::continue_linear, trim_dims_vec);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value =
@@ -893,10 +878,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
 
   auto concatenator = ConcatenatorData(props_extract, trim_extract);
 
-  auto interpolator_data = InterpolateData<trim_ndim, ndim, REAL, REAL,
-                                           decltype(grid_func_data), trim_ndim>(
-      dims_vec, ranges_vec, grid, particle_group->sycl_target, grid_func_data,
-      ExtrapolationType::continue_linear, trim_dims_vec);
+  auto interpolator_data =
+      InterpolateData<trim_ndim, ndim, decltype(grid_func_data), trim_ndim>(
+          dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data,
+          ExtrapolationType::continue_linear, trim_dims_vec);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value =
