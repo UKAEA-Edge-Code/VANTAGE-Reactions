@@ -72,15 +72,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
   std::uniform_real_distribution<REAL> uniform_dist(
       upper_bounds[0], 0.5 * std::numeric_limits<REAL>::max());
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
-
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -178,15 +171,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
   std::uniform_real_distribution<REAL> uniform_dist(
       -(0.5 * std::numeric_limits<REAL>::max()), lower_bounds[0]);
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
-
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -283,15 +269,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
   std::uniform_real_distribution<REAL> uniform_dist(
       upper_bounds[0], (0.5 * std::numeric_limits<REAL>::max()));
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
-
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -387,15 +366,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
   std::uniform_real_distribution<REAL> uniform_dist(
       -(0.5 * std::numeric_limits<REAL>::max()), lower_bounds[0]);
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
-
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -493,15 +465,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
   std::uniform_real_distribution<REAL> uniform_dist(
       upper_bound_0, (0.5 * std::numeric_limits<REAL>::max()));
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
-
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -600,15 +565,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
   std::uniform_real_distribution<REAL> uniform_dist(
       -(0.5 * std::numeric_limits<REAL>::max()), lower_bound_0);
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
-
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -708,21 +666,10 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
   std::uniform_real_distribution<REAL> uniform_dist_1(
       -(std::sqrt(std::numeric_limits<REAL>::max())), lower_bounds[1]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
 
   particle_loop(
       particle_group,
@@ -827,21 +774,10 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_1) {
   std::uniform_real_distribution<REAL> uniform_dist_1(
       -(std::sqrt(std::numeric_limits<REAL>::max())), lower_bounds[1]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
 
   particle_loop(
       particle_group,
@@ -948,21 +884,10 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
   std::uniform_real_distribution<REAL> uniform_dist_1(
       -(std::sqrt(std::numeric_limits<REAL>::max())), lower_bounds[1]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
 
   particle_loop(
       particle_group,
@@ -1073,23 +998,12 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_0) {
   std::uniform_real_distribution<REAL> uniform_dist_2(
       upper_bounds[2], std::pow(std::numeric_limits<REAL>::max(), 1.0 / 3.0));
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
-  auto rng_kernel_2 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_2), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
+  auto rng_kernel_2 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2, rng), 1);
 
   particle_loop(
       particle_group,
@@ -1202,23 +1116,12 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_1) {
   std::uniform_real_distribution<REAL> uniform_dist_2(
       upper_bounds[2], std::pow(std::numeric_limits<REAL>::max(), 1.0 / 3.0));
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
-  auto rng_kernel_2 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_2), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
+  auto rng_kernel_2 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2, rng), 1);
 
   particle_loop(
       particle_group,
@@ -1334,23 +1237,12 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_UNDER_TYPE_2) {
   std::uniform_real_distribution<REAL> uniform_dist_2(
       upper_bounds[2], std::pow(std::numeric_limits<REAL>::max(), 1.0 / 3.0));
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
-  auto rng_kernel_2 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_2), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
+  auto rng_kernel_2 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2, rng), 1);
 
   particle_loop(
       particle_group,

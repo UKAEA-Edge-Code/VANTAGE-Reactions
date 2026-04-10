@@ -2,6 +2,7 @@
 #include "include/mock_particle_group.hpp"
 #include "include/test_vantage_reactions_utils.hpp"
 #include <gtest/gtest.h>
+#include <random>
 
 #define INTERPOLATION_TOLERANCE 1e-14
 
@@ -35,15 +36,9 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   std::mt19937 rng = std::mt19937(52234126 + rank);
   std::uniform_real_distribution<REAL> uniform_dist(lower_bounds[0],
                                                     upper_bounds[0]);
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
-    do {
-      rng_sample = uniform_dist(rng);
-    } while (rng_sample == 0.0);
-    return rng_sample;
-  };
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
       particle_group,
@@ -141,21 +136,10 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   std::uniform_real_distribution<REAL> uniform_dist_1(lower_bounds[1],
                                                       upper_bounds[1]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
 
   particle_loop(
       particle_group,
@@ -260,23 +244,12 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   std::uniform_real_distribution<REAL> uniform_dist_2(lower_bounds[2],
                                                       upper_bounds[2]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
-  auto rng_kernel_2 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_2), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
+  auto rng_kernel_2 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2, rng), 1);
 
   particle_loop(
       particle_group,
@@ -388,25 +361,14 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   std::uniform_real_distribution<REAL> uniform_dist_3(lower_bounds[3],
                                                       upper_bounds[3]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
-  auto rng_kernel_2 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_2), 1);
-  auto rng_kernel_3 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_3), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
+  auto rng_kernel_2 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2, rng), 1);
+  auto rng_kernel_3 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_3, rng), 1);
 
   particle_loop(
       particle_group,
@@ -526,27 +488,16 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
   std::uniform_real_distribution<REAL> uniform_dist_4(lower_bounds[4],
                                                       upper_bounds[4]);
 
-  auto rng_lambda_wrapper = [&](std::uniform_real_distribution<REAL> &dist) {
-    auto rng_lambda = [&]() -> REAL {
-      REAL rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_kernel_0 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_0), 1);
-  auto rng_kernel_1 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_1), 1);
-  auto rng_kernel_2 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_2), 1);
-  auto rng_kernel_3 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_3), 1);
-  auto rng_kernel_4 =
-      host_per_particle_block_rng<REAL>(rng_lambda_wrapper(uniform_dist_4), 1);
+  auto rng_kernel_0 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
+  auto rng_kernel_1 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
+  auto rng_kernel_2 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_2, rng), 1);
+  auto rng_kernel_3 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_3, rng), 1);
+  auto rng_kernel_4 = host_per_particle_block_rng<REAL>(
+      rng_lambda_wrapper_real(uniform_dist_4, rng), 1);
 
   particle_loop(
       particle_group,
@@ -668,16 +619,17 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   }
 
   // Random number generator kernel
+  auto rng = std::mt19937(52234126 + rank);
   std::uniform_int_distribution<INT> uniform_dist_0(0, dims_vec[0] - 1);
   std::uniform_int_distribution<INT> uniform_dist_1(0, dims_vec[1] - 1);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
   auto rng_kernel0 = host_per_particle_block_rng<INT>(
-      rng_lambda_wrapper_int(uniform_dist_0, rank), 1);
+      rng_lambda_wrapper_int(uniform_dist_0, rng), 1);
   auto rng_kernel1 = host_per_particle_block_rng<INT>(
-      rng_lambda_wrapper_int(uniform_dist_1, rank), 1);
+      rng_lambda_wrapper_int(uniform_dist_1, rng), 1);
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_2, rank), trim_ndim);
+      rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
   auto grid_req_int_props = grid_func_data.get_required_int_sym_vector();
   auto grid_req_real_props = grid_func_data.get_required_real_sym_vector();
@@ -825,6 +777,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   auto grid_func_data_on_device = grid_func_data.get_on_device_obj();
 
   // Random number generator kernel
+  auto rng = std::mt19937(52234126 + rank);
   std::uniform_real_distribution<REAL> uniform_dist_0(lower_bounds[0],
                                                       upper_bounds[0]);
   std::uniform_real_distribution<REAL> uniform_dist_1(lower_bounds[1],
@@ -832,11 +785,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
   auto rng_kernel0 = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_0, rank), 1);
+      rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
   auto rng_kernel1 = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_1, rank), 1);
+      rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_2, rank), trim_ndim);
+      rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
   particle_loop(
       particle_group,
