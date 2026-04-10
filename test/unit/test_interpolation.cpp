@@ -1,6 +1,9 @@
+#include "include/mock_debug_particle_group.hpp"
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
 #include "include/test_vantage_reactions_utils.hpp"
+#include "reactions_lib/interp_utils.hpp"
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <memory>
 #include <random>
@@ -645,7 +648,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
 
 TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   static constexpr int ndim = 2;
-  static constexpr int trim_dims = 3;
+  static constexpr int trim_ndim = 3;
 
   auto particle_group = create_test_particle_group(1e3);
 
@@ -654,9 +657,9 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   auto npart = particle_group->get_npart_local();
 
   particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
-  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_dims);
+  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_ndim);
   particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
-                                   trim_dims);
+                                   trim_ndim);
 
   // Setup the mock data.
   auto coeffs_data = trim_coefficient_values(particle_group->sycl_target);
@@ -666,6 +669,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func_data = coeffs_data.get_grid_func_data();
+  auto grid_func = coeffs_data.get_grid_func();
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
 
   std::array<size_t, ndim> dims_arr;
@@ -673,48 +677,22 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
     dims_arr[i] = dims_vec[i];
   }
 
-  std::array<INT, trim_dims> trim_dims_arr;
-  for (int i = 0; i < trim_dims; i++) {
+  std::array<INT, trim_ndim> trim_dims_arr;
+  for (int i = 0; i < trim_ndim; i++) {
     trim_dims_arr[i] = trim_dims_vec[i];
   }
 
-  auto grid_func_data_on_device = grid_func_data.get_on_device_obj();
-
   // Random number generator kernel
-  std::mt19937 rng = std::mt19937(52234126 + rank);
   std::uniform_int_distribution<INT> uniform_dist_0(0, dims_vec[0] - 1);
   std::uniform_int_distribution<INT> uniform_dist_1(0, dims_vec[1] - 1);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
-  auto rng_lambda_wrapper_int = [&](std::uniform_int_distribution<INT> &dist) {
-    auto rng_lambda = [&]() -> INT {
-      INT rng_sample = 0.0;
-      do {
-        rng_sample = dist(rng);
-      } while (rng_sample == 0.0);
-      return rng_sample;
-    };
-    return rng_lambda;
-  };
-
-  auto rng_lambda_wrapper_real =
-      [&](std::uniform_real_distribution<REAL> &dist) {
-        auto rng_lambda = [&]() -> REAL {
-          REAL rng_sample = 0.0;
-          do {
-            rng_sample = dist(rng);
-          } while (rng_sample == 0.0);
-          return rng_sample;
-        };
-        return rng_lambda;
-      };
-
   auto rng_kernel0 = host_per_particle_block_rng<INT>(
-      rng_lambda_wrapper_int(uniform_dist_0), 1);
+      rng_lambda_wrapper_int(uniform_dist_0, rank), 1);
   auto rng_kernel1 = host_per_particle_block_rng<INT>(
-      rng_lambda_wrapper_int(uniform_dist_1), 1);
+      rng_lambda_wrapper_int(uniform_dist_1, rank), 1);
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_2), trim_dims);
+      rng_lambda_wrapper_real(uniform_dist_2, rank), trim_ndim);
 
   auto grid_req_int_props = grid_func_data.get_required_int_sym_vector();
   auto grid_req_real_props = grid_func_data.get_required_real_sym_vector();
@@ -732,7 +710,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
                                              static_cast<INT>(index1)};
 
         auto dims_ptr = dims_arr.data();
-        auto trim_dims_ptr = trim_dims_arr.data();
 
         props.at(0) = ranges_vec[index0];
         props.at(1) = ranges_vec[dims_ptr[0] + index1];
@@ -741,19 +718,14 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         trim_indices.at(1) = trim_kernel.at(index, 1);
         trim_indices.at(2) = trim_kernel.at(index, 2);
 
-        std::array<REAL, trim_dims> trim_indices_part = {
+        std::array<REAL, trim_ndim> trim_indices_part = {
             trim_indices.at(0), trim_indices.at(1), trim_indices.at(2)};
 
         auto normalized_trim_indices = interp_utils::normalized_to_coords(
-            trim_indices_part, trim_dims_ptr);
+            trim_indices_part, trim_dims_arr);
 
-        std::array<REAL, trim_dims> result = grid_func_data_on_device.calc_data(
-            std::array<INT, 1 + trim_dims>{interp_utils::coeff_index_on_device(
-                                               indices.data(), dims_ptr, ndim),
-                                           normalized_trim_indices[0],
-                                           normalized_trim_indices[1],
-                                           normalized_trim_indices[2]},
-            index, grid_int_props, grid_real_props, grid_kernel);
+        std::array<REAL, trim_ndim> result = grid_func(
+            props.at(0), props.at(1), normalized_trim_indices, trim_dims_arr);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -772,18 +744,18 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
   auto props_extract = extract<ndim>("PROPS");
 
-  auto trim_extract = extract<trim_dims>("TRIM_INDICES");
+  auto trim_extract = extract<trim_ndim>("TRIM_INDICES");
 
   auto concatenator = ConcatenatorData(props_extract, trim_extract);
 
-  auto interpolator_data = InterpolateData<trim_dims, ndim, REAL, REAL,
-                                           decltype(grid_func_data), trim_dims>(
+  auto interpolator_data = InterpolateData<trim_ndim, ndim, REAL, REAL,
+                                           decltype(grid_func_data), trim_ndim>(
       dims_vec, ranges_vec, grid, particle_group->sycl_target, grid_func_data,
       ExtrapolationType::continue_linear, trim_dims_vec);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value =
-      extract<trim_dims>("EXPECTED_INTERPOLATION_VALUE");
+      extract<trim_ndim>("EXPECTED_INTERPOLATION_VALUE");
 
   auto concat_data_calc = DataCalculator(pipeline);
   auto expect_data_calc = DataCalculator(extract_expected_value);
@@ -817,11 +789,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
     EXPECT_EQ(expect_pre_req_data->index.shape[0], n_part_cell);
 
     for (int ipart = 0; ipart < n_part_cell; ipart++) {
-      for (int icomp = 0; icomp < trim_dims; icomp++) {
+      for (int icomp = 0; icomp < trim_ndim; icomp++) {
         calculated_interpolation_value =
-            calc_results_dat[(ipart * trim_dims) + icomp];
+            calc_results_dat[(ipart * trim_ndim) + icomp];
         expected_interpolation_value =
-            expect_results_dat[(ipart * trim_dims) + icomp];
+            expect_results_dat[(ipart * trim_ndim) + icomp];
 
         EXPECT_DOUBLE_EQ(calculated_interpolation_value,
                          expected_interpolation_value);
@@ -835,7 +807,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
 TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   static constexpr int ndim = 2;
-  static constexpr int trim_dims = 3;
+  static constexpr int trim_ndim = 3;
 
   auto particle_group = create_test_particle_group(1e3);
 
@@ -844,9 +816,9 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   auto npart = particle_group->get_npart_local();
 
   particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
-  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_dims);
+  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_ndim);
   particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
-                                   trim_dims);
+                                   trim_ndim);
 
   // Setup the mock data.
   auto coeffs_data = trim_coefficient_values(particle_group->sycl_target);
@@ -859,88 +831,76 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   auto grid_func = coeffs_data.get_grid_func();
   auto grid_func_data = coeffs_data.get_grid_func_data();
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
-  std::array<INT, trim_dims> trim_dims_arr;
-  for (int i = 0; i < trim_dims; i++) {
+
+  std::array<INT, trim_ndim> trim_dims_arr;
+  for (int i = 0; i < trim_ndim; i++) {
     trim_dims_arr[i] = trim_dims_vec[i];
   }
 
   auto grid_func_data_on_device = grid_func_data.get_on_device_obj();
 
   // Random number generator kernel
-  std::mt19937 rng = std::mt19937(52234126 + rank);
   std::uniform_real_distribution<REAL> uniform_dist_0(lower_bounds[0],
                                                       upper_bounds[0]);
   std::uniform_real_distribution<REAL> uniform_dist_1(lower_bounds[1],
                                                       upper_bounds[1]);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
-  auto rng_lambda_wrapper_real =
-      [&](std::uniform_real_distribution<REAL> &dist) {
-        auto rng_lambda = [&]() -> REAL {
-          REAL rng_sample = 0.0;
-          do {
-            rng_sample = dist(rng);
-          } while (rng_sample == 0.0);
-          return rng_sample;
-        };
-        return rng_lambda;
-      };
-
   auto rng_kernel0 = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_0), 1);
+      rng_lambda_wrapper_real(uniform_dist_0, rank), 1);
   auto rng_kernel1 = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_1), 1);
+      rng_lambda_wrapper_real(uniform_dist_1, rank), 1);
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
-      rng_lambda_wrapper_real(uniform_dist_2), trim_dims);
+      rng_lambda_wrapper_real(uniform_dist_2, rank), trim_ndim);
 
   particle_loop(
       particle_group,
-      [=](auto index, auto props, auto expected_value, auto trim_indices,
-          auto prop0_kernel, auto prop1_kernel, auto trim_kernel) {
-        auto trim_dims_ptr = trim_dims_arr.data();
-
+      [=](auto index, auto props, auto prop0_kernel, auto prop1_kernel,
+          auto trim_indices, auto trim_kernel, auto expected_value) {
         props.at(0) = prop0_kernel.at(index, 0);
         props.at(1) = prop1_kernel.at(index, 0);
 
-        trim_indices.at(0) = trim_kernel.at(index, 0);
-        trim_indices.at(1) = trim_kernel.at(index, 1);
-        trim_indices.at(2) = trim_kernel.at(index, 2);
+        std::array<REAL, trim_ndim> real_trim_indices = {
+            trim_kernel.at(index, 0), trim_kernel.at(index, 1),
+            trim_kernel.at(index, 2)};
 
-        std::array<REAL, trim_dims> trim_indices_part = {
-            trim_indices.at(0), trim_indices.at(1), trim_indices.at(2)};
+        trim_indices.at(0) = real_trim_indices[0];
+        trim_indices.at(1) = real_trim_indices[1];
+        trim_indices.at(2) = real_trim_indices[2];
 
-        auto normalized_trim_indices = interp_utils::normalized_to_coords(
-            trim_indices_part, trim_dims_ptr);
+        std::array<INT, trim_ndim> normalized_trim_indices =
+            interp_utils::normalized_to_coords(real_trim_indices,
+                                               trim_dims_arr);
 
-        std::array<REAL, trim_dims> result = grid_func(
-            props.at(0), props.at(1), normalized_trim_indices, trim_dims_arr);
+        auto result = grid_func(props.at(0), props.at(1),
+                                normalized_trim_indices, trim_dims_arr);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
         expected_value.at(2) = result[2];
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
-      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")),
-      Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(rng_kernel0),
-      Access::read(rng_kernel1), Access::read(trim_rng_kernel))
+      Access::read(rng_kernel0), Access::read(rng_kernel1),
+      Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
+      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
-  auto trim_extract = extract<trim_dims>("TRIM_INDICES");
+  auto trim_extract = extract<trim_ndim>("TRIM_INDICES");
 
   auto concatenator = ConcatenatorData(props_extract, trim_extract);
 
-  auto interpolator_data = InterpolateData<trim_dims, ndim, REAL, REAL,
-                                           decltype(grid_func_data), trim_dims>(
+  auto interpolator_data = InterpolateData<trim_ndim, ndim, REAL, REAL,
+                                           decltype(grid_func_data), trim_ndim>(
       dims_vec, ranges_vec, grid, particle_group->sycl_target, grid_func_data,
       ExtrapolationType::continue_linear, trim_dims_vec);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value =
-      extract<trim_dims>("EXPECTED_INTERPOLATION_VALUE");
+      extract<trim_ndim>("EXPECTED_INTERPOLATION_VALUE");
 
   auto concat_data_calc = DataCalculator(pipeline);
   auto expect_data_calc = DataCalculator(extract_expected_value);
@@ -974,11 +934,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
     EXPECT_EQ(expect_pre_req_data->index.shape[0], n_part_cell);
 
     for (int ipart = 0; ipart < n_part_cell; ipart++) {
-      for (int icomp = 0; icomp < trim_dims; icomp++) {
+      for (int icomp = 0; icomp < trim_ndim; icomp++) {
         calculated_interpolation_value =
-            calc_results_dat[(ipart * trim_dims) + icomp];
+            calc_results_dat[(ipart * trim_ndim) + icomp];
         expected_interpolation_value =
-            expect_results_dat[(ipart * trim_dims) + icomp];
+            expect_results_dat[(ipart * trim_ndim) + icomp];
 
         EXPECT_DOUBLE_EQ(calculated_interpolation_value,
                          expected_interpolation_value);

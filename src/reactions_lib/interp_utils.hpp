@@ -144,22 +144,18 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
   return points;
 }
 
-template <size_t... Is, size_t rng_ndim>
-constexpr std::array<INT, rng_ndim>
-normalized_to_coords_impl(const std::array<double, rng_ndim> &u,
-                          INT const *dims,
-                          std::index_sequence<Is...>) noexcept {
-  return {(static_cast<INT>(u[Is] * dims[Is]) < dims[Is]
-               ? static_cast<INT>(u[Is] * dims[Is])
-               : dims[Is] - 1)...};
-}
-
 template <size_t rng_ndim>
-constexpr std::array<INT, rng_ndim>
-normalized_to_coords(const std::array<double, rng_ndim> &u,
-                     INT const *dims) noexcept {
-  return normalized_to_coords_impl(u, dims,
-                                   std::make_index_sequence<rng_ndim>{});
+inline std::array<INT, rng_ndim>
+normalized_to_coords(const std::array<REAL, rng_ndim> &u,
+                     const std::array<INT, rng_ndim> &dims) {
+  std::array<INT, rng_ndim> coords{};
+
+  for (size_t i = 0; i < rng_ndim; ++i) {
+    const INT x = static_cast<INT>(u[i] * dims[i]);
+    coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
+  }
+
+  return coords;
 }
 
 /**
@@ -213,7 +209,10 @@ inline void initial_func_eval_on_device(
     }
 
     grid_func_input[0] = coeff_index_on_device(vertex_coord, dims_vec, ndim);
-    auto trim_int_indices = normalized_to_coords(trim_indices, trim_dims);
+    std::array<INT, rng_ndim> trim_dims_arr;
+    for (int i = 0; i < rng_ndim; i++)
+      trim_dims_arr[i] = trim_dims[i];
+    auto trim_int_indices = normalized_to_coords(trim_indices, trim_dims_arr);
     for (int i = 0; i < rng_ndim; i++) {
       grid_func_input[1 + i] = trim_int_indices[i];
     }

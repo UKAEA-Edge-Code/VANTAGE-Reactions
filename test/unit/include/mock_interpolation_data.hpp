@@ -79,7 +79,7 @@ public:
 };
 
 struct TrimEval : public ReactionDataBase<TrimEvalOnDevice> {
-  TrimEval(const std::vector<REAL> &grid, const std::vector<INT> trim_dims,
+  TrimEval(const std::vector<REAL> &grid, const std::vector<INT> &trim_dims,
            SYCLTargetSharedPtr sycl_target) {
     this->on_device_obj = TrimEvalOnDevice();
 
@@ -243,20 +243,20 @@ public:
 
 struct trim_coefficient_values : abstract_coefficient_values {
 private:
-  const int ndim = 2;
-  const int trim_dims = 3;
+  static constexpr int ndim = 2;
+  static constexpr int trim_ndim = 3;
 
-  static const int dim0 = 100;
-  const int dim1 = 70;
+  static constexpr int dim0 = 100;
+  static constexpr int dim1 = 70;
 
-  static const int trim_dim0 = 5;
-  static const int trim_dim1 = 5;
-  static const int trim_dim2 = 5;
+  static constexpr int trim_dim0 = 5;
+  static constexpr int trim_dim1 = 5;
+  static constexpr int trim_dim2 = 5;
 
-  std::vector<INT> trim_dims_vec = {trim_dim0, trim_dim1, trim_dim2};
+  static inline std::vector<INT> trim_dims_vec{trim_dim0, trim_dim1, trim_dim2};
 
   // generated using: numpy.logspace(0, numpy.log10(5e3), 100)
-  std::vector<REAL> dim0_range = {
+  const std::vector<REAL> dim0_range = {
       1.00000000e+00, 1.08984148e+00, 1.18775445e+00, 1.29446407e+00,
       1.41076064e+00, 1.53750546e+00, 1.67563723e+00, 1.82617896e+00,
       1.99024558e+00, 2.16905218e+00, 2.36392304e+00, 2.57630139e+00,
@@ -285,7 +285,7 @@ private:
 
   // generated using: 90.0 - numpy.logspace(numpy.log10(90.0),
   // numpy.log10(90.0 - 8.5e1), 70) just replace the first element to 0.0;
-  std::vector<REAL> dim1_range = {
+  const std::vector<REAL> dim1_range = {
       0.00000000e+00, 3.69217858e+00, 7.23288847e+00, 1.06283435e+01,
       1.38845028e+01, 1.70070806e+01, 2.00015572e+01, 2.28731878e+01,
       2.56270120e+01, 2.82678627e+01, 3.08003747e+01, 3.32289923e+01,
@@ -305,8 +305,8 @@ private:
       8.38350185e+01, 8.40879319e+01, 8.43304698e+01, 8.45630578e+01,
       8.47861041e+01, 8.50000000e+01};
 
-  static constexpr auto trim_grid_func_0 = [](const REAL &dim0_val,
-                                              const REAL &dim1_val) {
+  static inline auto trim_grid_func_0 = [](const REAL &dim0_val,
+                                           const REAL &dim1_val) {
     std::array<REAL, trim_dim0> result;
     for (int idim = 0; idim < trim_dim0; idim++) {
       result[idim] = idim * dim0_val * dim1_val;
@@ -314,37 +314,38 @@ private:
     return result;
   };
 
-  static constexpr auto trim_grid_func_1 = [](const REAL &dim0_val,
-                                              const REAL &dim1_val) {
+  static inline auto trim_grid_func_1 = [](const REAL &dim0_val,
+                                           const REAL &dim1_val) {
     std::array<REAL, trim_dim0 * trim_dim1> result;
+    INT counter = 0;
     for (int idim = 0; idim < trim_dim0; idim++) {
       for (int jdim = 0; jdim < trim_dim1; jdim++) {
-        result[(idim * trim_dim1) + jdim] =
-            ((idim * trim_dim1) + jdim) * (dim0_val * dim1_val);
+        result[counter] = counter * (dim0_val * dim1_val);
+        counter++;
       }
     }
     return result;
   };
 
-  static constexpr auto trim_grid_func_2 = [](const REAL &dim0_val,
-                                              const REAL &dim1_val) {
+  static inline auto trim_grid_func_2 = [](const REAL &dim0_val,
+                                           const REAL &dim1_val) {
     std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2> result;
+    INT counter = 0;
     for (int idim = 0; idim < trim_dim0; idim++) {
       for (int jdim = 0; jdim < trim_dim1; jdim++) {
         for (int kdim = 0; kdim < trim_dim2; kdim++) {
-          result[(idim * trim_dim2 * trim_dim1) + (jdim * trim_dim2) + kdim] =
-              ((idim * trim_dim2 * trim_dim1) + (jdim * trim_dim2) + kdim) *
-              (dim0_val * dim1_val);
+          result[counter] = counter * (dim0_val * dim1_val);
+          counter++;
         }
       }
     }
     return result;
   };
 
-  static constexpr auto trim_grid_func_lambda =
+  static inline auto trim_grid_func_lambda =
       [](const REAL &dim0_val, const REAL &dim1_val,
-         const std::array<INT, 3> &trim_indices,
-         const std::array<INT, 3> &trim_dims) {
+         const std::array<INT, trim_ndim> &trim_indices,
+         const std::array<INT, trim_ndim> &trim_dims) {
         auto trim_vals_trim_dim0 =
             trim_grid_func_0(dim0_val, dim1_val)[trim_indices[0]];
 
@@ -357,8 +358,8 @@ private:
             dim1_val)[(trim_indices[0] * (trim_dims[2] * trim_dims[1])) +
                       (trim_indices[1] * trim_dims[2]) + trim_indices[2]];
 
-        return std::array<REAL, 3>{trim_vals_trim_dim0, trim_vals_trim_dim1,
-                                   trim_vals_trim_dim2};
+        return std::array<REAL, trim_ndim>{
+            trim_vals_trim_dim0, trim_vals_trim_dim1, trim_vals_trim_dim2};
       };
 
   utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
