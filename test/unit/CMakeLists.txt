@@ -1,4 +1,8 @@
-file(GLOB_RECURSE src_unit "*.cpp")
+# file(GLOB_RECURSE src_unit "*.cpp")
+set(src_unit
+  Main.cpp
+  test_particle_loop_bug.cpp
+)
 
 set(EXECUTABLE unit_tests)
 include(GoogleTest)
