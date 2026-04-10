@@ -162,12 +162,12 @@ template <size_t sub_index_ndim>
 inline std::array<INT, sub_index_ndim>
 normalized_to_coords(const std::array<REAL, sub_index_ndim> &u,
                      const std::array<INT, sub_index_ndim> &dims) {
-  // for (size_t i = 0; i < sub_index_ndim; i++) {
-  //   NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
-  //              "Input array, u, must have values between 0.0 and "
-  //              "1.0.");
-  //   NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
-  // }
+  for (size_t i = 0; i < sub_index_ndim; i++) {
+    NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
+               "Input array, u, must have values between 0.0 and "
+               "1.0.");
+    NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
+  }
 
   std::array<INT, sub_index_ndim> coords{};
 
