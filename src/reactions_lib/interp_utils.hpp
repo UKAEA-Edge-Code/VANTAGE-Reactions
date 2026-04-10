@@ -1,12 +1,14 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
 #include <neso_particles.hpp>
+#include <neso_particles/loop/particle_loop_index.hpp>
+#include <neso_particles/typedefs.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions::interp_utils {
 /**
- * Helper macro that extracts the value of the binary representation of i at
+ * Helper function that extracts the value of the binary representation of i at
  * position j (in the binary representation of i).
  */
 template <typename T> inline T binary_extract(const T &i, const size_t &j) {
@@ -144,14 +146,54 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
 }
 
 /**
+ * @brief Function to convert REAL-valued (between 0.0 and 1.0) elements of an
+ * input array, u, into INT-valued indices that lie between 0 and an upper limit
+ * defined by the elements of dims. For example with u = {0.1, 0.7, 0.3} and
+ * dims = {4, 6, 9} the output coords would be: {0, 4, 2}
+ *
+ * @tparam sub_index_ndim The size of the u array, the dims array and the output
+ * from the function.
+ * @param u REAL-valued array of size sub_index_ndim that contains the values
+ * (between 0.0 and 1.0) that are to be converted to indices.
+ * @param dims INT-valued array of size sub_index_ndim that contains values that
+ * define the upper limits for the results.
+ */
+template <size_t sub_index_ndim>
+inline std::array<INT, sub_index_ndim>
+normalized_to_coords(const std::array<REAL, sub_index_ndim> &u,
+                     const std::array<INT, sub_index_ndim> &dims) {
+  for (size_t i = 0; i < sub_index_ndim; i++) {
+    NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
+               "Input array, u, must have values between 0.0 and "
+               "1.0.");
+    NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
+  }
+
+  std::array<INT, sub_index_ndim> coords{};
+
+  for (size_t i = 0; i < sub_index_ndim; ++i) {
+    const INT x = static_cast<INT>(u[i] * dims[i]);
+    coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
+  }
+
+  return coords;
+}
+
+/**
  * Function to calculate the initial function values on the vertices of the
  * hypercube.
  *
+ * @tparam DATATYPE ReactionDataBaseOnDevice derived type corresponding to the
+ * grid-function evaluation reaction data.
+ * @tparam output_ndim Number of dimensions of the output of the grid-function
+ * evaluation.
+ * @tparam sub_index_ndim Number of sub-index dimensions.
  * @param vertex_func_evals Pointer to a vector to fill
  * with function evaluations.
  * @param vertex_coord Pointer to a vector to fill with
  * locations of the vertices of the hypercube.
- * @param func_grid Pointer to a contiguous array containing the ND grid data.
+ * @param grid_func_data DATATYPE object that defines the grid-function
+ * evaluation.
  * @param hypercube_vertices Pointer to a vector containing the vertices of the
  * hypercube (integers whose binary representations give the normalised
  * positions of the vertices).
@@ -163,19 +205,73 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * @param ndim The number of dimensions.
  * @param num_points The number of vertices needed for the hypercube
  * representation
+ * @param sub_indices Pointer to an array containing the sub-indices that are
+ * needed for grid-function evaluation (eg. for TRIM data).
+ * @param sub_dims Pointer to an array containing the size of the dimensions for
+ * each sub-index.
+ * @param index Read-only accessor to a loop index for a ParticleLoop
+ * inside which calc_data is called. Access using either
+ * index.get_loop_linear_index(), index.get_local_linear_index(),
+ * index.get_sub_linear_index() as required.
+ * @param req_int_props Vector of symbols for integer-valued properties that
+ * need to be used for the reaction data calculation.
+ * @param req_real_props Vector of symbols for real-valued properties that
+ * need to be used for the reaction data calculation.
+ * @param rng_kernel The random number generator kernel potentially used in
+ * the calculation
  */
+
+template <typename DATATYPE, int output_ndim, int sub_index_ndim>
 inline void initial_func_eval_on_device(
-    REAL *vertex_func_evals, INT *vertex_coord, REAL const *func_grid,
+    REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
     INT const *hypercube_vertices, INT const *origin_indices,
-    size_t const *dims_vec, const int &ndim, const int &num_points) {
+    size_t const *dims_vec, const int &ndim, const int &num_points,
+    REAL const *sub_indices, INT const *sub_dims,
+    const Access::LoopIndex::Read &index,
+    const Access::SymVector::Write<INT> &req_int_props,
+    const Access::SymVector::Read<REAL> &req_real_props,
+    typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
+        KernelType &rng_kernel) {
+
+  std::array<REAL, output_ndim> grid_func_output;
+  for (size_t idim = 0; idim < output_ndim; idim++)
+    grid_func_output[idim] = 0.0;
+
+  std::array<INT, 1 + sub_index_ndim> grid_func_input;
+  for (int idim = 0; idim < (1 + sub_index_ndim); idim++) {
+    grid_func_input[idim] = 0;
+  }
+
   for (size_t point_index = 0; point_index < num_points; point_index++) {
     for (size_t vertex_index = 0; vertex_index < ndim; vertex_index++) {
       vertex_coord[vertex_index] =
           origin_indices[vertex_index] +
           binary_extract(hypercube_vertices[point_index], vertex_index);
     }
-    vertex_func_evals[point_index] =
-        func_grid[coeff_index_on_device(vertex_coord, dims_vec, ndim)];
+
+    grid_func_input[0] = coeff_index_on_device(vertex_coord, dims_vec, ndim);
+
+    std::array<REAL, sub_index_ndim> sub_indices_arr;
+    std::array<INT, sub_index_ndim> sub_dims_arr;
+    for (int i = 0; i < sub_index_ndim; i++) {
+      sub_indices_arr[i] = sub_indices[i];
+      sub_dims_arr[i] = sub_dims[i];
+    }
+
+    auto sub_int_indices = normalized_to_coords(sub_indices_arr, sub_dims_arr);
+
+    for (int i = 0; i < sub_index_ndim; i++) {
+      grid_func_input[1 + i] = sub_int_indices[i];
+    }
+
+    grid_func_output =
+        grid_func_data.calc_data(grid_func_input, index, req_int_props,
+                                 req_real_props, rng_kernel.template get<0>());
+
+    for (size_t idim = 0; idim < output_ndim; idim++) {
+      vertex_func_evals[(point_index * output_ndim) + idim] =
+          grid_func_output[idim];
+    }
   }
 }
 
@@ -183,6 +279,7 @@ inline void initial_func_eval_on_device(
  * @brief Function to contract a hypercube down by 1 dimension via linear
  * interpolation.
  *
+ * @tparam output_ndim Number of output dimensions of output_evals.
  * @param interp_points Pointer to a vector that contains
  * the interpolation points in each dimension.
  * @param dim_index Since this function is called multiple times, this counter
@@ -208,7 +305,7 @@ inline void initial_func_eval_on_device(
  * storing the vertices of the hypercube after they've been mapped to the actual
  * region in the dimensions of the grid that are of interest.
  */
-
+template <int output_ndim>
 inline void contract_hypercube_on_device(
     const REAL *interp_points, const size_t &dim_index,
     INT const *hypercube_vertices, const INT *origin_indices,
@@ -240,11 +337,15 @@ inline void contract_hypercube_on_device(
     range_val_1 = // x1
         ranges_vec[range_index_on_device(vertex_1, dim_index, dims_vec)];
 
-    eval_point_0 = vertex_func_evals[i];                    // f0
-    eval_point_1 = vertex_func_evals[num_points - (i + 1)]; // f1
+    for (size_t idim = 0; idim < output_ndim; idim++) {
+      eval_point_0 = vertex_func_evals[(i * output_ndim) + idim]; // f0
+      eval_point_1 = vertex_func_evals[((num_points - (i + 1)) * output_ndim) +
+                                       idim]; // f1
 
-    output_evals[i] = linear_interp(interp_points[dim_index], range_val_0,
-                                    range_val_1, eval_point_0, eval_point_1);
+      output_evals[(i * output_ndim) + idim] =
+          linear_interp(interp_points[dim_index], range_val_0, range_val_1,
+                        eval_point_0, eval_point_1);
+    }
   }
 }
 

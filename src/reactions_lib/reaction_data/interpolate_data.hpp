@@ -1,15 +1,16 @@
 /**
  * The following host and device classes provide a method of interpolating
- * values on an ND grid. The algorithm used follows the method described in:
+ * values on an ND grid (represented by evaluations of a given ReactionData
+ * derived object). The algorithm used follows the method described in:
  * https://www.nas.nasa.gov/assets/nas/pdf/staff/Murman_S_apnum_jun13.pdf
  *
  * In short, the algorithm finds where the interpolation points lie in the
  * discretized ND space that the grid is defined on. It then proceeds to
- * construct a hypercube around the interpolation points. The grid values at
- * each vertex of the hypercube are retrieved. With the vertex positions and
- * grid points, a recursive contraction of the hypercube, 1 dimension at a time,
- * is performed. The final interpolated function evaluation is returned (within
- * a 1D array for compatibility with ReactionDataBaseOnDevice).
+ * construct a hypercube around the interpolation points. The grid values(which
+ * may be multi-dimensional) at each vertex of the hypercube are retrieved. With
+ * the vertex positions and grid points, a recursive contraction of the
+ * hypercube, 1 dimension at a time, is performed. The final interpolated
+ * function evaluation is returned.
  *
  * An illustrative example of contracting from 3D to 0D is shown here.
  * Each vertex is 1 index apart so if V1 is defined as an origin (0,0,0) then
@@ -74,13 +75,11 @@
  * corresponding to the dimension that's being contracted.
  */
 
-#ifndef REACTIONS_INTERPOLATE_DATA_H
-#define REACTIONS_INTERPOLATE_DATA_H
-#include "../reaction_data.hpp"
+#ifndef REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
+#define REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
+#include "reactions_lib/composite_data.hpp"
 #include "reactions_lib/interp_utils.hpp"
-#include <memory>
 #include <neso_particles.hpp>
-#include <vector>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -95,23 +94,38 @@ enum class ExtrapolationType { continue_linear, clamp_to_zero, clamp_to_edge };
 /**
  * @brief On device: ReactionData calculating an interpolated function
  * evaluation given a set of interpolation points (provided on-device by the
- * particles on a per-particle basis) and a pre-calculated grid of function
- * evaluations.
+ * particles on a per-particle basis), sub-indices (can be per-particle or
+ * pre-calculated) and a ReactionDataBaseOnDevice derived object.
  *
- * @tparam input_ndim The number of dimensions that correspond to the number of
+ * @tparam output_ndim The number of dimensions that correspond to the output of
+ * calc_data from DATATYPE.
+ * @tparam interp_ndim The number of dimensions that correspond to the number of
  * interpolation points.
+ * @tparam sub_index_ndim The number of sub-index dimensions used by calc_data
+ * from DATATYPE.
+ * @tparam DATATYPE ReactionDataBaseOnDevice derived type corresponding to the
+ * on-device grid-function evaluation reaction data object.
  */
-template <size_t input_ndim>
+template <size_t output_ndim, size_t interp_ndim, size_t sub_index_ndim,
+          typename DATATYPE>
 struct InterpolateDataOnDevice
-    : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
+    : public CompositeDataOnDevice<output_ndim, interp_ndim + sub_index_ndim,
+                                   REAL, REAL, DATATYPE> {
+
+  InterpolateDataOnDevice() = default;
   /**
    * @brief Constructor for InterpolateDataOnDevice.
    *
+   * @param interp_data ReactionDataBaseOnDevice derived object corresponding to
+   * the grid-function evaluation reaction data.
    * @param extrapolation_type The extrapolation type to fall back on if
    * interpolation is not possible for a set of points.
    */
-  InterpolateDataOnDevice(ExtrapolationType extrapolation_type =
-                              ExtrapolationType::continue_linear) {
+  InterpolateDataOnDevice(
+      DATATYPE interp_data,
+      ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
+      : CompositeDataOnDevice<output_ndim, interp_ndim + sub_index_ndim, REAL,
+                              REAL, DATATYPE>(interp_data) {
     switch (extrapolation_type) {
     case VANTAGE::Reactions::ExtrapolationType::continue_linear:
       this->continue_linear = true;
@@ -128,10 +142,12 @@ struct InterpolateDataOnDevice
   /**
    * @brief Function to calculate interpolated function evaluations.
    *
-   * @param interpolation_points An array containing the interpolation points at
-   * which a function evaluation is desired (for example the points may be
+   * @param interpolation_points An array containing the interpolation points
+   * at which a function evaluation is desired (for example the points may be
    * provided by the values of properties on a particle for which calc_data is
-   * being run).
+   * being run) for the first interp_ndim number of elements. The next
+   * sub-index_ndim number of elements correspond to sub-indices needed for
+   * grid-function evaluation (these can be per-particle or pre-calculated).
    * @param index Read-only accessor to a loop index for a ParticleLoop
    * inside which calc_data is called. Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
@@ -141,32 +157,36 @@ struct InterpolateDataOnDevice
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
-   * calculation
+   * calculation (the kernel type is inherited from the kernel type for
+   * DATATYPE)
    *
-   * @return A REAL-valued array of size 1 that contains the interpolated
-   * function evaluation at the given interpolation points.
+   * @return A REAL-valued array of size output_ndim that contains the
+   * interpolated function evaluation at the given interpolation points.
    */
-  std::array<REAL, 1> calc_data(
-      const std::array<REAL, input_ndim> &interpolation_points,
+  std::array<REAL, output_ndim> calc_data(
+      const std::array<REAL, interp_ndim + sub_index_ndim>
+          &interpolation_points,
       [[maybe_unused]] const Access::LoopIndex::Read &index,
       [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      typename ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL,
-                                        input_ndim>::RNG_KERNEL_TYPE::KernelType
-          &kernel) const {
-    // Temporary arrays for intermediate calculation (in principle will hold
-    // unique values for each particle)
-    std::array<REAL, input_ndim> mut_interpolation_points =
-        interpolation_points;
-    std::array<INT, input_ndim> origin_indices;
+      [[maybe_unused]]
+      typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
+          KernelType &kernel) const {
 
-    std::array<REAL, initial_num_points> vertex_func_evals;
+    std::array<REAL, interp_ndim> mut_interpolation_points;
+    for (int i = 0; i < interp_ndim; i++) {
+      mut_interpolation_points[i] = interpolation_points[i];
+    }
+
+    std::array<INT, interp_ndim> origin_indices;
+
+    std::array<REAL, initial_num_points * output_ndim> vertex_func_evals;
     std::array<INT, initial_num_points> vertex_coord;
 
-    std::array<REAL, initial_num_points> output_evals;
+    std::array<REAL, initial_num_points * output_ndim> output_evals;
     std::array<INT, initial_num_points> varying_dim;
 
-    for (size_t i = 0; i < input_ndim; i++) {
+    for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i] = 0;
     }
 
@@ -181,11 +201,6 @@ struct InterpolateDataOnDevice
     // Counter
     INT num_points = this->initial_num_points;
 
-    // Array of length 1 to maintain compatibility with pipelining interface for
-    // ReactionData objects.
-    std::array<REAL, 1> calculated_interpolated_vals;
-    calculated_interpolated_vals[0] = 0.0;
-
     // Calculation of the indices that will form the "origin" of the
     // hypercube. These are the smallest indices in each dimension that
     // still have coordinate values that are less than the interpolation
@@ -193,10 +208,10 @@ struct InterpolateDataOnDevice
     // every dimension).
     // Note that the actual ranges for the dimensions used in this calculation
     // are the "extended" versions which are padded with -INF_INTERP_DOUBLE
-    // below their lower bounds and +INF_INTERP_DOUBLE above their upper bounds.
-    // This is for the sake of aiding in extrapolation handling and is reset
-    // after extrapolation handling.
-    for (size_t i = 0; i < input_ndim; i++) {
+    // below their lower bounds and +INF_INTERP_DOUBLE above their upper
+    // bounds. This is for the sake of aiding in extrapolation handling and is
+    // reset after extrapolation handling.
+    for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i] = interp_utils::calc_floor_point_index(
           mut_interpolation_points[i],
           this->d_extended_ranges_vec + this->d_extended_ranges_strides[i],
@@ -213,7 +228,7 @@ struct InterpolateDataOnDevice
 
     bool out_of_range_clamp_to_zero = false;
 
-    for (size_t i = 0; i < input_ndim; i++) {
+    for (size_t i = 0; i < interp_ndim; i++) {
       above_range = (origin_indices[i] == (this->d_extended_dims_vec[i] - 2));
       below_range = (origin_indices[i] == 0);
 
@@ -237,7 +252,7 @@ struct InterpolateDataOnDevice
     // represents the penultimate element in the standard dimensional range
     // which is the last left-most index that can be selected such that the
     // linear gradient can be calculated.
-    for (size_t i = 0; i < input_ndim; i++) {
+    for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i]--;
       origin_indices[i] = Kernel::min(Kernel::max(origin_indices[i], 0),
                                       this->d_dims_vec[i] - 2);
@@ -253,46 +268,63 @@ struct InterpolateDataOnDevice
     auto output_evals_ptr = output_evals.data();
     auto varying_dim_ptr = varying_dim.data();
 
+    auto interp_data = Tuple::get<0>(this->data);
+
+    auto sub_indices_ptr = interpolation_points.data() + interp_ndim;
+
     // Initial function evaluation (ie values of the coeffs_vec) based on the
-    // origin_indices and the vertices of the hypercube.
-    interp_utils::initial_func_eval_on_device(
-        vertex_func_evals_ptr, vertex_coord_ptr, this->d_grid,
+    // origin_indices and the vertices of the hypercube and any data needed for
+    // DATATYPE.calc_data(...).
+    interp_utils::initial_func_eval_on_device<decltype(interp_data),
+                                              output_ndim, sub_index_ndim>(
+        vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
         this->d_hypercube_vertices, origin_indices_ptr, this->d_dims_vec,
-        input_ndim, num_points);
+        interp_ndim, num_points, sub_indices_ptr, this->d_sub_index_dims, index,
+        req_int_props, req_real_props, kernel);
+
+    std::array<REAL, output_ndim> calculated_interpolated_vals;
+    for (int i = 0; i < output_ndim; i++) {
+      calculated_interpolated_vals[i] = 0.0;
+    }
 
     // Loop until the last dimension (down to 0D)
     // Note that despite the dim_index = input_ndim assignment, the loop
-    // actually starts at dim_index = (input_ndim - 1) , as desired, due to the
-    // decrement and store during the first check against 0.
-    for (size_t dim_index = input_ndim; dim_index-- > 0;) {
+    // actually starts at dim_index = (input_ndim - 1) , as desired, due to
+    // the decrement and store during the first check against 0.
+    for (size_t dim_index = interp_ndim; dim_index-- > 0;) {
 
       // Contract the hypercube vertices and evaluations by performing linear
       // interpolation on the current dimension (denoted by dim_index). The
       // contraction is expressed by the reduction in the length of the
       // output_evals (ie. for 3D to 2D, the vertex_func_evals would be of
       // length 8 and output_evals would be of length 4).
-      interp_utils::contract_hypercube_on_device(
+      interp_utils::contract_hypercube_on_device<output_ndim>(
           mut_interpolation_points_ptr, dim_index, this->d_hypercube_vertices,
           origin_indices_ptr, vertex_func_evals_ptr, this->d_ranges_vec,
           this->d_dims_vec, output_evals_ptr, varying_dim_ptr,
           vertex_coord_ptr);
 
-      // This now accounts for the smaller size of output_evals, and makes sure
-      // that any loops in future contract_hypercube(...) invocations remain
-      // consistent.
+      // This now accounts for the smaller size of output_evals, and makes
+      // sure that any loops in future contract_hypercube(...) invocations
+      // remain consistent.
       num_points = num_points >> 1;
 
       // Reset vertex_func_evals for the next contraction
       for (int i = 0; i < num_points; i++) {
-        vertex_func_evals[i] = output_evals[i];
+        for (int idim = 0; idim < output_ndim; idim++) {
+          vertex_func_evals[(i * output_ndim) + idim] =
+              output_evals[(i * output_ndim) + idim];
+        }
       }
     }
 
-    // Return either 0 or vertex_func_evals[0] depending on the
+    // Return either 0 or vertex_func_evals[idim] depending on the
     // out_of_range_clamp_to_zero boolean value.
-    calculated_interpolated_vals[0] = out_of_range_clamp_to_zero
-                                          ? calculated_interpolated_vals[0]
-                                          : vertex_func_evals[0];
+    for (int idim = 0; idim < output_ndim; idim++) {
+      calculated_interpolated_vals[idim] =
+          out_of_range_clamp_to_zero ? calculated_interpolated_vals[idim]
+                                     : vertex_func_evals[idim];
+    }
 
     return calculated_interpolated_vals;
   }
@@ -301,13 +333,13 @@ public:
   INT const *d_hypercube_vertices;
   size_t const *d_dims_vec;
   REAL const *d_ranges_vec;
-  REAL const *d_grid;
   REAL const *d_extended_ranges_vec;
   size_t const *d_extended_dims_vec;
   size_t const *d_ranges_strides;
   size_t const *d_extended_ranges_strides;
+  INT const *d_sub_index_dims;
 
-  static constexpr INT initial_num_points = 1 << input_ndim;
+  static constexpr INT initial_num_points = 1 << interp_ndim;
 
   bool continue_linear = false;
   bool clamp_to_zero = false;
@@ -317,16 +349,26 @@ public:
 /**
  * @brief ReactionData calculating an interpolated function evaluation given a
  * set of interpolation points (provided on-device by the particles on a
- * per-particle basis) and a pre-calculated grid of function evaluations.
+ * per-particle basis) sub-indices (can be per-particle or
+ * pre-calculated) and a ReactionDataBaseOnDevice derived object.
  *
- * @tparam input_ndim The number of dimensions that correspond to the number of
+ * @tparam output_ndim The number of dimensions that correspond to the output of
+ * calc_data from DATATYPE.
+ * @tparam interp_ndim The number of dimensions that correspond to the number of
  * interpolation points.
+ * @tparam DATATYPE ReactionDataBase derived type corresponding to the
+ * grid-function evaluation reaction data object.
+ * @tparam sub_index_ndim The number of sub-index dimensions used by calc_data
+ * from DATATYPE.
  */
 
-template <size_t input_ndim>
+template <size_t output_ndim, size_t interp_ndim, typename DATATYPE,
+          size_t sub_index_ndim = 0>
 struct InterpolateData
-    : public ReactionDataBase<InterpolateDataOnDevice<input_ndim>, 1,
-                              DEFAULT_RNG_KERNEL, input_ndim> {
+    : public CompositeData<
+          InterpolateDataOnDevice<output_ndim, interp_ndim, sub_index_ndim,
+                                  typename DATATYPE::ON_DEVICE_OBJ_TYPE>,
+          output_ndim, interp_ndim + sub_index_ndim, DATATYPE> {
   /**
    * @brief Constructor for InterpolateData
    *
@@ -336,97 +378,117 @@ struct InterpolateData
    * each axis that defines the grid of pre-computed values. The values in
    * ranges_vec can be thought of as a set of concatenated arrays where each
    * segment's length within the 1D ranges_vec is defined in dims_vec.
-   * @param grid A contiguous row-major vector that contains the pre-computed
-   * function evaluations on a grid of input_ndim dimensions. The flattening of
-   * this data follows the standard C-style flattening of multi-dimensional data
-   * into a 1D array. An explanation of this flattening can be found either:
-   * https://en.wikipedia.org/wiki/Array_(data_structure)#Multidimensional_arrays
-   * or
-   * https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
    * @param sycl_target SYCL target pointer used to interface with
    * NESO-Particles routines
+   * @interp_data ReactionDataBase derived object corresponding to
+   * the grid-function evaluation reaction data object.
    * @param extrapolation_type The extrapolation type to fall back on if
-   * interpolation is not possible for a set of points. Either continue_linear,
-   * clamp_to_zero or clamp_to_edge.
+   * interpolation is not possible for a set of points. Either
+   * continue_linear, clamp_to_zero or clamp_to_edge.
+   * @param sub_index_dims_vec A vector that contains values that defines the
+   * size of the dimensions for each sub-index.
    */
-  InterpolateData(
-      const std::vector<size_t> &dims_vec, const std::vector<REAL> &ranges_vec,
-      const std::vector<REAL> &grid, SYCLTargetSharedPtr sycl_target,
-      ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
-      : ReactionDataBase<InterpolateDataOnDevice<input_ndim>, 1,
-                         DEFAULT_RNG_KERNEL, input_ndim>() {
+  InterpolateData(const std::vector<size_t> &dims_vec,
+                  const std::vector<REAL> &ranges_vec,
+                  SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
+                  const ExtrapolationType &extrapolation_type =
+                      ExtrapolationType::continue_linear,
+                  const std::vector<INT> &sub_index_dims_vec = {})
+      : CompositeData<
+            InterpolateDataOnDevice<output_ndim, interp_ndim, sub_index_ndim,
+                                    typename DATATYPE::ON_DEVICE_OBJ_TYPE>,
+            output_ndim, interp_ndim + sub_index_ndim, DATATYPE>(interp_data),
+        dims_vec(dims_vec), ranges_vec(ranges_vec),
+        sub_index_dims_vec(sub_index_dims_vec), sycl_target(sycl_target),
+        extrapolation_type(extrapolation_type) {
+    this->post_init();
+    NESOASSERT(sub_index_dims_vec.size() == sub_index_ndim,
+               "Ensure that the number of elements in the sub_index_dims_vec "
+               "argument matches the sub_index_ndim template parameter.");
+  };
 
+  void index_on_device_object() override {
     /**
      * A series of vertices of an N-Dimensional
-     * hypercube are constructed here. Note that the hypercube vertices produced
-     * don't actually have any direct mapping onto the values of the dimensions
-     * of the grid (ie. the x-values or y-values), rather it can be thought of
-     * as a stencil to be used with the origin_indices array that's calculated
-     * in InterpolateDataOnDevice.calc_data. More details on the
+     * hypercube are constructed here. Note that the hypercube vertices
+     * produced don't actually have any direct mapping onto the values of the
+     * dimensions of the grid (ie. the x-values or y-values), rather it can be
+     * thought of as a stencil to be used with the origin_indices array that's
+     * calculated in InterpolateDataOnDevice.calc_data. More details on the
      * construct_initial_hypercube can be found in the docstring in
      * interp_utils.hpp.
      */
     auto initial_hypercube =
-        interp_utils::construct_initial_hypercube(input_ndim);
+        interp_utils::construct_initial_hypercube(interp_ndim);
 
     this->on_device_obj =
-        InterpolateDataOnDevice<input_ndim>(extrapolation_type);
+        InterpolateDataOnDevice<output_ndim, interp_ndim, sub_index_ndim,
+                                typename DATATYPE::ON_DEVICE_OBJ_TYPE>(
+            std::get<0>(this->data).get_on_device_obj(),
+            this->extrapolation_type);
 
     // BufferDevice<REAL> mock setup
-    this->h_dims_vec =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
+    this->h_dims_vec = std::make_shared<BufferDevice<size_t>>(this->sycl_target,
+                                                              this->dims_vec);
     this->on_device_obj->d_dims_vec = this->h_dims_vec->ptr;
 
-    std::vector<size_t> ranges_strides(input_ndim);
-    std::vector<size_t> extended_dims_vec(input_ndim);
-    std::vector<size_t> extended_ranges_strides(input_ndim);
-    for (size_t idim = 0; idim < input_ndim; idim++) {
-      extended_dims_vec[idim] = dims_vec[idim] + 2;
+    std::vector<size_t> ranges_strides(interp_ndim);
+    std::vector<size_t> extended_dims_vec(interp_ndim);
+    std::vector<size_t> extended_ranges_strides(interp_ndim);
+    for (size_t idim = 0; idim < interp_ndim; idim++) {
+      extended_dims_vec[idim] = this->dims_vec[idim] + 2;
       for (size_t j = 0; j < idim; j++) {
-        ranges_strides[idim] += dims_vec[j];
+        ranges_strides[idim] += this->dims_vec[j];
         extended_ranges_strides[idim] += extended_dims_vec[j];
       }
     }
 
     std::vector<REAL> extended_ranges_vec;
-    for (size_t idim = 0; idim < input_ndim; idim++) {
+    for (size_t idim = 0; idim < interp_ndim; idim++) {
       extended_ranges_vec.push_back(-INF_INTERP_DOUBLE);
-      for (size_t irange = 0; irange < dims_vec[idim]; irange++) {
+      for (size_t irange = 0; irange < this->dims_vec[idim]; irange++) {
         extended_ranges_vec.push_back(
             ranges_vec[irange + ranges_strides[idim]]);
       }
       extended_ranges_vec.push_back(INF_INTERP_DOUBLE);
     }
 
-    this->h_extended_ranges_vec =
-        std::make_shared<BufferDevice<REAL>>(sycl_target, extended_ranges_vec);
+    this->h_extended_ranges_vec = std::make_shared<BufferDevice<REAL>>(
+        this->sycl_target, extended_ranges_vec);
     this->on_device_obj->d_extended_ranges_vec =
         this->h_extended_ranges_vec->ptr;
 
-    this->h_extended_dims_vec =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, extended_dims_vec);
+    this->h_extended_dims_vec = std::make_shared<BufferDevice<size_t>>(
+        this->sycl_target, extended_dims_vec);
     this->on_device_obj->d_extended_dims_vec = this->h_extended_dims_vec->ptr;
 
-    this->h_ranges_vec =
-        std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
+    this->h_ranges_vec = std::make_shared<BufferDevice<REAL>>(this->sycl_target,
+                                                              this->ranges_vec);
     this->on_device_obj->d_ranges_vec = this->h_ranges_vec->ptr;
 
-    this->h_ranges_strides =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, ranges_strides);
+    this->h_ranges_strides = std::make_shared<BufferDevice<size_t>>(
+        this->sycl_target, ranges_strides);
     this->on_device_obj->d_ranges_strides = this->h_ranges_strides->ptr;
 
     this->h_extended_ranges_strides = std::make_shared<BufferDevice<size_t>>(
-        sycl_target, extended_ranges_strides);
+        this->sycl_target, extended_ranges_strides);
     this->on_device_obj->d_extended_ranges_strides =
         this->h_extended_ranges_strides->ptr;
 
-    this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
-    this->on_device_obj->d_grid = this->h_grid->ptr;
-
-    this->h_hypercube_vertices =
-        std::make_shared<BufferDevice<INT>>(sycl_target, initial_hypercube);
+    this->h_hypercube_vertices = std::make_shared<BufferDevice<INT>>(
+        this->sycl_target, initial_hypercube);
     this->on_device_obj->d_hypercube_vertices = this->h_hypercube_vertices->ptr;
-  };
+
+    this->h_sub_index_dims = std::make_shared<BufferDevice<INT>>(
+        this->sycl_target, this->sub_index_dims_vec);
+    this->on_device_obj->d_sub_index_dims = this->h_sub_index_dims->ptr;
+  }
+
+  SYCLTargetSharedPtr sycl_target;
+  std::vector<size_t> dims_vec;
+  std::vector<REAL> ranges_vec;
+  std::vector<INT> sub_index_dims_vec;
+  ExtrapolationType extrapolation_type;
 
   std::shared_ptr<BufferDevice<size_t>> h_dims_vec;
   std::shared_ptr<BufferDevice<REAL>> h_ranges_vec;
@@ -434,8 +496,8 @@ struct InterpolateData
   std::shared_ptr<BufferDevice<size_t>> h_extended_dims_vec;
   std::shared_ptr<BufferDevice<size_t>> h_ranges_strides;
   std::shared_ptr<BufferDevice<size_t>> h_extended_ranges_strides;
-  std::shared_ptr<BufferDevice<REAL>> h_grid;
   std::shared_ptr<BufferDevice<INT>> h_hypercube_vertices;
+  std::shared_ptr<BufferDevice<INT>> h_sub_index_dims;
 };
 }; // namespace VANTAGE::Reactions
 #endif
