@@ -110,8 +110,8 @@ inline size_t calc_floor_point_index(const REAL &x_interp,
  *
  * @return REAL value of the linearly interpolated function value at x_interp.
  */
-inline REAL linear_interp(const REAL x_interp, const REAL x0, const REAL x1,
-                          const REAL f0, const REAL f1) {
+inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
+                          const REAL &f0, const REAL &f1) {
   // The excessive splitting of operations is due to a failed unit tests on
   // cudallvm compilationflow when using variables whose definitions combine
   // multiple operations.
@@ -165,14 +165,14 @@ template <size_t sub_index_ndim>
 inline std::array<INT, sub_index_ndim>
 bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
                         const std::array<INT, sub_index_ndim> &dims) {
-  for (size_t i = 0; i < sub_index_ndim; i++) {
-    NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
-               "Input array, u, must have values between 0.0 and "
-               "1.0.");
-    NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
-  }
+  // for (size_t i = 0; i < sub_index_ndim; i++) {
+  //   NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
+  //              "Input array, u, must have values between 0.0 and "
+  //              "1.0.");
+  //   NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
+  // }
 
-  std::array<INT, sub_index_ndim> coords{};
+  std::array<INT, sub_index_ndim> coords;
 
   INT x = 0;
   for (size_t i = 0; i < sub_index_ndim; ++i) {
@@ -334,8 +334,11 @@ inline void contract_hypercube_on_device(
   REAL range_val_0, range_val_1, eval_point_0, eval_point_1;
 
   for (size_t i = 0; i < num_out_points; i++) {
-    vertex_0 = varying_dim[i];
-    vertex_1 = varying_dim[num_points - (i + 1)];
+    INT index_0 = i;
+    INT index_1 = num_points - (i + 1);
+
+    vertex_0 = varying_dim[index_0];
+    vertex_1 = varying_dim[index_1];
 
     range_val_0 = // x0
         ranges_vec[range_index_on_device(vertex_0, dim_index, dims_vec)];
@@ -343,11 +346,10 @@ inline void contract_hypercube_on_device(
         ranges_vec[range_index_on_device(vertex_1, dim_index, dims_vec)];
 
     for (size_t idim = 0; idim < output_ndim; idim++) {
-      eval_point_0 = vertex_func_evals[(i * output_ndim) + idim]; // f0
-      eval_point_1 = vertex_func_evals[((num_points - (i + 1)) * output_ndim) +
-                                       idim]; // f1
+      eval_point_0 = vertex_func_evals[(index_0 * output_ndim) + idim]; // f0
+      eval_point_1 = vertex_func_evals[(index_1 * output_ndim) + idim]; // f1
 
-      output_evals[(i * output_ndim) + idim] =
+      output_evals[(index_0 * output_ndim) + idim] =
           linear_interp(interp_points[dim_index], range_val_0, range_val_1,
                         eval_point_0, eval_point_1);
     }

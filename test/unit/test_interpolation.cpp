@@ -1,7 +1,10 @@
+#include "include/mock_debug_particle_group.hpp"
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
 #include "include/test_vantage_reactions_utils.hpp"
 #include <gtest/gtest.h>
+#include <memory>
+#include <neso_particles/device_buffers.hpp>
 #include <random>
 
 #define INTERPOLATION_TOLERANCE 1e-14
@@ -612,6 +615,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
     dims_arr[i] = dims_vec[i];
   }
 
+  auto h_ranges_arr = std::make_shared<BufferDevice<REAL>>(
+      particle_group->sycl_target, ranges_vec);
+  auto d_ranges_arr = h_ranges_arr->ptr;
+
   std::array<INT, trim_ndim> trim_dims_arr;
   for (int i = 0; i < trim_ndim; i++) {
     trim_dims_arr[i] = trim_dims_vec[i];
@@ -639,8 +646,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
         auto indices = std::array<INT, ndim>{index0, index1};
 
-        props.at(0) = ranges_vec[index0];
-        props.at(1) = ranges_vec[dims_arr[0] + index1];
+        props.at(0) = d_ranges_arr[index0];
+        props.at(1) = d_ranges_arr[dims_arr[0] + index1];
 
         auto current_count = index.get_loop_linear_index();
 
