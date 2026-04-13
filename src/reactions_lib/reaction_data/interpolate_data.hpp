@@ -288,8 +288,8 @@ struct InterpolateDataOnDevice
     }
 
     // Loop until the last dimension (down to 0D)
-    // Note that despite the dim_index = input_ndim assignment, the loop
-    // actually starts at dim_index = (input_ndim - 1) , as desired, due to
+    // Note that despite the dim_index = interp_ndim assignment, the loop
+    // actually starts at dim_index = (interp_ndim - 1) , as desired, due to
     // the decrement and store during the first check against 0.
     for (size_t dim_index = interp_ndim; dim_index-- > 0;) {
 

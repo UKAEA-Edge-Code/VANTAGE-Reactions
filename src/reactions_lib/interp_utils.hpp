@@ -1,5 +1,6 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
+#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <neso_particles.hpp>
 #include <neso_particles/loop/particle_loop_index.hpp>
 #include <neso_particles/typedefs.hpp>
@@ -146,7 +147,7 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
 }
 
 /**
- * @brief Function to convert REAL-valued (between 0.0 and 1.0) elements of an
+ * @brief Function to bin REAL-valued (between 0.0 and 1.0) elements of an
  * input array, u, into INT-valued indices that lie between 0 and an upper limit
  * defined by the elements of dims. For example with u = {0.1, 0.7, 0.3} and
  * dims = {4, 6, 9} the output coords would be: {0, 4, 2}
@@ -157,11 +158,13 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * (between 0.0 and 1.0) that are to be converted to indices.
  * @param dims INT-valued array of size sub_index_ndim that contains values that
  * define the upper limits for the results.
+ * @return An INT-valued array of size sub_index_ndim that contains required
+ * sub-indices.
  */
 template <size_t sub_index_ndim>
 inline std::array<INT, sub_index_ndim>
-normalized_to_coords(const std::array<REAL, sub_index_ndim> &u,
-                     const std::array<INT, sub_index_ndim> &dims) {
+bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
+                        const std::array<INT, sub_index_ndim> &dims) {
   for (size_t i = 0; i < sub_index_ndim; i++) {
     NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
                "Input array, u, must have values between 0.0 and "
@@ -171,8 +174,9 @@ normalized_to_coords(const std::array<REAL, sub_index_ndim> &u,
 
   std::array<INT, sub_index_ndim> coords{};
 
+  INT x = 0;
   for (size_t i = 0; i < sub_index_ndim; ++i) {
-    const INT x = static_cast<INT>(u[i] * dims[i]);
+    x = static_cast<INT>(sycl::floor(u[i] * dims[i]));
     coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
   }
 
@@ -258,7 +262,8 @@ inline void initial_func_eval_on_device(
       sub_dims_arr[i] = sub_dims[i];
     }
 
-    auto sub_int_indices = normalized_to_coords(sub_indices_arr, sub_dims_arr);
+    auto sub_int_indices =
+        bin_uniform_sub_indices(sub_indices_arr, sub_dims_arr);
 
     for (int i = 0; i < sub_index_ndim; i++) {
       grid_func_input[1 + i] = sub_int_indices[i];
