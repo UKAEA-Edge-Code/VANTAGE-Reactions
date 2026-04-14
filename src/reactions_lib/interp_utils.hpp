@@ -2,6 +2,7 @@
 #define REACTIONS_INTERP_UTILS_H
 #include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <neso_particles.hpp>
+#include <neso_particles/error_propagate.hpp>
 #include <neso_particles/loop/particle_loop_index.hpp>
 #include <neso_particles/typedefs.hpp>
 #include <vector>
@@ -164,13 +165,12 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
 template <size_t sub_index_ndim>
 inline std::array<INT, sub_index_ndim>
 bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
-                        const std::array<INT, sub_index_ndim> &dims) {
-  // for (size_t i = 0; i < sub_index_ndim; i++) {
-  //   NESOASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)),
-  //              "Input array, u, must have values between 0.0 and "
-  //              "1.0.");
-  //   NESOASSERT(dims[i] > 0, "Dims array must have values more than 0.");
-  // }
+                        const std::array<INT, sub_index_ndim> &dims,
+                        int *error_propagate_ptr) {
+  for (size_t i = 0; i < sub_index_ndim; i++) {
+    NESO_KERNEL_ASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)), error_propagate_ptr);
+    NESO_KERNEL_ASSERT(dims[i] > 0, error_propagate_ptr);
+  }
 
   std::array<INT, sub_index_ndim> coords;
 
@@ -235,7 +235,8 @@ inline void initial_func_eval_on_device(
     const Access::SymVector::Write<INT> &req_int_props,
     const Access::SymVector::Read<REAL> &req_real_props,
     typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
-        KernelType &rng_kernel) {
+        KernelType &rng_kernel,
+    int *error_propagate_ptr) {
 
   std::array<REAL, output_ndim> grid_func_output;
   for (size_t idim = 0; idim < output_ndim; idim++)
@@ -262,8 +263,8 @@ inline void initial_func_eval_on_device(
       sub_dims_arr[i] = sub_dims[i];
     }
 
-    auto sub_int_indices =
-        bin_uniform_sub_indices(sub_indices_arr, sub_dims_arr);
+    auto sub_int_indices = bin_uniform_sub_indices(
+        sub_indices_arr, sub_dims_arr, error_propagate_ptr);
 
     for (int i = 0; i < sub_index_ndim; i++) {
       grid_func_input[1 + i] = sub_int_indices[i];

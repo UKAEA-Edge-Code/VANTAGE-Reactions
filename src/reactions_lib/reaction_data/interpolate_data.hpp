@@ -80,6 +80,7 @@
 #include "reactions_lib/composite_data.hpp"
 #include "reactions_lib/interp_utils.hpp"
 #include <neso_particles.hpp>
+#include <neso_particles/error_propagate.hpp>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -280,7 +281,7 @@ struct InterpolateDataOnDevice
         vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
         this->d_hypercube_vertices, origin_indices_ptr, this->d_dims_vec,
         interp_ndim, num_points, sub_indices_ptr, this->d_sub_index_dims, index,
-        req_int_props, req_real_props, kernel);
+        req_int_props, req_real_props, kernel, d_error_propagate);
 
     std::array<REAL, output_ndim> calculated_interpolated_vals;
     for (int i = 0; i < output_ndim; i++) {
@@ -338,6 +339,7 @@ public:
   size_t const *d_ranges_strides;
   size_t const *d_extended_ranges_strides;
   INT const *d_sub_index_dims;
+  int *d_error_propagate;
 
   static constexpr INT initial_num_points = 1 << interp_ndim;
 
@@ -427,6 +429,10 @@ struct InterpolateData
             std::get<0>(this->data).get_on_device_obj(),
             this->extrapolation_type);
 
+    this->h_error_propagate = std::make_shared<ErrorPropagate>(sycl_target);
+    this->on_device_obj->d_error_propagate =
+        this->h_error_propagate->device_ptr();
+
     // BufferDevice<REAL> mock setup
     this->h_dims_vec = std::make_shared<BufferDevice<size_t>>(this->sycl_target,
                                                               this->dims_vec);
@@ -484,11 +490,15 @@ struct InterpolateData
     this->on_device_obj->d_sub_index_dims = this->h_sub_index_dims->ptr;
   }
 
+  const auto &get_error_propgate() const { return this->h_error_propagate; }
+
   SYCLTargetSharedPtr sycl_target;
   std::vector<size_t> dims_vec;
   std::vector<REAL> ranges_vec;
   std::vector<INT> sub_index_dims_vec;
   ExtrapolationType extrapolation_type;
+
+  std::shared_ptr<ErrorPropagate> h_error_propagate;
 
   std::shared_ptr<BufferDevice<size_t>> h_dims_vec;
   std::shared_ptr<BufferDevice<REAL>> h_ranges_vec;

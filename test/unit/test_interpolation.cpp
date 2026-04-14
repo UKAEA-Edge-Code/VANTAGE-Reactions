@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles/device_buffers.hpp>
+#include <neso_particles/error_propagate.hpp>
 #include <random>
 
 #define INTERPOLATION_TOLERANCE 1e-14
@@ -637,6 +638,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
+  auto test_error_propagate =
+      std::make_shared<ErrorPropagate>(particle_group->sycl_target);
+  auto d_test_error_propagate_ptr = test_error_propagate->device_ptr();
+
   particle_loop(
       particle_group,
       [=](auto index, auto props, auto prop0_kernel, auto prop1_kernel,
@@ -660,8 +665,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         trim_indices.at(2) = real_trim_indices[2];
 
         std::array<INT, trim_ndim> normalized_trim_indices =
-            interp_utils::bin_uniform_sub_indices(real_trim_indices,
-                                                  trim_dims_arr);
+            interp_utils::bin_uniform_sub_indices(
+                real_trim_indices, trim_dims_arr, d_test_error_propagate_ptr);
 
         auto result = grid_func(props.at(0), props.at(1),
                                 normalized_trim_indices, trim_dims_arr);
@@ -675,6 +680,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
       Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
       Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
+
+  test_error_propagate->check_and_throw(
+      "Error in setting up uniform sub indices for calculating expected test "
+      "results!");
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -786,6 +795,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
+  auto test_error_propagate =
+      std::make_shared<ErrorPropagate>(particle_group->sycl_target);
+  auto d_test_error_propagate_ptr = test_error_propagate->device_ptr();
+
   particle_loop(
       particle_group,
       [=](auto index, auto props, auto prop0_kernel, auto prop1_kernel,
@@ -802,8 +815,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
         trim_indices.at(2) = real_trim_indices[2];
 
         std::array<INT, trim_ndim> normalized_trim_indices =
-            interp_utils::bin_uniform_sub_indices(real_trim_indices,
-                                                  trim_dims_arr);
+            interp_utils::bin_uniform_sub_indices(
+                real_trim_indices, trim_dims_arr, d_test_error_propagate_ptr);
 
         auto result = grid_func(props.at(0), props.at(1),
                                 normalized_trim_indices, trim_dims_arr);
@@ -817,6 +830,10 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
       Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
       Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
+
+  test_error_propagate->check_and_throw(
+      "Error in setting up uniform sub indices for calculating expected test "
+      "results!");
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
