@@ -86,21 +86,21 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
     REAL sum_E = 0;
     if (left_asymptote) {
 
-	for (int i = num_l_coeffs - 1; i >= 0; i--) {
-    		sum_E = sum_E * logE + this->l_coeffs[i];
-	}
+      for (int i = num_l_coeffs - 1; i >= 0; i--) {
+        sum_E = sum_E * logE + this->l_coeffs[i];
+      }
     } else if
 
         (right_asymptote) {
 
       for (int i = num_r_coeffs - 1; i >= 0; i--) {
-	      sum_E = sum_E * logE + this->r_coeffs[i];
+        sum_E = sum_E * logE + this->r_coeffs[i];
       }
     }
 
     else {
-	    for (int i = num_coeffs - 1; i >= 0; i--) {
-		    sum_E = sum_E * logE + this->coeffs[i];
+      for (int i = num_coeffs - 1; i >= 0; i--) {
+        sum_E = sum_E * logE + this->coeffs[i];
       }
     }
     return Kernel::exp(sum_E) * 1e-4 / this->cs_norm;
