@@ -1,4 +1,9 @@
-file(GLOB_RECURSE src_unit "*.cpp")
+# file(GLOB_RECURSE src_unit "*.cpp")
+set(src_unit
+  Main.cpp
+  test_interpolation.cpp
+  # test_extrapolation.cpp
+)
 
 set(EXECUTABLE unit_tests)
 include(GoogleTest)

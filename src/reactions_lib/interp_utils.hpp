@@ -175,7 +175,7 @@ bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
   std::array<INT, sub_index_ndim> coords;
 
   INT x = 0;
-  for (size_t i = 0; i < sub_index_ndim; ++i) {
+  for (size_t i = 0; i < sub_index_ndim; i++) {
     x = static_cast<INT>(sycl::floor(u[i] * dims[i]));
     coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
   }
@@ -225,49 +225,52 @@ bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
  * the calculation
  */
 
-template <typename DATATYPE, int output_ndim, int sub_index_ndim>
+template <typename DATATYPE, int output_ndim, int interp_ndim,
+          int sub_index_ndim, int total_ndim>
 inline void initial_func_eval_on_device(
     REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
-    INT const *hypercube_vertices, INT const *origin_indices,
-    size_t const *dims_vec, const int &ndim, const int &num_points,
-    REAL const *sub_indices, INT const *sub_dims,
+    INT const *origin_indices, INT const *hypercube_vertices,
+    REAL const *ranges_vec, REAL const *non_interpolation_points,
+    const std::array<size_t, interp_ndim> &interpolation_indices,
+    const std::array<size_t, sub_index_ndim> &non_interpolation_indices,
+    size_t const *dims_vec, int *error_propagate_ptr,
     const Access::LoopIndex::Read &index,
     const Access::SymVector::Write<INT> &req_int_props,
     const Access::SymVector::Read<REAL> &req_real_props,
     typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
-        KernelType &rng_kernel,
-    int *error_propagate_ptr) {
+        KernelType &rng_kernel) {
 
   std::array<REAL, output_ndim> grid_func_output;
   for (size_t idim = 0; idim < output_ndim; idim++)
     grid_func_output[idim] = 0.0;
 
-  std::array<INT, 1 + sub_index_ndim> grid_func_input;
-  for (int idim = 0; idim < (1 + sub_index_ndim); idim++) {
-    grid_func_input[idim] = 0;
+  std::array<REAL, interp_ndim> vertex_val;
+  for (size_t i = 0; i < interp_ndim; i++) {
+    vertex_val[i] = 0.0;
   }
 
+  std::array<REAL, total_ndim> grid_func_input;
+  for (size_t i = 0; i < total_ndim; i++)
+    grid_func_input[i] = 0.0;
+
+  size_t num_points = 1 << interp_ndim;
   for (size_t point_index = 0; point_index < num_points; point_index++) {
-    for (size_t vertex_index = 0; vertex_index < ndim; vertex_index++) {
+    for (size_t i = 0; i < total_ndim; i++)
+      grid_func_input[i] = 0.0;
+    for (size_t vertex_index = 0; vertex_index < interp_ndim; vertex_index++) {
       vertex_coord[vertex_index] =
           origin_indices[vertex_index] +
           binary_extract(hypercube_vertices[point_index], vertex_index);
+      vertex_val[vertex_index] = ranges_vec[range_index_on_device(
+          vertex_coord[vertex_index], vertex_index, dims_vec)];
+
+      grid_func_input[interpolation_indices[vertex_index]] =
+          vertex_val[vertex_index];
     }
 
-    grid_func_input[0] = coeff_index_on_device(vertex_coord, dims_vec, ndim);
-
-    std::array<REAL, sub_index_ndim> sub_indices_arr;
-    std::array<INT, sub_index_ndim> sub_dims_arr;
-    for (int i = 0; i < sub_index_ndim; i++) {
-      sub_indices_arr[i] = sub_indices[i];
-      sub_dims_arr[i] = sub_dims[i];
-    }
-
-    auto sub_int_indices = bin_uniform_sub_indices(
-        sub_indices_arr, sub_dims_arr, error_propagate_ptr);
-
-    for (int i = 0; i < sub_index_ndim; i++) {
-      grid_func_input[1 + i] = sub_int_indices[i];
+    for (size_t i = 0; i < sub_index_ndim; i++) {
+      grid_func_input[non_interpolation_indices[i]] =
+          non_interpolation_points[i];
     }
 
     grid_func_output =

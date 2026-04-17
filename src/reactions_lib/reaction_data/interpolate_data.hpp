@@ -79,7 +79,10 @@
 #define REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
 #include "reactions_lib/composite_data.hpp"
 #include "reactions_lib/interp_utils.hpp"
+#include <algorithm>
+#include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/device_buffers.hpp>
 #include <neso_particles/error_propagate.hpp>
 
 using namespace NESO::Particles;
@@ -124,9 +127,11 @@ struct InterpolateDataOnDevice
    */
   InterpolateDataOnDevice(
       DATATYPE interp_data,
+      const std::array<size_t, interp_ndim> &interp_indices,
       ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
       : CompositeDataOnDevice<output_ndim, interp_ndim + sub_index_ndim, REAL,
-                              REAL, DATATYPE>(interp_data) {
+                              REAL, DATATYPE>(interp_data),
+        interp_indices(interp_indices) {
     switch (extrapolation_type) {
     case VANTAGE::Reactions::ExtrapolationType::continue_linear:
       this->continue_linear = true;
@@ -137,6 +142,14 @@ struct InterpolateDataOnDevice
     case VANTAGE::Reactions::ExtrapolationType::clamp_to_edge:
       this->clamp_to_edge = true;
       break;
+    }
+
+    size_t j = 0;
+    for (size_t i = 0; i < this->total_ndim; i++) {
+      if (std::find(interp_indices.begin(), interp_indices.end(), i) ==
+          interp_indices.end()) {
+        this->non_interp_indices[j++] = i;
+      }
     }
   };
 
@@ -176,24 +189,30 @@ struct InterpolateDataOnDevice
 
     std::array<REAL, interp_ndim> mut_interpolation_points;
     for (int i = 0; i < interp_ndim; i++) {
-      mut_interpolation_points[i] = interpolation_points[i];
+      mut_interpolation_points[i] =
+          interpolation_points[this->interp_indices[i]];
+    }
+
+    std::array<REAL, sub_index_ndim> non_interpolation_points;
+    for (int i = 0; i < sub_index_ndim; i++) {
+      non_interpolation_points[i] = interpolation_points[non_interp_indices[i]];
     }
 
     std::array<INT, interp_ndim> origin_indices;
 
     std::array<REAL, initial_num_points * output_ndim> vertex_func_evals;
-    std::array<INT, initial_num_points> vertex_coord;
+    std::array<INT, interp_ndim> vertex_coord;
 
     std::array<REAL, initial_num_points * output_ndim> output_evals;
     std::array<INT, initial_num_points> varying_dim;
 
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i] = 0;
+      vertex_coord[i] = 0;
     }
 
     for (size_t i = 0; i < initial_num_points; i++) {
       vertex_func_evals[i] = 0.0;
-      vertex_coord[i] = 0;
 
       output_evals[i] = 0.0;
       varying_dim[i] = 0;
@@ -260,7 +279,10 @@ struct InterpolateDataOnDevice
     }
 
     // Necessary for using the interp_utils functions.
+
     auto mut_interpolation_points_ptr = mut_interpolation_points.data();
+    auto non_interpolation_points_ptr = non_interpolation_points.data();
+
     auto origin_indices_ptr = origin_indices.data();
 
     auto vertex_func_evals_ptr = vertex_func_evals.data();
@@ -271,17 +293,17 @@ struct InterpolateDataOnDevice
 
     auto interp_data = Tuple::get<0>(this->data);
 
-    auto sub_indices_ptr = interpolation_points.data() + interp_ndim;
-
     // Initial function evaluation (ie values of the coeffs_vec) based on the
     // origin_indices and the vertices of the hypercube and any data needed for
     // DATATYPE.calc_data(...).
     interp_utils::initial_func_eval_on_device<decltype(interp_data),
-                                              output_ndim, sub_index_ndim>(
+                                              output_ndim, interp_ndim,
+                                              sub_index_ndim, total_ndim>(
         vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
-        this->d_hypercube_vertices, origin_indices_ptr, this->d_dims_vec,
-        interp_ndim, num_points, sub_indices_ptr, this->d_sub_index_dims, index,
-        req_int_props, req_real_props, kernel, d_error_propagate);
+        origin_indices_ptr, this->d_hypercube_vertices, this->d_ranges_vec,
+        non_interpolation_points_ptr, this->interp_indices,
+        this->non_interp_indices, this->d_dims_vec, d_error_propagate, index,
+        req_int_props, req_real_props, kernel);
 
     std::array<REAL, output_ndim> calculated_interpolated_vals;
     for (int i = 0; i < output_ndim; i++) {
@@ -338,10 +360,13 @@ public:
   size_t const *d_extended_dims_vec;
   size_t const *d_ranges_strides;
   size_t const *d_extended_ranges_strides;
-  INT const *d_sub_index_dims;
   int *d_error_propagate;
 
+  std::array<size_t, interp_ndim> interp_indices;
+  std::array<size_t, sub_index_ndim> non_interp_indices;
+
   static constexpr INT initial_num_points = 1 << interp_ndim;
+  static constexpr int total_ndim = interp_ndim + sub_index_ndim;
 
   bool continue_linear = false;
   bool clamp_to_zero = false;
@@ -392,21 +417,18 @@ struct InterpolateData
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &ranges_vec,
+                  const std::array<size_t, interp_ndim> &interp_indices,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type =
-                      ExtrapolationType::continue_linear,
-                  const std::vector<INT> &sub_index_dims_vec = {})
+                      ExtrapolationType::continue_linear)
       : CompositeData<
             InterpolateDataOnDevice<output_ndim, interp_ndim, sub_index_ndim,
                                     typename DATATYPE::ON_DEVICE_OBJ_TYPE>,
             output_ndim, interp_ndim + sub_index_ndim, DATATYPE>(interp_data),
         dims_vec(dims_vec), ranges_vec(ranges_vec),
-        sub_index_dims_vec(sub_index_dims_vec), sycl_target(sycl_target),
+        interp_indices(interp_indices), sycl_target(sycl_target),
         extrapolation_type(extrapolation_type) {
     this->post_init();
-    NESOASSERT(sub_index_dims_vec.size() == sub_index_ndim,
-               "Ensure that the number of elements in the sub_index_dims_vec "
-               "argument matches the sub_index_ndim template parameter.");
   };
 
   void index_on_device_object() override {
@@ -426,7 +448,7 @@ struct InterpolateData
     this->on_device_obj =
         InterpolateDataOnDevice<output_ndim, interp_ndim, sub_index_ndim,
                                 typename DATATYPE::ON_DEVICE_OBJ_TYPE>(
-            std::get<0>(this->data).get_on_device_obj(),
+            std::get<0>(this->data).get_on_device_obj(), this->interp_indices,
             this->extrapolation_type);
 
     this->h_error_propagate = std::make_shared<ErrorPropagate>(sycl_target);
@@ -484,10 +506,6 @@ struct InterpolateData
     this->h_hypercube_vertices = std::make_shared<BufferDevice<INT>>(
         this->sycl_target, initial_hypercube);
     this->on_device_obj->d_hypercube_vertices = this->h_hypercube_vertices->ptr;
-
-    this->h_sub_index_dims = std::make_shared<BufferDevice<INT>>(
-        this->sycl_target, this->sub_index_dims_vec);
-    this->on_device_obj->d_sub_index_dims = this->h_sub_index_dims->ptr;
   }
 
   const auto &get_error_propgate() const { return this->h_error_propagate; }
@@ -495,7 +513,7 @@ struct InterpolateData
   SYCLTargetSharedPtr sycl_target;
   std::vector<size_t> dims_vec;
   std::vector<REAL> ranges_vec;
-  std::vector<INT> sub_index_dims_vec;
+  std::array<size_t, interp_ndim> interp_indices;
   ExtrapolationType extrapolation_type;
 
   std::shared_ptr<ErrorPropagate> h_error_propagate;
@@ -507,7 +525,6 @@ struct InterpolateData
   std::shared_ptr<BufferDevice<size_t>> h_ranges_strides;
   std::shared_ptr<BufferDevice<size_t>> h_extended_ranges_strides;
   std::shared_ptr<BufferDevice<INT>> h_hypercube_vertices;
-  std::shared_ptr<BufferDevice<INT>> h_sub_index_dims;
 };
 }; // namespace VANTAGE::Reactions
 #endif

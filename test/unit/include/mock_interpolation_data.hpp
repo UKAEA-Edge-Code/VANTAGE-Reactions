@@ -1,6 +1,10 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
+#include "reactions_lib/interp_utils.hpp"
+#include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/device_buffers.hpp>
+#include <neso_particles/error_propagate.hpp>
 #include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;
@@ -37,16 +41,39 @@ public:
 };
 
 struct TrimEvalOnDevice
-    : public ReactionDataBaseOnDevice<3, DEFAULT_RNG_KERNEL, 4, REAL, INT> {
+    : public ReactionDataBaseOnDevice<3, DEFAULT_RNG_KERNEL, 5, REAL, INT> {
   TrimEvalOnDevice() = default;
 
   std::array<REAL, 3> calc_data(
-      const std::array<INT, 4> &input,
+      const std::array<REAL, 5> &input,
       [[maybe_unused]] const Access::LoopIndex::Read &index,
       [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
-    auto grid_access_point = input[0] * this->grid_stride;
+
+    std::array<REAL, 3> input_to_bin;
+    std::array<INT, 3> trim_dims_arr;
+    for (size_t i = 0; i < 3; i++) {
+      input_to_bin[i] = input[i + 2];
+      trim_dims_arr[i] = this->d_trim_dims[i];
+    }
+
+    std::array<INT, 3> binned_inputs = interp_utils::bin_uniform_sub_indices(
+        input_to_bin, trim_dims_arr, this->d_error_propagate);
+
+    std::array<INT, 2> grid_indices;
+    grid_indices[0] = interp_utils::calc_floor_point_index(
+        input[0], this->d_ranges, this->d_dims[0]);
+    for (size_t i = 1; i < 2; i++) {
+      grid_indices[i] = interp_utils::calc_floor_point_index(
+          input[i], this->d_ranges + this->d_dims[i - 1], this->d_dims[i]);
+    }
+
+    auto grid_indices_ptr = grid_indices.data();
+    INT grid_flat_index =
+        interp_utils::coeff_index_on_device(grid_indices_ptr, this->d_dims, 2);
+
+    auto grid_access_point = grid_flat_index * this->grid_stride;
 
     std::array<INT, DIM> trim_indices;
     std::array<REAL, DIM> trim_vals;
@@ -61,45 +88,65 @@ struct TrimEvalOnDevice
       for (int jdim = idim - 1, kdim = 0; jdim >= 0; jdim--, kdim++) {
         aggregate_dim *= d_trim_dims[kdim];
         field_access_point += aggregate_dim;
-        field_stride += (input[jdim + 1] * aggregate_dim);
+        field_stride += (binned_inputs[jdim] * aggregate_dim);
       }
 
-      trim_indices[idim] = field_access_point + field_stride + input[idim + 1];
+      trim_indices[idim] =
+          field_access_point + field_stride + binned_inputs[idim];
       trim_vals[idim] = this->d_grid[grid_access_point + trim_indices[idim]];
     }
-
     return trim_vals;
   }
 
 public:
   int grid_stride;
 
-  INT const *d_trim_dims;
+  REAL const *d_ranges;
+  size_t const *d_dims;
+  size_t const *d_trim_dims;
   REAL const *d_grid;
+  int *d_error_propagate;
 };
 
 struct TrimEval : public ReactionDataBase<TrimEvalOnDevice> {
-  TrimEval(const std::vector<REAL> &grid, const std::vector<INT> &trim_dims,
+  TrimEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
+           const std::vector<size_t> &dims_vec,
+           const std::vector<size_t> &trim_dims_vec,
            SYCLTargetSharedPtr sycl_target) {
     this->on_device_obj = TrimEvalOnDevice();
 
     this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
     this->on_device_obj->d_grid = this->h_grid->ptr;
 
+    this->h_ranges =
+        std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
+    this->on_device_obj->d_ranges = this->h_ranges->ptr;
+
+    this->h_dims =
+        std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
+    this->on_device_obj->d_dims = this->h_dims->ptr;
+
     int aggregrate_dim = 1;
-    for (auto &trim_dim : trim_dims) {
+    for (auto &trim_dim : trim_dims_vec) {
       aggregrate_dim *= trim_dim;
       this->on_device_obj->grid_stride += aggregrate_dim;
     }
 
     this->h_trim_dims =
-        std::make_shared<BufferDevice<INT>>(sycl_target, trim_dims);
+        std::make_shared<BufferDevice<size_t>>(sycl_target, trim_dims_vec);
     this->on_device_obj->d_trim_dims = this->h_trim_dims->ptr;
+
+    this->h_error_propagate = std::make_shared<ErrorPropagate>(sycl_target);
+    this->on_device_obj->d_error_propagate =
+        this->h_error_propagate->device_ptr();
   };
 
 public:
-  std::shared_ptr<BufferDevice<INT>> h_trim_dims;
+  std::shared_ptr<BufferDevice<REAL>> h_ranges;
+  std::shared_ptr<BufferDevice<size_t>> h_dims;
+  std::shared_ptr<BufferDevice<size_t>> h_trim_dims;
   std::shared_ptr<BufferDevice<REAL>> h_grid;
+  std::shared_ptr<ErrorPropagate> h_error_propagate;
 };
 
 }; // namespace test_composite_data
@@ -253,7 +300,8 @@ private:
   static constexpr int trim_dim1 = 5;
   static constexpr int trim_dim2 = 5;
 
-  static inline std::vector<INT> trim_dims_vec{trim_dim0, trim_dim1, trim_dim2};
+  static inline std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
+                                                  trim_dim2};
 
   // generated using: numpy.logspace(0, numpy.log10(5e3), 100)
   const std::vector<REAL> dim0_range = {
@@ -441,7 +489,8 @@ public:
     std::optional<test_composite_data::TrimEval> return_val;
     if (this->sycl_target) {
       return_val = test_composite_data::TrimEval(
-          this->coeffs_vec, this->trim_dims_vec, this->sycl_target.value());
+          this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
+          this->trim_dims_vec, this->sycl_target.value());
     }
     return return_val.value();
   }
