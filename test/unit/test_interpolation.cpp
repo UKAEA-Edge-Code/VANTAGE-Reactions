@@ -13,7 +13,7 @@
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
-#if 0
+
 TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   static constexpr int ndim = 1;
 
@@ -586,7 +586,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
   particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
-#endif
+
 TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   static constexpr size_t ndim = 2;
   static constexpr size_t trim_ndim = 3;
@@ -666,8 +666,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         trim_indices.at(2) = real_trim_indices[2];
 
         std::array<INT, trim_ndim> normalized_trim_indices =
-            interp_utils::bin_uniform_sub_indices(
-                real_trim_indices, trim_dims_arr, d_test_error_propagate_ptr);
+            interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr,
+                                              d_test_error_propagate_ptr);
 
         auto result = grid_func(props.at(0), props.at(1),
                                 normalized_trim_indices, trim_dims_arr);
@@ -818,8 +818,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
         trim_indices.at(2) = real_trim_indices[2];
 
         std::array<INT, trim_ndim> normalized_trim_indices =
-            interp_utils::bin_uniform_sub_indices(
-                real_trim_indices, trim_dims_arr, d_test_error_propagate_ptr);
+            interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr,
+                                              d_test_error_propagate_ptr);
 
         auto result = grid_func(props.at(0), props.at(1),
                                 normalized_trim_indices, trim_dims_arr);

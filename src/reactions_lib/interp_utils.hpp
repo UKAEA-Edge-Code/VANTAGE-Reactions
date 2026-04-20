@@ -153,29 +153,29 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
  * defined by the elements of dims. For example with u = {0.1, 0.7, 0.3} and
  * dims = {4, 6, 9} the output coords would be: {0, 4, 2}
  *
- * @tparam sub_index_ndim The size of the u array, the dims array and the output
+ * @tparam index_ndim The size of the u array, the dims array and the output
  * from the function.
- * @param u REAL-valued array of size sub_index_ndim that contains the values
+ * @param u REAL-valued array of size index_ndim that contains the values
  * (between 0.0 and 1.0) that are to be converted to indices.
- * @param dims INT-valued array of size sub_index_ndim that contains values that
+ * @param dims INT-valued array of size index_ndim that contains values that
  * define the upper limits for the results.
- * @return An INT-valued array of size sub_index_ndim that contains required
- * sub-indices.
+ * @return An INT-valued array of size index_ndim that contains required
+ * indices.
  */
-template <size_t sub_index_ndim>
-inline std::array<INT, sub_index_ndim>
-bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
-                        const std::array<INT, sub_index_ndim> &dims,
-                        int *error_propagate_ptr) {
-  for (size_t i = 0; i < sub_index_ndim; i++) {
+template <size_t index_ndim>
+inline std::array<INT, index_ndim>
+bin_uniform_indices(const std::array<REAL, index_ndim> &u,
+                    const std::array<INT, index_ndim> &dims,
+                    int *error_propagate_ptr) {
+  for (size_t i = 0; i < index_ndim; i++) {
     NESO_KERNEL_ASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)), error_propagate_ptr);
     NESO_KERNEL_ASSERT(dims[i] > 0, error_propagate_ptr);
   }
 
-  std::array<INT, sub_index_ndim> coords;
+  std::array<INT, index_ndim> coords;
 
   INT x = 0;
-  for (size_t i = 0; i < sub_index_ndim; i++) {
+  for (size_t i = 0; i < index_ndim; i++) {
     x = static_cast<INT>(sycl::floor(u[i] * dims[i]));
     coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
   }
@@ -191,28 +191,33 @@ bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
  * grid-function evaluation reaction data.
  * @tparam output_ndim Number of dimensions of the output of the grid-function
  * evaluation.
- * @tparam sub_index_ndim Number of sub-index dimensions.
+ * @tparam interp_ndim Number of dimensions being interpolated.
+ * @tparam non_interp_ndim Number of non-interpolated dimensions (ie. dimensions
+ * passed through without modification to calc_data(...)).
+ * @tparam total_ndim The size of the input array to pass to calc_data(...) (ie.
+ * interp_ndim + non_interp_ndim).
  * @param vertex_func_evals Pointer to a vector to fill
  * with function evaluations.
  * @param vertex_coord Pointer to a vector to fill with
  * locations of the vertices of the hypercube.
  * @param grid_func_data DATATYPE object that defines the grid-function
  * evaluation.
- * @param hypercube_vertices Pointer to a vector containing the vertices of the
- * hypercube (integers whose binary representations give the normalised
- * positions of the vertices).
  * @param origin_indices Pointer to a vector containing the
  * indices that will form the (0,0) point of the hypercube (that is to say, the
  * largest indices in each dimension that are still smaller than the desired
  * interpolation point).
+ * @param hypercube_vertices Pointer to a vector containing the vertices of the
+ * hypercube (integers whose binary representations give the normalised
+ * positions of the vertices).
+ * @param ranges_vec Pointer to the flattened ranges array used to recover the
+ * coordinate value for each interpolated dimension.
+ * @param non_interpolation_points Values passed through without modification to
+ * calc_data(...)
+ * @param interpolation_indices Array of indices that correspond to the
+ * dimensions that will be interpolated.
+ * @param non_interpolation_indices Array of indices that correspond to the
+ * dimensions that will not be interpolated.
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
- * @param ndim The number of dimensions.
- * @param num_points The number of vertices needed for the hypercube
- * representation
- * @param sub_indices Pointer to an array containing the sub-indices that are
- * needed for grid-function evaluation (eg. for TRIM data).
- * @param sub_dims Pointer to an array containing the size of the dimensions for
- * each sub-index.
  * @param index Read-only accessor to a loop index for a ParticleLoop
  * inside which calc_data is called. Access using either
  * index.get_loop_linear_index(), index.get_local_linear_index(),
@@ -226,15 +231,15 @@ bin_uniform_sub_indices(const std::array<REAL, sub_index_ndim> &u,
  */
 
 template <typename DATATYPE, int output_ndim, int interp_ndim,
-          int sub_index_ndim, int total_ndim>
+          int non_interp_ndim, int total_ndim>
 inline void initial_func_eval_on_device(
     REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
     INT const *origin_indices, INT const *hypercube_vertices,
-    REAL const *ranges_vec, REAL const *non_interpolation_points,
+    REAL const *ranges_vec,
+    const std::array<REAL, non_interp_ndim> &non_interpolation_points,
     const std::array<size_t, interp_ndim> &interpolation_indices,
-    const std::array<size_t, sub_index_ndim> &non_interpolation_indices,
-    size_t const *dims_vec, int *error_propagate_ptr,
-    const Access::LoopIndex::Read &index,
+    const std::array<size_t, non_interp_ndim> &non_interpolation_indices,
+    size_t const *dims_vec, const Access::LoopIndex::Read &index,
     const Access::SymVector::Write<INT> &req_int_props,
     const Access::SymVector::Read<REAL> &req_real_props,
     typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
@@ -268,7 +273,7 @@ inline void initial_func_eval_on_device(
           vertex_val[vertex_index];
     }
 
-    for (size_t i = 0; i < sub_index_ndim; i++) {
+    for (size_t i = 0; i < non_interp_ndim; i++) {
       grid_func_input[non_interpolation_indices[i]] =
           non_interpolation_points[i];
     }

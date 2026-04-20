@@ -1,6 +1,7 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
 #include "reactions_lib/interp_utils.hpp"
+#include "reactions_lib/reaction_data.hpp"
 #include <memory>
 #include <neso_particles.hpp>
 #include <neso_particles/device_buffers.hpp>
@@ -11,62 +12,101 @@ using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 namespace test_composite_data {
+template <int input_ndim>
 struct GridEvalOnDevice
-    : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, 3> {
+    : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
   GridEvalOnDevice() = default;
 
   std::array<REAL, 1> calc_data(
-      const std::array<INT, 1> &grid_index,
+      const std::array<REAL, input_ndim> &input,
       [[maybe_unused]] const Access::LoopIndex::Read &index,
       [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
-    return std::array<REAL, 1>{this->d_grid[grid_index[0]]};
+    std::array<INT, input_ndim> grid_indices;
+    grid_indices[0] = interp_utils::calc_floor_point_index(
+        input[0], this->d_ranges, this->d_dims[0]);
+    size_t aggregate_dims = 0;
+    for (size_t i = 1; i < input_ndim; i++) {
+      aggregate_dims += this->d_dims[i - 1];
+      grid_indices[i] = interp_utils::calc_floor_point_index(
+          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
+    }
+
+    auto grid_indices_ptr = grid_indices.data();
+    INT grid_flat_index = interp_utils::coeff_index_on_device(
+        grid_indices_ptr, this->d_dims, input_ndim);
+
+    return std::array<REAL, 1>{this->d_grid[grid_flat_index]};
   }
 
 public:
+  size_t const *d_dims;
+  REAL const *d_ranges;
   REAL const *d_grid;
 };
 
-struct GridEval : public ReactionDataBase<GridEvalOnDevice> {
-  GridEval(const std::vector<REAL> &grid, SYCLTargetSharedPtr sycl_target) {
-    this->on_device_obj = GridEvalOnDevice();
+template <int input_ndim>
+struct GridEval : public ReactionDataBase<GridEvalOnDevice<input_ndim>> {
+  GridEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
+           const std::vector<size_t> &dims_vec,
+           SYCLTargetSharedPtr sycl_target) {
+    this->on_device_obj = GridEvalOnDevice<input_ndim>();
+
+    this->h_dims =
+        std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
+    this->on_device_obj->d_dims = this->h_dims->ptr;
+
+    this->h_ranges =
+        std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
+    this->on_device_obj->d_ranges = this->h_ranges->ptr;
 
     this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
     this->on_device_obj->d_grid = this->h_grid->ptr;
   };
 
 public:
+  std::shared_ptr<BufferDevice<size_t>> h_dims;
+  std::shared_ptr<BufferDevice<REAL>> h_ranges;
   std::shared_ptr<BufferDevice<REAL>> h_grid;
 };
 
+template <int input_ndim, int output_ndim>
 struct TrimEvalOnDevice
-    : public ReactionDataBaseOnDevice<3, DEFAULT_RNG_KERNEL, 5, REAL, INT> {
-  TrimEvalOnDevice() = default;
+    : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
+                                      input_ndim, REAL, INT> {
+  TrimEvalOnDevice() {
+    static_assert(
+        input_ndim >= output_ndim,
+        "For TrimEvalOnDevice, input_ndim >= output_ndim must be true.");
+  };
 
-  std::array<REAL, 3> calc_data(
-      const std::array<REAL, 5> &input,
+  std::array<REAL, output_ndim> calc_data(
+      const std::array<REAL, input_ndim> &input,
       [[maybe_unused]] const Access::LoopIndex::Read &index,
       [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
 
-    std::array<REAL, 3> input_to_bin;
-    std::array<INT, 3> trim_dims_arr;
-    for (size_t i = 0; i < 3; i++) {
-      input_to_bin[i] = input[i + 2];
+    std::array<REAL, output_ndim> input_to_bin;
+    std::array<INT, output_ndim> trim_dims_arr;
+    for (size_t i = 0; i < output_ndim; i++) {
+      input_to_bin[i] = input[i + interp_ndim];
       trim_dims_arr[i] = this->d_trim_dims[i];
     }
 
-    std::array<INT, 3> binned_inputs = interp_utils::bin_uniform_sub_indices(
-        input_to_bin, trim_dims_arr, this->d_error_propagate);
+    std::array<INT, output_ndim> binned_inputs =
+        interp_utils::bin_uniform_indices(input_to_bin, trim_dims_arr,
+                                          this->d_error_propagate);
 
-    std::array<INT, 2> grid_indices;
+    std::array<INT, interp_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
         input[0], this->d_ranges, this->d_dims[0]);
-    for (size_t i = 1; i < 2; i++) {
+    size_t aggregate_dims = 0;
+    for (size_t i = 1; i < interp_ndim; i++) {
+      aggregate_dims += this->d_dims[i - 1];
       grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + this->d_dims[i - 1], this->d_dims[i]);
+          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
     }
 
     auto grid_indices_ptr = grid_indices.data();
@@ -75,13 +115,13 @@ struct TrimEvalOnDevice
 
     auto grid_access_point = grid_flat_index * this->grid_stride;
 
-    std::array<INT, DIM> trim_indices;
-    std::array<REAL, DIM> trim_vals;
+    std::array<INT, output_ndim> trim_indices;
+    std::array<REAL, output_ndim> trim_vals;
 
     int field_access_point;
     int field_stride;
     int aggregate_dim;
-    for (int idim = 0; idim < DIM; idim++) {
+    for (int idim = 0; idim < output_ndim; idim++) {
       field_access_point = 0;
       field_stride = 0;
       aggregate_dim = 1;
@@ -101,6 +141,8 @@ struct TrimEvalOnDevice
 public:
   int grid_stride;
 
+  static constexpr int interp_ndim = input_ndim - output_ndim;
+
   REAL const *d_ranges;
   size_t const *d_dims;
   size_t const *d_trim_dims;
@@ -108,12 +150,14 @@ public:
   int *d_error_propagate;
 };
 
-struct TrimEval : public ReactionDataBase<TrimEvalOnDevice> {
+template <int input_ndim, int output_ndim>
+struct TrimEval
+    : public ReactionDataBase<TrimEvalOnDevice<input_ndim, output_ndim>> {
   TrimEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
            const std::vector<size_t> &dims_vec,
            const std::vector<size_t> &trim_dims_vec,
            SYCLTargetSharedPtr sycl_target) {
-    this->on_device_obj = TrimEvalOnDevice();
+    this->on_device_obj = TrimEvalOnDevice<input_ndim, output_ndim>();
 
     this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
     this->on_device_obj->d_grid = this->h_grid->ptr;
@@ -127,6 +171,7 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice> {
     this->on_device_obj->d_dims = this->h_dims->ptr;
 
     int aggregrate_dim = 1;
+    this->on_device_obj->grid_stride = 0;
     for (auto &trim_dim : trim_dims_vec) {
       aggregrate_dim *= trim_dim;
       this->on_device_obj->grid_stride += aggregrate_dim;
@@ -177,11 +222,12 @@ public:
 
   const std::vector<REAL> &get_upper_bounds() { return this->upper_bounds; }
 
-  auto get_grid_func_data() const {
-    std::optional<test_composite_data::GridEval> return_val;
+  template <int input_ndim> auto get_grid_func_data_ndim() const {
+    std::optional<test_composite_data::GridEval<input_ndim>> return_val;
     if (this->sycl_target) {
-      return_val = test_composite_data::GridEval(this->coeffs_vec,
-                                                 this->sycl_target.value());
+      return_val = test_composite_data::GridEval<input_ndim>(
+          this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
+          this->sycl_target.value());
     }
     // deliberately error if no value is set.
     return return_val.value();
@@ -190,7 +236,7 @@ public:
 
 struct coefficient_values_1D : abstract_coefficient_values {
 private:
-  const int ndim = 1;
+  static constexpr int ndim = 1;
   const int dim0 = 8;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
@@ -227,11 +273,15 @@ public:
   };
 
   auto get_grid_func() const { return this->grid_func; }
+
+  auto get_grid_func_data() const {
+    return this->get_grid_func_data_ndim<ndim>();
+  }
 };
 
 struct coefficient_values_2D : abstract_coefficient_values {
 private:
-  const int ndim = 2;
+  static constexpr int ndim = 2;
   const size_t dim0 = 8;
   const size_t dim1 = 10;
 
@@ -286,6 +336,10 @@ public:
   };
 
   auto get_grid_func() const { return this->grid_func; }
+
+  auto get_grid_func_data() const {
+    return this->get_grid_func_data_ndim<ndim>();
+  }
 };
 
 struct trim_coefficient_values : abstract_coefficient_values {
@@ -486,9 +540,10 @@ public:
   auto get_trim_dims_vec() const { return this->trim_dims_vec; }
 
   auto get_grid_func_data() const {
-    std::optional<test_composite_data::TrimEval> return_val;
+    std::optional<test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>>
+        return_val;
     if (this->sycl_target) {
-      return_val = test_composite_data::TrimEval(
+      return_val = test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>(
           this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
           this->trim_dims_vec, this->sycl_target.value());
     }
@@ -500,7 +555,7 @@ public:
 
 struct coefficient_values_3D : abstract_coefficient_values {
 private:
-  const int ndim = 3;
+  static constexpr int ndim = 3;
   const int dim0 = 8;
   const int dim1 = 10;
   const int dim2 = 15;
@@ -571,11 +626,15 @@ public:
   };
 
   auto get_grid_func() const { return this->grid_func; }
+
+  auto get_grid_func_data() const {
+    return this->get_grid_func_data_ndim<ndim>();
+  }
 };
 
 struct coefficient_values_4D : abstract_coefficient_values {
 private:
-  const int ndim = 4;
+  static constexpr int ndim = 4;
   const int dim0 = 8;
   const int dim1 = 10;
   const int dim2 = 15;
@@ -666,11 +725,15 @@ public:
   };
 
   auto get_grid_func() const { return this->grid_func; }
+
+  auto get_grid_func_data() const {
+    return this->get_grid_func_data_ndim<ndim>();
+  }
 };
 
 struct coefficient_values_5D : abstract_coefficient_values {
 private:
-  const int ndim = 5;
+  static constexpr int ndim = 5;
   const int dim0 = 8;
   const int dim1 = 10;
   const int dim2 = 15;
@@ -780,6 +843,10 @@ public:
   };
 
   auto get_grid_func() const { return this->grid_func; }
+
+  auto get_grid_func_data() const {
+    return this->get_grid_func_data_ndim<ndim>();
+  }
 };
 
 #endif
