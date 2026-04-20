@@ -434,6 +434,25 @@ struct InterpolateData
     this->post_init();
   };
 
+  /**
+   * \overload
+   * @brief Constructor for InterpolateData that takes the usual arguments but
+   * without extrapolation_type (set to continue_linear)
+   *
+   * @param dims_vec A vector containing the lengths of each dimension that
+   * defines the grid of pre-computed values.
+   * @param ranges_vec A vector that contains the range of values for
+   * each axis that defines the grid of pre-computed values. The values in
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
+   * @param interp_indices An array of indices that correspond to the indices of
+   * the full input array that will be passed to calc_data that are to be
+   * interpolated.
+   * @param sycl_target SYCL target pointer used to interface with
+   * NESO-Particles routines
+   * @param interp_data ReactionDataBase derived object corresponding to
+   * the grid-function evaluation reaction data object.
+   */
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &ranges_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
@@ -441,12 +460,49 @@ struct InterpolateData
       : InterpolateData(dims_vec, ranges_vec, interp_indices, sycl_target,
                         interp_data, ExtrapolationType::continue_linear) {};
 
+  /**
+   * \overload
+   * @brief Constructor for InterpolateData that takes the usual arguments but
+   * without interp_indices (set to a zero-intialized array of size interp_ndim)
+   * and extrapolation_type (set to continue_linear).
+   *
+   * @param dims_vec A vector containing the lengths of each dimension that
+   * defines the grid of pre-computed values.
+   * @param ranges_vec A vector that contains the range of values for
+   * each axis that defines the grid of pre-computed values. The values in
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
+   * @param sycl_target SYCL target pointer used to interface with
+   * NESO-Particles routines
+   * @param interp_data ReactionDataBase derived object corresponding to
+   * the grid-function evaluation reaction data object.
+   */
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &ranges_vec,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
       : InterpolateData(dims_vec, ranges_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data) {};
 
+  /**
+   * \overload
+   * @brief Constructor for InterpolateData that takes the usual arguments but
+   * without interp_indices (set to a zero-initialized array of size
+   * interp_ndim).
+   *
+   * @param dims_vec A vector containing the lengths of each dimension that
+   * defines the grid of pre-computed values.
+   * @param ranges_vec A vector that contains the range of values for
+   * each axis that defines the grid of pre-computed values. The values in
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
+   * @param sycl_target SYCL target pointer used to interface with
+   * NESO-Particles routines
+   * @param interp_data ReactionDataBase derived object corresponding to
+   * the grid-function evaluation reaction data object.
+   * @param extrapolation_type The extrapolation type to fall back on if
+   * interpolation is not possible for a set of points. Either
+   * continue_linear, clamp_to_zero or clamp_to_edge.
+   */
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &ranges_vec,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
