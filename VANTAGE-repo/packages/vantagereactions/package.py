@@ -17,16 +17,12 @@ class Vantagereactions(CMakePackage):
 
     variant("enable_tests", default=False, description="Enable tests")
 
+    depends_on("c")
+    depends_on("cxx")
     depends_on("mpi", type=("build", "link", "run"))
     depends_on("neso-particles", type=("build", "link", "run"))
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
-
-    # requires(
-    #     "%gcc", "%clang",
-    #     policy="one_of",
-    #     msg="Reactions builds with only gcc or clang."
-    # )
 
     def cmake_args(self):
         args = []

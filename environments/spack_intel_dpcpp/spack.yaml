@@ -1,0 +1,33 @@
+# This is a Spack Environment file.
+#
+# It describes the set of packages to be installed when developing
+# NESO, along with configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+    - vantage.vantagereactions+enable_tests build_type=Release ^neso-particles~build_tests ^neso.dpcpp ^intel-oneapi-mpi
+
+  view: false
+  concretizer:
+    unify: false
+  repos:
+    - ${PWD}/VANTAGE-repo
+    - ${PWD}/NESO-Spack
+  develop:
+    vantagereactions:
+      path: ${PWD}
+      spec: vantagereactions@working
+    neso-particles:
+      path: ${PWD}/neso-particles
+      spec: neso-particles@working
+  packages:
+    c:
+      require:
+        - intel-oneapi-compilers
+    cxx:
+      require:
+        - intel-oneapi-compilers
+    all:
+      providers:
+        mpi: [intel-oneapi-mpi]
+        sycl: [dpcpp]
