@@ -407,8 +407,8 @@ private:
       8.38350185e+01, 8.40879319e+01, 8.43304698e+01, 8.45630578e+01,
       8.47861041e+01, 8.50000000e+01};
 
-  static inline auto trim_grid_func_0 = [](const REAL &dim0_val,
-                                           const REAL &dim1_val) {
+  static const inline auto trim_grid_func_0 = [](const REAL &dim0_val,
+                                                 const REAL &dim1_val) {
     std::array<REAL, trim_dim0> result;
     for (int idim = 0; idim < trim_dim0; idim++) {
       result[idim] = idim * dim0_val * dim1_val;
@@ -416,8 +416,8 @@ private:
     return result;
   };
 
-  static inline auto trim_grid_func_1 = [](const REAL &dim0_val,
-                                           const REAL &dim1_val) {
+  static const inline auto trim_grid_func_1 = [](const REAL &dim0_val,
+                                                 const REAL &dim1_val) {
     std::array<REAL, trim_dim0 * trim_dim1> result;
     INT counter = 0;
     for (int idim = 0; idim < trim_dim0; idim++) {
@@ -429,8 +429,8 @@ private:
     return result;
   };
 
-  static inline auto trim_grid_func_2 = [](const REAL &dim0_val,
-                                           const REAL &dim1_val) {
+  static const inline auto trim_grid_func_2 = [](const REAL &dim0_val,
+                                                 const REAL &dim1_val) {
     std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2> result;
     INT counter = 0;
     for (int idim = 0; idim < trim_dim0; idim++) {
@@ -444,7 +444,7 @@ private:
     return result;
   };
 
-  static inline auto trim_grid_func_lambda =
+  static const inline auto trim_grid_func_lambda =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<INT, trim_ndim> &trim_indices,
          const std::array<INT, trim_ndim> &trim_dims) {

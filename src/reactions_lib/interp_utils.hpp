@@ -1,6 +1,5 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <neso_particles.hpp>
 #include <neso_particles/error_propagate.hpp>
 #include <neso_particles/loop/particle_loop_index.hpp>

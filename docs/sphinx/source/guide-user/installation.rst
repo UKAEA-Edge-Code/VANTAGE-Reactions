@@ -70,7 +70,7 @@ To designate a package as an external one, the path of the root directory of the
 
 Note, this must be done outside the Reactions spack environment (for example in the $HOME directory).
 This will modify a file in ``$SPACK_ROOT`` called ``packages.yaml`` or create one if it doesn't exist. It is recommended to assign the listed packages as external if possible to smooth the experience of the first time install.
-NOTE: For `llvm`, if it's pre-installed then it's best to let spack find it using `spack compiler find ${llvm_install_path}` instead.
+NOTE: For ``llvm``, if it's pre-installed then it's best to let spack find it using ``spack compiler find ${llvm_install_path}`` instead.
 
 Installation
 =====================
@@ -122,9 +122,10 @@ If any compatibility issues are present when attempting these optional variants,
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
 
-Load the `vantagereactions` package:
+Unload any existing loaded packages, then load the ``vantagereactions`` package:
 ::
 
+    spack unload --all
     spack load vantagereactions
 
 The CPU specific command to run the unit tests is:
@@ -141,7 +142,7 @@ To ensure that invalid/failure states are tested, run the unit tests with the co
 
 Run unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~
-Load the `vantagereactions` package again (ensuring you're within the correct environment).
+Unload any existing loaded packages, then load the ``vantagereactions`` package again (ensuring you're within the correct environment).
 Then the GPU specific command to run the unit tests is:
 ::
 
