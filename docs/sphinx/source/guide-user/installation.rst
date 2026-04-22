@@ -113,15 +113,19 @@ To use any of these environments, activate the environment with ``spack env acti
 
 For CUDA-specific installations, the environments are provided but given the subtleties associated with this installation, there is no guarantee that these will work out-of-the-box and might require more modifications (possibly outside of the ``spack.yaml``) to function.
 
+Similarly for HIP-specific installations (for AMD GPUs), the environment is provided but again depending on the subtleties of your system, there may need to be more modifications.
+
+The ``spack.yaml`` files do have some limited guidance on things like specifying GPU architecture and some dependencies but there may need to be more modifications system-side to make things work smoothly.
+
 If any compatibility issues are present when attempting these optional variants, please contact the repo maintainers for support.
 
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
 
-Load the `reactions` package:
+Load the `vantagereactions` package:
 ::
 
-    spack load reactions
+    spack load vantagereactions
 
 The CPU specific command to run the unit tests is:
 ::
@@ -137,7 +141,7 @@ To ensure that invalid/failure states are tested, run the unit tests with the co
 
 Run unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~
-Load the `reactions` package again (ensuring you're within the correct environment).
+Load the `vantagereactions` package again (ensuring you're within the correct environment).
 Then the GPU specific command to run the unit tests is:
 ::
 
