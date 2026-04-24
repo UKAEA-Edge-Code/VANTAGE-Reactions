@@ -109,7 +109,7 @@ In addition to the default environment, there are also some other variants inclu
 Each sub-folder has it's own ``spack.yaml`` that defines an environment and spec that's specific to that sub-folder. For example, the ``spack_omp_accelerated``
 contains a spec that allows for an installation with ``adaptivecpp`` designating ``llvm`` as the backend for compilation.
 
-To use any of these environments, activate the environment with ``spack env activate -p -d environments/{desired_environment}`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Then simply run ``spack install``.
+To use any of these environments, activate the environment with ``spack env activate -p -d environments/{desired_environment}`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Ensure any existing loaded packages are unloaded with ``spack unload --all`` and then simply run ``spack install``.
 
 For CUDA-specific installations, the environments are provided but given the subtleties associated with this installation, there is no guarantee that these will work out-of-the-box and might require more modifications (possibly outside of the ``spack.yaml``) to function.
 

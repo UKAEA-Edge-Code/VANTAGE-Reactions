@@ -8,9 +8,9 @@
  * discretized ND space that the grid is defined on. It then proceeds to
  * construct a hypercube around the interpolation points. The grid values(which
  * may be multi-dimensional) at each vertex of the hypercube are retrieved. With
- * the vertex positions and grid points, a recursive contraction of the
- * hypercube, 1 dimension at a time, is performed. The final interpolated
- * function evaluation is returned.
+ * the vertex coordinates and function evaluations at the vertices, a recursive
+ * contraction of the hypercube, 1 dimension at a time, is performed. The final
+ * interpolated function evaluation is returned.
  *
  * An illustrative example of contracting from 3D to 0D is shown here.
  * Each vertex is 1 index apart so if V1 is defined as an origin (0,0,0) then
@@ -82,6 +82,7 @@
 #include <algorithm>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -128,7 +129,8 @@ struct InterpolateDataOnDevice
       DATATYPE interp_data,
       const std::array<size_t, interp_ndim> &interp_indices,
       ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
-      : CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim, REAL,
+      : interp_indices(interp_indices),
+        CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim, REAL,
                               REAL, DATATYPE>(interp_data) {
     switch (extrapolation_type) {
     case VANTAGE::Reactions::ExtrapolationType::continue_linear:
@@ -142,18 +144,13 @@ struct InterpolateDataOnDevice
       break;
     }
 
-    if (non_interp_ndim > 0) {
+    if constexpr (non_interp_ndim > 0) {
       size_t j = 0;
       for (size_t i = 0; i < this->total_ndim; i++) {
         if (std::find(interp_indices.begin(), interp_indices.end(), i) ==
             interp_indices.end()) {
           this->non_interp_indices[j++] = i;
         }
-      }
-      this->interp_indices = interp_indices;
-    } else {
-      for (size_t i = 0; i < this->total_ndim; i++) {
-        this->interp_indices[i] = i;
       }
     }
   };
@@ -180,8 +177,7 @@ struct InterpolateDataOnDevice
    * interpolated function evaluation at the given interpolation points.
    */
   std::array<REAL, output_ndim> calc_data(
-      const std::array<REAL, interp_ndim + non_interp_ndim>
-          &interpolation_points,
+      const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
       [[maybe_unused]] const Access::LoopIndex::Read &index,
       [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
@@ -191,13 +187,12 @@ struct InterpolateDataOnDevice
 
     std::array<REAL, interp_ndim> mut_interpolation_points;
     for (int i = 0; i < interp_ndim; i++) {
-      mut_interpolation_points[i] =
-          interpolation_points[this->interp_indices[i]];
+      mut_interpolation_points[i] = input_array[this->interp_indices[i]];
     }
 
     std::array<REAL, non_interp_ndim> non_interpolation_points;
     for (int i = 0; i < non_interp_ndim; i++) {
-      non_interpolation_points[i] = interpolation_points[non_interp_indices[i]];
+      non_interpolation_points[i] = input_array[non_interp_indices[i]];
     }
 
     std::array<INT, interp_ndim> origin_indices;
@@ -342,8 +337,6 @@ struct InterpolateDataOnDevice
       }
     }
 
-    // Return either 0 or vertex_func_evals[idim] depending on the
-    // out_of_range_clamp_to_zero boolean value.
     for (int idim = 0; idim < output_ndim; idim++) {
       calculated_interpolated_vals[idim] =
           out_of_range_clamp_to_zero ? calculated_interpolated_vals[idim]
@@ -463,8 +456,9 @@ struct InterpolateData
   /**
    * \overload
    * @brief Constructor for InterpolateData that takes the usual arguments but
-   * without interp_indices (set to a zero-intialized array of size interp_ndim)
-   * and extrapolation_type (set to continue_linear).
+   * without interp_indices (set to an array with values from 0 to inter_ndim,
+   * ie. all dimensions are to be interpolated) and extrapolation_type (set to
+   * continue_linear).
    *
    * @param dims_vec A vector containing the lengths of each dimension that
    * defines the grid of pre-computed values.
@@ -481,13 +475,16 @@ struct InterpolateData
                   const std::vector<REAL> &ranges_vec,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
       : InterpolateData(dims_vec, ranges_vec, std::array<size_t, interp_ndim>(),
-                        sycl_target, interp_data) {};
+                        sycl_target, interp_data) {
+    for (size_t i = 0; i < interp_ndim; i++)
+      this->interp_indices[i] = i;
+  };
 
   /**
    * \overload
    * @brief Constructor for InterpolateData that takes the usual arguments but
-   * without interp_indices (set to a zero-initialized array of size
-   * interp_ndim).
+   * without interp_indices (set to an array with values from 0 to inter_ndim,
+   * ie. all dimensions are to be interpolated).
    *
    * @param dims_vec A vector containing the lengths of each dimension that
    * defines the grid of pre-computed values.
@@ -508,7 +505,10 @@ struct InterpolateData
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type)
       : InterpolateData(dims_vec, ranges_vec, std::array<size_t, interp_ndim>(),
-                        sycl_target, interp_data, extrapolation_type) {};
+                        sycl_target, interp_data, extrapolation_type) {
+    for (size_t i = 0; i < interp_ndim; i++)
+      this->interp_indices[i] = i;
+  };
 
   void index_on_device_object() override {
     /**

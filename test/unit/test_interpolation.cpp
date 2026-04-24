@@ -1,4 +1,3 @@
-#include "include/mock_debug_particle_group.hpp"
 #include "include/mock_interpolation_data.hpp"
 #include "include/mock_particle_group.hpp"
 #include "include/test_vantage_reactions_utils.hpp"
@@ -595,6 +594,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
   const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
+  auto rng = std::mt19937(52234126 + rank);
+
   auto npart = particle_group->get_npart_local();
 
   particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
@@ -603,7 +604,14 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
                                    trim_ndim);
 
   // Setup the mock data.
-  auto coeffs_data = trim_coefficient_values(particle_group->sycl_target);
+  std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
+  std::array<REAL, trim_ndim> random_grid_nums;
+  for (int i = 0; i < trim_ndim; i++) {
+    random_grid_nums[i] = uniform_dist_m1(rng);
+  }
+
+  auto coeffs_data =
+      trim_coefficient_values(random_grid_nums, particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
@@ -627,7 +635,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   }
 
   // Random number generator kernel
-  auto rng = std::mt19937(52234126 + rank);
   std::uniform_int_distribution<INT> uniform_dist_0(0, dims_vec[0] - 1);
   std::uniform_int_distribution<INT> uniform_dist_1(0, dims_vec[1] - 1);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
@@ -638,10 +645,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
       rng_lambda_wrapper_int(uniform_dist_1, rng), 1);
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
-
-  auto test_error_propagate =
-      std::make_shared<ErrorPropagate>(particle_group->sycl_target);
-  auto d_test_error_propagate_ptr = test_error_propagate->device_ptr();
 
   particle_loop(
       particle_group,
@@ -666,11 +669,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         trim_indices.at(2) = real_trim_indices[2];
 
         std::array<INT, trim_ndim> normalized_trim_indices =
-            interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr,
-                                              d_test_error_propagate_ptr);
+            interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result = grid_func(props.at(0), props.at(1),
-                                normalized_trim_indices, trim_dims_arr);
+        auto result =
+            grid_func(props.at(0), props.at(1), normalized_trim_indices,
+                      trim_dims_arr, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -681,10 +684,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
       Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
       Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
-
-  test_error_propagate->check_and_throw(
-      "Error in setting up uniform sub indices for calculating expected test "
-      "results!");
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 
@@ -761,6 +760,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
 
   const int rank = particle_group->sycl_target->comm_pair.rank_parent;
 
+  auto rng = std::mt19937(52234126 + rank);
+
   auto npart = particle_group->get_npart_local();
 
   particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
@@ -769,7 +770,14 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
                                    trim_ndim);
 
   // Setup the mock data.
-  auto coeffs_data = trim_coefficient_values(particle_group->sycl_target);
+  std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
+  std::array<REAL, trim_ndim> random_grid_nums;
+  for (int i = 0; i < trim_ndim; i++) {
+    random_grid_nums[i] = uniform_dist_m1(rng);
+  }
+
+  auto coeffs_data =
+      trim_coefficient_values(random_grid_nums, particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
@@ -784,7 +792,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   }
 
   // Random number generator kernel
-  auto rng = std::mt19937(52234126 + rank);
   std::uniform_real_distribution<REAL> uniform_dist_0(lower_bounds[0],
                                                       upper_bounds[0]);
   std::uniform_real_distribution<REAL> uniform_dist_1(lower_bounds[1],
@@ -797,10 +804,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
       rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
   auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
-
-  auto test_error_propagate =
-      std::make_shared<ErrorPropagate>(particle_group->sycl_target);
-  auto d_test_error_propagate_ptr = test_error_propagate->device_ptr();
 
   particle_loop(
       particle_group,
@@ -818,11 +821,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
         trim_indices.at(2) = real_trim_indices[2];
 
         std::array<INT, trim_ndim> normalized_trim_indices =
-            interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr,
-                                              d_test_error_propagate_ptr);
+            interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result = grid_func(props.at(0), props.at(1),
-                                normalized_trim_indices, trim_dims_arr);
+        auto result =
+            grid_func(props.at(0), props.at(1), normalized_trim_indices,
+                      trim_dims_arr, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -833,10 +836,6 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
       Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
       Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
-
-  test_error_propagate->check_and_throw(
-      "Error in setting up uniform sub indices for calculating expected test "
-      "results!");
 
   auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
 

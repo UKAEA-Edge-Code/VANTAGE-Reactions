@@ -164,13 +164,7 @@ inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
 template <size_t index_ndim>
 inline std::array<INT, index_ndim>
 bin_uniform_indices(const std::array<REAL, index_ndim> &u,
-                    const std::array<INT, index_ndim> &dims,
-                    int *error_propagate_ptr) {
-  for (size_t i = 0; i < index_ndim; i++) {
-    NESO_KERNEL_ASSERT(((u[i] >= 0.0) && (u[i] <= 1.0)), error_propagate_ptr);
-    NESO_KERNEL_ASSERT(dims[i] > 0, error_propagate_ptr);
-  }
-
+                    const std::array<INT, index_ndim> &dims) {
   std::array<INT, index_ndim> coords;
 
   INT x = 0;
