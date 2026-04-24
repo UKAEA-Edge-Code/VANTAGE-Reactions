@@ -3,9 +3,6 @@
 #include "include/test_vantage_reactions_utils.hpp"
 #include <gtest/gtest.h>
 #include <memory>
-#include <neso_particles/device_buffers.hpp>
-#include <neso_particles/error_propagate.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <random>
 
 #define INTERPOLATION_TOLERANCE 1e-14

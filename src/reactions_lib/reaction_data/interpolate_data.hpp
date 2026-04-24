@@ -82,7 +82,6 @@
 #include <algorithm>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -271,8 +270,9 @@ struct InterpolateDataOnDevice
     // linear gradient can be calculated.
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i]--;
-      origin_indices[i] = Kernel::min(Kernel::max(origin_indices[i], 0),
-                                      this->d_dims_vec[i] - 2);
+      origin_indices[i] =
+          Kernel::clamp(origin_indices[i], static_cast<INT>(0),
+                        static_cast<INT>(this->d_dims_vec[i] - 2));
     }
 
     // Necessary for using the interp_utils functions.
@@ -292,9 +292,8 @@ struct InterpolateDataOnDevice
     // Initial function evaluation (ie values of the coeffs_vec) based on the
     // origin_indices and the vertices of the hypercube and any data needed for
     // DATATYPE.calc_data(...).
-    interp_utils::initial_func_eval_on_device<decltype(interp_data),
-                                              output_ndim, interp_ndim,
-                                              non_interp_ndim, total_ndim>(
+    interp_utils::initial_func_eval_on_device<
+        decltype(interp_data), output_ndim, interp_ndim, non_interp_ndim>(
         vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
         origin_indices_ptr, this->d_hypercube_vertices, this->d_ranges_vec,
         non_interpolation_points, this->interp_indices,

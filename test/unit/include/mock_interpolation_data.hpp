@@ -1,11 +1,7 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
-#include "reactions_lib/interp_utils.hpp"
-#include "reactions_lib/reaction_data.hpp"
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/device_buffers.hpp>
-#include <neso_particles/error_propagate.hpp>
 #include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;

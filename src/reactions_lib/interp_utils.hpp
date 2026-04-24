@@ -224,7 +224,7 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  */
 
 template <typename DATATYPE, int output_ndim, int interp_ndim,
-          int non_interp_ndim, int total_ndim>
+          int non_interp_ndim>
 inline void initial_func_eval_on_device(
     REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
     INT const *origin_indices, INT const *hypercube_vertices,
@@ -246,6 +246,8 @@ inline void initial_func_eval_on_device(
   for (size_t i = 0; i < interp_ndim; i++) {
     vertex_val[i] = 0.0;
   }
+
+  static constexpr int total_ndim = interp_ndim + non_interp_ndim;
 
   std::array<REAL, total_ndim> grid_func_input;
   for (size_t i = 0; i < total_ndim; i++)
