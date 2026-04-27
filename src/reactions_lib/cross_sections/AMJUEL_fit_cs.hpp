@@ -49,8 +49,9 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
                         std::array<REAL, num_l_coeffs> l_coeffs,
                         std::array<REAL, num_r_coeffs> r_coeffs, REAL lab_E_min,
                         REAL lab_E_max, REAL max_E)
-      : cs_norm(cs_norm), mult_const(vel_norm * vel_norm * mass_amu *
-                                     1.66053904e-27 / (2 * 1.60217663e-19)),
+      : cs_norm(cs_norm), scaled_inverse_cs_norm(1e-4 / cs_norm),
+        mult_const(vel_norm * vel_norm * mass_amu * 1.66053904e-27 /
+                   (2 * 1.60217663e-19)),
         coeffs(coeffs), l_coeffs(l_coeffs), r_coeffs(r_coeffs),
         lab_E_min(lab_E_min), lab_E_max(lab_E_max) {
 
@@ -85,28 +86,35 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
 
     REAL sum_E = 0;
     if (left_asymptote) {
+      /*
+       * Code before optimisation for futher info search horner's
+       * method
+       *
+       * for (int i = 0; i < num_l_coeffs; i++) {
+       *	sum_E += this->l_coeffs[i] * std::pow(logE, i);
+       *	}
+       *
+       */
 
-      for (int i = 0; i < num_l_coeffs; i++) {
-
-        sum_E += this->l_coeffs[i] * std::pow(logE, i);
+      for (int i = static_cast<int>(num_l_coeffs) - 1; i >= 0; i--) {
+        sum_E = sum_E * logE + this->l_coeffs[i];
       }
     } else if
 
         (right_asymptote) {
 
-      for (int i = 0; i < num_r_coeffs; i++) {
-
-        sum_E += this->r_coeffs[i] * std::pow(logE, i);
+      for (int i = static_cast<int>(num_r_coeffs) - 1; i >= 0; i--) {
+        sum_E = sum_E * logE + this->r_coeffs[i];
       }
     }
 
     else {
-      for (int i = 0; i < num_coeffs; i++) {
-
-        sum_E += this->coeffs[i] * std::pow(logE, i);
+      for (int i = static_cast<int>(num_coeffs) - 1; i >= 0; i--) {
+        sum_E = sum_E * logE + this->coeffs[i];
       }
     }
-    return Kernel::exp(sum_E) * 1e-4 / this->cs_norm;
+
+    return Kernel::exp(sum_E) * this->scaled_inverse_cs_norm;
   };
 
   /**
@@ -123,6 +131,7 @@ private:
   REAL max_E;
   REAL lab_E_min;
   REAL lab_E_max;
+  REAL scaled_inverse_cs_norm;
   std::array<REAL, num_coeffs> coeffs;
   std::array<REAL, num_l_coeffs> l_coeffs;
   std::array<REAL, num_r_coeffs> r_coeffs;

@@ -15,6 +15,8 @@ Default property enums and maps are supplied with the library, but users can ext
 These are:
 
 #. reacted_flag
+#. grouping_index
+#. linear_index
 #. panic
 #. position
 #. velocity 
@@ -45,6 +47,8 @@ If a user-defined reaction extension requires more properties than the above, th
 The above enum entries get mapped to strings used to construct :class:`Sym` objects. The default map is:
 
 * reacted_flag - "PARTICLE_REACTED_FLAG"
+* grouping_index - "REACTIONS_GROUPING_FLAG"
+* linear_index - "REACTIONS_LINEAR_INDEX"
 * panic - "REACTIONS_PANIC_FLAG"
 * position - "POSITION"
 * velocity - "VELOCITY"
@@ -105,6 +109,8 @@ When constructed using the recommended constructor, the following properties are
 * id 
 * internal_state
 * reacted_flag 
+* grouping_index
+* linear_index
 * weight
 * tot_reaction_rate
 

@@ -1,2 +1,4 @@
 ---
-# BasedOnStyle: LLVM
+BasedOnStyle: LLVM
+# IndentAccessModifiers: true
+# AccessModifierOffset: 0

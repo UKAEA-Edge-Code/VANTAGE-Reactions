@@ -32,6 +32,8 @@ struct StandardPropertiesEnum {
 public:
   enum {
     reacted_flag,
+    grouping_index,
+    linear_index,
     panic,
     position,
     velocity,
@@ -94,6 +96,8 @@ public:
 private:
   std::map<int, std::string> private_map{
       {default_properties.reacted_flag, "PARTICLE_REACTED_FLAG"},
+      {default_properties.grouping_index, "REACTIONS_GROUPING_INDEX"},
+      {default_properties.linear_index, "REACTIONS_LINEAR_INDEX"},
       {default_properties.panic, "REACTIONS_PANIC_FLAG"},
       {default_properties.position, "POSITION"},
       {default_properties.velocity, "VELOCITY"},
