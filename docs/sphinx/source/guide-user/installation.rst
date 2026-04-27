@@ -70,7 +70,7 @@ To designate a package as an external one, the path of the root directory of the
 
 Note, this must be done outside the Reactions spack environment (for example in the $HOME directory).
 This will modify a file in ``$SPACK_ROOT`` called ``packages.yaml`` or create one if it doesn't exist. It is recommended to assign the listed packages as external if possible to smooth the experience of the first time install.
-NOTE: For `llvm`, if it's pre-installed then it's best to let spack find it using `spack compiler find ${llvm_install_path}` instead.
+NOTE: For ``llvm``, if it's pre-installed then it's best to let spack find it using ``spack compiler find ${llvm_install_path}`` instead.
 
 Installation
 =====================
@@ -109,7 +109,7 @@ In addition to the default environment, there are also some other variants inclu
 Each sub-folder has it's own ``spack.yaml`` that defines an environment and spec that's specific to that sub-folder. For example, the ``spack_omp_accelerated``
 contains a spec that allows for an installation with ``adaptivecpp`` designating ``llvm`` as the backend for compilation.
 
-To use any of these environments, activate the environment with ``spack env activate -p -d environments/{desired_environment}`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Then simply run ``spack install``.
+To use any of these environments, activate the environment with ``spack env activate -p -d environments/{desired_environment}`` (make sure that you're outside of the default environment using ``spack env deactivate`` before activating another one). Ensure any existing loaded packages are unloaded with ``spack unload --all`` and then simply run ``spack install``.
 
 For CUDA-specific installations, the environments are provided but given the subtleties associated with this installation, there is no guarantee that these will work out-of-the-box and might require more modifications (possibly outside of the ``spack.yaml``) to function.
 
@@ -122,9 +122,10 @@ If any compatibility issues are present when attempting these optional variants,
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
 
-Load the `vantagereactions` package:
+Unload any existing loaded packages, then load the ``vantagereactions`` package:
 ::
 
+    spack unload --all
     spack load vantagereactions
 
 The CPU specific command to run the unit tests is:
@@ -141,7 +142,7 @@ To ensure that invalid/failure states are tested, run the unit tests with the co
 
 Run unit-tests (GPU)
 ~~~~~~~~~~~~~~~~~~~~
-Load the `vantagereactions` package again (ensuring you're within the correct environment).
+Unload any existing loaded packages, then load the ``vantagereactions`` package again (ensuring you're within the correct environment).
 Then the GPU specific command to run the unit tests is:
 ::
 
