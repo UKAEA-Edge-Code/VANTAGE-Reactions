@@ -75,6 +75,9 @@
  * corresponding to the dimension that's being contracted.
  */
 
+// Type discipline for indices:
+//   size_t  — API boundaries, container sizes, stride values
+//   INT     — internal device computation (subtraction, decrement, clamp)
 #ifndef REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
 #define REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
 #include "reactions_lib/composite_data.hpp"
@@ -185,12 +188,12 @@ struct InterpolateDataOnDevice
           KernelType &kernel) const {
 
     std::array<REAL, interp_ndim> mut_interpolation_points;
-    for (int i = 0; i < interp_ndim; i++) {
+    for (size_t i = 0; i < interp_ndim; i++) {
       mut_interpolation_points[i] = input_array[this->interp_indices[i]];
     }
 
     std::array<REAL, non_interp_ndim> non_interpolation_points;
-    for (int i = 0; i < non_interp_ndim; i++) {
+    for (size_t i = 0; i < non_interp_ndim; i++) {
       non_interpolation_points[i] = input_array[non_interp_indices[i]];
     }
 
@@ -207,7 +210,7 @@ struct InterpolateDataOnDevice
       vertex_coord[i] = 0;
     }
 
-    for (INT i = 0; i < initial_num_points; i++) {
+    for (size_t i = 0; i < initial_num_points; i++) {
       vertex_func_evals[i] = 0.0;
 
       output_evals[i] = 0.0;
@@ -215,7 +218,7 @@ struct InterpolateDataOnDevice
     }
 
     // Counter
-    INT num_points = this->initial_num_points;
+    INT num_points = static_cast<INT>(this->initial_num_points);
 
     // Calculation of the indices that will form the "origin" of the
     // hypercube. These are the smallest indices in each dimension that
@@ -228,11 +231,11 @@ struct InterpolateDataOnDevice
     // bounds. This is for the sake of aiding in extrapolation handling and is
     // reset after extrapolation handling.
     for (size_t i = 0; i < interp_ndim; i++) {
-      origin_indices[i] = interp_utils::calc_floor_point_index(
+      origin_indices[i] = static_cast<INT>(interp_utils::calc_floor_point_index(
           mut_interpolation_points[i],
           this->d_extended_ranges_vec_ptr +
               this->d_extended_ranges_strides_ptr[i],
-          this->d_extended_dims_vec_ptr[i] - 1);
+          this->d_extended_dims_vec_ptr[i] - 1));
     }
 
     // Out-of-range clamping handling
@@ -246,8 +249,8 @@ struct InterpolateDataOnDevice
     bool out_of_range_clamp_to_zero = false;
 
     for (size_t i = 0; i < interp_ndim; i++) {
-      above_range =
-          (origin_indices[i] == (this->d_extended_dims_vec_ptr[i] - 2));
+      above_range = (origin_indices[i] ==
+                     static_cast<INT>(this->d_extended_dims_vec_ptr[i] - 2));
       below_range = (origin_indices[i] == 0);
 
       out_of_range = (above_range || below_range);
@@ -305,15 +308,14 @@ struct InterpolateDataOnDevice
         req_real_props, kernel);
 
     std::array<REAL, output_ndim> calculated_interpolated_vals;
-    for (int i = 0; i < output_ndim; i++) {
+    for (size_t i = 0; i < output_ndim; i++) {
       calculated_interpolated_vals[i] = 0.0;
     }
 
     // Loop until the last dimension (down to 0D)
-    // Note that despite the dim_index = interp_ndim assignment, the loop
-    // actually starts at dim_index = (interp_ndim - 1) , as desired, due to
-    // the decrement and store during the first check against 0.
-    for (size_t dim_index = interp_ndim; dim_index-- > 0;) {
+    // Starts at dim_index = (interp_ndim - 1) and decrements to 0.
+    for (INT dim_index = static_cast<INT>(interp_ndim) - 1; dim_index >= 0;
+         dim_index--) {
 
       // Contract the hypercube vertices and evaluations by performing linear
       // interpolation on the current dimension (denoted by dim_index). The
@@ -332,15 +334,15 @@ struct InterpolateDataOnDevice
       num_points = num_points >> 1;
 
       // Reset vertex_func_evals for the next contraction
-      for (int i = 0; i < num_points; i++) {
-        for (int idim = 0; idim < output_ndim; idim++) {
+      for (size_t i = 0; i < static_cast<size_t>(num_points); i++) {
+        for (size_t idim = 0; idim < output_ndim; idim++) {
           vertex_func_evals[(i * output_ndim) + idim] =
               output_evals[(i * output_ndim) + idim];
         }
       }
     }
 
-    for (int idim = 0; idim < output_ndim; idim++) {
+    for (size_t idim = 0; idim < output_ndim; idim++) {
       calculated_interpolated_vals[idim] =
           out_of_range_clamp_to_zero ? calculated_interpolated_vals[idim]
                                      : vertex_func_evals[idim];
@@ -350,7 +352,7 @@ struct InterpolateDataOnDevice
   }
 
 public:
-  INT const *d_hypercube_vertices_ptr;
+  size_t const *d_hypercube_vertices_ptr;
   size_t const *d_dims_vec_ptr;
   REAL const *d_ranges_vec_ptr;
   REAL const *d_extended_ranges_vec_ptr;
@@ -361,8 +363,8 @@ public:
   std::array<size_t, interp_ndim> interp_indices;
   std::array<size_t, non_interp_ndim> non_interp_indices;
 
-  static constexpr INT initial_num_points = 1 << interp_ndim;
-  static constexpr int total_ndim = interp_ndim + non_interp_ndim;
+  static constexpr size_t initial_num_points = 1 << interp_ndim;
+  static constexpr size_t total_ndim = interp_ndim + non_interp_ndim;
 
   bool continue_linear = false;
   bool clamp_to_zero = false;
@@ -582,7 +584,7 @@ struct InterpolateData
     this->on_device_obj->d_extended_ranges_strides_ptr =
         this->d_extended_ranges_strides->ptr;
 
-    this->d_hypercube_vertices = std::make_shared<BufferDevice<INT>>(
+    this->d_hypercube_vertices = std::make_shared<BufferDevice<size_t>>(
         this->sycl_target, initial_hypercube);
     this->on_device_obj->d_hypercube_vertices_ptr =
         this->d_hypercube_vertices->ptr;
@@ -600,7 +602,7 @@ struct InterpolateData
   std::shared_ptr<BufferDevice<size_t>> d_extended_dims_vec;
   std::shared_ptr<BufferDevice<size_t>> d_ranges_strides;
   std::shared_ptr<BufferDevice<size_t>> d_extended_ranges_strides;
-  std::shared_ptr<BufferDevice<INT>> d_hypercube_vertices;
+  std::shared_ptr<BufferDevice<size_t>> d_hypercube_vertices;
 };
 }; // namespace VANTAGE::Reactions
 #endif

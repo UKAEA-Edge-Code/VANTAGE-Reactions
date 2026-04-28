@@ -20,13 +20,13 @@ struct GridEvalOnDevice
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
     std::array<INT, input_ndim> grid_indices;
-    grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges, this->d_dims[0]);
+    grid_indices[0] = static_cast<INT>(interp_utils::calc_floor_point_index(
+        input[0], this->d_ranges, this->d_dims[0]));
     size_t aggregate_dims = 0;
-    for (size_t i = 1; i < input_ndim; i++) {
+    for (size_t i = 1; i < static_cast<size_t>(input_ndim); i++) {
       aggregate_dims += this->d_dims[i - 1];
-      grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
+      grid_indices[i] = static_cast<INT>(interp_utils::calc_floor_point_index(
+          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]));
     }
 
     auto grid_indices_ptr = grid_indices.data();
@@ -95,13 +95,13 @@ struct TrimEvalOnDevice
         interp_utils::bin_uniform_indices(input_to_bin, trim_dims_arr);
 
     std::array<INT, interp_ndim> grid_indices;
-    grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges, this->d_dims[0]);
+    grid_indices[0] = static_cast<INT>(interp_utils::calc_floor_point_index(
+        input[0], this->d_ranges, this->d_dims[0]));
     size_t aggregate_dims = 0;
-    for (size_t i = 1; i < interp_ndim; i++) {
+    for (size_t i = 1; i < static_cast<size_t>(interp_ndim); i++) {
       aggregate_dims += this->d_dims[i - 1];
-      grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
+      grid_indices[i] = static_cast<INT>(interp_utils::calc_floor_point_index(
+          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]));
     }
 
     auto grid_indices_ptr = grid_indices.data();
