@@ -1,18 +1,10 @@
 #ifndef REACTIONS_DOWNSAMPLING_BASE_H
 #define REACTIONS_DOWNSAMPLING_BASE_H
 
-#include "common_markers.hpp"
-#include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
 #include "transformation_wrapper.hpp"
-#include "utils.hpp"
-#include <algorithm>
 #include <cmath>
-#include <functional>
-#include <limits>
 #include <memory>
 #include <neso_particles.hpp>
-#include <vector>
 
 using namespace NESO::Particles;
 
@@ -344,16 +336,16 @@ struct DownsamplingStrategy : TransformationStrategy {
     // needed
     if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
       this->reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
-          template_group->sycl_target, cell_count,
-          DOWNSAMPLING_KERNEL::REDUCTION_PLUS_DIM, num_downsampling_groups);
+          template_group->sycl_target, cell_count, num_downsampling_groups,
+          DOWNSAMPLING_KERNEL::REDUCTION_PLUS_DIM);
 
       this->min_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
-          template_group->sycl_target, cell_count,
-          DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM, num_downsampling_groups);
+          template_group->sycl_target, cell_count, num_downsampling_groups,
+          DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM);
 
       this->max_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
-          template_group->sycl_target, cell_count,
-          DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM, num_downsampling_groups);
+          template_group->sycl_target, cell_count, num_downsampling_groups,
+          DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM);
     }
 
     // We only need to track the number of particles in the merging mode
