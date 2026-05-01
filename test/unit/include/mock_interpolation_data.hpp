@@ -2,188 +2,27 @@
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/typedefs.hpp>
 #include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
+#include "reactions_lib/reaction_data/grid_eval_data.hpp"
+#include "reactions_lib/reaction_data/trim_eval_data.hpp"
+
 namespace test_composite_data {
-template <int input_ndim>
-struct GridEvalOnDevice
-    : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
-  GridEvalOnDevice() = default;
+// Using-declarations for backward compatibility with test code
+template <int N>
+using GridEvalOnDevice = VANTAGE::Reactions::GridEvalOnDevice<N>;
 
-  std::array<REAL, 1> calc_data(
-      const std::array<REAL, input_ndim> &input,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
-    std::array<INT, input_ndim> grid_indices;
-    grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges, this->d_dims[0]);
-    size_t aggregate_dims = 0;
-    for (size_t i = 1; i < input_ndim; i++) {
-      aggregate_dims += this->d_dims[i - 1];
-      grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
-    }
+template <int N> using GridEval = VANTAGE::Reactions::GridEval<N>;
 
-    auto grid_indices_ptr = grid_indices.data();
-    INT grid_flat_index = interp_utils::coeff_index_on_device(
-        grid_indices_ptr, this->d_dims, input_ndim);
+template <int I, int O>
+using TrimEvalOnDevice = VANTAGE::Reactions::TrimEvalOnDevice<I, O>;
 
-    return std::array<REAL, 1>{this->d_grid[grid_flat_index]};
-  }
-
-public:
-  size_t const *d_dims;
-  REAL const *d_ranges;
-  REAL const *d_grid;
-};
-
-template <int input_ndim>
-struct GridEval : public ReactionDataBase<GridEvalOnDevice<input_ndim>> {
-  GridEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
-           const std::vector<size_t> &dims_vec,
-           SYCLTargetSharedPtr sycl_target) {
-    this->on_device_obj = GridEvalOnDevice<input_ndim>();
-
-    this->h_dims =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
-    this->on_device_obj->d_dims = this->h_dims->ptr;
-
-    this->h_ranges =
-        std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
-    this->on_device_obj->d_ranges = this->h_ranges->ptr;
-
-    this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
-    this->on_device_obj->d_grid = this->h_grid->ptr;
-  };
-
-public:
-  std::shared_ptr<BufferDevice<size_t>> h_dims;
-  std::shared_ptr<BufferDevice<REAL>> h_ranges;
-  std::shared_ptr<BufferDevice<REAL>> h_grid;
-};
-
-template <int input_ndim, int output_ndim>
-struct TrimEvalOnDevice
-    : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
-                                      input_ndim, REAL, INT> {
-  TrimEvalOnDevice() {
-    static_assert(
-        input_ndim >= output_ndim,
-        "For TrimEvalOnDevice, input_ndim >= output_ndim must be true.");
-  };
-
-  std::array<REAL, output_ndim> calc_data(
-      const std::array<REAL, input_ndim> &input,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
-
-    std::array<REAL, output_ndim> input_to_bin;
-    std::array<INT, output_ndim> trim_dims_arr;
-    for (size_t i = 0; i < output_ndim; i++) {
-      input_to_bin[i] = input[i + interp_ndim];
-      trim_dims_arr[i] = this->d_trim_dims[i];
-    }
-
-    std::array<INT, output_ndim> binned_inputs =
-        interp_utils::bin_uniform_indices(input_to_bin, trim_dims_arr);
-
-    std::array<INT, interp_ndim> grid_indices;
-    grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges, this->d_dims[0]);
-    size_t aggregate_dims = 0;
-    for (size_t i = 1; i < interp_ndim; i++) {
-      aggregate_dims += this->d_dims[i - 1];
-      grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
-    }
-
-    auto grid_indices_ptr = grid_indices.data();
-    INT grid_flat_index =
-        interp_utils::coeff_index_on_device(grid_indices_ptr, this->d_dims, 2);
-
-    auto grid_access_point = grid_flat_index * this->grid_stride;
-
-    std::array<INT, output_ndim> trim_indices;
-    std::array<REAL, output_ndim> trim_vals;
-
-    int field_access_point;
-    int field_stride;
-    int aggregate_dim;
-    for (int idim = 0; idim < output_ndim; idim++) {
-      field_access_point = 0;
-      field_stride = 0;
-      aggregate_dim = 1;
-      for (int jdim = idim - 1, kdim = 0; jdim >= 0; jdim--, kdim++) {
-        aggregate_dim *= d_trim_dims[kdim];
-        field_access_point += aggregate_dim;
-        field_stride += (binned_inputs[jdim] * aggregate_dim);
-      }
-
-      trim_indices[idim] =
-          field_access_point + field_stride + binned_inputs[idim];
-      trim_vals[idim] = this->d_grid[grid_access_point + trim_indices[idim]];
-    }
-    return trim_vals;
-  }
-
-public:
-  int grid_stride;
-
-  static constexpr int interp_ndim = input_ndim - output_ndim;
-
-  REAL const *d_ranges;
-  size_t const *d_dims;
-  size_t const *d_trim_dims;
-  REAL const *d_grid;
-};
-
-template <int input_ndim, int output_ndim>
-struct TrimEval
-    : public ReactionDataBase<TrimEvalOnDevice<input_ndim, output_ndim>> {
-  TrimEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
-           const std::vector<size_t> &dims_vec,
-           const std::vector<size_t> &trim_dims_vec,
-           SYCLTargetSharedPtr sycl_target) {
-    this->on_device_obj = TrimEvalOnDevice<input_ndim, output_ndim>();
-
-    this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
-    this->on_device_obj->d_grid = this->h_grid->ptr;
-
-    this->h_ranges =
-        std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
-    this->on_device_obj->d_ranges = this->h_ranges->ptr;
-
-    this->h_dims =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
-    this->on_device_obj->d_dims = this->h_dims->ptr;
-
-    int aggregrate_dim = 1;
-    this->on_device_obj->grid_stride = 0;
-    for (auto &trim_dim : trim_dims_vec) {
-      aggregrate_dim *= trim_dim;
-      this->on_device_obj->grid_stride += aggregrate_dim;
-    }
-
-    this->h_trim_dims =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, trim_dims_vec);
-    this->on_device_obj->d_trim_dims = this->h_trim_dims->ptr;
-  };
-
-public:
-  std::shared_ptr<BufferDevice<REAL>> h_ranges;
-  std::shared_ptr<BufferDevice<size_t>> h_dims;
-  std::shared_ptr<BufferDevice<size_t>> h_trim_dims;
-  std::shared_ptr<BufferDevice<REAL>> h_grid;
-};
-
-}; // namespace test_composite_data
+template <int I, int O> using TrimEval = VANTAGE::Reactions::TrimEval<I, O>;
+} // namespace test_composite_data
 
 struct abstract_coefficient_values {
   abstract_coefficient_values() = default;
@@ -343,9 +182,10 @@ private:
   static constexpr int trim_dim1 = 5;
   static constexpr int trim_dim2 = 5;
 
-  static constexpr int c1dtd1 = 1.0 / trim_dim1;
-  static constexpr int c1dtd2 = 1.0 / trim_dim2;
-  static constexpr int c1dtd1td2 = 1.0 / (trim_dim1 * trim_dim2);
+  static constexpr REAL c1dtd1 = 1.0 / static_cast<REAL>(trim_dim1);
+  static constexpr REAL c1dtd2 = 1.0 / static_cast<REAL>(trim_dim2);
+  static constexpr REAL c1dtd1td2 =
+      1.0 / static_cast<REAL>(trim_dim1 * trim_dim2);
 
   static inline std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
                                                   trim_dim2};
@@ -417,9 +257,9 @@ private:
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0 * trim_dim1> result;
         for (INT counter = 0; counter < trim_dim0 * trim_dim1; counter++) {
-          INT idim = counter * c1dtd1;
+          INT idim = static_cast<INT>(static_cast<REAL>(counter) * c1dtd1);
           INT jdim = counter % trim_dim1;
-          result[counter] = (dim0_val * dim1_val);
+          result[counter] = counter * (dim0_val * dim1_val);
           result[counter] *=
               (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
                rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0));
@@ -433,8 +273,9 @@ private:
         std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2> result;
         for (INT counter = 0; counter < trim_dim0 * trim_dim1 * trim_dim2;
              counter++) {
-          INT idim = counter * c1dtd1td2;
-          INT jdim = (counter * c1dtd2) % trim_dim1;
+          INT idim = static_cast<INT>(static_cast<REAL>(counter) * c1dtd1td2);
+          INT jdim =
+              static_cast<INT>(static_cast<REAL>(counter) * c1dtd2) % trim_dim1;
           INT kdim = counter % trim_dim2;
           result[counter] = counter * (dim0_val * dim1_val);
           result[counter] *=
@@ -470,6 +311,219 @@ private:
 
 public:
   trim_coefficient_values(
+      const std::array<REAL, trim_ndim> &rand_nums,
+      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda) {
+
+    this->sycl_target = sycl_target;
+
+    std::vector<std::vector<std::array<REAL, trim_dim0>>> trim_vals_trim_dim0(
+        dim1, std::vector<std::array<REAL, trim_dim0>>(dim0));
+    std::vector<std::vector<std::array<REAL, trim_dim0 * trim_dim1>>>
+        trim_vals_trim_dim1(
+            dim1, std::vector<std::array<REAL, trim_dim0 * trim_dim1>>(dim0));
+    std::vector<
+        std::vector<std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2>>>
+        trim_vals_trim_dim2(
+            dim1,
+            std::vector<std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2>>(
+                dim0));
+
+    std::vector<std::vector<std::vector<REAL>>> trim_vals(
+        dim1, std::vector<std::vector<REAL>>(dim0));
+
+    for (int idim1 = 0; idim1 < this->dim1; idim1++) {
+      for (int idim0 = 0; idim0 < this->dim0; idim0++) {
+        trim_vals_trim_dim0[idim1][idim0] = trim_grid_func_0(
+            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
+
+        trim_vals_trim_dim1[idim1][idim0] = trim_grid_func_1(
+            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
+
+        trim_vals_trim_dim2[idim1][idim0] = trim_grid_func_2(
+            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
+
+        for (int itrim_dim0 = 0; itrim_dim0 < trim_dim0; itrim_dim0++) {
+          trim_vals[idim1][idim0].push_back(
+              trim_vals_trim_dim0[idim1][idim0][itrim_dim0]);
+        }
+
+        for (int itrim_dim1 = 0; itrim_dim1 < (trim_dim0 * trim_dim1);
+             itrim_dim1++) {
+          trim_vals[idim1][idim0].push_back(
+              trim_vals_trim_dim1[idim1][idim0][itrim_dim1]);
+        }
+
+        for (int itrim_dim2 = 0;
+             itrim_dim2 < (trim_dim0 * trim_dim1 * trim_dim2); itrim_dim2++) {
+          trim_vals[idim1][idim0].push_back(
+              trim_vals_trim_dim2[idim1][idim0][itrim_dim2]);
+        }
+
+        this->coeffs_vec.insert(this->coeffs_vec.end(),
+                                trim_vals[idim1][idim0].begin(),
+                                trim_vals[idim1][idim0].end());
+      }
+    }
+
+    this->ranges_flat_vec = this->dim0_range;
+    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
+                                 this->dim1_range.begin(),
+                                 this->dim1_range.end());
+
+    this->lower_bounds.push_back(this->dim0_range[0]);
+    this->lower_bounds.push_back(this->dim1_range[0]);
+
+    this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
+    this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
+
+    this->dims_vec.push_back(this->dim0);
+    this->dims_vec.push_back(this->dim1);
+  }
+
+  auto get_trim_dims_vec() const { return this->trim_dims_vec; }
+
+  auto get_grid_func_data() const {
+    std::optional<test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>>
+        return_val;
+    if (this->sycl_target) {
+      return_val = test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>(
+          this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
+          this->trim_dims_vec, this->sycl_target.value());
+    }
+    return return_val.value();
+  }
+
+  auto get_grid_func() const { return this->trim_grid_func; }
+};
+
+struct trim_coefficient_values_asym : abstract_coefficient_values {
+private:
+  static constexpr int ndim = 2;
+  static constexpr int trim_ndim = 3;
+
+  static constexpr int dim0 = 100;
+  static constexpr int dim1 = 70;
+
+  static constexpr int trim_dim0 = 3;
+  static constexpr int trim_dim1 = 5;
+  static constexpr int trim_dim2 = 4;
+
+  static constexpr REAL c1dtd1 = 1.0 / static_cast<REAL>(trim_dim1);
+  static constexpr REAL c1dtd2 = 1.0 / static_cast<REAL>(trim_dim2);
+  static constexpr REAL c1dtd1td2 =
+      1.0 / static_cast<REAL>(trim_dim1 * trim_dim2);
+
+  static inline std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
+                                                  trim_dim2};
+
+  // generated using: numpy.logspace(1e4, numpy.log10(4e4), 100)
+  const std::vector<REAL> dim0_range = {
+      1.0000e+04, 1.0141e+04, 1.0284e+04, 1.0429e+04, 1.0576e+04, 1.0725e+04,
+      1.0876e+04, 1.1030e+04, 1.1185e+04, 1.1343e+04, 1.1503e+04, 1.1665e+04,
+      1.1830e+04, 1.1997e+04, 1.2166e+04, 1.2337e+04, 1.2511e+04, 1.2688e+04,
+      1.2867e+04, 1.3048e+04, 1.3232e+04, 1.3419e+04, 1.3608e+04, 1.3800e+04,
+      1.3994e+04, 1.4192e+04, 1.4392e+04, 1.4595e+04, 1.4801e+04, 1.5009e+04,
+      1.5221e+04, 1.5436e+04, 1.5653e+04, 1.5874e+04, 1.6098e+04, 1.6325e+04,
+      1.6555e+04, 1.6789e+04, 1.7025e+04, 1.7265e+04, 1.7509e+04, 1.7756e+04,
+      1.8006e+04, 1.8260e+04, 1.8517e+04, 1.8779e+04, 1.9043e+04, 1.9312e+04,
+      1.9584e+04, 1.9860e+04, 2.0141e+04, 2.0425e+04, 2.0713e+04, 2.1005e+04,
+      2.1301e+04, 2.1601e+04, 2.1906e+04, 2.2215e+04, 2.2528e+04, 2.2846e+04,
+      2.3168e+04, 2.3495e+04, 2.3826e+04, 2.4162e+04, 2.4503e+04, 2.4848e+04,
+      2.5198e+04, 2.5554e+04, 2.5914e+04, 2.6280e+04, 2.6650e+04, 2.7026e+04,
+      2.7407e+04, 2.7793e+04, 2.8185e+04, 2.8583e+04, 2.8986e+04, 2.9395e+04,
+      2.9809e+04, 3.0230e+04, 3.0656e+04, 3.1088e+04, 3.1527e+04, 3.1971e+04,
+      3.2422e+04, 3.2879e+04, 3.3343e+04, 3.3813e+04, 3.4290e+04, 3.4773e+04,
+      3.5264e+04, 3.5761e+04, 3.6265e+04, 3.6777e+04, 3.7295e+04, 3.7821e+04,
+      3.8354e+04, 3.8895e+04, 3.9444e+04, 4.0000e+04};
+
+  // generated using: 90.0 - numpy.logspace(numpy.log10(90.0 - 4.5e1),
+  // numpy.log10(90.0 - 8.5e1), 70) just replace the first element to 0.0;
+  const std::vector<REAL> dim1_range = {
+      4.5000e+01, 4.6410e+01, 4.7777e+01, 4.9100e+01, 5.0382e+01, 5.1624e+01,
+      5.2826e+01, 5.3991e+01, 5.5120e+01, 5.6213e+01, 5.7272e+01, 5.8298e+01,
+      5.9292e+01, 6.0254e+01, 6.1186e+01, 6.2089e+01, 6.2964e+01, 6.3812e+01,
+      6.4632e+01, 6.5427e+01, 6.6198e+01, 6.6944e+01, 6.7666e+01, 6.8366e+01,
+      6.9044e+01, 6.9701e+01, 7.0337e+01, 7.0954e+01, 7.1551e+01, 7.2129e+01,
+      7.2689e+01, 7.3231e+01, 7.3757e+01, 7.4266e+01, 7.4759e+01, 7.5237e+01,
+      7.5700e+01, 7.6148e+01, 7.6582e+01, 7.7003e+01, 7.7410e+01, 7.7805e+01,
+      7.8187e+01, 7.8557e+01, 7.8916e+01, 7.9263e+01, 7.9600e+01, 7.9926e+01,
+      8.0241e+01, 8.0547e+01, 8.0843e+01, 8.1130e+01, 8.1408e+01, 8.1678e+01,
+      8.1939e+01, 8.2191e+01, 8.2436e+01, 8.2673e+01, 8.2903e+01, 8.3125e+01,
+      8.3341e+01, 8.3549e+01, 8.3751e+01, 8.3947e+01, 8.4137e+01, 8.4321e+01,
+      8.4499e+01, 8.4671e+01, 8.4838e+01, 8.5000e+01};
+
+  static const inline auto trim_grid_func_0 =
+      [](const REAL &dim0_val, const REAL &dim1_val,
+         const std::array<REAL, trim_ndim> &rand_nums) {
+        std::array<REAL, trim_dim0> result;
+        for (int idim = 0; idim < trim_dim0; idim++) {
+          result[idim] = (dim0_val * dim1_val);
+          result[idim] *=
+              rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0);
+        }
+        return result;
+      };
+
+  static const inline auto trim_grid_func_1 =
+      [](const REAL &dim0_val, const REAL &dim1_val,
+         const std::array<REAL, trim_ndim> &rand_nums) {
+        std::array<REAL, trim_dim0 * trim_dim1> result;
+        for (INT counter = 0; counter < trim_dim0 * trim_dim1; counter++) {
+          INT idim = static_cast<INT>(static_cast<REAL>(counter) * c1dtd1);
+          INT jdim = counter % trim_dim1;
+          result[counter] = counter * (dim0_val * dim1_val);
+          result[counter] *=
+              (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
+               rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0));
+        }
+        return result;
+      };
+
+  static const inline auto trim_grid_func_2 =
+      [](const REAL &dim0_val, const REAL &dim1_val,
+         const std::array<REAL, trim_ndim> &rand_nums) {
+        std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2> result;
+        for (INT counter = 0; counter < trim_dim0 * trim_dim1 * trim_dim2;
+             counter++) {
+          INT idim = static_cast<INT>(static_cast<REAL>(counter) * c1dtd1td2);
+          INT jdim =
+              static_cast<INT>(static_cast<REAL>(counter) * c1dtd2) % trim_dim1;
+          INT kdim = counter % trim_dim2;
+          result[counter] = counter * (dim0_val * dim1_val);
+          result[counter] *=
+              (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
+               rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0) +
+               rand_nums[2] * Kernel::pow(static_cast<REAL>(kdim), 2.0));
+        }
+        return result;
+      };
+
+  static const inline auto trim_grid_func_lambda =
+      [](const REAL &dim0_val, const REAL &dim1_val,
+         const std::array<INT, trim_ndim> &trim_indices,
+         const std::array<INT, trim_ndim> &trim_dims,
+         const std::array<REAL, trim_ndim> &rand_nums) {
+        auto trim_vals_trim_dim0 =
+            trim_grid_func_0(dim0_val, dim1_val, rand_nums)[trim_indices[0]];
+
+        auto trim_vals_trim_dim1 = trim_grid_func_1(
+            dim0_val, dim1_val,
+            rand_nums)[(trim_indices[0] * trim_dims[1]) + trim_indices[1]];
+
+        auto trim_vals_trim_dim2 = trim_grid_func_2(
+            dim0_val, dim1_val,
+            rand_nums)[(trim_indices[0] * (trim_dims[2] * trim_dims[1])) +
+                       (trim_indices[1] * trim_dims[2]) + trim_indices[2]];
+
+        return std::array<REAL, trim_ndim>{
+            trim_vals_trim_dim0, trim_vals_trim_dim1, trim_vals_trim_dim2};
+      };
+
+  utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
+
+public:
+  trim_coefficient_values_asym(
       const std::array<REAL, trim_ndim> &rand_nums,
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda) {
