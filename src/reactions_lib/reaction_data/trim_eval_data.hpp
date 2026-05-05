@@ -13,9 +13,10 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device: ReactionData evaluating a TRIM (Tabulated Representation
- * of Internal Modes) distribution by binning velocity components and looking
- * up tabulated values from a grid, combining interpolation with trimming.
+ * @brief On device: Reaction rate data calculation evaluating a TRIM (Tabulated
+ * Representation of Internal Modes) distribution by binning velocity components
+ * and looking up tabulated values from a grid, combining interpolation with
+ * trimming.
  *
  * @tparam input_ndim Total input dimensionality (interp + trim dimensions).
  * @tparam output_ndim Number of trim/velocity dimensions (number of output
@@ -41,10 +42,9 @@ struct TrimEvalOnDevice
    * components are interpolation coordinates, remaining output_ndim components
    * are trim coordinates).
    * @param index Read-only accessor to a loop index for a ParticleLoop inside
-   * which calc_data is called (unused for this data type).
+   * which calc_data is called.
    * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation (unused for this data
-   * type).
+   * need to be used for the reaction rate calculation.
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation (unused for this data
    * type).
@@ -56,8 +56,8 @@ struct TrimEvalOnDevice
    */
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, input_ndim> &input,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
+      const Access::LoopIndex::Read &index,
+      const Access::SymVector::Write<INT> &req_int_props,
       [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
 
@@ -139,7 +139,7 @@ public:
 };
 
 /**
- * @brief Host-side ReactionDataBase managing SYCL buffers for grid, ranges,
+ * @brief Reaction rate data calculation managing SYCL buffers for grid, ranges,
  * dims, and trim_dims used in TRIM evaluation.
  *
  * @tparam input_ndim Total input dimensionality (interp + trim dimensions).

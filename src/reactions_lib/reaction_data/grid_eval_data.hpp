@@ -12,8 +12,9 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device: ReactionData evaluating a lookup grid by computing
- * floor-point grid indices and returning the grid value at the flat index.
+ * @brief On device: Reaction rate data calculation evaluating a lookup grid by
+ * computing floor-point grid indices and returning the grid value at the flat
+ * index.
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.
  */
@@ -72,7 +73,7 @@ public:
 };
 
 /**
- * @brief Host-side ReactionDataBase managing SYCL buffers for grid,
+ * @brief Reaction rate data calculation managing SYCL buffers for grid,
  * ranges, and dims, enabling on-device grid evaluation.
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.
