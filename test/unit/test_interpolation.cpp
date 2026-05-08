@@ -910,7 +910,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   particle_group->domain->mesh->free();
 }
 
-TEST(InterpolationTest, TRIM_DATA_ASSYMETRIC) {
+TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
   static constexpr int ndim = 2;
   static constexpr int trim_ndim = 3;
 

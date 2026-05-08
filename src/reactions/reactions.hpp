@@ -38,10 +38,12 @@
 #include "../reactions_lib/reaction_data/fixed_array_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_coefficient_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_rate_data.hpp"
+#include "../reactions_lib/reaction_data/grid_eval_data.hpp"
 #include "../reactions_lib/reaction_data/interpolate_data.hpp"
 #include "../reactions_lib/reaction_data/sampler_data.hpp"
 #include "../reactions_lib/reaction_data/specular_reflection_data.hpp"
 #include "../reactions_lib/reaction_data/spherical_basis_reflection_data.hpp"
+#include "../reactions_lib/reaction_data/trim_eval_data.hpp"
 
 #include "../reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"

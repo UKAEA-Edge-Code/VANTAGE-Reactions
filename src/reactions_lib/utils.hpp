@@ -3,7 +3,10 @@
 #include <cassert>
 #include <cmath>
 #include <complex>
+#include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/compute_target.hpp>
+#include <neso_particles/device_buffers.hpp>
 #include <numeric>
 #include <type_traits>
 #include <vector>
@@ -45,6 +48,24 @@ template <class F, size_t DIM = 1> struct LambdaWrapper {
 private:
   alignas(F) unsigned char buf[sizeof(F)];
 };
+
+/**
+ * @brief Helper function to construct a shared pointer to a BufferDevice from a
+ * vector.
+ *
+ * @tparam T Arithmetic type template parameter
+ *
+ * @param sycl_target SYCL target shared pointer used for buffer allocation.
+ * @param vec Vector to be wrapped by BufferDevice.
+ *
+ * @return Shared pointer to an allocated BufferDevice.
+ */
+template <typename T>
+std::shared_ptr<BufferDevice<T>>
+make_buffer_device_ptr(SYCLTargetSharedPtr sycl_target,
+                       const std::vector<T> &vec) {
+  return std::make_shared<BufferDevice<T>>(sycl_target, vec);
+}
 
 /**
  * @brief Helper function to calculate the L2 norm of a vector of arithmetic

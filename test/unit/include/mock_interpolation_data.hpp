@@ -1,28 +1,11 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
-#include <memory>
 #include <neso_particles.hpp>
 #include <neso_particles/typedefs.hpp>
 #include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
-
-#include "reactions_lib/reaction_data/grid_eval_data.hpp"
-#include "reactions_lib/reaction_data/trim_eval_data.hpp"
-
-namespace test_composite_data {
-// Using-declarations for backward compatibility with test code
-template <int N>
-using GridEvalOnDevice = VANTAGE::Reactions::GridEvalOnDevice<N>;
-
-template <int N> using GridEval = VANTAGE::Reactions::GridEval<N>;
-
-template <int I, int O>
-using TrimEvalOnDevice = VANTAGE::Reactions::TrimEvalOnDevice<I, O>;
-
-template <int I, int O> using TrimEval = VANTAGE::Reactions::TrimEval<I, O>;
-} // namespace test_composite_data
 
 struct abstract_coefficient_values {
   abstract_coefficient_values() = default;
@@ -51,9 +34,9 @@ public:
   const std::vector<REAL> &get_upper_bounds() { return this->upper_bounds; }
 
   template <int input_ndim> auto get_grid_func_data_ndim() const {
-    std::optional<test_composite_data::GridEval<input_ndim>> return_val;
+    std::optional<CartesianGridData<input_ndim>> return_val;
     if (this->sycl_target) {
-      return_val = test_composite_data::GridEval<input_ndim>(
+      return_val = CartesianGridData<input_ndim>(
           this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
           this->sycl_target.value());
     }
@@ -384,10 +367,9 @@ public:
   auto get_trim_dims_vec() const { return this->trim_dims_vec; }
 
   auto get_grid_func_data() const {
-    std::optional<test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>>
-        return_val;
+    std::optional<TrimEval<ndim + trim_ndim, trim_ndim>> return_val;
     if (this->sycl_target) {
-      return_val = test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>(
+      return_val = TrimEval<ndim + trim_ndim, trim_ndim>(
           this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
           this->trim_dims_vec, this->sycl_target.value());
     }
@@ -597,10 +579,9 @@ public:
   auto get_trim_dims_vec() const { return this->trim_dims_vec; }
 
   auto get_grid_func_data() const {
-    std::optional<test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>>
-        return_val;
+    std::optional<TrimEval<ndim + trim_ndim, trim_ndim>> return_val;
     if (this->sycl_target) {
-      return_val = test_composite_data::TrimEval<ndim + trim_ndim, trim_ndim>(
+      return_val = TrimEval<ndim + trim_ndim, trim_ndim>(
           this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
           this->trim_dims_vec, this->sycl_target.value());
     }

@@ -4,6 +4,8 @@
 #include <memory>
 #include <neso_particles.hpp>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
@@ -343,5 +345,101 @@ struct ReactionDataBaseOnDevice {
   }
   static constexpr size_t get_dim() { return dim; }
 };
+
+/**
+ * @brief Compile-time helpers for checking that a ReactionDataOnDevice
+ * derived class defines calc_data with the correct parameter signature
+ * and return type.
+ *
+ * These traits use std::void_t SFINAE to detect whether
+ * `T::calc_data(Args...)` is a well-formed expression, and if so,
+ * what type it returns.  They are used inside derived-class constructors
+ * to emit a static_assert message instead of a cryptic template
+ * instantiation error when a developer accidentally uses calc_data
+ * with an incorrect signature.
+ *
+ * Example usage in a derived class constructor:
+ *
+ *   using Base = typename MyDerived::ReactionDataBaseOnDevice;
+ *
+ *   using input_t = const std::array<typename Base::INPUT_TYPE,
+ *                                    Base::INPUT_DIM> &;
+ *
+ *   static_assert(
+ *       is_calc_data_callable_v<MyDerived, input_t,
+ *                               const Access::LoopIndex::Read &,
+ *                               ...>,
+ *       "MyDerived::calc_data parameter signature mismatch");
+ *
+ *   static_assert(
+ *       check_calc_data_return_type<
+ *           MyDerived,
+ *           std::array<typename Base::VALUE_TYPE, Base::DIM>,
+ *           input_t,
+ *           const Access::LoopIndex::Read &, ...>(),
+ *       "MyDerived::calc_data return type mismatch");
+ *
+ */
+namespace calc_data_traits_defs {
+
+// Primary template: calc_data(Args...) is NOT a valid expression.
+template <typename, typename = void, typename...> struct calc_data_traits {
+  static constexpr bool is_callable = false;
+  using return_type = void;
+};
+
+/** Partial specialization: selected only when
+ *  `std::declval<const T>().calc_data(std::declval<Args>()...)` is
+ *  well-formed.  `std::void_t` produces `void` for a valid expression
+ *  and triggers SFINAE (Substitution Failure Is Not An Error) for an
+ *  invalid one, causing the compiler to fall back to the primary
+ *  template above.
+ */
+template <typename T, typename... Args>
+struct calc_data_traits<T,
+                        std::void_t<decltype(std::declval<const T>().calc_data(
+                            std::declval<Args>()...))>,
+                        Args...> {
+  static constexpr bool is_callable = true;
+  using return_type =
+      decltype(std::declval<const T>().calc_data(std::declval<Args>()...));
+};
+
+} // namespace calc_data_traits_defs
+
+/**
+ * @brief `true` if `T::calc_data(Args...)` is a valid call expression.
+ */
+template <typename T, typename... Args>
+inline constexpr bool is_calc_data_callable_v =
+    calc_data_traits_defs::calc_data_traits<T, void, Args...>::is_callable;
+
+/**
+ * @brief The return type of `T::calc_data(Args...)` (or `void` if not
+ * callable).
+ */
+template <typename T, typename... Args>
+using calc_data_return_t =
+    typename calc_data_traits_defs::calc_data_traits<T, void,
+                                                     Args...>::return_type;
+
+/**
+ * @brief Check whether `T::calc_data(Args...)` returns exactly `Expected`.
+ *
+ * This helper short-circuits: if the parameter signature is wrong,
+ * `is_calc_data_callable_v` is `false` and the function returns `true`
+ * so that a separate `static_assert` on parameter mismatch can be the
+ * *only* error emitted.  When the parameter signature is correct but
+ * the return type differs, it returns `false`.
+ */
+template <typename T, typename Expected, typename... Args>
+constexpr bool check_calc_data_return_type() {
+  if constexpr (is_calc_data_callable_v<T, Args...>) {
+    return std::is_same_v<calc_data_return_t<T, Args...>, Expected>;
+  } else {
+    return true;
+  }
+}
+
 }; // namespace VANTAGE::Reactions
 #endif

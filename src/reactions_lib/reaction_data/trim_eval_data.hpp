@@ -4,55 +4,151 @@
 #include "../reaction_data.hpp"
 #include "reactions_lib/interp_utils.hpp"
 #include "reactions_lib/particle_properties_map.hpp"
+#include "reactions_lib/reaction_data/grid_eval_data.hpp"
+#include "reactions_lib/utils.hpp"
 #include <array>
 #include <memory>
 #include <neso_particles.hpp>
+#include <neso_particles/device_buffers.hpp>
+#include <type_traits>
+#include <utility>
 
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device: Reaction rate data calculation evaluating a TRIM (Tabulated
- * Representation of Internal Modes) distribution by binning velocity components
- * and looking up tabulated values from a grid, combining interpolation with
- * trimming.
+ * @brief On device: Reaction rate data calculation evaluating a tabulated
+ * distribution by computing floor-point grid indices for interpolation
+ * dimensions and binning the remaining TRIM dimensions against nested table
+ * values.
  *
- * @tparam input_ndim Total input dimensionality (interp + trim dimensions).
- * @tparam output_ndim Number of trim/velocity dimensions (number of output
- * values).
+ * TRIM = TRansport of Ions in Matter.
+ *
+ * An input coordinate is split into two parts. The first interp_ndim
+ * components (where interp_ndim = input_ndim - output_ndim) are interpolation
+ * coordinates. For each such component the corresponding range vector in
+ * d_ranges is searched to find the floor-point index, exactly as in
+ * CartesianGridDataOnDevice. These per-dimension indices are flattened with
+ * row-major ordering into a flat grid index, and the base data offset is
+ * flat_index * grid_stride, (details of the grid_stride calculation are in the
+ * TrimEval docstrings).
+ *
+ * The remaining output_ndim components are TRIM coordinates between 0.0
+ * and 1.0. Each is uniformly binned against the corresponding entry in
+ * d_trim_dims. The grid data for a single interpolation point is a
+ * concatenation of nested arrays. Data corresponding to the first output
+ * dimension occupies a 1-D array of length d_trim_dims[0]; the second occupies
+ * a 2-D array of size d_trim_dims[0] * d_trim_dims[1] starting immediately
+ * after the first; the third occupies a 3-D array of size d_trim_dims[0] *
+ * d_trim_dims[1] * d_trim_dims[2] starting immediately after the second; in
+ * general the table for output dimension idim has size
+ * product(d_trim_dims[jdim] for jdim = 0 to idim). To read output idim, the
+ * flattened nested data at d_grid[grid_access_point] has to be accessed by
+ * calculating a field_access_point and a field_stride and adding those to the
+ * binned_input[idim]. This total is then added to grid_access_point to get the
+ * index of the trim_vals[idim].
+ *
+ * The setup of the nested tables and the details of accessing the elements can
+ * be found in the EIRENE documentation (in section 4):
+ * https://www.eirene.de/old_eirene/trim.pdf
+ *
+ * @tparam input_ndim Total input dimensionality (interpolation plus TRIM
+ * dimensions).
+ * @tparam output_ndim Number of TRIM dimensions (size of the returned value
+ * array).
  */
 template <int input_ndim, int output_ndim>
 struct TrimEvalOnDevice
     : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
-                                      input_ndim, REAL, INT> {
+                                      input_ndim> {
 
+  // Alternative to static_assert for input and output type checks is to
+  // just direct developers to set IN_TYPE and VAL_TYPE from
+  // ReactionDataBaseOnDevice as the types for the input and return arrays of
+  // calc_data. This effectively kicks the can upstream to the point when
+  // calc_data is called and produces a less informative compile-time error (eg.
+  // "no match between array<REAL, ...> and array<VAL_TYPE,...>") but is easier
+  // for developers to implement. Happy to go with either approach.
+  //
+  // using IN_TYPE =
+  //     typename
+  //     TrimEvalOnDevice::ReactionDataBaseOnDevice::INPUT_TYPE;
+  // using VAL_TYPE =
+  //     typename
+  //     TrimEvalOnDevice::ReactionDataBaseOnDevice::VALUE_TYPE;
+
+  /**
+   * @brief Default constructor for TrimEvalOnDevice which contains checks for
+   * signature and return type of calc_data.
+   */
   TrimEvalOnDevice() {
     static_assert(
         input_ndim >= output_ndim,
         "For TrimEvalOnDevice, input_ndim >= output_ndim must be true.");
+
+    using Base = typename TrimEvalOnDevice::ReactionDataBaseOnDevice;
+
+    using input_t =
+        const std::array<typename Base::INPUT_TYPE, Base::INPUT_DIM> &;
+
+    static_assert(
+        is_calc_data_callable_v<TrimEvalOnDevice, input_t,
+                                const Access::LoopIndex::Read &,
+                                const Access::SymVector::Write<INT> &,
+                                const Access::SymVector::Read<REAL> &,
+                                typename DEFAULT_RNG_KERNEL::KernelType &>,
+        "TrimEvalOnDevice::calc_data parameter signature mismatch");
+
+    static_assert(
+        check_calc_data_return_type<
+            TrimEvalOnDevice, std::array<typename Base::VALUE_TYPE, Base::DIM>,
+            input_t, const Access::LoopIndex::Read &,
+            const Access::SymVector::Write<INT> &,
+            const Access::SymVector::Read<REAL> &,
+            typename DEFAULT_RNG_KERNEL::KernelType &>(),
+        "TrimEvalOnDevice::calc_data return type mismatch");
   };
 
   /**
-   * @brief Function to evaluate the TRIM distribution. Bins the trim
-   * dimensions of the input, computes grid indices for the interpolation
-   * dimensions, and returns the tabulated trim values.
+   * @brief Constructor for TrimEvalOnDevice.
    *
-   * @param input Input coordinate array of size input_ndim (first interp_ndim
-   * components are interpolation coordinates, remaining output_ndim components
-   * are trim coordinates).
+   * @param h_grid Host buffer containing the tabulated distribution data.
+   * @param h_ranges Host buffer containing range boundaries for the
+   * interpolation dimensions.
+   * @param h_dims Host buffer containing grid dimensions for the
+   * interpolation axes.
+   * @param h_trim_dims Host buffer containing TRIM grid dimensions.
+   */
+  TrimEvalOnDevice(const std::shared_ptr<BufferDevice<REAL>> &h_grid,
+                   const std::shared_ptr<BufferDevice<REAL>> &h_ranges,
+                   const std::shared_ptr<BufferDevice<size_t>> &h_dims,
+                   const std::shared_ptr<BufferDevice<size_t>> &h_trim_dims)
+      : TrimEvalOnDevice() {
+    this->d_grid = h_grid->ptr;
+    this->d_ranges = h_ranges->ptr;
+    this->d_dims = h_dims->ptr;
+    this->d_trim_dims = h_trim_dims->ptr;
+  }
+
+  /**
+   * @brief Function to evaluate the tabulated TRIM distribution. Computes
+   * floor-point grid indices for the interpolation dimensions, bins the TRIM
+   * dimensions, and returns the values for the computed flat index from the
+   * nested data at the interpolation point.
+   *
+   * @param input The input coordinate array of size input_ndim.
    * @param index Read-only accessor to a loop index for a ParticleLoop inside
    * which calc_data is called.
    * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
+   * need to be used for the reaction rate calculation. The panic counter is
+   * incremented when a TRIM coordinate falls outside 0.0 and 1.0.
    * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation (unused for this data
-   * type).
+   * need to be used for the reaction rate calculation (unused here).
    * @param rng_kernel The random number generator kernel potentially used in
-   * the calculation (unused for this data type).
+   * the calculation (unused here).
    *
-   * @return A REAL-valued array of size output_ndim containing the tabulated
-   * trim values.
+   * @return A REAL-valued array of size output_ndim containing the TRIM values.
    */
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, input_ndim> &input,
@@ -67,10 +163,10 @@ struct TrimEvalOnDevice
       input_to_bin[i] = input[i + interp_ndim];
 
       req_int_props.at(this->panic_ind, index, i) +=
-          ((input_to_bin[i] < 0) || (input_to_bin[i] >= 1)) ? 1 : 0;
+          ((input_to_bin[i] < 0.0) || (input_to_bin[i] >= 1.0)) ? 1 : 0;
 
-      input_to_bin[i] = ((input_to_bin[i] < 0) || (input_to_bin[i] >= 1))
-                            ? 0
+      input_to_bin[i] = ((input_to_bin[i] < 0.0) || (input_to_bin[i] >= 1.0))
+                            ? 0.0
                             : input_to_bin[i];
 
       trim_dims_arr[i] = this->d_trim_dims[i];
@@ -90,8 +186,8 @@ struct TrimEvalOnDevice
     }
 
     auto grid_indices_ptr = grid_indices.data();
-    INT grid_flat_index =
-        interp_utils::coeff_index_on_device(grid_indices_ptr, this->d_dims, 2);
+    INT grid_flat_index = interp_utils::coeff_index_on_device(
+        grid_indices_ptr, this->d_dims, (input_ndim - output_ndim));
 
     auto grid_access_point = grid_flat_index * this->grid_stride;
 
@@ -115,6 +211,7 @@ struct TrimEvalOnDevice
       for (int jdim = 0; jdim < idim; jdim++) {
         offset_factor *= d_trim_dims[jdim];
         field_access_point += offset_factor;
+        // TODO try to optimize out the integer division
         field_stride += binned_inputs[jdim] * (aggregate_dim / offset_factor);
       }
 
@@ -130,21 +227,33 @@ public:
 
   static constexpr int interp_ndim = input_ndim - output_ndim;
 
+  REAL const *d_grid;
   REAL const *d_ranges;
   size_t const *d_dims;
   size_t const *d_trim_dims;
-  REAL const *d_grid;
 
   int panic_ind;
 };
 
 /**
- * @brief Reaction rate data calculation managing SYCL buffers for grid, ranges,
- * dims, and trim_dims used in TRIM evaluation.
+ * @brief Reaction rate data calculation managing buffers for grid,
+ * ranges, dims, and trim_dims, enabling on-device tabulated distribution
+ * evaluation.
  *
- * @tparam input_ndim Total input dimensionality (interp + trim dimensions).
- * @tparam output_ndim Number of trim/velocity dimensions (number of output
- * values).
+ * The evaluation works with the BufferDevice objects that are constructed for
+ * the input vectors (grid, ranges_vec, dims_vec, trim_dims_vec). All input
+ * vectors are 1D vectors and are accessed using the logic in the on-device
+ * calc_data(...). The interpolated points are calculated with the same indexing
+ * as in CartesianGridDataOnDevice. The TRIM dimensions are uniformly binned.
+ * The TRIM grid data for each interpolation point is a concatenation of nested
+ * tables whose sizes are determined by cumulative products of trim_dims_vec
+ * entries. The grid_stride member stores the total size of this concatenation
+ * and is precomputed on the host.
+ *
+ * @tparam input_ndim Total input dimensionality (interpolation plus TRIM
+ * dimensions).
+ * @tparam output_ndim Number of TRIM dimensions (size of the returned value
+ * array).
  */
 template <int input_ndim, int output_ndim>
 struct TrimEval
@@ -156,13 +265,15 @@ struct TrimEval
   /**
    * @brief Constructor for TrimEval.
    *
-   * @param grid Flat vector of grid values containing the tabulated trim data.
+   * @param grid Flat vector of grid values (tabulated distribution data).
    * @param ranges_vec Range boundaries for the interpolation dimensions (used
    * for floor-point index computation).
    * @param dims_vec Grid dimensions for the interpolation axes.
-   * @param trim_dims_vec Trim/velocity grid dimensions (number of bins per
-   * trim axis).
-   * @param sycl_target SYCL target shared pointer used for buffer allocation.
+   * @param trim_dims_vec Trim grid dimensions (number of bins per TRIM
+   * axis).
+   * @param sycl_target SYCL target shared pointer used for buffer
+   * allocation.
+   * @param properties_map Map of property indices to names.
    */
   TrimEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
            const std::vector<size_t> &dims_vec,
@@ -171,29 +282,50 @@ struct TrimEval
            std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<TrimEvalOnDevice<input_ndim, output_ndim>>(
             Properties<INT>(required_simple_int_props), properties_map) {
-    this->on_device_obj = TrimEvalOnDevice<input_ndim, output_ndim>();
 
-    this->h_grid = std::make_shared<BufferDevice<REAL>>(sycl_target, grid);
-    this->on_device_obj->d_grid = this->h_grid->ptr;
+    auto dims_size = dims_vec.size();
+    NESOASSERT((dims_size == (input_ndim - output_ndim)),
+               "Invalid size of input dims vector.");
 
-    this->h_ranges =
-        std::make_shared<BufferDevice<REAL>>(sycl_target, ranges_vec);
-    this->on_device_obj->d_ranges = this->h_ranges->ptr;
+    auto trim_dims_size = trim_dims_vec.size();
+    NESOASSERT((trim_dims_size == output_ndim),
+               "Invalid size of input TRIM dims vector.");
 
-    this->h_dims =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, dims_vec);
-    this->on_device_obj->d_dims = this->h_dims->ptr;
-
+    auto grid_stride = 0;
     int aggregate_dim = 1;
-    this->on_device_obj->grid_stride = 0;
     for (auto &trim_dim : trim_dims_vec) {
       aggregate_dim *= trim_dim;
-      this->on_device_obj->grid_stride += aggregate_dim;
+      grid_stride += aggregate_dim;
     }
 
+    auto grid_size = grid.size();
+    auto ranges_size = ranges_vec.size();
+
+    auto expected_grid_size = 1;
+    auto expected_ranges_size = 0;
+
+    for (auto &idim : dims_vec) {
+      expected_grid_size *= idim;
+      expected_ranges_size += idim;
+    }
+
+    expected_grid_size *= grid_stride;
+
+    NESOASSERT((ranges_size == expected_ranges_size),
+               "Invalid size of input ranges vector.");
+    NESOASSERT((grid_size == expected_grid_size),
+               "Invalid size of input grid.");
+
+    this->h_grid = utils::make_buffer_device_ptr(sycl_target, grid);
+    this->h_ranges = utils::make_buffer_device_ptr(sycl_target, ranges_vec);
+    this->h_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
     this->h_trim_dims =
-        std::make_shared<BufferDevice<size_t>>(sycl_target, trim_dims_vec);
-    this->on_device_obj->d_trim_dims = this->h_trim_dims->ptr;
+        utils::make_buffer_device_ptr(sycl_target, trim_dims_vec);
+
+    this->on_device_obj = TrimEvalOnDevice<input_ndim, output_ndim>(
+        h_grid, h_ranges, h_dims, h_trim_dims);
+
+    this->on_device_obj->grid_stride = grid_stride;
 
     this->index_on_device_obj();
   };
