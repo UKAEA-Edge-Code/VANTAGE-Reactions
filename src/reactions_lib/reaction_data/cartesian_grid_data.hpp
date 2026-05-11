@@ -1,14 +1,12 @@
 #ifndef REACTIONS_GRID_EVAL_DATA_H
 #define REACTIONS_GRID_EVAL_DATA_H
 
+#include "../interp_utils.hpp"
 #include "../reaction_data.hpp"
-#include "reactions_lib/interp_utils.hpp"
-#include "reactions_lib/utils.hpp"
+#include "../utils.hpp"
 #include <array>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/device_buffers.hpp>
-#include <neso_particles/typedefs.hpp>
 
 using namespace NESO::Particles;
 
@@ -16,30 +14,29 @@ namespace VANTAGE::Reactions {
 
 /**
  * @brief On device: Reaction rate data calculation evaluating a lookup grid by
- * computing floor-point grid indices and returning the grid value at the flat
- * index.
+ * computing grid indices and returning the grid value at the flat index.
  *
  * An input coordinate is mapped to a flat grid index as follows. The range
- * vector for dimension idim begins at offset: sum(d_dims[jdim] for jdim = 0 to
- * idim-1) and contains d_dims[idim] elements. Given an input value:
- * input[idim], the floor-point index: grid_indices[idim], is calculated. This
- * is the largest index satisfying input[idim] >= d_ranges[offset +
- * grid_indices[idim]]. The per-dimension grid_indices are combined via
- * row-major ordering into a single flat index, and the returned value is
- * d_grid[grid_flat_index].
+ * vector for dimension idim begins at an offset:
+ * sum(d_dims[jdim] for jdim = 0 to idim-1) and contains d_dims[idim] elements.
+ * Given an input value (input[idim]), the index (grid_indices[idim]), is
+ * calculated. This is the largest index satisfying input[idim] >=
+ * d_ranges[offset + grid_indices[idim]]. The per-dimension grid_indices are
+ * combined via row-major ordering into a single flat index, and the returned
+ * value is d_grid[grid_flat_index].
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.
  */
 template <int input_ndim>
 struct CartesianGridDataOnDevice
     : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
-  // Alternative to static_assert for input and output type checks is to
-  // just direct developers to set IN_TYPE and VAL_TYPE from
-  // ReactionDataBaseOnDevice as the types for the input and return arrays of
-  // calc_data. This effectively kicks the can upstream to the point when
-  // calc_data is called and produces a less informative compile-time error (eg.
-  // "no match between array<REAL, ...> and array<VAL_TYPE,...>") but is easier
-  // for developers to implement. Happy to go with either approach.
+  // Alternative to static_assert for input and output type checks is to just
+  // direct developers to set IN_TYPE and VAL_TYPE from ReactionDataBaseOnDevice
+  // as the types for the input and return arrays of calc_data. This effectively
+  // kicks the can upstream to the point when calc_data is called and produces a
+  // less informative compile-time error (eg. "no match between array<REAL, ...>
+  // and array<VAL_TYPE,...>") but is easier for developers to implement. Happy
+  // to go with either approach.
   //
   // using IN_TYPE =
   //     typename
@@ -53,7 +50,7 @@ struct CartesianGridDataOnDevice
    * checks for signature and return type of calc_data.
    */
   CartesianGridDataOnDevice() {
-    using Base = CartesianGridDataOnDevice::ReactionDataBaseOnDevice;
+    using Base = typename CartesianGridDataOnDevice::ReactionDataBaseOnDevice;
 
     using input_t =
         const std::array<typename Base::INPUT_TYPE, Base::INPUT_DIM> &;
@@ -95,8 +92,8 @@ struct CartesianGridDataOnDevice
   }
 
   /**
-   * @brief Function to compute floor-point grid indices from the input
-   * coordinate and return the grid value at the computed index.
+   * @brief Function to compute grid indices from the input coordinate and
+   * return the grid value at the computed index.
    *
    * @param input The input coordinate array of size input_ndim.
    * @param index Read-only accessor to a loop index for a ParticleLoop inside
@@ -143,19 +140,19 @@ public:
 };
 
 /**
- * @brief Reaction rate data calculation managing buffers for grid,
- * ranges, and dims, enabling on-device grid evaluation.
+ * @brief Reaction rate data calculation managing buffers for grid, ranges, and
+ * dims, enabling on-device grid evaluation.
  *
  * The grid evaluation works with the BufferDevice objects that are constructed
  * for the input vectors (grid, ranges_vec, dims_vec). As such, there are
  * constraints on the format of the vectors. All input vectors are 1D vectors
  * and are accessed using the logic in the on-device calc_data(...). For a given
- * input coordinate, the floor-point index in each dimension is found by
- * locating the index of the closest point in the range for that dimension that
- * is less than the input coordinate value. These per-dimension indices are then
- * flattened via row-major ordering into a single index, and the corresponding
- * value is retrieved from d_grid (device-side pointer to a host-side
- * BufferDevice that is constructed from std::vector<REAL> grid).
+ * input coordinate, the index in each dimension is found by locating the index
+ * of the closest point in the range for that dimension that is less than the
+ * input coordinate value. These per-dimension indices are then flattened via
+ * row-major ordering into a single index, and the corresponding value is
+ * retrieved from d_grid (device-side pointer to a host-side BufferDevice that
+ * is constructed from std::vector<REAL> grid).
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.
  */
@@ -167,7 +164,7 @@ struct CartesianGridData
    *
    * @param grid Flat vector of grid values (tabulated data).
    * @param ranges_vec Range boundaries for each dimension (used for
-   * floor-point index computation).
+   * index computation).
    * @param dims_vec Grid dimensions (number of grid points per axis).
    * @param sycl_target SYCL target shared pointer used for buffer
    * allocation.

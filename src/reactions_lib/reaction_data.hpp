@@ -3,7 +3,6 @@
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
 #include <neso_particles.hpp>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -351,12 +350,12 @@ struct ReactionDataBaseOnDevice {
  * derived class defines calc_data with the correct parameter signature
  * and return type.
  *
- * These traits use std::void_t SFINAE to detect whether
- * `T::calc_data(Args...)` is a well-formed expression, and if so,
- * what type it returns.  They are used inside derived-class constructors
- * to emit a static_assert message instead of a cryptic template
- * instantiation error when a developer accidentally uses calc_data
- * with an incorrect signature.
+ * These traits use std::void_t SFINAE (Substitution Failure Is Not An Error) to
+ * detect whether T::calc_data(Args...) is a well-formed expression, and if
+ * so, what type it returns.  They are used inside derived-class constructors to
+ * emit a static_assert message instead of a cryptic template instantiation
+ * error when a developer accidentally uses calc_data with an incorrect
+ * signature.
  *
  * Example usage in a derived class constructor:
  *
@@ -389,8 +388,8 @@ template <typename, typename = void, typename...> struct calc_data_traits {
 };
 
 /** Partial specialization: selected only when
- *  `std::declval<const T>().calc_data(std::declval<Args>()...)` is
- *  well-formed.  `std::void_t` produces `void` for a valid expression
+ *  std::declval<const T>().calc_data(std::declval<Args>()...) is
+ *  well-formed. std::void_t produces void for a valid expression
  *  and triggers SFINAE (Substitution Failure Is Not An Error) for an
  *  invalid one, causing the compiler to fall back to the primary
  *  template above.
@@ -408,14 +407,14 @@ struct calc_data_traits<T,
 } // namespace calc_data_traits_defs
 
 /**
- * @brief `true` if `T::calc_data(Args...)` is a valid call expression.
+ * @brief true if T::calc_data(Args...) is a valid call expression.
  */
 template <typename T, typename... Args>
 inline constexpr bool is_calc_data_callable_v =
     calc_data_traits_defs::calc_data_traits<T, void, Args...>::is_callable;
 
 /**
- * @brief The return type of `T::calc_data(Args...)` (or `void` if not
+ * @brief The return type of T::calc_data(Args...) (or void if not
  * callable).
  */
 template <typename T, typename... Args>
@@ -424,13 +423,13 @@ using calc_data_return_t =
                                                      Args...>::return_type;
 
 /**
- * @brief Check whether `T::calc_data(Args...)` returns exactly `Expected`.
+ * @brief Check whether T::calc_data(Args...) returns exactly Expected.
  *
  * This helper short-circuits: if the parameter signature is wrong,
- * `is_calc_data_callable_v` is `false` and the function returns `true`
- * so that a separate `static_assert` on parameter mismatch can be the
- * *only* error emitted.  When the parameter signature is correct but
- * the return type differs, it returns `false`.
+ * is_calc_data_callable_v is false and the function returns true
+ * so that a separate static_assert on parameter mismatch can be the
+ * only error emitted.  When the parameter signature is correct but
+ * the return type differs, it returns false.
  */
 template <typename T, typename Expected, typename... Args>
 constexpr bool check_calc_data_return_type() {

@@ -1,11 +1,10 @@
 #ifndef REACTIONS_TRIM_EVAL_DATA_H
 #define REACTIONS_TRIM_EVAL_DATA_H
 
+#include "../interp_utils.hpp"
+#include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
-#include "reactions_lib/interp_utils.hpp"
-#include "reactions_lib/particle_properties_map.hpp"
-#include "reactions_lib/reaction_data/grid_eval_data.hpp"
-#include "reactions_lib/utils.hpp"
+#include "../utils.hpp"
 #include <array>
 #include <memory>
 #include <neso_particles.hpp>
@@ -19,20 +18,18 @@ namespace VANTAGE::Reactions {
 
 /**
  * @brief On device: Reaction rate data calculation evaluating a tabulated
- * distribution by computing floor-point grid indices for interpolation
- * dimensions and binning the remaining TRIM dimensions against nested table
- * values.
+ * distribution by computing grid indices for interpolation dimensions and
+ * binning the remaining TRIM dimensions against nested table values.
  *
  * TRIM = TRansport of Ions in Matter.
  *
- * An input coordinate is split into two parts. The first interp_ndim
- * components (where interp_ndim = input_ndim - output_ndim) are interpolation
- * coordinates. For each such component the corresponding range vector in
- * d_ranges is searched to find the floor-point index, exactly as in
- * CartesianGridDataOnDevice. These per-dimension indices are flattened with
- * row-major ordering into a flat grid index, and the base data offset is
- * flat_index * grid_stride, (details of the grid_stride calculation are in the
- * TrimEval docstrings).
+ * An input coordinate is split into two parts. The first interp_ndim components
+ * (where interp_ndim = input_ndim - output_ndim) are interpolation coordinates.
+ * For each such component an index for it in the corresponding range vector is
+ * computed, exactly as in CartesianGridDataOnDevice. These per-dimension
+ * indices are flattened with row-major ordering into a flat grid index, and the
+ * base data offset is flat_index * grid_stride, (details of the grid_stride
+ * calculation are in the TrimEval docstrings).
  *
  * The remaining output_ndim components are TRIM coordinates between 0.0
  * and 1.0. Each is uniformly binned against the corresponding entry in
@@ -42,7 +39,7 @@ namespace VANTAGE::Reactions {
  * a 2-D array of size d_trim_dims[0] * d_trim_dims[1] starting immediately
  * after the first; the third occupies a 3-D array of size d_trim_dims[0] *
  * d_trim_dims[1] * d_trim_dims[2] starting immediately after the second; in
- * general the table for output dimension idim has size
+ * general the table for output dimension idim has size:
  * product(d_trim_dims[jdim] for jdim = 0 to idim). To read output idim, the
  * flattened nested data at d_grid[grid_access_point] has to be accessed by
  * calculating a field_access_point and a field_stride and adding those to the
@@ -63,13 +60,13 @@ struct TrimEvalOnDevice
     : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
                                       input_ndim> {
 
-  // Alternative to static_assert for input and output type checks is to
-  // just direct developers to set IN_TYPE and VAL_TYPE from
-  // ReactionDataBaseOnDevice as the types for the input and return arrays of
-  // calc_data. This effectively kicks the can upstream to the point when
-  // calc_data is called and produces a less informative compile-time error (eg.
-  // "no match between array<REAL, ...> and array<VAL_TYPE,...>") but is easier
-  // for developers to implement. Happy to go with either approach.
+  // Alternative to static_assert for input and output type checks is to just
+  // direct developers to set IN_TYPE and VAL_TYPE from ReactionDataBaseOnDevice
+  // as the types for the input and return arrays of calc_data. This effectively
+  // kicks the can upstream to the point when calc_data is called and produces a
+  // less informative compile-time error (eg. "no match between array<REAL, ...>
+  // and array<VAL_TYPE,...>") but is easier for developers to implement. Happy
+  // to go with either approach.
   //
   // using IN_TYPE =
   //     typename
@@ -132,10 +129,10 @@ struct TrimEvalOnDevice
   }
 
   /**
-   * @brief Function to evaluate the tabulated TRIM distribution. Computes
-   * floor-point grid indices for the interpolation dimensions, bins the TRIM
-   * dimensions, and returns the values for the computed flat index from the
-   * nested data at the interpolation point.
+   * @brief Function to evaluate the tabulated TRIM distribution. Computes grid
+   * indices for the interpolation dimensions, bins the TRIM dimensions, and
+   * returns the values for the computed flat index from the nested data at the
+   * interpolation point.
    *
    * @param input The input coordinate array of size input_ndim.
    * @param index Read-only accessor to a loop index for a ParticleLoop inside
@@ -148,7 +145,8 @@ struct TrimEvalOnDevice
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation (unused here).
    *
-   * @return A REAL-valued array of size output_ndim containing the TRIM values.
+   * @return A REAL-valued array of size output_ndim containing the TRIM values
+   * at the interpolation point.
    */
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, input_ndim> &input,
@@ -236,9 +234,8 @@ public:
 };
 
 /**
- * @brief Reaction rate data calculation managing buffers for grid,
- * ranges, dims, and trim_dims, enabling on-device tabulated distribution
- * evaluation.
+ * @brief Reaction rate data calculation managing buffers for grid, ranges,
+ * dims, and trim_dims, enabling on-device tabulated distribution evaluation.
  *
  * The evaluation works with the BufferDevice objects that are constructed for
  * the input vectors (grid, ranges_vec, dims_vec, trim_dims_vec). All input
@@ -248,7 +245,10 @@ public:
  * The TRIM grid data for each interpolation point is a concatenation of nested
  * tables whose sizes are determined by cumulative products of trim_dims_vec
  * entries. The grid_stride member stores the total size of this concatenation
- * and is precomputed on the host.
+ * and is precomputed in the constructor. It's effectively a two-stage
+ * calculation for itrim_dim:
+ * sum(product(trim_dims_vec[jtrim_dim] for jtrim_dim= 0 to jtrim_dim =
+ * itrim_dim) for itrim_dim = 0 to itrim_dim = output_ndim).
  *
  * @tparam input_ndim Total input dimensionality (interpolation plus TRIM
  * dimensions).
@@ -267,9 +267,9 @@ struct TrimEval
    *
    * @param grid Flat vector of grid values (tabulated distribution data).
    * @param ranges_vec Range boundaries for the interpolation dimensions (used
-   * for floor-point index computation).
+   * for index computation).
    * @param dims_vec Grid dimensions for the interpolation axes.
-   * @param trim_dims_vec Trim grid dimensions (number of bins per TRIM
+   * @param trim_dims_vec Trim grid dimensions (ie. number of bins per TRIM
    * axis).
    * @param sycl_target SYCL target shared pointer used for buffer
    * allocation.
