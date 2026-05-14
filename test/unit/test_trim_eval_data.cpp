@@ -41,7 +41,7 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
 
   auto invalid_grid_stride = 0;
   auto invalid_aggregate_dim = 1;
-  for (int i = 0; i < trim_ndim; i++) {
+  for (int i = 0; i < invalid_trim_dims_vec.size(); i++) {
     // Deliberately under-allocating
     invalid_aggregate_dim *= invalid_trim_dims_vec[i] - 2;
     invalid_grid_stride += invalid_aggregate_dim;
