@@ -30,48 +30,8 @@ namespace VANTAGE::Reactions {
 template <int input_ndim>
 struct CartesianGridDataOnDevice
     : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
-  // Alternative to static_assert for input and output type checks is to just
-  // direct developers to set IN_TYPE and VAL_TYPE from ReactionDataBaseOnDevice
-  // as the types for the input and return arrays of calc_data. This effectively
-  // kicks the can upstream to the point when calc_data is called and produces a
-  // less informative compile-time error (eg. "no match between array<REAL, ...>
-  // and array<VAL_TYPE,...>") but is easier for developers to implement. Happy
-  // to go with either approach.
-  //
-  // using IN_TYPE =
-  //     typename
-  //     CartesianGridDataOnDevice::ReactionDataBaseOnDevice::INPUT_TYPE;
-  // using VAL_TYPE =
-  //     typename
-  // CartesianGridDataOnDevice::ReactionDataBaseOnDevice::VALUE_TYPE;
 
-  /**
-   * @brief Default constructor for CartesianGridDataOnDevice which contains
-   * checks for signature and return type of calc_data.
-   */
-  CartesianGridDataOnDevice() {
-    using Base = typename CartesianGridDataOnDevice::ReactionDataBaseOnDevice;
-
-    using input_t =
-        const std::array<typename Base::INPUT_TYPE, Base::INPUT_DIM> &;
-
-    static_assert(
-        is_calc_data_callable_v<CartesianGridDataOnDevice, input_t,
-                                const Access::LoopIndex::Read &,
-                                const Access::SymVector::Write<INT> &,
-                                const Access::SymVector::Read<REAL> &,
-                                typename DEFAULT_RNG_KERNEL::KernelType &>,
-        "CartesianGridDataOnDevice::calc_data parameter signature mismatch");
-
-    static_assert(check_calc_data_return_type<
-                      CartesianGridDataOnDevice,
-                      std::array<typename Base::VALUE_TYPE, Base::DIM>, input_t,
-                      const Access::LoopIndex::Read &,
-                      const Access::SymVector::Write<INT> &,
-                      const Access::SymVector::Read<REAL> &,
-                      typename DEFAULT_RNG_KERNEL::KernelType &>(),
-                  "CartesianGridDataOnDevice::calc_data return type mismatch");
-  };
+  CartesianGridDataOnDevice() = default;
 
   /**
    * @brief Constructor for CartesianGridDataOnDevice.
@@ -82,10 +42,10 @@ struct CartesianGridDataOnDevice
    * @param h_dims Host buffer containing grid dimensions for the
    * interpolation axes.
    */
-  CartesianGridDataOnDevice(const std::shared_ptr<BufferDevice<REAL>> &h_grid,
-                            const std::shared_ptr<BufferDevice<REAL>> &h_ranges,
-                            const std::shared_ptr<BufferDevice<size_t>> &h_dims)
-      : CartesianGridDataOnDevice() {
+  CartesianGridDataOnDevice(
+      const std::shared_ptr<BufferDevice<REAL>> &h_grid,
+      const std::shared_ptr<BufferDevice<REAL>> &h_ranges,
+      const std::shared_ptr<BufferDevice<size_t>> &h_dims) {
     d_grid = h_grid->ptr;
     d_ranges = h_ranges->ptr;
     d_dims = h_dims->ptr;
