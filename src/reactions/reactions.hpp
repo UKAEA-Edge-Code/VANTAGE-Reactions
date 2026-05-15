@@ -1,6 +1,8 @@
 #ifndef REACTIONS_REACTIONS_H
 #define REACTIONS_REACTIONS_H
 
+#include "neso_test_assert.hpp"
+
 #include "../reactions_lib/binary_array_transform_data.hpp"
 #include "../reactions_lib/common_array_transforms.hpp"
 #include "../reactions_lib/common_markers.hpp"
@@ -22,7 +24,6 @@
 #include "../reactions_lib/transformation_wrapper.hpp"
 #include "../reactions_lib/unary_array_transform_data.hpp"
 #include "../reactions_lib/utils.hpp"
-#include "neso_test_assert.hpp"
 
 #include "../reactions_lib/cross_sections/AMJUEL_fit_cs.hpp"
 #include "../reactions_lib/cross_sections/constant_rate_cs.hpp"

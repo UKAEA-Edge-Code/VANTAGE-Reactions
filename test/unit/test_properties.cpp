@@ -364,8 +364,7 @@ TEST(Properties, properties_map_setting) {
   std::map<int, std::string> test_property_map = {
       {0, "TEST_PROP1"}, {1, "TEST_PROP2"}, {2, "TEST_PROP3"}};
 
-  // Dummy template argument here set to INT
-  struct test_reaction_data : ReactionDataBase<INT> {
+  struct test_reaction_data : ReactionDataBase<TestEphemeralVarDataOnDevice> {
     test_reaction_data(std::map<int, std::string> property_map_)
         : ReactionDataBase(property_map_) {}
 
