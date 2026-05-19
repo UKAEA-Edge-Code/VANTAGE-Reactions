@@ -1,12 +1,15 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
 #include <neso_particles.hpp>
-#include <neso_particles/error_propagate.hpp>
-#include <neso_particles/loop/particle_loop_index.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <vector>
 
 using namespace NESO::Particles;
+// Type discipline for indices:
+//   size_t  — API boundaries, container sizes, stride values
+//   INT     — internal device computation (subtraction, decrement, clamp)
+static_assert(
+    sizeof(INT) >= sizeof(size_t) || sizeof(size_t) <= 8,
+    "INT must be able to represent all size_t values on this platform");
 namespace VANTAGE::Reactions::interp_utils {
 /**
  * Helper function that extracts the value of the binary representation of i at
@@ -135,11 +138,11 @@ inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
  * @return std::vector<INT> That contains the points denoting the vertices of
  * the hypercube.
  */
-inline std::vector<INT> construct_initial_hypercube(const INT &ndim) {
-  int total_num = 1 << ndim;
-  std::vector<INT> points(total_num);
+inline std::vector<size_t> construct_initial_hypercube(const size_t &ndim) {
+  size_t total_num = 1 << ndim;
+  std::vector<size_t> points(total_num);
 
-  for (int i = 0; i < total_num; i++) {
+  for (size_t i = 0; i < total_num; i++) {
     points[i] = (i ^ (i >> 1));
   }
 
@@ -227,7 +230,7 @@ template <typename DATATYPE, int output_ndim, int interp_ndim,
           int non_interp_ndim>
 inline void initial_func_eval_on_device(
     REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
-    INT const *origin_indices, INT const *hypercube_vertices,
+    INT const *origin_indices, size_t const *hypercube_vertices,
     REAL const *ranges_vec,
     const std::array<REAL, non_interp_ndim> &non_interpolation_points,
     const std::array<size_t, interp_ndim> &interpolation_indices,
@@ -317,7 +320,7 @@ inline void initial_func_eval_on_device(
 template <int output_ndim>
 inline void contract_hypercube_on_device(
     const REAL *interp_points, const size_t &dim_index,
-    INT const *hypercube_vertices, const INT *origin_indices,
+    size_t const *hypercube_vertices, const INT *origin_indices,
     const REAL *vertex_func_evals, REAL const *ranges_vec,
     size_t const *dims_vec, REAL *output_evals, INT *varying_dim,
     INT *vertex_coord) {
