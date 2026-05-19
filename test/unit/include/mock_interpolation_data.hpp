@@ -59,34 +59,31 @@ private:
   };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+  CartesianGridGenerator<ndim> grid_generator;
 
 public:
   coefficient_values_1D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
+      : abstract_coefficient_values(), grid_func(grid_func_lambda),
+        grid_generator({this->dim0_range}, this->grid_func) {
 
     this->sycl_target = sycl_target;
-
-    REAL dim0_i = 0.0;
-    REAL val = 0.0;
-    for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-      dim0_i = this->dim0_range[idim0];
-      val = this->grid_func(dim0_i);
-      this->coeffs_vec.push_back(val);
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
   };
 
   auto get_grid_func() const { return this->grid_func; }
 
   auto get_grid_func_data() const {
-    return this->get_grid_func_data_ndim<ndim>();
+    std::optional<CartesianGridData<ndim>> return_val;
+    if (this->sycl_target) {
+      return_val = CartesianGridData<ndim>(this->grid_generator,
+                                           this->sycl_target.value());
+    }
+    return return_val.value();
   }
 };
 
@@ -111,45 +108,33 @@ private:
   };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+  CartesianGridGenerator<ndim> grid_generator;
 
 public:
   coefficient_values_2D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
+      : abstract_coefficient_values(), grid_func(grid_func_lambda),
+        grid_generator({this->dim0_range, this->dim1_range}, this->grid_func) {
 
     this->sycl_target = sycl_target;
-
-    REAL dim1_i = 0.0;
-    REAL dim0_i = 0.0;
-    REAL val = 0.0;
-    for (int idim1 = 0; idim1 < this->dim1; idim1++) {
-      dim1_i = this->dim1_range[idim1];
-      for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-        dim0_i = this->dim0_range[idim0];
-        val = this->grid_func(dim0_i, dim1_i);
-        this->coeffs_vec.push_back(val);
-      }
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim1_range.begin(),
-                                 this->dim1_range.end());
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
-
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
     this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-    this->dims_vec.push_back(this->dim1);
   };
 
   auto get_grid_func() const { return this->grid_func; }
 
   auto get_grid_func_data() const {
-    return this->get_grid_func_data_ndim<ndim>();
+    std::optional<CartesianGridData<ndim>> return_val;
+    if (this->sycl_target) {
+      return_val = CartesianGridData<ndim>(this->grid_generator,
+                                           this->sycl_target.value());
+    }
+    return return_val.value();
   }
 };
 
@@ -290,78 +275,30 @@ private:
             trim_vals_trim_dim0, trim_vals_trim_dim1, trim_vals_trim_dim2};
       };
 
+  utils::LambdaWrapper<decltype(trim_grid_func_0)> trim_grid_func0;
+  utils::LambdaWrapper<decltype(trim_grid_func_1)> trim_grid_func1;
+  utils::LambdaWrapper<decltype(trim_grid_func_2)> trim_grid_func2;
+
   utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
+  TrimGridGenerator<ndim, trim_ndim> grid_generator;
 
 public:
   trim_coefficient_values(
       const std::array<REAL, trim_ndim> &rand_nums,
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda) {
+      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda),
+        grid_generator({this->dim0_range, this->dim1_range},
+                       {trim_dim0, trim_dim1, trim_dim2}, trim_grid_func_0,
+                       trim_grid_func_1, trim_grid_func_2, rand_nums) {
 
     this->sycl_target = sycl_target;
-
-    std::vector<std::vector<std::array<REAL, trim_dim0>>> trim_vals_trim_dim0(
-        dim1, std::vector<std::array<REAL, trim_dim0>>(dim0));
-    std::vector<std::vector<std::array<REAL, trim_dim0 * trim_dim1>>>
-        trim_vals_trim_dim1(
-            dim1, std::vector<std::array<REAL, trim_dim0 * trim_dim1>>(dim0));
-    std::vector<
-        std::vector<std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2>>>
-        trim_vals_trim_dim2(
-            dim1,
-            std::vector<std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2>>(
-                dim0));
-
-    std::vector<std::vector<std::vector<REAL>>> trim_vals(
-        dim1, std::vector<std::vector<REAL>>(dim0));
-
-    for (int idim1 = 0; idim1 < this->dim1; idim1++) {
-      for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-        trim_vals_trim_dim0[idim1][idim0] = trim_grid_func_0(
-            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
-
-        trim_vals_trim_dim1[idim1][idim0] = trim_grid_func_1(
-            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
-
-        trim_vals_trim_dim2[idim1][idim0] = trim_grid_func_2(
-            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
-
-        for (int itrim_dim0 = 0; itrim_dim0 < trim_dim0; itrim_dim0++) {
-          trim_vals[idim1][idim0].push_back(
-              trim_vals_trim_dim0[idim1][idim0][itrim_dim0]);
-        }
-
-        for (int itrim_dim1 = 0; itrim_dim1 < (trim_dim0 * trim_dim1);
-             itrim_dim1++) {
-          trim_vals[idim1][idim0].push_back(
-              trim_vals_trim_dim1[idim1][idim0][itrim_dim1]);
-        }
-
-        for (int itrim_dim2 = 0;
-             itrim_dim2 < (trim_dim0 * trim_dim1 * trim_dim2); itrim_dim2++) {
-          trim_vals[idim1][idim0].push_back(
-              trim_vals_trim_dim2[idim1][idim0][itrim_dim2]);
-        }
-
-        this->coeffs_vec.insert(this->coeffs_vec.end(),
-                                trim_vals[idim1][idim0].begin(),
-                                trim_vals[idim1][idim0].end());
-      }
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim1_range.begin(),
-                                 this->dim1_range.end());
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
-
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
     this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-    this->dims_vec.push_back(this->dim1);
   }
 
   auto get_trim_dims_vec() const { return this->trim_dims_vec; }
@@ -370,13 +307,16 @@ public:
     std::optional<TrimEval<ndim + trim_ndim, trim_ndim>> return_val;
     if (this->sycl_target) {
       return_val = TrimEval<ndim + trim_ndim, trim_ndim>(
-          this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
-          this->trim_dims_vec, this->sycl_target.value());
+          this->grid_generator, this->sycl_target.value());
     }
     return return_val.value();
   }
 
   auto get_grid_func() const { return this->trim_grid_func; }
+
+  auto get_trim_grid_func_0() const { return this->trim_grid_func0; }
+  auto get_trim_grid_func_1() const { return this->trim_grid_func1; }
+  auto get_trim_grid_func_2() const { return this->trim_grid_func2; }
 };
 
 struct trim_coefficient_values_asym : abstract_coefficient_values {
@@ -503,77 +443,25 @@ private:
       };
 
   utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
+  TrimGridGenerator<ndim, trim_ndim> grid_generator;
 
 public:
   trim_coefficient_values_asym(
       const std::array<REAL, trim_ndim> &rand_nums,
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda) {
+      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda),
+        grid_generator({this->dim0_range, this->dim1_range},
+                       {trim_dim0, trim_dim1, trim_dim2}, trim_grid_func_0,
+                       trim_grid_func_1, trim_grid_func_2, rand_nums) {
 
     this->sycl_target = sycl_target;
-
-    std::vector<std::vector<std::array<REAL, trim_dim0>>> trim_vals_trim_dim0(
-        dim1, std::vector<std::array<REAL, trim_dim0>>(dim0));
-    std::vector<std::vector<std::array<REAL, trim_dim0 * trim_dim1>>>
-        trim_vals_trim_dim1(
-            dim1, std::vector<std::array<REAL, trim_dim0 * trim_dim1>>(dim0));
-    std::vector<
-        std::vector<std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2>>>
-        trim_vals_trim_dim2(
-            dim1,
-            std::vector<std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2>>(
-                dim0));
-
-    std::vector<std::vector<std::vector<REAL>>> trim_vals(
-        dim1, std::vector<std::vector<REAL>>(dim0));
-
-    for (int idim1 = 0; idim1 < this->dim1; idim1++) {
-      for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-        trim_vals_trim_dim0[idim1][idim0] = trim_grid_func_0(
-            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
-
-        trim_vals_trim_dim1[idim1][idim0] = trim_grid_func_1(
-            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
-
-        trim_vals_trim_dim2[idim1][idim0] = trim_grid_func_2(
-            this->dim0_range[idim0], this->dim1_range[idim1], rand_nums);
-
-        for (int itrim_dim0 = 0; itrim_dim0 < trim_dim0; itrim_dim0++) {
-          trim_vals[idim1][idim0].push_back(
-              trim_vals_trim_dim0[idim1][idim0][itrim_dim0]);
-        }
-
-        for (int itrim_dim1 = 0; itrim_dim1 < (trim_dim0 * trim_dim1);
-             itrim_dim1++) {
-          trim_vals[idim1][idim0].push_back(
-              trim_vals_trim_dim1[idim1][idim0][itrim_dim1]);
-        }
-
-        for (int itrim_dim2 = 0;
-             itrim_dim2 < (trim_dim0 * trim_dim1 * trim_dim2); itrim_dim2++) {
-          trim_vals[idim1][idim0].push_back(
-              trim_vals_trim_dim2[idim1][idim0][itrim_dim2]);
-        }
-
-        this->coeffs_vec.insert(this->coeffs_vec.end(),
-                                trim_vals[idim1][idim0].begin(),
-                                trim_vals[idim1][idim0].end());
-      }
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim1_range.begin(),
-                                 this->dim1_range.end());
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
-
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
     this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-    this->dims_vec.push_back(this->dim1);
   }
 
   auto get_trim_dims_vec() const { return this->trim_dims_vec; }
@@ -582,8 +470,7 @@ public:
     std::optional<TrimEval<ndim + trim_ndim, trim_ndim>> return_val;
     if (this->sycl_target) {
       return_val = TrimEval<ndim + trim_ndim, trim_ndim>(
-          this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
-          this->trim_dims_vec, this->sycl_target.value());
+          this->grid_generator, this->sycl_target.value());
     }
     return return_val.value();
   }
@@ -618,55 +505,36 @@ private:
       };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+  CartesianGridGenerator<ndim> grid_generator;
 
 public:
   coefficient_values_3D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
+      : abstract_coefficient_values(), grid_func(grid_func_lambda),
+        grid_generator({this->dim0_range, this->dim1_range, this->dim2_range},
+                       this->grid_func) {
 
     this->sycl_target = sycl_target;
-
-    REAL dim2_i = 0.0;
-    REAL dim1_i = 0.0;
-    REAL dim0_i = 0.0;
-    REAL val = 0.0;
-    for (int idim2 = 0; idim2 < this->dim2; idim2++) {
-      dim2_i = this->dim2_range[idim2];
-      for (int idim1 = 0; idim1 < this->dim1; idim1++) {
-        dim1_i = this->dim1_range[idim1];
-        for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-          dim0_i = this->dim0_range[idim0];
-          val = this->grid_func(dim0_i, dim1_i, dim2_i);
-          this->coeffs_vec.push_back(val);
-        }
-      }
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim1_range.begin(),
-                                 this->dim1_range.end());
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim2_range.begin(),
-                                 this->dim2_range.end());
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->lower_bounds.push_back(this->dim2_range[0]);
-
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
     this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
     this->upper_bounds.push_back(this->dim2_range[this->dim2 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-    this->dims_vec.push_back(this->dim1);
-    this->dims_vec.push_back(this->dim2);
   };
 
   auto get_grid_func() const { return this->grid_func; }
 
   auto get_grid_func_data() const {
-    return this->get_grid_func_data_ndim<ndim>();
+    std::optional<CartesianGridData<ndim>> return_val;
+    if (this->sycl_target) {
+      return_val = CartesianGridData<ndim>(this->grid_generator,
+                                           this->sycl_target.value());
+    }
+    return return_val.value();
   }
 };
 
@@ -707,65 +575,39 @@ private:
       };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+  CartesianGridGenerator<ndim> grid_generator;
 
 public:
   coefficient_values_4D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
+      : abstract_coefficient_values(), grid_func(grid_func_lambda),
+        grid_generator({this->dim0_range, this->dim1_range, this->dim2_range,
+                        this->dim3_range},
+                       this->grid_func) {
 
     this->sycl_target = sycl_target;
-
-    REAL dim3_i = 0.0;
-    REAL dim2_i = 0.0;
-    REAL dim1_i = 0.0;
-    REAL dim0_i = 0.0;
-    REAL val = 0.0;
-    for (int idim3 = 0; idim3 < this->dim3; idim3++) {
-      dim3_i = this->dim3_range[idim3];
-      for (int idim2 = 0; idim2 < this->dim2; idim2++) {
-        dim2_i = this->dim2_range[idim2];
-        for (int idim1 = 0; idim1 < this->dim1; idim1++) {
-          dim1_i = this->dim1_range[idim1];
-          for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-            dim0_i = this->dim0_range[idim0];
-            val = this->grid_func(dim0_i, dim1_i, dim2_i, dim3_i);
-            this->coeffs_vec.push_back(val);
-          }
-        }
-      }
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim1_range.begin(),
-                                 this->dim1_range.end());
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim2_range.begin(),
-                                 this->dim2_range.end());
-    this->ranges_flat_vec.insert(this->ranges_flat_vec.end(),
-                                 this->dim3_range.begin(),
-                                 this->dim3_range.end());
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->lower_bounds.push_back(this->dim2_range[0]);
     this->lower_bounds.push_back(this->dim3_range[0]);
-
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
     this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
     this->upper_bounds.push_back(this->dim2_range[this->dim2 - 1]);
     this->upper_bounds.push_back(this->dim3_range[this->dim3 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-    this->dims_vec.push_back(this->dim1);
-    this->dims_vec.push_back(this->dim2);
-    this->dims_vec.push_back(this->dim3);
   };
 
   auto get_grid_func() const { return this->grid_func; }
 
   auto get_grid_func_data() const {
-    return this->get_grid_func_data_ndim<ndim>();
+    std::optional<CartesianGridData<ndim>> return_val;
+    if (this->sycl_target) {
+      return_val = CartesianGridData<ndim>(this->grid_generator,
+                                           this->sycl_target.value());
+    }
+    return return_val.value();
   }
 };
 
@@ -815,75 +657,41 @@ private:
       };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
+  CartesianGridGenerator<ndim> grid_generator;
 
 public:
   coefficient_values_5D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda) {
+      : abstract_coefficient_values(), grid_func(grid_func_lambda),
+        grid_generator({this->dim0_range, this->dim1_range, this->dim2_range,
+                        this->dim3_range, this->dim4_range},
+                       this->grid_func) {
 
     this->sycl_target = sycl_target;
-
-    REAL dim4_i = 0.0;
-    REAL dim3_i = 0.0;
-    REAL dim2_i = 0.0;
-    REAL dim1_i = 0.0;
-    REAL dim0_i = 0.0;
-    REAL val = 0.0;
-    for (int idim4 = 0; idim4 < this->dim4; idim4++) {
-      dim4_i = this->dim4_range[idim4];
-      for (int idim3 = 0; idim3 < this->dim3; idim3++) {
-        dim3_i = this->dim3_range[idim3];
-        for (int idim2 = 0; idim2 < this->dim2; idim2++) {
-          dim2_i = this->dim2_range[idim2];
-          for (int idim1 = 0; idim1 < this->dim1; idim1++) {
-            dim1_i = this->dim1_range[idim1];
-            for (int idim0 = 0; idim0 < this->dim0; idim0++) {
-              dim0_i = this->dim0_range[idim0];
-              val = this->grid_func(dim0_i, dim1_i, dim2_i, dim3_i, dim4_i);
-              this->coeffs_vec.push_back(val);
-            }
-          }
-        }
-      }
-    }
-
-    this->ranges_flat_vec = this->dim0_range;
-    this->ranges_flat_vec.insert(ranges_flat_vec.end(),
-                                 this->dim1_range.begin(),
-                                 this->dim1_range.end());
-    this->ranges_flat_vec.insert(ranges_flat_vec.end(),
-                                 this->dim2_range.begin(),
-                                 this->dim2_range.end());
-    this->ranges_flat_vec.insert(ranges_flat_vec.end(),
-                                 this->dim3_range.begin(),
-                                 this->dim3_range.end());
-    this->ranges_flat_vec.insert(ranges_flat_vec.end(),
-                                 this->dim4_range.begin(),
-                                 this->dim4_range.end());
-
+    this->coeffs_vec = grid_generator.flatten_grid();
+    this->ranges_flat_vec = grid_generator.flatten_ranges();
+    this->dims_vec = grid_generator.flatten_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->lower_bounds.push_back(this->dim2_range[0]);
     this->lower_bounds.push_back(this->dim3_range[0]);
     this->lower_bounds.push_back(this->dim4_range[0]);
-
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
     this->upper_bounds.push_back(this->dim1_range[this->dim1 - 1]);
     this->upper_bounds.push_back(this->dim2_range[this->dim2 - 1]);
     this->upper_bounds.push_back(this->dim3_range[this->dim3 - 1]);
     this->upper_bounds.push_back(this->dim4_range[this->dim4 - 1]);
-
-    this->dims_vec.push_back(this->dim0);
-    this->dims_vec.push_back(this->dim1);
-    this->dims_vec.push_back(this->dim2);
-    this->dims_vec.push_back(this->dim3);
-    this->dims_vec.push_back(this->dim4);
   };
 
   auto get_grid_func() const { return this->grid_func; }
 
   auto get_grid_func_data() const {
-    return this->get_grid_func_data_ndim<ndim>();
+    std::optional<CartesianGridData<ndim>> return_val;
+    if (this->sycl_target) {
+      return_val = CartesianGridData<ndim>(this->grid_generator,
+                                           this->sycl_target.value());
+    }
+    return return_val.value();
   }
 };
 

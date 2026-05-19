@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "grid_generators.hpp"
+
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
@@ -288,6 +290,25 @@ struct TrimEval
 
     this->index_on_device_obj();
   };
+
+  /**
+   * \overload
+   * @brief Constructor from a TrimGridGenerator.
+   */
+  template <int InterpNDim, int OutNDim>
+  TrimEval(const TrimGridGenerator<InterpNDim, OutNDim> &grid_generator,
+           SYCLTargetSharedPtr sycl_target,
+           std::map<int, std::string> properties_map = get_default_map())
+      : TrimEval(grid_generator.flatten_grid(), grid_generator.flatten_ranges(),
+                 grid_generator.flatten_interp_dims(),
+                 grid_generator.flatten_trim_dims(), sycl_target,
+                 properties_map) {
+    static_assert(InterpNDim == input_ndim - output_ndim,
+                  "TrimGridGenerator interpolation dimensions must match "
+                  "input_ndim - output_ndim");
+    static_assert(OutNDim == output_ndim,
+                  "TrimGridGenerator output dimensions must match output_ndim");
+  }
 
   void index_on_device_obj() {
     this->on_device_obj->panic_ind = this->required_int_props.find_index(

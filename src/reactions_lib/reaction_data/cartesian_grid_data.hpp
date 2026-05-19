@@ -8,6 +8,8 @@
 #include <memory>
 #include <neso_particles.hpp>
 
+#include "grid_generators.hpp"
+
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
@@ -159,6 +161,16 @@ struct CartesianGridData
     this->on_device_obj = CartesianGridDataOnDevice<input_ndim>(
         this->h_grid, this->h_ranges, this->h_dims);
   };
+
+  /**
+   * \overload
+   * @brief Constructor from a CartesianGridGenerator.
+   */
+  CartesianGridData(const CartesianGridGenerator<input_ndim> &grid_generator,
+                    SYCLTargetSharedPtr sycl_target)
+      : CartesianGridData(grid_generator.flatten_grid(),
+                          grid_generator.flatten_ranges(),
+                          grid_generator.flatten_dims(), sycl_target) {}
 
 public:
   std::shared_ptr<BufferDevice<REAL>> h_grid;
