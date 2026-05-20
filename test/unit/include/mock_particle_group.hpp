@@ -6,6 +6,22 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
+inline auto mesh_sycl_target_only() {
+  auto dims = std::vector<int>(2, 2);
+
+  const double cell_extent = 1.0;
+  const int subdivision_order = 1;
+  const int stencil_width = 1;
+
+  auto mesh = std::make_shared<CartesianHMesh>(
+      MPI_COMM_WORLD, 2, dims, cell_extent, subdivision_order, stencil_width);
+
+  auto sycl_target =
+      std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
+
+  return std::tuple(mesh, sycl_target);
+}
+
 template <size_t ndim = 2>
 inline auto create_test_particle_group(int N_total)
     -> std::shared_ptr<ParticleGroup> {

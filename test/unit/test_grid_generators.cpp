@@ -91,4 +91,7 @@ TEST(GridGenerators, INVALID_TRIM_FUNCS) {
                      ranges, invalid_trim_dims, trim_grid_func0,
                      trim_grid_func1, trim_grid_func2, random_grid_nums)),
                  std::logic_error);
+
+  sycl_target->free();
+  mesh->free();
 }

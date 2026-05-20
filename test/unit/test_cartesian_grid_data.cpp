@@ -9,9 +9,9 @@ using namespace VANTAGE::Reactions;
 TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
   static constexpr int ndim = 3;
 
-  auto particle_group = create_test_particle_group(1e3);
+  auto [mesh, sycl_target] = mesh_sycl_target_only();
 
-  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
+  const int rank = sycl_target->comm_pair.rank_parent;
   std::mt19937 rng = std::mt19937(52234126 + rank);
   std::uniform_int_distribution<size_t> uniform_dist_0(1, 5);
   std::uniform_real_distribution<REAL> uniform_dist_1(0.0, 10.0);
@@ -44,8 +44,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
   // Test dims_size error
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, invalid_ranges_vec,
-                                         invalid_dims_vec,
-                                         particle_group->sycl_target),
+                                         invalid_dims_vec, sycl_target),
                  std::logic_error);
 
   // Test ranges_size error
@@ -56,7 +55,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, invalid_ranges_vec,
-                                         dims_vec, particle_group->sycl_target),
+                                         dims_vec, sycl_target),
                  std::logic_error);
 
   // Test grid_size error
@@ -72,9 +71,9 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, ranges_vec, dims_vec,
-                                         particle_group->sycl_target),
+                                         sycl_target),
                  std::logic_error);
 
-  particle_group->sycl_target->free();
-  particle_group->domain->mesh->free();
+  sycl_target->free();
+  mesh->free();
 }
