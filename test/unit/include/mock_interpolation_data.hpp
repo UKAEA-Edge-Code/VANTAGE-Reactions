@@ -275,10 +275,6 @@ private:
             trim_vals_trim_dim0, trim_vals_trim_dim1, trim_vals_trim_dim2};
       };
 
-  utils::LambdaWrapper<decltype(trim_grid_func_0)> trim_grid_func0;
-  utils::LambdaWrapper<decltype(trim_grid_func_1)> trim_grid_func1;
-  utils::LambdaWrapper<decltype(trim_grid_func_2)> trim_grid_func2;
-
   utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
   TrimGridGenerator<ndim, trim_ndim> grid_generator;
 
@@ -314,9 +310,9 @@ public:
 
   auto get_grid_func() const { return this->trim_grid_func; }
 
-  auto get_trim_grid_func_0() const { return this->trim_grid_func0; }
-  auto get_trim_grid_func_1() const { return this->trim_grid_func1; }
-  auto get_trim_grid_func_2() const { return this->trim_grid_func2; }
+  auto get_trim_grid_func_0() const { return this->trim_grid_func_0; }
+  auto get_trim_grid_func_1() const { return this->trim_grid_func_1; }
+  auto get_trim_grid_func_2() const { return this->trim_grid_func_2; }
 };
 
 struct trim_coefficient_values_asym : abstract_coefficient_values {
