@@ -57,10 +57,11 @@ namespace VANTAGE::Reactions {
  * @tparam output_ndim Number of TRIM dimensions (size of the returned value
  * array).
  */
-template <int input_ndim, int output_ndim>
+template <int input_ndim>
 struct TrimEvalOnDevice
-    : public ReactionDataBaseOnDevice<output_ndim, DEFAULT_RNG_KERNEL,
-                                      input_ndim> {
+    : public ReactionDataBaseOnDevice<3, DEFAULT_RNG_KERNEL, input_ndim> {
+
+  static constexpr int output_ndim = 3;
 
   TrimEvalOnDevice() {
     static_assert(
@@ -216,9 +217,11 @@ public:
  * @tparam output_ndim Number of TRIM dimensions (size of the returned value
  * array).
  */
-template <int input_ndim, int output_ndim>
-struct TrimEval
-    : public ReactionDataBase<TrimEvalOnDevice<input_ndim, output_ndim>> {
+template <int input_ndim>
+struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
+
+  static constexpr int output_ndim = 3;
+  static constexpr int interp_ndim = input_ndim - output_ndim;
 
   constexpr static auto props = default_properties;
 
@@ -241,11 +244,11 @@ struct TrimEval
            const std::vector<size_t> &trim_dims_vec,
            SYCLTargetSharedPtr sycl_target,
            std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<TrimEvalOnDevice<input_ndim, output_ndim>>(
+      : ReactionDataBase<TrimEvalOnDevice<input_ndim>>(
             Properties<INT>(required_simple_int_props), properties_map) {
 
     auto dims_size = dims_vec.size();
-    NESOASSERT((dims_size == (input_ndim - output_ndim)),
+    NESOASSERT((dims_size == interp_ndim),
                "Invalid size of input dims vector.");
 
     auto trim_dims_size = trim_dims_vec.size();
@@ -283,8 +286,8 @@ struct TrimEval
     this->h_trim_dims =
         utils::make_buffer_device_ptr(sycl_target, trim_dims_vec);
 
-    this->on_device_obj = TrimEvalOnDevice<input_ndim, output_ndim>(
-        h_grid, h_ranges, h_dims, h_trim_dims);
+    this->on_device_obj =
+        TrimEvalOnDevice<input_ndim>(h_grid, h_ranges, h_dims, h_trim_dims);
 
     this->on_device_obj->grid_stride = grid_stride;
 
@@ -293,21 +296,18 @@ struct TrimEval
 
   /**
    * \overload
-   * @brief Constructor from a TrimGridGenerator.
+   * @brief Constructor from a GridGenerator object.
    */
-  template <int InterpNDim, int OutNDim>
-  TrimEval(const TrimGridGenerator<InterpNDim, OutNDim> &grid_generator,
+  TrimEval(const GridGenerator<interp_ndim, output_ndim> &grid_generator,
            SYCLTargetSharedPtr sycl_target,
            std::map<int, std::string> properties_map = get_default_map())
       : TrimEval(grid_generator.flatten_grid(), grid_generator.flatten_ranges(),
                  grid_generator.flatten_interp_dims(),
                  grid_generator.flatten_trim_dims(), sycl_target,
                  properties_map) {
-    static_assert(InterpNDim == input_ndim - output_ndim,
+    static_assert(interp_ndim == input_ndim - output_ndim,
                   "TrimGridGenerator interpolation dimensions must match "
                   "input_ndim - output_ndim");
-    static_assert(OutNDim == output_ndim,
-                  "TrimGridGenerator output dimensions must match output_ndim");
   }
 
   void index_on_device_obj() {

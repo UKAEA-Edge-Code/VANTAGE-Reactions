@@ -673,9 +673,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         std::array<INT, trim_ndim> normalized_trim_indices =
             interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result =
-            grid_func(props.at(0), props.at(1), normalized_trim_indices,
-                      trim_dims_arr, random_grid_nums);
+        auto result = grid_func(props.at(0), props.at(1),
+                                normalized_trim_indices, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -829,9 +828,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
         std::array<INT, trim_ndim> normalized_trim_indices =
             interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result =
-            grid_func(props.at(0), props.at(1), normalized_trim_indices,
-                      trim_dims_arr, random_grid_nums);
+        auto result = grid_func(props.at(0), props.at(1),
+                                normalized_trim_indices, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -985,9 +983,8 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
         std::array<INT, trim_ndim> normalized_trim_indices =
             interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result =
-            grid_func(props.at(0), props.at(1), normalized_trim_indices,
-                      trim_dims_arr, random_grid_nums);
+        auto result = grid_func(props.at(0), props.at(1),
+                                normalized_trim_indices, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];

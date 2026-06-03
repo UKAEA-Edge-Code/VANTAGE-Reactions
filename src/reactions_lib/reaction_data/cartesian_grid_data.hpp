@@ -164,13 +164,13 @@ struct CartesianGridData
 
   /**
    * \overload
-   * @brief Constructor from a CartesianGridGenerator.
+   * @brief Constructor using a GridGenerator object.
    */
-  CartesianGridData(const CartesianGridGenerator<input_ndim> &grid_generator,
+  CartesianGridData(const GridGenerator<input_ndim> &grid_generator,
                     SYCLTargetSharedPtr sycl_target)
       : CartesianGridData(grid_generator.flatten_grid(),
                           grid_generator.flatten_ranges(),
-                          grid_generator.flatten_dims(), sycl_target) {}
+                          grid_generator.flatten_interp_dims(), sycl_target) {}
 
 public:
   std::shared_ptr<BufferDevice<REAL>> h_grid;

@@ -38,17 +38,7 @@ TEST(GridGenerators, INVALID_TRIM_FUNCS) {
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_flat_vec = coeffs_data.get_ranges_flat_vec();
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
-
-  auto trim_grid_func0 = coeffs_data.get_trim_grid_func_0();
-  auto trim_grid_func1 = coeffs_data.get_trim_grid_func_1();
-
-  // Deliberately incorrect trim_grid_func2
-  auto invalid_trim_grid_func2 =
-      [&](const REAL &dim0_val, const REAL &dim1_val,
-          const std::array<REAL, trim_ndim> &rand_nums) {
-        std::array<REAL, 1> result{0};
-        return result;
-      };
+  auto trim_grid_func = coeffs_data.get_grid_func_concat();
 
   std::array<std::vector<REAL>, ndim> ranges;
 
@@ -66,17 +56,9 @@ TEST(GridGenerators, INVALID_TRIM_FUNCS) {
     trim_dims[i] = trim_dims_vec[i];
   }
 
-  if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW((TrimGridGenerator<ndim, trim_ndim>(
-                     ranges, trim_dims, trim_grid_func0, trim_grid_func1,
-                     invalid_trim_grid_func2, random_grid_nums)),
-                 std::logic_error);
-
-  auto trim_grid_func2 = coeffs_data.get_trim_grid_func_2();
-
   // Assumes trim_dims_vec[i] = 5 for all i.
-  std::uniform_int_distribution<INT> uniform_dist_0(-2, 3);
-  std::array<REAL, trim_ndim> random_trim_nums;
+  std::uniform_int_distribution<int> uniform_dist_0(-2, 3);
+  std::array<int, trim_ndim> random_trim_nums;
   for (int i = 0; i < trim_ndim; i++) {
     random_trim_nums[i] = uniform_dist_0(rng);
   }
@@ -87,11 +69,8 @@ TEST(GridGenerators, INVALID_TRIM_FUNCS) {
   }
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW((TrimGridGenerator<ndim, trim_ndim>(
-                     ranges, invalid_trim_dims, trim_grid_func0,
-                     trim_grid_func1, trim_grid_func2, random_grid_nums)),
-                 std::logic_error);
-
-  sycl_target->free();
-  mesh->free();
+    EXPECT_THROW(
+        (GridGenerator<ndim, trim_ndim>(ranges, invalid_trim_dims,
+                                        trim_grid_func, random_grid_nums)),
+        std::logic_error);
 }

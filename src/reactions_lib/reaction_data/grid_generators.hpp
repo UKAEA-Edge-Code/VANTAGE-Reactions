@@ -1,5 +1,5 @@
-#ifndef REACTIONS_GRID_DESCRIPTOR_H
-#define REACTIONS_GRID_DESCRIPTOR_H
+#ifndef REACTIONS_GRID_GENERATORS_H
+#define REACTIONS_GRID_GENERATORS_H
 
 #include <algorithm>
 #include <array>
@@ -42,6 +42,13 @@ struct is_std_array_of_real<std::array<REAL, N>> : std::true_type {};
  */
 template <typename T>
 inline constexpr bool is_std_array_of_real_v = is_std_array_of_real<T>::value;
+
+template <typename T> struct is_tuple : std::false_type {};
+
+template <typename... Args>
+struct is_tuple<std::tuple<Args...>> : std::true_type {};
+
+template <typename T> inline constexpr bool is_tuple_v = is_tuple<T>::value;
 
 /**
  * @brief Iterate over all grid points in row-major order (dimension 0 varies
@@ -134,6 +141,20 @@ inline decltype(auto) apply_coords(const FUNC &func,
                            context...);
 }
 
+/* @brief Compute the return type of a callable when invoked with unpacked
+ * std::array<REAL, N> elements plus trailing context arguments.
+ */
+template <typename FUNC, size_t N, typename... Context, size_t... Is>
+auto invoke_result_unpacked_impl(std::index_sequence<Is...>)
+    -> std::invoke_result_t<
+        FUNC,
+        decltype(std::get<Is>(std::declval<const std::array<REAL, N> &>()))...,
+        Context...>;
+template <typename FUNC, size_t N, typename... Context>
+using invoke_result_unpacked =
+    decltype(invoke_result_unpacked_impl<FUNC, N, Context...>(
+        std::make_index_sequence<N>{}));
+
 /**
  * @brief Invoke each generator function from a tuple with unpacked
  * coordinates and context arguments, appending results to a writer.
@@ -154,118 +175,36 @@ inline decltype(auto) apply_coords(const FUNC &func,
  * @param coords Coordinate array unpacked into each generator call.
  * @param args Tuple containing generator functions and context arguments.
  */
-template <size_t ContextOffset, typename Writer, size_t N, typename Tuple,
-          size_t... FunctionIndices, size_t... ContextIndices>
-inline void
-append_func_results(Writer &writer, const std::array<REAL, N> &coords,
-                    const Tuple &args, std::index_sequence<FunctionIndices...>,
-                    std::index_sequence<ContextIndices...>) {
-  (writer.append(
-       apply_coords(std::get<FunctionIndices>(args), coords,
-                    std::get<ContextOffset + ContextIndices>(args)...)),
-   ...);
+template <typename Writer, size_t N, typename FUNC, typename... Context>
+inline void append_func_results(Writer &writer,
+                                const std::array<REAL, N> &coords,
+                                const FUNC &func, const Context &...context) {
+  using FUNC_RETURN_TYPE = invoke_result_unpacked<FUNC, N, Context...>;
+  auto func_result = apply_coords(func, coords, context...);
+
+  if constexpr (std::is_same_v<FUNC_RETURN_TYPE, REAL>) {
+    writer.append(std::vector<REAL>{func_result});
+  } else if (grid_detail::is_std_array_of_real_v<FUNC_RETURN_TYPE>) {
+    std::vector<REAL> func_result_vec;
+    func_result_vec.insert(func_result_vec.end(), func_result.begin(),
+                           func_result.end());
+    writer.append(func_result_vec);
+  }
 }
 
 } // namespace grid_detail
 
 /**
- * @brief Generator for Cartesian grid data that handles flattening of
- * dimensions, ranges and values.
- *
- * @tparam ndim Number of grid dimensions.
- */
-template <int ndim> struct CartesianGridGenerator {
-  /**
-   * @brief Construct from per-dimension ranges and a generator function.
-   *
-   * The generator is called once per grid point in row-major order (dimension 0
-   * varying fastest).
-   *
-   * @tparam FUNC Generator callable type.
-   * @param ranges_in Per-dimension range vectors.
-   * @param func Generator callable with signature
-   *   REAL(const std::array<REAL, ndim>&).
-   */
-  template <typename FUNC, typename... Context>
-  CartesianGridGenerator(const std::array<std::vector<REAL>, ndim> &ranges_in,
-                         const FUNC &func, const Context &...context)
-      : ranges(std::move(ranges_in)) {
-
-    // Compute total number of grid points and reserve storage.
-    size_t expected = 1;
-    for (const auto &r : ranges) {
-      expected *= r.size();
-    }
-
-    // Evaluate the generator at every grid point and store the results.
-    grid_detail::iterate_points<ndim>(
-        this->ranges, [&](const std::array<REAL, ndim> &coords) {
-          this->grid.push_back(
-              grid_detail::apply_coords(func, coords, context...));
-        });
-
-    // Difficult to test this as there is no external action from the user that
-    // can corrupt the calculation of either expected or grid.size(). It is
-    // still a runtime sanity check, in case of weird non-user triggered
-    // scenarios (maybe bad memory access of this->grid inside func if that's
-    // possible?) but might be worth removing if it seems redundant.
-    NESOASSERT(this->grid.size() == expected,
-               "CartesianGridGenerator: grid size does not match product of "
-               "range sizes.");
-  }
-
-  /**
-   * @brief Flatten the per-dimension range vectors into a single contiguous
-   * vector.
-   *
-   * @return Vector containing all range values concatenated in dimension order.
-   */
-  const std::vector<REAL> flatten_ranges() const {
-    std::vector<REAL> flat;
-    size_t total = 0;
-    for (const auto &r : this->ranges) {
-      total += r.size();
-    }
-
-    for (const auto &r : this->ranges) {
-      flat.insert(flat.end(), r.begin(), r.end());
-    }
-    return flat;
-  }
-
-  /**
-   * @brief Return the size of each dimension's range vector.
-   *
-   * @return Vector containing the number of grid points per dimension.
-   */
-  const std::vector<size_t> flatten_dims() const {
-    std::vector<size_t> dims;
-    for (const auto &r : this->ranges) {
-      dims.push_back(r.size());
-    }
-    return dims;
-  }
-
-  /**
-   * @brief Return the flat grid data vector.
-   *
-   * @return Const reference to the internally stored grid values.
-   */
-  const std::vector<REAL> &flatten_grid() const { return this->grid; }
-
-private:
-  std::array<std::vector<REAL>, ndim> ranges;
-  std::vector<REAL> grid;
-};
-
-/**
- * @brief Generator for TrimEval grid data that handles flattening of
- * interpolation ranges, trim dimensions, and the nested per-point tables.
+ * @brief Abstract base class with common elements for both versions of
+ * GridGenerator.
  *
  * @tparam interp_ndim Number of interpolation dimensions.
- * @tparam output_ndim Number of TRIM output dimensions.
+ * @tparam output_ndim Number of TRIM output dimensions (default is 0).
+ *
  */
-template <int interp_ndim, int output_ndim> struct TrimGridGenerator {
+template <int interp_ndim, int output_ndim = 0> struct AbstractGridGenerator {
+  AbstractGridGenerator() = default;
+
   std::array<std::vector<REAL>, interp_ndim> ranges;
   std::array<size_t, output_ndim> trim_dims;
   std::vector<REAL> grid;
@@ -280,6 +219,7 @@ template <int interp_ndim, int output_ndim> struct TrimGridGenerator {
    * the order expected by TrimEval.
    */
   struct TableWriter {
+    TableWriter() = default;
     REAL *ptr = nullptr;
     int offset = 0;
 
@@ -311,70 +251,6 @@ template <int interp_ndim, int output_ndim> struct TrimGridGenerator {
       offset += static_cast<int>(n);
     }
   };
-
-  /**
-   * @brief Construct from interpolation ranges, trim dimensions, and a
-   * generator function.
-   *
-   * The generator is called once per interpolation point in row-major order.
-   * It must return a tuple-like object (e.g. std::tuple, std::array) of
-   * exactly output_ndim containers. Each container is appended in order to
-   * the internal flat grid buffer.
-   *
-   * @tparam FUNC Generator callable type.
-   * @param ranges_in Per-dimension interpolation range vectors.
-   * @param trim_dims_in TRIM grid dimensions per output axis.
-   * @param func Generator callable with signature
-   *   auto(const std::array<REAL, interp_ndim>&) returning a tuple-like
-   *   object of output_ndim containers.
-   */
-  template <typename... Args>
-  TrimGridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
-                    const std::array<size_t, output_ndim> &trim_dims_in,
-                    const Args &...args)
-      : ranges(std::move(ranges_in)), trim_dims(trim_dims_in) {
-
-    static_assert(sizeof...(Args) >= output_ndim,
-                  "TrimGridGenerator: must provide at least output_ndim "
-                  "functions");
-
-    // Compute grid_stride exactly as TrimEval does
-    int agg = 1;
-    for (auto d : trim_dims) {
-      agg *= static_cast<int>(d);
-      grid_stride += agg;
-    }
-
-    // Compute total number of interpolation points and allocate the grid vector
-    size_t num_points = 1;
-    for (const auto &r : ranges) {
-      num_points *= r.size();
-    }
-    for (size_t i = 0; i < (num_points * grid_stride); i++) {
-      grid.push_back(0.0);
-    }
-
-    // Pack generators and trailing context arguments into a tuple for
-    // indexed access during iteration.
-    constexpr size_t context_count = sizeof...(Args) - output_ndim;
-    auto args_tuple = std::make_tuple(args...);
-
-    // Iterate over all interpolation points, evaluate the generators, and
-    // append the nested per-point tables into the flat grid buffer.
-    size_t point_idx = 0;
-    grid_detail::iterate_points<interp_ndim>(
-        ranges, [&](const std::array<REAL, interp_ndim> &coords) {
-          TableWriter writer{&grid[point_idx * grid_stride]};
-          grid_detail::append_func_results<output_ndim>(
-              writer, coords, args_tuple,
-              std::make_index_sequence<output_ndim>{},
-              std::make_index_sequence<context_count>{});
-          NESOASSERT(writer.offset == grid_stride,
-                     "TrimGridGenerator: per-point data size does not match "
-                     "grid_stride.");
-          ++point_idx;
-        });
-  }
 
   /**
    * @brief Flatten the per-dimension interpolation range vectors into a single
@@ -421,7 +297,7 @@ template <int interp_ndim, int output_ndim> struct TrimGridGenerator {
   /**
    * @brief Return the per-interpolation-point data stride.
    *
-   * @return The total number of REAL values stored for each interpolation
+   * @return The total number of values stored for each interpolation
    * point.
    */
   const int &get_grid_stride() const { return grid_stride; }
@@ -434,6 +310,135 @@ template <int interp_ndim, int output_ndim> struct TrimGridGenerator {
   const std::vector<REAL> &flatten_grid() const { return grid; }
 };
 
+/**
+ * @brief Generator struct for CartesianGridData or TrimEval grid data that
+ * handles flattening of interpolation ranges, trim dimensions, and the nested
+ * per-point tables.
+ *
+ * @tparam interp_ndim Number of interpolation dimensions.
+ * @tparam output_ndim Number of TRIM output dimensions (default is 0).
+ */
+template <int interp_ndim, int output_ndim = 0>
+struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
+  using typename AbstractGridGenerator<interp_ndim, output_ndim>::TableWriter;
+
+  /**
+   * @brief Construct from interpolation ranges and a
+   * generator function (with optional additional context).
+   *
+   * The generator is called once per interpolation point in row-major order.
+   * It must return a REAL value. Each value is appended to the internal flat
+   * grid buffer.
+   *
+   * @tparam FUNC Generator callable type.
+   * @tparam Context Type names of any additional context data needed for the
+   * generator.
+   * @param ranges_in Per-dimension interpolation range vectors.
+   * @param func Generator callable with signature
+   *   auto(const REAL &dim0_val, const REAL &dim1_val,... , Context... context)
+   * returning a REAL value.
+   */
+  // The extra std::is_same_v condition is due to Clang limitation not allowing
+  // deactivation using enable_if_t when the condition only uses the template
+  // parameter from the enclosing struct.
+  template <typename FUNC, typename... Context,
+            std::enable_if_t<(output_ndim == 0) && std::is_same_v<FUNC, FUNC>,
+                             int> = 0>
+  GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
+                const FUNC &func, const Context &...context)
+      : AbstractGridGenerator<interp_ndim, output_ndim>() {
+
+    this->ranges = std::move(ranges_in);
+
+    // Compute total number of interpolation points and allocate the grid vector
+    size_t num_points = 1;
+    for (const auto &r : this->ranges) {
+      num_points *= r.size();
+    }
+    for (size_t i = 0; i < num_points; i++) {
+      this->grid.push_back(0.0);
+    }
+
+    // Iterate over all interpolation points, evaluate the passed function, and
+    // append the nested per-point tables into the flat grid buffer.
+    size_t point_idx = 0;
+
+    grid_detail::iterate_points<interp_ndim>(
+        this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
+          TableWriter writer{&(this->grid[point_idx])};
+          grid_detail::append_func_results(writer, coords, func, context...);
+          ++point_idx;
+        });
+  }
+
+  /**
+   * @brief Construct from interpolation ranges, trim dimensions, and a
+   * generator function (with optional additional context).
+   *
+   * The generator is called once per interpolation point in row-major order.
+   * It must return a REAL std::array of size (trim_dim0 + (trim_dim0 *
+   * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each array is
+   * appended to the internal flat grid buffer.
+   *
+   * @tparam FUNC Generator callable type.
+   * @tparam Context Type names of any additional context data needed for the
+   * generator.
+   * @param ranges_in Per-dimension interpolation range vectors.
+   * @param trim_dims_arr TRIM grid dimensions per output axis.
+   * @param func Generator callable with signature
+   *   auto(const REAL &dim0_val, const REAL &dim1_val,... , Context... context)
+   * returning a REAL std::array
+   */
+  // The extra std::is_same_v condition is due to Clang limitation not allowing
+  // deactivation using enable_if_t when the condition only uses the template
+  // parameter from the enclosing struct.
+  template <typename FUNC, typename... Context,
+            std::enable_if_t<(output_ndim == 3) && std::is_same_v<FUNC, FUNC>,
+                             int> = 0>
+  GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
+                const std::array<size_t, output_ndim> &trim_dims_arr,
+                const FUNC &func, const Context &...context)
+      : AbstractGridGenerator<interp_ndim, output_ndim>() {
+
+    this->ranges = std::move(ranges_in);
+
+    // Compute grid_stride exactly as TrimEval does
+    this->trim_dims = std::move(trim_dims_arr);
+    int agg = 1;
+    for (auto &d : this->trim_dims) {
+      agg *= static_cast<int>(d);
+      this->grid_stride += agg;
+    }
+
+    // Compute total number of interpolation points and allocate the grid vector
+    size_t num_points = 1;
+    for (const auto &r : this->ranges) {
+      num_points *= r.size();
+    }
+    size_t grid_size_upper_limit = num_points * this->grid_stride;
+    for (size_t i = 0; i < grid_size_upper_limit; i++) {
+      this->grid.push_back(0.0);
+    }
+
+    // Iterate over all interpolation points, evaluate the passed function, and
+    // append the nested per-point tables into the flat grid buffer.
+    size_t point_idx = 0;
+    size_t grid_access_index = 0;
+
+    grid_detail::iterate_points<interp_ndim>(
+        this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
+          grid_access_index = point_idx * this->grid_stride;
+          TableWriter writer{&(this->grid[grid_access_index])};
+          grid_detail::append_func_results(writer, coords, func, context...);
+          NESOASSERT(writer.offset == this->grid_stride,
+                     "TrimGridGenerator: per-point data size does not match "
+                     "grid_stride.");
+
+          ++point_idx;
+        });
+  }
+};
+
 } // namespace VANTAGE::Reactions
 
-#endif // REACTIONS_GRID_DESCRIPTOR_H
+#endif // REACTIONS_GRID_GENERATORS_H

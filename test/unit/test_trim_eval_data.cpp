@@ -8,7 +8,7 @@ using namespace VANTAGE::Reactions;
 
 TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   static constexpr int ndim = 4;
-  static constexpr int trim_ndim = 5;
+  static constexpr int trim_ndim = 3;
   static constexpr int input_ndim = ndim + trim_ndim;
 
   auto [mesh, sycl_target] = mesh_sycl_target_only();
@@ -64,9 +64,9 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // Extra brackets around TrimEval needed due to googletest-related
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW((TrimEval<input_ndim, trim_ndim>(
-                     invalid_grid_vec, invalid_ranges_vec, invalid_dims_vec,
-                     invalid_trim_dims_vec, sycl_target)),
+    EXPECT_THROW((TrimEval<input_ndim>(invalid_grid_vec, invalid_ranges_vec,
+                                       invalid_dims_vec, invalid_trim_dims_vec,
+                                       sycl_target)),
                  std::logic_error);
 
   // Test trim_dims_size error
@@ -78,10 +78,10 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // Extra brackets around TrimEval needed due to googletest-related
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW((TrimEval<input_ndim, trim_ndim>(
-                     invalid_grid_vec, invalid_ranges_vec, dims_vec,
-                     invalid_trim_dims_vec, sycl_target)),
-                 std::logic_error);
+    EXPECT_THROW(
+        (TrimEval<input_ndim>(invalid_grid_vec, invalid_ranges_vec, dims_vec,
+                              invalid_trim_dims_vec, sycl_target)),
+        std::logic_error);
 
   // Test ranges_size error
   std::vector<size_t> trim_dims_vec;
@@ -92,10 +92,9 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // Extra brackets around TrimEval needed due to googletest-related
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW(
-        (TrimEval<input_ndim, trim_ndim>(invalid_grid_vec, invalid_ranges_vec,
-                                         dims_vec, trim_dims_vec, sycl_target)),
-        std::logic_error);
+    EXPECT_THROW((TrimEval<input_ndim>(invalid_grid_vec, invalid_ranges_vec,
+                                       dims_vec, trim_dims_vec, sycl_target)),
+                 std::logic_error);
 
   // Test grid_size error
   std::vector<REAL> ranges_vec;
@@ -108,10 +107,9 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // Extra brackets around TrimEval needed due to googletest-related
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW(
-        (TrimEval<input_ndim, trim_ndim>(invalid_grid_vec, ranges_vec, dims_vec,
-                                         trim_dims_vec, sycl_target)),
-        std::logic_error);
+    EXPECT_THROW((TrimEval<input_ndim>(invalid_grid_vec, ranges_vec, dims_vec,
+                                       trim_dims_vec, sycl_target)),
+                 std::logic_error);
 
   sycl_target->free();
   mesh->free();
