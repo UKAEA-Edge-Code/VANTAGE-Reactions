@@ -5,7 +5,6 @@
 #include <array>
 #include <cstddef>
 #include <neso_particles.hpp>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -43,21 +42,14 @@ struct is_std_array_of_real<std::array<REAL, N>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_std_array_of_real_v = is_std_array_of_real<T>::value;
 
-template <typename T> struct is_tuple : std::false_type {};
-
-template <typename... Args>
-struct is_tuple<std::tuple<Args...>> : std::true_type {};
-
-template <typename T> inline constexpr bool is_tuple_v = is_tuple<T>::value;
-
 /**
  * @brief Iterate over all grid points in row-major order (dimension 0 varies
  * fastest) and execute a function at the calculated coordinates of each
  * grid point.
  *
  * @tparam ndim Number of dimensions.
- * @tparam FUNC Callable taking const std::array<REAL, ndim> & (coordinate
- * values).
+ * @tparam FUNC Type of callable taking const std::array<REAL, ndim> &
+ * (coordinate values).
  * @param ranges Per-dimension range vectors defining the grid coordinates.
  * @param func Callable invoked once per grid point with the coordinate array.
  */
@@ -156,39 +148,77 @@ using invoke_result_unpacked =
         std::make_index_sequence<N>{}));
 
 /**
- * @brief Invoke each generator function from a tuple with unpacked
- * coordinates and context arguments, appending results to a writer.
+ * @brief Helper for appending nested tables into a flat grid buffer.
  *
- * Used by TrimGridGenerator to evaluate per-point generators and store the
- * nested table data. The trailing std::index_sequence arguments are
- * compile-time tags that drive the parameter-pack expansion over the
- * generator functions and their context arguments.
- *
- * @tparam ContextOffset Offset in the tuple where context arguments begin.
- * @tparam Writer Type supporting an append() method.
- * @tparam N Number of coordinate dimensions.
- * @tparam Tuple Tuple-like type holding generator functions and context args.
- * @tparam FunctionIndices Index sequence selecting generator functions.
- * @tparam ContextIndices Index sequence selecting context arguments.
- * @param writer Output writer (e.g. TrimGridGenerator::TableWriter) that
- *   accumulates the flattened per-point table data via append().
- * @param coords Coordinate array unpacked into each generator call.
- * @param args Tuple containing generator functions and context arguments.
+ * Usage consists of passing a table (either in a vector/array or as a
+ * pointer to and size of an vector/array) to append(...) which appends the
+ * table (as a flat buffer) to the buffer that is pointed to by REAL *ptr.
+ * (Note the grid buffer pointed to by REAL *ptr, is written to directly by
+ * append(...) so avoid concurrent calls to append(...) to prevent potential
+ * data-races)
  */
-template <typename Writer, size_t N, typename FUNC, typename... Context>
-inline void append_func_results(Writer &writer,
+struct TableWriter {
+  TableWriter() = default;
+  REAL *ptr = nullptr;
+  int offset = 0;
+
+  /**
+   * @brief Append elements from a container into the flat grid buffer at the
+   * current offset.
+   *
+   * @tparam Container Valid types: std::array<REAL, N>, std::vector<REAL>.
+   * @param data Container of REAL values to copy.
+   */
+  template <typename Container>
+  std::enable_if_t<std::is_same_v<Container, std::vector<REAL>> ||
+                       grid_detail::is_std_array_of_real_v<Container>,
+                   void>
+  append(const Container &data) {
+    std::copy(data.begin(), data.end(), this->ptr + this->offset);
+    offset += static_cast<int>(data.size());
+  }
+
+  /**
+   * @brief Append n REAL values from a raw pointer into the flat grid buffer
+   * at the current offset.
+   *
+   * @param data Pointer to the first REAL value to copy.
+   * @param n Number of elements to copy.
+   */
+  void append(const REAL *data, size_t n) {
+    std::copy(data, data + n, this->ptr + this->offset);
+    offset += static_cast<int>(n);
+  }
+};
+
+/**
+ * @brief Call a function on a given set of coords and append the result to a
+ * flat grid buffer (via TableWriter::append).
+ *
+ * The result of the function call should be either a REAL value or a
+ * std::array<REAL>/std::vector<REAL>.
+ *
+ * @tparam N Number of coordinate dimensions.
+ * @tparam FUNC Callable type.
+ * @tparam Context Extra argument types forwarded after the array elements.
+ * @param writer Output TableWriter  that accumulates the flattened per-point
+ * table data via append().
+ * @param coords Coordinate array unpacked into each generator call.
+ * @param func Callable to be passed to apply_coords
+ * @param context Extra arguments needed for func besides coords.
+ */
+template <size_t N, typename FUNC, typename... Context>
+inline void append_func_results(TableWriter &writer,
                                 const std::array<REAL, N> &coords,
                                 const FUNC &func, const Context &...context) {
   using FUNC_RETURN_TYPE = invoke_result_unpacked<FUNC, N, Context...>;
   auto func_result = apply_coords(func, coords, context...);
 
   if constexpr (std::is_same_v<FUNC_RETURN_TYPE, REAL>) {
-    writer.append(std::vector<REAL>{func_result});
-  } else if (grid_detail::is_std_array_of_real_v<FUNC_RETURN_TYPE>) {
-    std::vector<REAL> func_result_vec;
-    func_result_vec.insert(func_result_vec.end(), func_result.begin(),
-                           func_result.end());
-    writer.append(func_result_vec);
+    writer.append(std::array<REAL, 1>{func_result});
+  } else if (grid_detail::is_std_array_of_real_v<FUNC_RETURN_TYPE> ||
+             std::is_same_v<FUNC_RETURN_TYPE, std::vector<REAL>>) {
+    writer.append(func_result);
   }
 }
 
@@ -199,58 +229,16 @@ inline void append_func_results(Writer &writer,
  * GridGenerator.
  *
  * @tparam interp_ndim Number of interpolation dimensions.
- * @tparam output_ndim Number of TRIM output dimensions (default is 0).
+ * @tparam output_ndim Number of output dimensions (default is 0).
  *
  */
 template <int interp_ndim, int output_ndim = 0> struct AbstractGridGenerator {
   AbstractGridGenerator() = default;
 
   std::array<std::vector<REAL>, interp_ndim> ranges;
-  std::array<size_t, output_ndim> trim_dims;
+  std::array<size_t, output_ndim> output_dims;
   std::vector<REAL> grid;
   int grid_stride = 0;
-
-  /**
-   * @brief Helper for appending nested tables into the flat grid buffer.
-   *
-   * Each interpolation point in the TrimGridGenerator owns a contiguous slice
-   * of the flat grid. A TableWriter is passed to the user's generator
-   * function so that nested per-output-dimension tables can be appended in
-   * the order expected by TrimEval.
-   */
-  struct TableWriter {
-    TableWriter() = default;
-    REAL *ptr = nullptr;
-    int offset = 0;
-
-    /**
-     * @brief Append elements from a container into the flat grid buffer at the
-     * current offset.
-     *
-     * @tparam Container Valid types: std::array<REAL, N>, std::vector<REAL>.
-     * @param data Container of REAL values to copy.
-     */
-    template <typename Container>
-    std::enable_if_t<std::is_same_v<Container, std::vector<REAL>> ||
-                         grid_detail::is_std_array_of_real_v<Container>,
-                     void>
-    append(const Container &data) {
-      std::copy(data.begin(), data.end(), ptr + offset);
-      offset += static_cast<int>(data.size());
-    }
-
-    /**
-     * @brief Append n REAL values from a raw pointer into the flat grid buffer
-     * at the current offset.
-     *
-     * @param data Pointer to the first REAL value to copy.
-     * @param n Number of elements to copy.
-     */
-    void append(const REAL *data, size_t n) {
-      std::copy(data, data + n, ptr + offset);
-      offset += static_cast<int>(n);
-    }
-  };
 
   /**
    * @brief Flatten the per-dimension interpolation range vectors into a single
@@ -286,12 +274,12 @@ template <int interp_ndim, int output_ndim = 0> struct AbstractGridGenerator {
   }
 
   /**
-   * @brief Return the TRIM grid dimensions.
+   * @brief Return the output dimensions.
    *
-   * @return Vector containing the TRIM output dimensions.
+   * @return Vector containing the output dimensions.
    */
-  const std::vector<size_t> flatten_trim_dims() const {
-    return std::vector<size_t>(trim_dims.begin(), trim_dims.end());
+  const std::vector<size_t> flatten_output_dims() const {
+    return std::vector<size_t>(output_dims.begin(), output_dims.end());
   }
 
   /**
@@ -316,12 +304,10 @@ template <int interp_ndim, int output_ndim = 0> struct AbstractGridGenerator {
  * per-point tables.
  *
  * @tparam interp_ndim Number of interpolation dimensions.
- * @tparam output_ndim Number of TRIM output dimensions (default is 0).
+ * @tparam output_ndim Number of output dimensions (default is 0).
  */
 template <int interp_ndim, int output_ndim = 0>
 struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
-  using typename AbstractGridGenerator<interp_ndim, output_ndim>::TableWriter;
-
   /**
    * @brief Construct from interpolation ranges and a
    * generator function (with optional additional context).
@@ -346,26 +332,21 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
                              int> = 0>
   GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
                 const FUNC &func, const Context &...context)
-      : AbstractGridGenerator<interp_ndim, output_ndim>() {
-
-    this->ranges = std::move(ranges_in);
+      : AbstractGridGenerator<interp_ndim, output_ndim>{ranges_in} {
 
     // Compute total number of interpolation points and allocate the grid vector
     size_t num_points = 1;
     for (const auto &r : this->ranges) {
       num_points *= r.size();
     }
-    for (size_t i = 0; i < num_points; i++) {
-      this->grid.push_back(0.0);
-    }
+    this->grid.assign(num_points, 0.0);
 
     // Iterate over all interpolation points, evaluate the passed function, and
-    // append the nested per-point tables into the flat grid buffer.
+    // append the func results to the flat grid buffer.
     size_t point_idx = 0;
-
     grid_detail::iterate_points<interp_ndim>(
         this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
-          TableWriter writer{&(this->grid[point_idx])};
+          grid_detail::TableWriter writer{&(this->grid[point_idx])};
           grid_detail::append_func_results(writer, coords, func, context...);
           ++point_idx;
         });
@@ -376,9 +357,9 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
    * generator function (with optional additional context).
    *
    * The generator is called once per interpolation point in row-major order.
-   * It must return a REAL std::array of size (trim_dim0 + (trim_dim0 *
-   * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each array is
-   * appended to the internal flat grid buffer.
+   * It must return a REAL std::array/std::vector of size (trim_dim0 +
+   * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
+   * array/vector is appended to the flat grid buffer.
    *
    * @tparam FUNC Generator callable type.
    * @tparam Context Type names of any additional context data needed for the
@@ -398,41 +379,37 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
   GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
                 const std::array<size_t, output_ndim> &trim_dims_arr,
                 const FUNC &func, const Context &...context)
-      : AbstractGridGenerator<interp_ndim, output_ndim>() {
-
-    this->ranges = std::move(ranges_in);
+      : AbstractGridGenerator<interp_ndim, output_ndim>{ranges_in,
+                                                        trim_dims_arr} {
 
     // Compute grid_stride exactly as TrimEval does
-    this->trim_dims = std::move(trim_dims_arr);
     int agg = 1;
-    for (auto &d : this->trim_dims) {
+    for (auto &d : this->output_dims) {
       agg *= static_cast<int>(d);
       this->grid_stride += agg;
     }
 
-    // Compute total number of interpolation points and allocate the grid vector
+    // Compute total number of grid points and allocate the grid vector
     size_t num_points = 1;
     for (const auto &r : this->ranges) {
       num_points *= r.size();
     }
-    size_t grid_size_upper_limit = num_points * this->grid_stride;
-    for (size_t i = 0; i < grid_size_upper_limit; i++) {
-      this->grid.push_back(0.0);
-    }
+    num_points *= this->grid_stride;
+    this->grid.assign(num_points, 0.0);
 
     // Iterate over all interpolation points, evaluate the passed function, and
-    // append the nested per-point tables into the flat grid buffer.
+    // append the nested per-point tables to the flat grid buffer.
     size_t point_idx = 0;
     size_t grid_access_index = 0;
 
     grid_detail::iterate_points<interp_ndim>(
         this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
           grid_access_index = point_idx * this->grid_stride;
-          TableWriter writer{&(this->grid[grid_access_index])};
+          grid_detail::TableWriter writer{&(this->grid[grid_access_index])};
           grid_detail::append_func_results(writer, coords, func, context...);
-          NESOASSERT(writer.offset == this->grid_stride,
-                     "TrimGridGenerator: per-point data size does not match "
-                     "grid_stride.");
+          NESOASSERT(
+              writer.offset == this->grid_stride,
+              "GridGenerator: per-point data size does not match grid_stride.");
 
           ++point_idx;
         });

@@ -303,7 +303,7 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
            std::map<int, std::string> properties_map = get_default_map())
       : TrimEval(grid_generator.flatten_grid(), grid_generator.flatten_ranges(),
                  grid_generator.flatten_interp_dims(),
-                 grid_generator.flatten_trim_dims(), sycl_target,
+                 grid_generator.flatten_output_dims(), sycl_target,
                  properties_map) {
     static_assert(interp_ndim == input_ndim - output_ndim,
                   "TrimGridGenerator interpolation dimensions must match "
