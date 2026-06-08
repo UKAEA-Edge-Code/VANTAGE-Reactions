@@ -79,7 +79,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
       particle_group,
       [=](auto index, auto prop0, auto expected_value, auto kernel) {
         prop0.at(0) = kernel.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0));
+        auto coords = std::array<REAL, ndim>{prop0.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
@@ -178,7 +179,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
       particle_group,
       [=](auto index, auto prop0, auto expected_value, auto kernel) {
         prop0.at(0) = kernel.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0));
+        auto coords = std::array<REAL, ndim>{prop0.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
@@ -451,10 +453,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
   auto dims_vec = coeffs_data.get_dims_vec();
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
-  auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
-  auto upper_bound_0 = upper_bounds[0];
+  auto bounds_arr = std::array<REAL, ndim>{upper_bounds[0]};
   auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
@@ -463,7 +464,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
   // The special upper bound is due to the grid_func from
   // coefficient_values_1D being f(x) = 2*x.
   std::uniform_real_distribution<REAL> uniform_dist(
-      upper_bound_0, (0.5 * std::numeric_limits<REAL>::max()));
+      bounds_arr[0], (0.5 * std::numeric_limits<REAL>::max()));
 
   auto rng_kernel = host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
@@ -473,7 +474,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
       [=](auto index, auto prop0, auto expected_value, auto kernel) {
         prop0.at(0) = kernel.at(index, 0);
         expected_value.at(0) =
-            grid_func(upper_bound_0); // ExtrapolationType::clamp_to_edge;
+            grid_func(bounds_arr); // ExtrapolationType::clamp_to_edge;
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
@@ -552,9 +553,8 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
   auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
-  auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
-  auto lower_bound_0 = lower_bounds[0];
+  auto bounds_arr = std::array<REAL, ndim>{lower_bounds[0]};
   auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
@@ -563,7 +563,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
   // The special upper bound is due to the grid_func from
   // coefficient_values_1D being f(x) = 2*x.
   std::uniform_real_distribution<REAL> uniform_dist(
-      -(0.5 * std::numeric_limits<REAL>::max()), lower_bound_0);
+      -(0.5 * std::numeric_limits<REAL>::max()), bounds_arr[0]);
 
   auto rng_kernel = host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
@@ -573,7 +573,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
       [=](auto index, auto prop0, auto expected_value, auto kernel) {
         prop0.at(0) = kernel.at(index, 0);
         expected_value.at(0) =
-            grid_func(lower_bound_0); // ExtrapolationType::clamp_to_edge;
+            grid_func(bounds_arr); // ExtrapolationType::clamp_to_edge;
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
@@ -677,7 +677,8 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_0) {
           auto kernel1) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0));
+        auto coords = std::array<REAL, ndim>{prop0.at(0), prop1.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")),
@@ -871,8 +872,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func = coeffs_data.get_grid_func();
-  auto upper_bound_0 = upper_bounds[0];
-  auto lower_bound_1 = lower_bounds[1];
+  auto bounds_arr = std::array<REAL, ndim>{upper_bounds[0], lower_bounds[1]};
   auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
@@ -896,8 +896,7 @@ TEST(ExtrapolationTest, REACTION_DATA_2D_OVER_UNDER_TYPE_2) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
         expected_value.at(0) =
-            grid_func(upper_bound_0,
-                      lower_bound_1); // ExtrapolationType::clamp_to_edge
+            grid_func(bounds_arr); // ExtrapolationType::clamp_to_edge
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")),
@@ -1012,7 +1011,9 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_TYPE_0) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
         prop2.at(0) = kernel2.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0), prop2.at(0));
+        auto coords =
+            std::array<REAL, ndim>{prop0.at(0), prop1.at(0), prop2.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),
@@ -1223,6 +1224,8 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_TYPE_2) {
   auto upper_bound_0 = upper_bounds[0];
   auto lower_bound_1 = lower_bounds[1];
   auto upper_bound_2 = upper_bounds[2];
+  auto bounds_arr =
+      std::array<REAL, ndim>{upper_bounds[0], lower_bounds[1], upper_bounds[2]};
   auto grid_func_data = coeffs_data.get_grid_func_data();
 
   // Random number generator kernel
@@ -1252,8 +1255,7 @@ TEST(ExtrapolationTest, REACTION_DATA_3D_OVER_UNDER_OVER_TYPE_2) {
         prop1.at(0) = kernel1.at(index, 0);
         prop2.at(0) = kernel2.at(index, 0);
         expected_value.at(0) =
-            grid_func(upper_bound_0, lower_bound_1,
-                      upper_bound_2); // ExtrapolationType::clamp_to_edge
+            grid_func(bounds_arr); // ExtrapolationType::clamp_to_edge
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),

@@ -55,9 +55,8 @@ private:
   std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
                                   5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
 
-  static constexpr auto grid_func_lambda = [](const REAL &dim0_val) {
-    return (2 * dim0_val);
-  };
+  static constexpr auto grid_func_lambda =
+      [](const std::array<REAL, ndim> &vals) { return (2 * vals[0]); };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
   GridGenerator<ndim> grid_generator;
@@ -103,10 +102,8 @@ private:
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
 
-  static constexpr auto grid_func_lambda = [](const REAL &dim0_val,
-                                              const REAL &dim1_val) {
-    return (dim0_val * dim1_val);
-  };
+  static constexpr auto grid_func_lambda =
+      [](const std::array<REAL, ndim> &vals) { return (vals[0] * vals[1]); };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
   GridGenerator<ndim> grid_generator;
@@ -257,18 +254,18 @@ private:
       };
 
   static const inline auto trim_grid_func_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val,
+      [](const std::array<REAL, ndim> &vals,
          const std::array<INT, trim_ndim> &trim_indices,
          const std::array<REAL, trim_ndim> &rand_nums) {
         auto trim_vals_trim_dim0 =
-            trim_grid_func_0(dim0_val, dim1_val, rand_nums)[trim_indices[0]];
+            trim_grid_func_0(vals[0], vals[1], rand_nums)[trim_indices[0]];
 
         auto trim_vals_trim_dim1 = trim_grid_func_1(
-            dim0_val, dim1_val,
+            vals[0], vals[1],
             rand_nums)[(trim_indices[0] * trim_dim1) + trim_indices[1]];
 
         auto trim_vals_trim_dim2 = trim_grid_func_2(
-            dim0_val, dim1_val,
+            vals[0], vals[1],
             rand_nums)[(trim_indices[0] * (trim_dim2 * trim_dim1)) +
                        (trim_indices[1] * trim_dim2) + trim_indices[2]];
 
@@ -277,16 +274,16 @@ private:
       };
 
   static const inline auto trim_grid_func_concat_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val,
+      [](const std::array<REAL, ndim> &vals,
          const std::array<REAL, trim_ndim> &rand_nums) {
         auto trim_vals_trim_dim0 =
-            trim_grid_func_0(dim0_val, dim1_val, rand_nums);
+            trim_grid_func_0(vals[0], vals[1], rand_nums);
 
         auto trim_vals_trim_dim1 =
-            trim_grid_func_1(dim0_val, dim1_val, rand_nums);
+            trim_grid_func_1(vals[0], vals[1], rand_nums);
 
         auto trim_vals_trim_dim2 =
-            trim_grid_func_2(dim0_val, dim1_val, rand_nums);
+            trim_grid_func_2(vals[0], vals[1], rand_nums);
 
         std::array<REAL, trim_dim0 + (trim_dim0 * trim_dim1) +
                              (trim_dim0 * trim_dim1 * trim_dim2)>
@@ -450,18 +447,18 @@ private:
       };
 
   static const inline auto trim_grid_func_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val,
+      [](const std::array<REAL, ndim> &vals,
          const std::array<INT, trim_ndim> &trim_indices,
          const std::array<REAL, trim_ndim> &rand_nums) {
         auto trim_vals_trim_dim0 =
-            trim_grid_func_0(dim0_val, dim1_val, rand_nums)[trim_indices[0]];
+            trim_grid_func_0(vals[0], vals[1], rand_nums)[trim_indices[0]];
 
         auto trim_vals_trim_dim1 = trim_grid_func_1(
-            dim0_val, dim1_val,
+            vals[0], vals[1],
             rand_nums)[(trim_indices[0] * trim_dim1) + trim_indices[1]];
 
         auto trim_vals_trim_dim2 = trim_grid_func_2(
-            dim0_val, dim1_val,
+            vals[0], vals[1],
             rand_nums)[(trim_indices[0] * (trim_dim2 * trim_dim1)) +
                        (trim_indices[1] * trim_dim2) + trim_indices[2]];
 
@@ -470,16 +467,16 @@ private:
       };
 
   static const inline auto trim_grid_func_concat_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val,
+      [](const std::array<REAL, ndim> &vals,
          const std::array<REAL, trim_ndim> &rand_nums) {
         auto trim_vals_trim_dim0 =
-            trim_grid_func_0(dim0_val, dim1_val, rand_nums);
+            trim_grid_func_0(vals[0], vals[1], rand_nums);
 
         auto trim_vals_trim_dim1 =
-            trim_grid_func_1(dim0_val, dim1_val, rand_nums);
+            trim_grid_func_1(vals[0], vals[1], rand_nums);
 
         auto trim_vals_trim_dim2 =
-            trim_grid_func_2(dim0_val, dim1_val, rand_nums);
+            trim_grid_func_2(vals[0], vals[1], rand_nums);
 
         std::array<REAL, trim_dim0 + (trim_dim0 * trim_dim1) +
                              (trim_dim0 * trim_dim1 * trim_dim2)>
@@ -563,8 +560,8 @@ private:
                                   81.5,  116.,  153.5, 194., 237.5};
 
   static constexpr auto grid_func_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val, const REAL &dim2_val) {
-        return (dim0_val * dim1_val * dim2_val);
+      [](const std::array<REAL, ndim> &vals) {
+        return (vals[0] * vals[1] * vals[2]);
       };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
@@ -632,9 +629,8 @@ private:
       1.11033632e+11, 3.33217094e+11, 1.00000000e+12};
 
   static constexpr auto grid_func_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val, const REAL &dim2_val,
-         const REAL &dim3_val) {
-        return (dim0_val * dim1_val * dim2_val * dim3_val);
+      [](const std::array<REAL, ndim> &vals) {
+        return (vals[0] * vals[1] * vals[2] * vals[3]);
       };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
@@ -714,9 +710,8 @@ private:
       2.83753467, 2.91545191, 2.99550872, 3.07776385, 3.16227766};
 
   static constexpr auto grid_func_lambda =
-      [](const REAL &dim0_val, const REAL &dim1_val, const REAL &dim2_val,
-         const REAL &dim3_val, const REAL &dim4_val) {
-        return (dim0_val * dim1_val * dim2_val * dim3_val * dim4_val);
+      [](const std::array<REAL, ndim> &vals) {
+        return (vals[0] * vals[1] * vals[2] * vals[3] * vals[4]);
       };
 
   utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;

@@ -6,14 +6,13 @@
 #include <cstddef>
 #include <neso_particles.hpp>
 #include <type_traits>
-#include <utility>
 #include <vector>
 
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
-namespace grid_detail {
+namespace grid_utils {
 
 /**
  * @brief Type trait to check if a type is a std::array of REAL.
@@ -27,7 +26,7 @@ template <typename T> struct is_std_array_of_real : std::false_type {};
 /**
  * @brief Partial specialization for std::array<REAL, N>.
  *
- * Yields std::true_type when T is a std::array of REAL values.
+ * Yields std::true_type when std::array of REAL values is inferred implicitly.
  *
  * @tparam N Number of elements in the array.
  */
@@ -66,7 +65,8 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &ranges,
     total *= i;
   }
 
-  std::array<size_t, ndim> idx{};
+  std::array<size_t, ndim> idx;
+  idx.fill(0);
   for (size_t flat_idx = 0; flat_idx < total; flat_idx++) {
     std::array<REAL, ndim> coords;
     for (int i = 0; i < ndim; i++) {
@@ -84,68 +84,6 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &ranges,
     }
   }
 }
-
-/**
- * @brief Implementation detail for apply_coords.
- *
- * Unpacks a std::array as individual arguments to a callable using an index
- * sequence.
- *
- * @tparam FUNC Callable type.
- * @tparam T Array element type.
- * @tparam N Array size.
- * @tparam Is Index sequence (0, 1, ..., N-1).
- * @tparam Context Extra argument types forwarded after the array elements.
- * @param func Callable to invoke.
- * @param arr Array whose elements are unpacked as arguments.
- * @param context Extra arguments forwarded after the unpacked elements.
- * @return decltype(auto) Result of invoking func(arr[0], ..., arr[N-1],
- * context...).
- */
-template <typename FUNC, typename T, size_t N, size_t... Is,
-          typename... Context>
-inline decltype(auto)
-apply_coords_impl(const FUNC &func, const std::array<T, N> &arr,
-                  std::index_sequence<Is...>, const Context &...context) {
-  return func(arr[Is]..., context...);
-}
-
-/**
- * @brief Unpack a std::array as individual arguments to a callable.
- *
- * Optionally appends extra context arguments after the unpacked elements.
- *
- * @tparam FUNC Callable type.
- * @tparam T Array element type.
- * @tparam N Array size.
- * @tparam Context Extra argument types forwarded after the array elements.
- * @param func Callable to invoke.
- * @param arr Array whose elements are unpacked as arguments.
- * @param context Extra arguments forwarded after the unpacked elements.
- * @return decltype(auto) Result of invoking func(arr[0], ..., arr[N-1],
- * context...).
- */
-template <typename FUNC, typename T, size_t N, typename... Context>
-inline decltype(auto) apply_coords(const FUNC &func,
-                                   const std::array<T, N> &arr,
-                                   const Context &...context) {
-  return apply_coords_impl(func, arr, std::make_index_sequence<N>{},
-                           context...);
-}
-
-/* @brief Compute the return type of a callable when invoked with unpacked
- * std::array<REAL, N> elements plus trailing context arguments.
- */
-template <typename FUNC, size_t N, typename... Context, size_t... Is>
-auto invoke_result_unpacked_impl(std::index_sequence<Is...>)
-    -> std::invoke_result_t<
-        FUNC,
-        decltype(std::get<Is>(std::declval<const std::array<REAL, N> &>()))...,
-        Context...>;
-template <typename FUNC, size_t N, typename... Context>
-using invoke_result_unpacked =
-    decltype(invoke_result_unpacked_impl<FUNC, N, Context...>(
-        std::make_index_sequence<N>{}));
 
 /**
  * @brief Helper for appending nested tables into a flat grid buffer.
@@ -171,7 +109,7 @@ struct TableWriter {
    */
   template <typename Container>
   std::enable_if_t<std::is_same_v<Container, std::vector<REAL>> ||
-                       grid_detail::is_std_array_of_real_v<Container>,
+                       grid_utils::is_std_array_of_real_v<Container>,
                    void>
   append(const Container &data) {
     std::copy(data.begin(), data.end(), this->ptr + this->offset);
@@ -190,39 +128,7 @@ struct TableWriter {
     offset += static_cast<int>(n);
   }
 };
-
-/**
- * @brief Call a function on a given set of coords and append the result to a
- * flat grid buffer (via TableWriter::append).
- *
- * The result of the function call should be either a REAL value or a
- * std::array<REAL>/std::vector<REAL>.
- *
- * @tparam N Number of coordinate dimensions.
- * @tparam FUNC Callable type.
- * @tparam Context Extra argument types forwarded after the array elements.
- * @param writer Output TableWriter  that accumulates the flattened per-point
- * table data via append().
- * @param coords Coordinate array unpacked into each generator call.
- * @param func Callable to be passed to apply_coords
- * @param context Extra arguments needed for func besides coords.
- */
-template <size_t N, typename FUNC, typename... Context>
-inline void append_func_results(TableWriter &writer,
-                                const std::array<REAL, N> &coords,
-                                const FUNC &func, const Context &...context) {
-  using FUNC_RETURN_TYPE = invoke_result_unpacked<FUNC, N, Context...>;
-  auto func_result = apply_coords(func, coords, context...);
-
-  if constexpr (std::is_same_v<FUNC_RETURN_TYPE, REAL>) {
-    writer.append(std::array<REAL, 1>{func_result});
-  } else if (grid_detail::is_std_array_of_real_v<FUNC_RETURN_TYPE> ||
-             std::is_same_v<FUNC_RETURN_TYPE, std::vector<REAL>>) {
-    writer.append(func_result);
-  }
-}
-
-} // namespace grid_detail
+} // namespace grid_utils
 
 /**
  * @brief Abstract base class with common elements for both versions of
@@ -333,6 +239,11 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
   GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
                 const FUNC &func, const Context &...context)
       : AbstractGridGenerator<interp_ndim, output_ndim>{ranges_in} {
+    using FUNC_RETURN_TYPE =
+        std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
+                             decltype(context)...>;
+    static_assert(std::is_same_v<FUNC_RETURN_TYPE, REAL>,
+                  "Return type of func must be REAL.");
 
     // Compute total number of interpolation points and allocate the grid vector
     size_t num_points = 1;
@@ -344,10 +255,10 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
     // Iterate over all interpolation points, evaluate the passed function, and
     // append the func results to the flat grid buffer.
     size_t point_idx = 0;
-    grid_detail::iterate_points<interp_ndim>(
+    grid_utils::iterate_points<interp_ndim>(
         this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
-          grid_detail::TableWriter writer{&(this->grid[point_idx])};
-          grid_detail::append_func_results(writer, coords, func, context...);
+          grid_utils::TableWriter writer{&(this->grid[point_idx])};
+          writer.append(std::array<REAL, 1>{func(coords, context...)});
           ++point_idx;
         });
   }
@@ -381,6 +292,11 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
                 const FUNC &func, const Context &...context)
       : AbstractGridGenerator<interp_ndim, output_ndim>{ranges_in,
                                                         trim_dims_arr} {
+    using FUNC_RETURN_TYPE =
+        std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
+                             decltype(context)...>;
+    static_assert(grid_utils::is_std_array_of_real_v<FUNC_RETURN_TYPE>,
+                  "Return type of func must be std::array<REAL>.");
 
     // Compute grid_stride exactly as TrimEval does
     int agg = 1;
@@ -402,11 +318,11 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
     size_t point_idx = 0;
     size_t grid_access_index = 0;
 
-    grid_detail::iterate_points<interp_ndim>(
+    grid_utils::iterate_points<interp_ndim>(
         this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
           grid_access_index = point_idx * this->grid_stride;
-          grid_detail::TableWriter writer{&(this->grid[grid_access_index])};
-          grid_detail::append_func_results(writer, coords, func, context...);
+          grid_utils::TableWriter writer{&(this->grid[grid_access_index])};
+          writer.append(func(coords, context...));
           NESOASSERT(
               writer.offset == this->grid_stride,
               "GridGenerator: per-point data size does not match grid_stride.");

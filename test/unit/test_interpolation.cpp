@@ -46,7 +46,8 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
       particle_group,
       [=](auto index, auto prop0, auto expected_value, auto kernel) {
         prop0.at(0) = kernel.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0));
+        auto coords = std::array<REAL, ndim>{prop0.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")),
@@ -149,7 +150,8 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
           auto kernel1) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0));
+        auto coords = std::array<REAL, ndim>{prop0.at(0), prop1.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")),
@@ -260,7 +262,9 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
         prop0.at(0) = kernel0.at(index, 0);
         prop1.at(0) = kernel1.at(index, 0);
         prop2.at(0) = kernel2.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0), prop2.at(0));
+        auto coords =
+            std::array<REAL, ndim>{prop0.at(0), prop1.at(0), prop2.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),
@@ -381,8 +385,9 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
         prop1.at(0) = kernel1.at(index, 0);
         prop2.at(0) = kernel2.at(index, 0);
         prop3.at(0) = kernel3.at(index, 0);
-        expected_value.at(0) =
-            grid_func(prop0.at(0), prop1.at(0), prop2.at(0), prop3.at(0));
+        auto coords = std::array<REAL, ndim>{prop0.at(0), prop1.at(0),
+                                             prop2.at(0), prop3.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),
@@ -511,8 +516,9 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
         prop2.at(0) = kernel2.at(index, 0);
         prop3.at(0) = kernel3.at(index, 0);
         prop4.at(0) = kernel4.at(index, 0);
-        expected_value.at(0) = grid_func(prop0.at(0), prop1.at(0), prop2.at(0),
-                                         prop3.at(0), prop4.at(0));
+        auto coords = std::array<REAL, ndim>{
+            prop0.at(0), prop1.at(0), prop2.at(0), prop3.at(0), prop4.at(0)};
+        expected_value.at(0) = grid_func(coords);
       },
       Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
       Access::write(Sym<REAL>("PROP1")), Access::write(Sym<REAL>("PROP2")),
@@ -659,6 +665,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
         props.at(0) = d_ranges_arr[index0];
         props.at(1) = d_ranges_arr[dims_arr[0] + index1];
+        auto coords = std::array<REAL, ndim>{props.at(0), props.at(1)};
 
         auto current_count = index.get_loop_linear_index();
 
@@ -673,8 +680,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         std::array<INT, trim_ndim> normalized_trim_indices =
             interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result = grid_func(props.at(0), props.at(1),
-                                normalized_trim_indices, random_grid_nums);
+        auto result =
+            grid_func(coords, normalized_trim_indices, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -816,6 +823,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
           auto trim_indices, auto trim_kernel, auto expected_value) {
         props.at(0) = prop0_kernel.at(index, 0);
         props.at(1) = prop1_kernel.at(index, 0);
+        auto coords = std::array<REAL, ndim>{props.at(0), props.at(1)};
 
         std::array<REAL, trim_ndim> real_trim_indices = {
             trim_kernel.at(index, 0), trim_kernel.at(index, 1),
@@ -828,8 +836,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
         std::array<INT, trim_ndim> normalized_trim_indices =
             interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result = grid_func(props.at(0), props.at(1),
-                                normalized_trim_indices, random_grid_nums);
+        auto result =
+            grid_func(coords, normalized_trim_indices, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
@@ -971,6 +979,7 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
           auto trim_indices, auto trim_kernel, auto expected_value) {
         props.at(0) = prop0_kernel.at(index, 0);
         props.at(1) = prop1_kernel.at(index, 0);
+        auto coords = std::array<REAL, ndim>{props.at(0), props.at(1)};
 
         std::array<REAL, trim_ndim> real_trim_indices = {
             trim_kernel.at(index, 0), trim_kernel.at(index, 1),
@@ -983,8 +992,8 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
         std::array<INT, trim_ndim> normalized_trim_indices =
             interp_utils::bin_uniform_indices(real_trim_indices, trim_dims_arr);
 
-        auto result = grid_func(props.at(0), props.at(1),
-                                normalized_trim_indices, random_grid_nums);
+        auto result =
+            grid_func(coords, normalized_trim_indices, random_grid_nums);
 
         expected_value.at(0) = result[0];
         expected_value.at(1) = result[1];
