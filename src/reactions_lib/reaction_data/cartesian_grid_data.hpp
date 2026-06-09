@@ -8,7 +8,7 @@
 #include <memory>
 #include <neso_particles.hpp>
 
-#include "grid_generators.hpp"
+#include "grid_descriptors.hpp"
 
 using namespace NESO::Particles;
 
@@ -164,13 +164,13 @@ struct CartesianGridData
 
   /**
    * \overload
-   * @brief Constructor using a GridGenerator object.
+   * @brief Constructor using a GridDescriptor object.
    */
-  CartesianGridData(const GridGenerator<input_ndim> &grid_generator,
+  CartesianGridData(const GridDescriptor<input_ndim> &grid_descriptor,
                     SYCLTargetSharedPtr sycl_target)
-      : CartesianGridData(grid_generator.get_flat_grid(),
-                          grid_generator.get_flat_ranges(),
-                          grid_generator.get_interp_dims(), sycl_target) {}
+      : CartesianGridData(grid_descriptor.get_flat_grid(),
+                          grid_descriptor.get_flat_ranges(),
+                          grid_descriptor.get_interp_dims(), sycl_target) {}
 
 public:
   std::shared_ptr<BufferDevice<REAL>> d_grid;

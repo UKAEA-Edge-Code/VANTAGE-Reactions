@@ -40,7 +40,7 @@
 #include "../reactions_lib/reaction_data/fixed_array_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_coefficient_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_rate_data.hpp"
-#include "../reactions_lib/reaction_data/grid_generators.hpp"
+#include "../reactions_lib/reaction_data/grid_descriptors.hpp"
 #include "../reactions_lib/reaction_data/interpolate_data.hpp"
 #include "../reactions_lib/reaction_data/sampler_data.hpp"
 #include "../reactions_lib/reaction_data/specular_reflection_data.hpp"

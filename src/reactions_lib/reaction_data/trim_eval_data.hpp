@@ -9,7 +9,7 @@
 #include <memory>
 #include <neso_particles.hpp>
 
-#include "grid_generators.hpp"
+#include "grid_descriptors.hpp"
 
 using namespace NESO::Particles;
 
@@ -28,7 +28,7 @@ namespace VANTAGE::Reactions {
  * computed, exactly as in CartesianGridDataOnDevice. These per-dimension
  * indices are flattened with row-major ordering into a flat grid index, and the
  * base data offset is flat_index * grid_stride, (details of the grid_stride
- * calculation are in the TrimEval docstrings).
+ * calculation are in the TrimEvalData docstrings).
  *
  * The remaining output_ndim components are TRIM coordinates between 0.0
  * and 1.0. Each is uniformly binned against the corresponding entry in
@@ -55,19 +55,19 @@ namespace VANTAGE::Reactions {
  * array).
  */
 template <int input_ndim>
-struct TrimEvalOnDevice
+struct TrimEvalDataOnDevice
     : public ReactionDataBaseOnDevice<3, DEFAULT_RNG_KERNEL, input_ndim> {
 
   static constexpr int output_ndim = 3;
 
-  TrimEvalOnDevice() {
+  TrimEvalDataOnDevice() {
     static_assert(
         input_ndim >= output_ndim,
-        "For TrimEvalOnDevice, input_ndim >= output_ndim must be true.");
+        "For TrimEvalDataOnDevice, input_ndim >= output_ndim must be true.");
   }
 
   /**
-   * @brief Constructor for TrimEvalOnDevice.
+   * @brief Constructor for TrimEvalDataOnDevice.
    *
    * @param d_grid Host buffer containing the tabulated distribution data.
    * @param d_ranges Host buffer containing range boundaries for the
@@ -76,11 +76,11 @@ struct TrimEvalOnDevice
    * interpolation axes.
    * @param d_trim_dims Host buffer containing TRIM grid dimensions.
    */
-  TrimEvalOnDevice(const std::shared_ptr<BufferDevice<REAL>> &d_grid,
-                   const std::shared_ptr<BufferDevice<REAL>> &d_ranges,
-                   const std::shared_ptr<BufferDevice<size_t>> &d_dims,
-                   const std::shared_ptr<BufferDevice<size_t>> &d_trim_dims)
-      : TrimEvalOnDevice() {
+  TrimEvalDataOnDevice(const std::shared_ptr<BufferDevice<REAL>> &d_grid,
+                       const std::shared_ptr<BufferDevice<REAL>> &d_ranges,
+                       const std::shared_ptr<BufferDevice<size_t>> &d_dims,
+                       const std::shared_ptr<BufferDevice<size_t>> &d_trim_dims)
+      : TrimEvalDataOnDevice() {
     this->d_grid_ptr = d_grid->ptr;
     this->d_ranges_ptr = d_ranges->ptr;
     this->d_dims_ptr = d_dims->ptr;
@@ -212,7 +212,8 @@ public:
  * array).
  */
 template <int input_ndim>
-struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
+struct TrimEvalData
+    : public ReactionDataBase<TrimEvalDataOnDevice<input_ndim>> {
 
   static constexpr int output_ndim = 3;
   static constexpr int interp_ndim = input_ndim - output_ndim;
@@ -221,7 +222,7 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
 
   constexpr static std::array<int, 1> required_simple_int_props = {props.panic};
   /**
-   * @brief Constructor for TrimEval.
+   * @brief Constructor for TrimEvalData.
    *
    * @param grid Flat vector of grid values (tabulated distribution data).
    * @param ranges_vec Range boundaries for the interpolation dimensions (used
@@ -233,12 +234,13 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
    * allocation.
    * @param properties_map Map of property indices to names.
    */
-  TrimEval(const std::vector<REAL> &grid, const std::vector<REAL> &ranges_vec,
-           const std::vector<size_t> &dims_vec,
-           const std::vector<size_t> &trim_dims_vec,
-           SYCLTargetSharedPtr sycl_target,
-           std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<TrimEvalOnDevice<input_ndim>>(
+  TrimEvalData(const std::vector<REAL> &grid,
+               const std::vector<REAL> &ranges_vec,
+               const std::vector<size_t> &dims_vec,
+               const std::vector<size_t> &trim_dims_vec,
+               SYCLTargetSharedPtr sycl_target,
+               std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBase<TrimEvalDataOnDevice<input_ndim>>(
             Properties<INT>(required_simple_int_props), properties_map) {
 
     auto dims_size = dims_vec.size();
@@ -281,7 +283,7 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
         utils::make_buffer_device_ptr(sycl_target, trim_dims_vec);
 
     this->on_device_obj =
-        TrimEvalOnDevice<input_ndim>(d_grid, d_ranges, d_dims, d_trim_dims);
+        TrimEvalDataOnDevice<input_ndim>(d_grid, d_ranges, d_dims, d_trim_dims);
 
     this->on_device_obj->grid_stride = grid_stride;
 
@@ -290,17 +292,17 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
 
   /**
    * \overload
-   * @brief Constructor from a GridGenerator object.
+   * @brief Construct from a GridDescriptor object.
    */
-  TrimEval(const GridGenerator<interp_ndim, output_ndim> &grid_generator,
-           SYCLTargetSharedPtr sycl_target,
-           std::map<int, std::string> properties_map = get_default_map())
-      : TrimEval(
-            grid_generator.get_flat_grid(), grid_generator.get_flat_ranges(),
-            grid_generator.get_interp_dims(), grid_generator.get_output_dims(),
-            sycl_target, properties_map) {
+  TrimEvalData(const GridDescriptor<interp_ndim, output_ndim> &grid_descriptor,
+               SYCLTargetSharedPtr sycl_target,
+               std::map<int, std::string> properties_map = get_default_map())
+      : TrimEvalData(
+            grid_descriptor.get_flat_grid(), grid_descriptor.get_flat_ranges(),
+            grid_descriptor.get_interp_dims(),
+            grid_descriptor.get_output_dims(), sycl_target, properties_map) {
     static_assert(interp_ndim == input_ndim - output_ndim,
-                  "TrimGridGenerator interpolation dimensions must match "
+                  "GridDescriptor interpolation dimensions must match "
                   "input_ndim - output_ndim");
   }
 

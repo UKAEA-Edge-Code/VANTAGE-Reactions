@@ -7,7 +7,7 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
-TEST(GridGenerators, INVALID_TRIM_FUNCS) {
+TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
   static constexpr int ndim = 2;
   static constexpr int trim_ndim = 3;
 
@@ -70,7 +70,7 @@ TEST(GridGenerators, INVALID_TRIM_FUNCS) {
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(
-        (GridGenerator<ndim, trim_ndim>(ranges, invalid_trim_dims,
-                                        trim_grid_func, random_grid_nums)),
+        (GridDescriptor<ndim, trim_ndim>(ranges, invalid_trim_dims,
+                                         trim_grid_func, random_grid_nums)),
         std::logic_error);
 }

@@ -1,5 +1,5 @@
-#ifndef REACTIONS_GRID_GENERATORS_H
-#define REACTIONS_GRID_GENERATORS_H
+#ifndef REACTIONS_GRID_DESCRIPTOR_H
+#define REACTIONS_GRID_DESCRIPTOR_H
 
 #include <algorithm>
 #include <array>
@@ -126,21 +126,36 @@ inline void append(REAL *ptr, size_t &offset, const REAL *data, size_t n) {
 } // namespace grid_utils
 
 /**
- * @brief Generator struct for CartesianGridData or TrimEval grid data that
- * handles flattening of interpolation ranges, trim dimensions, and the nested
- * per-point tables.
+ * @brief Struct for describing the underlying grid that will be used by either
+ * CartesianGridData or TrimEvalData. It generates the grid at construction and
+ * it also handles flattening of data relating to interpolation ranges,
+ * interpolation dimensions, trim dimensions, and the nested per-point tables
+ * (depending on the value of output_ndim).
+ *
+ * When output_ndim = 0, the struct operates in "CartesianGridData" mode where
+ * the func that is passed to the constructor is expected to provide a single
+ * REAL value and the grid that is calculated has a single value at each
+ * grid point.
+ *
+ * When output_ndim = 3, the struct operates in "TrimEvalData" mode where the
+ * func that is passed is expected to provide a std::array<REAL, (trim_dim0 +
+ * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)> where
+ * trim_dim0, trim_dim1, trim_dim2 are the 3 trim dimensions (eg. 5, 5, 5 for
+ * EIRENE TRIM data so the size of the function result array would be 155) as an
+ * output and subsequently the grid that is calculated will have multiple values
+ * per grid point.
  *
  * @tparam interp_ndim Number of interpolation dimensions.
  * @tparam output_ndim Number of output dimensions (default is 0).
  */
-template <int interp_ndim, int output_ndim = 0> struct GridGenerator {
+template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   /**
    * @brief Construct from interpolation ranges and a
    * generator function (with optional additional context).
    *
-   * The generator is called once per interpolation point in row-major order.
-   * It must return a REAL value. Each value is appended to the internal flat
-   * grid buffer.
+   * The generator function is called once per interpolation point in row-major
+   * order. It must return a REAL value. Each value is appended to the internal
+   * flat grid buffer.
    *
    * @tparam FUNC Generator callable type.
    * @tparam Context Type names of any additional context data needed for the
@@ -156,8 +171,8 @@ template <int interp_ndim, int output_ndim = 0> struct GridGenerator {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 0) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
-                const FUNC &func, const Context &...context)
+  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
+                 const FUNC &func, const Context &...context)
       : ranges(ranges_in) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
@@ -211,9 +226,9 @@ template <int interp_ndim, int output_ndim = 0> struct GridGenerator {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 3) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges,
-                const std::array<size_t, output_ndim> &trim_dims_arr,
-                const FUNC &func, const Context &...context)
+  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &ranges,
+                 const std::array<size_t, output_ndim> &trim_dims_arr,
+                 const FUNC &func, const Context &...context)
       : ranges(ranges), output_dims(trim_dims_arr) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
@@ -278,10 +293,11 @@ template <int interp_ndim, int output_ndim = 0> struct GridGenerator {
    * @brief Return the vector containing the per-interpolation point output
    * dimensions. (Disabled if output_ndim != 3)
    */
-  template <typename DUMMY = void,
-            std::enable_if_t<(output_ndim == 3 && std::is_same_v<DUMMY, DUMMY>),
-                             int> = 0>
   const std::vector<size_t> &get_output_dims() const {
+    static_assert(
+        (output_ndim == 3),
+        "This function is only callable when GridDescriptor has been "
+        "constructed with output_ndim = 3 as the template parameter.");
     return this->output_dims_vec;
   }
 
@@ -318,10 +334,11 @@ private:
   /**
    * @brief Fills the output dimensions vector. (Disabled if output_ndim != 3)
    */
-  template <typename DUMMY = void,
-            std::enable_if_t<(output_ndim == 3 && std::is_same_v<DUMMY, DUMMY>),
-                             int> = 0>
   void flatten_output_dims() {
+    static_assert(
+        (output_ndim == 3),
+        "This function is only callable when GridDescriptor has been "
+        "constructed with output_ndim = 3 as the template parameter.");
     this->output_dims_vec =
         std::vector<size_t>(this->output_dims.begin(), this->output_dims.end());
   }
@@ -344,4 +361,4 @@ private:
 
 } // namespace VANTAGE::Reactions
 
-#endif // REACTIONS_GRID_GENERATORS_H
+#endif // REACTIONS_GRID_DESCRIPTOR_H
