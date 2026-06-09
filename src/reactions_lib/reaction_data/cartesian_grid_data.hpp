@@ -38,19 +38,19 @@ struct CartesianGridDataOnDevice
   /**
    * @brief Constructor for CartesianGridDataOnDevice.
    *
-   * @param h_grid Host buffer containing the tabulated data.
-   * @param h_ranges Host buffer containing range boundaries for the
+   * @param d_grid Host buffer containing the tabulated data.
+   * @param d_ranges Host buffer containing range boundaries for the
    * interpolation dimensions.
-   * @param h_dims Host buffer containing grid dimensions for the
+   * @param d_dims Host buffer containing grid dimensions for the
    * interpolation axes.
    */
   CartesianGridDataOnDevice(
-      const std::shared_ptr<BufferDevice<REAL>> &h_grid,
-      const std::shared_ptr<BufferDevice<REAL>> &h_ranges,
-      const std::shared_ptr<BufferDevice<size_t>> &h_dims) {
-    d_grid = h_grid->ptr;
-    d_ranges = h_ranges->ptr;
-    d_dims = h_dims->ptr;
+      const std::shared_ptr<BufferDevice<REAL>> &d_grid,
+      const std::shared_ptr<BufferDevice<REAL>> &d_ranges,
+      const std::shared_ptr<BufferDevice<size_t>> &d_dims) {
+    this->d_grid_ptr = d_grid->ptr;
+    this->d_ranges_ptr = d_ranges->ptr;
+    this->d_dims_ptr = d_dims->ptr;
   }
 
   /**
@@ -80,25 +80,25 @@ struct CartesianGridDataOnDevice
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
     std::array<INT, input_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges, this->d_dims[0]);
+        input[0], this->d_ranges_ptr, this->d_dims_ptr[0]);
     size_t aggregate_dims = 0;
     for (size_t i = 1; i < input_ndim; i++) {
-      aggregate_dims += this->d_dims[i - 1];
+      aggregate_dims += this->d_dims_ptr[i - 1];
       grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
+          input[i], this->d_ranges_ptr + aggregate_dims, this->d_dims_ptr[i]);
     }
 
     auto grid_indices_ptr = grid_indices.data();
     INT grid_flat_index = interp_utils::coeff_index_on_device(
-        grid_indices_ptr, this->d_dims, input_ndim);
+        grid_indices_ptr, this->d_dims_ptr, input_ndim);
 
-    return std::array<REAL, 1>{this->d_grid[grid_flat_index]};
+    return std::array<REAL, 1>{this->d_grid_ptr[grid_flat_index]};
   }
 
 public:
-  size_t const *d_dims;
-  REAL const *d_ranges;
-  REAL const *d_grid;
+  size_t const *d_dims_ptr;
+  REAL const *d_ranges_ptr;
+  REAL const *d_grid_ptr;
 };
 
 /**
@@ -154,12 +154,12 @@ struct CartesianGridData
     NESOASSERT((grid_size == expected_grid_size),
                "Invalid size of input grid.");
 
-    this->h_grid = utils::make_buffer_device_ptr(sycl_target, grid);
-    this->h_ranges = utils::make_buffer_device_ptr(sycl_target, ranges_vec);
-    this->h_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
+    this->d_grid = utils::make_buffer_device_ptr(sycl_target, grid);
+    this->d_ranges = utils::make_buffer_device_ptr(sycl_target, ranges_vec);
+    this->d_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
 
     this->on_device_obj = CartesianGridDataOnDevice<input_ndim>(
-        this->h_grid, this->h_ranges, this->h_dims);
+        this->d_grid, this->d_ranges, this->d_dims);
   };
 
   /**
@@ -168,14 +168,14 @@ struct CartesianGridData
    */
   CartesianGridData(const GridGenerator<input_ndim> &grid_generator,
                     SYCLTargetSharedPtr sycl_target)
-      : CartesianGridData(grid_generator.flatten_grid(),
-                          grid_generator.flatten_ranges(),
-                          grid_generator.flatten_interp_dims(), sycl_target) {}
+      : CartesianGridData(grid_generator.get_flat_grid(),
+                          grid_generator.get_flat_ranges(),
+                          grid_generator.get_interp_dims(), sycl_target) {}
 
 public:
-  std::shared_ptr<BufferDevice<REAL>> h_grid;
-  std::shared_ptr<BufferDevice<REAL>> h_ranges;
-  std::shared_ptr<BufferDevice<size_t>> h_dims;
+  std::shared_ptr<BufferDevice<REAL>> d_grid;
+  std::shared_ptr<BufferDevice<REAL>> d_ranges;
+  std::shared_ptr<BufferDevice<size_t>> d_dims;
 };
 
 } // namespace VANTAGE::Reactions

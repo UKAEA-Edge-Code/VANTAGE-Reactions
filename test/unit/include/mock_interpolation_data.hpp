@@ -1,8 +1,6 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
-#include "reactions_lib/utils.hpp"
 #include <neso_particles.hpp>
-#include <neso_particles/typedefs.hpp>
 #include <reactions/reactions.hpp>
 
 using namespace NESO::Particles;
@@ -68,9 +66,9 @@ public:
         grid_generator({this->dim0_range}, this->grid_func_lambda) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
   };
@@ -116,9 +114,9 @@ public:
                        this->grid_func_lambda) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
@@ -317,9 +315,9 @@ public:
                        this->trim_grid_func_concat_lambda, rand_nums) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
@@ -511,9 +509,9 @@ public:
             this->trim_grid_func_concat_lambda, rand_nums) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
@@ -575,9 +573,9 @@ public:
                        this->grid_func_lambda) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->lower_bounds.push_back(this->dim2_range[0]);
@@ -645,9 +643,9 @@ public:
                        this->grid_func_lambda) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->lower_bounds.push_back(this->dim2_range[0]);
@@ -726,9 +724,9 @@ public:
                        this->grid_func_lambda) {
 
     this->sycl_target = sycl_target;
-    this->coeffs_vec = grid_generator.flatten_grid();
-    this->ranges_flat_vec = grid_generator.flatten_ranges();
-    this->dims_vec = grid_generator.flatten_interp_dims();
+    this->coeffs_vec = grid_generator.get_flat_grid();
+    this->ranges_flat_vec = grid_generator.get_flat_ranges();
+    this->dims_vec = grid_generator.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
     this->lower_bounds.push_back(this->dim2_range[0]);

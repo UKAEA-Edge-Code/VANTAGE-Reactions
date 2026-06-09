@@ -86,123 +86,44 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &ranges,
 }
 
 /**
- * @brief Helper for appending nested tables into a flat grid buffer.
+ * @brief Append elements from a container into the flat grid buffer at the
+ * current offset.
  *
- * Usage consists of passing a table (either in a vector/array or as a
- * pointer to and size of an vector/array) to append(...) which appends the
- * table (as a flat buffer) to the buffer that is pointed to by REAL *ptr.
- * (Note the grid buffer pointed to by REAL *ptr, is written to directly by
- * append(...) so avoid concurrent calls to append(...) to prevent potential
- * data-races)
+ * @tparam Container Valid types: std::array<REAL, N>, std::vector<REAL>.
+ * @param ptr Pointer to the first value of the data that is to be copied to.
+ * @param offset Location to specify where in ptr to copy data to. This is
+ * updated post-copy so subsequent calls have the right offset.
+ * @param data Container of REAL values to copy.
  */
-struct TableWriter {
-  TableWriter() = default;
-  REAL *ptr = nullptr;
-  int offset = 0;
-
-  /**
-   * @brief Append elements from a container into the flat grid buffer at the
-   * current offset.
-   *
-   * @tparam Container Valid types: std::array<REAL, N>, std::vector<REAL>.
-   * @param data Container of REAL values to copy.
-   */
-  template <typename Container>
-  std::enable_if_t<std::is_same_v<Container, std::vector<REAL>> ||
-                       grid_utils::is_std_array_of_real_v<Container>,
-                   void>
-  append(const Container &data) {
-    std::copy(data.begin(), data.end(), this->ptr + this->offset);
-    offset += static_cast<int>(data.size());
-  }
-
-  /**
-   * @brief Append n REAL values from a raw pointer into the flat grid buffer
-   * at the current offset.
-   *
-   * @param data Pointer to the first REAL value to copy.
-   * @param n Number of elements to copy.
-   */
-  void append(const REAL *data, size_t n) {
-    std::copy(data, data + n, this->ptr + this->offset);
-    offset += static_cast<int>(n);
-  }
-};
-} // namespace grid_utils
+template <typename Container>
+inline void append(REAL *ptr, size_t &offset, const Container &data) {
+  // Changed from std::enable_if_t for a nicer/more useful error message.
+  static_assert(std::is_same_v<Container, std::vector<REAL>> ||
+                    grid_utils::is_std_array_of_real_v<Container>,
+                "If passing a container to append, it must be a "
+                "std::vector<REAL> or a std::array<REAL, N>. Alternatively "
+                "pass a pointer to the start of a container and the size of "
+                "the data to append.");
+  std::copy(data.begin(), data.end(), ptr + offset);
+  offset += data.size();
+}
 
 /**
- * @brief Abstract base class with common elements for both versions of
- * GridGenerator.
+ * @brief Append n REAL values from a raw pointer into the flat grid buffer
+ * at the current offset.
  *
- * @tparam interp_ndim Number of interpolation dimensions.
- * @tparam output_ndim Number of output dimensions (default is 0).
- *
+ * @param ptr Pointer to the first value of the data that is to be copied to.
+ * @param offset Location to specify where in ptr to copy data to. This is
+ * updated post-copy so subsequent calls have the right offset.
+ * @param data Pointer to the first REAL value to copy.
+ * @param n Number of elements to copy. MUST be less than or equal to the size
+ * of data.
  */
-template <int interp_ndim, int output_ndim = 0> struct AbstractGridGenerator {
-  AbstractGridGenerator() = default;
-
-  std::array<std::vector<REAL>, interp_ndim> ranges;
-  std::array<size_t, output_ndim> output_dims;
-  std::vector<REAL> grid;
-  int grid_stride = 0;
-
-  /**
-   * @brief Flatten the per-dimension interpolation range vectors into a single
-   * contiguous vector.
-   *
-   * @return Vector containing all range values concatenated in dimension order.
-   */
-  const std::vector<REAL> flatten_ranges() const {
-    std::vector<REAL> flat;
-    size_t total = 0;
-    for (const auto &r : ranges) {
-      total += r.size();
-    }
-
-    for (const auto &r : ranges) {
-      flat.insert(flat.end(), r.begin(), r.end());
-    }
-    return flat;
-  }
-
-  /**
-   * @brief Return the size of each interpolation dimension's range vector.
-   *
-   * @return Vector containing the number of interpolation grid points per
-   * dimension.
-   */
-  const std::vector<size_t> flatten_interp_dims() const {
-    std::vector<size_t> dims;
-    for (const auto &r : ranges) {
-      dims.push_back(r.size());
-    }
-    return dims;
-  }
-
-  /**
-   * @brief Return the output dimensions.
-   *
-   * @return Vector containing the output dimensions.
-   */
-  const std::vector<size_t> flatten_output_dims() const {
-    return std::vector<size_t>(output_dims.begin(), output_dims.end());
-  }
-
-  /**
-   * @brief Return the per-interpolation-point data stride.
-   *
-   * @return The total number of values stored for each interpolation
-   * point.
-   */
-  const int &get_grid_stride() const { return grid_stride; }
-
-  /**
-   * @brief Return the flat grid data vector.
-   *
-   * @return Const reference to the internally stored grid values.
-   */
-  const std::vector<REAL> &flatten_grid() const { return grid; }
-};
+inline void append(REAL *ptr, size_t &offset, const REAL *data, size_t n) {
+  std::copy(data, data + n, ptr + offset);
+  offset += n;
+}
+} // namespace grid_utils
 
 /**
  * @brief Generator struct for CartesianGridData or TrimEval grid data that
@@ -212,8 +133,7 @@ template <int interp_ndim, int output_ndim = 0> struct AbstractGridGenerator {
  * @tparam interp_ndim Number of interpolation dimensions.
  * @tparam output_ndim Number of output dimensions (default is 0).
  */
-template <int interp_ndim, int output_ndim = 0>
-struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
+template <int interp_ndim, int output_ndim = 0> struct GridGenerator {
   /**
    * @brief Construct from interpolation ranges and a
    * generator function (with optional additional context).
@@ -227,7 +147,7 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
    * generator.
    * @param ranges_in Per-dimension interpolation range vectors.
    * @param func Generator callable with signature
-   *   auto(const REAL &dim0_val, const REAL &dim1_val,... , Context... context)
+   *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
    * returning a REAL value.
    */
   // The extra std::is_same_v condition is due to Clang limitation not allowing
@@ -238,7 +158,7 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
                              int> = 0>
   GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
                 const FUNC &func, const Context &...context)
-      : AbstractGridGenerator<interp_ndim, output_ndim>{ranges_in} {
+      : ranges(ranges_in) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
                              decltype(context)...>;
@@ -257,18 +177,22 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
     size_t point_idx = 0;
     grid_utils::iterate_points<interp_ndim>(
         this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
-          grid_utils::TableWriter writer{&(this->grid[point_idx])};
-          writer.append(std::array<REAL, 1>{func(coords, context...)});
+          size_t offset = 0;
+          grid_utils::append(&(this->grid[point_idx]), offset,
+                             std::array<REAL, 1>{func(coords, context...)});
           ++point_idx;
         });
+
+    flatten_ranges();
+    flatten_interp_dims();
   }
 
   /**
    * @brief Construct from interpolation ranges, trim dimensions, and a
    * generator function (with optional additional context).
    *
-   * The generator is called once per interpolation point in row-major order.
-   * It must return a REAL std::array/std::vector of size (trim_dim0 +
+   * The generator function is called once per interpolation point in row-major
+   * order. It must return a REAL std::array/std::vector of size (trim_dim0 +
    * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
    * array/vector is appended to the flat grid buffer.
    *
@@ -278,7 +202,7 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
    * @param ranges_in Per-dimension interpolation range vectors.
    * @param trim_dims_arr TRIM grid dimensions per output axis.
    * @param func Generator callable with signature
-   *   auto(const REAL &dim0_val, const REAL &dim1_val,... , Context... context)
+   *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
    * returning a REAL std::array
    */
   // The extra std::is_same_v condition is due to Clang limitation not allowing
@@ -287,11 +211,10 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 3) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
+  GridGenerator(const std::array<std::vector<REAL>, interp_ndim> &ranges,
                 const std::array<size_t, output_ndim> &trim_dims_arr,
                 const FUNC &func, const Context &...context)
-      : AbstractGridGenerator<interp_ndim, output_ndim>{ranges_in,
-                                                        trim_dims_arr} {
+      : ranges(ranges), output_dims(trim_dims_arr) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
                              decltype(context)...>;
@@ -300,9 +223,10 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
 
     // Compute grid_stride exactly as TrimEval does
     int agg = 1;
+    int grid_stride = 0;
     for (auto &d : this->output_dims) {
       agg *= static_cast<int>(d);
-      this->grid_stride += agg;
+      grid_stride += agg;
     }
 
     // Compute total number of grid points and allocate the grid vector
@@ -310,7 +234,7 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
     for (const auto &r : this->ranges) {
       num_points *= r.size();
     }
-    num_points *= this->grid_stride;
+    num_points *= grid_stride;
     this->grid.assign(num_points, 0.0);
 
     // Iterate over all interpolation points, evaluate the passed function, and
@@ -320,16 +244,102 @@ struct GridGenerator : AbstractGridGenerator<interp_ndim, output_ndim> {
 
     grid_utils::iterate_points<interp_ndim>(
         this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
-          grid_access_index = point_idx * this->grid_stride;
-          grid_utils::TableWriter writer{&(this->grid[grid_access_index])};
-          writer.append(func(coords, context...));
+          grid_access_index = point_idx * grid_stride;
+          size_t offset = 0;
+          grid_utils::append(&(this->grid[grid_access_index]), offset,
+                             func(coords, context...));
           NESOASSERT(
-              writer.offset == this->grid_stride,
+              offset == grid_stride,
               "GridGenerator: per-point data size does not match grid_stride.");
 
           ++point_idx;
         });
+
+    flatten_ranges();
+    flatten_interp_dims();
+    flatten_output_dims();
   }
+
+  /**
+   * @brief Return the flattened vector of all of the ranges for each dimension
+   * of the grid.
+   */
+  const std::vector<REAL> &get_flat_ranges() const { return this->flat_ranges; }
+
+  /**
+   * @brief Return the vector containing the sizes of each dimension of the
+   * grid.
+   */
+  const std::vector<size_t> &get_interp_dims() const {
+    return this->interp_dims_vec;
+  }
+
+  /**
+   * @brief Return the vector containing the per-interpolation point output
+   * dimensions. (Disabled if output_ndim != 3)
+   */
+  template <typename DUMMY = void,
+            std::enable_if_t<(output_ndim == 3 && std::is_same_v<DUMMY, DUMMY>),
+                             int> = 0>
+  const std::vector<size_t> &get_output_dims() const {
+    return this->output_dims_vec;
+  }
+
+  /**
+   * @brief Return the flat grid data vector.
+   */
+  const std::vector<REAL> &get_flat_grid() const { return this->grid; }
+
+private:
+  /**
+   * @brief Flatten the per-dimension interpolation range vectors into a single
+   * contiguous vector.
+   */
+  void flatten_ranges() {
+    size_t total = 0;
+    for (const auto &r : this->ranges) {
+      total += r.size();
+    }
+
+    for (const auto &r : this->ranges) {
+      this->flat_ranges.insert(this->flat_ranges.end(), r.begin(), r.end());
+    }
+  }
+
+  /**
+   * @brief Fills the interp_dims vector.
+   */
+  void flatten_interp_dims() {
+    for (const auto &r : this->ranges) {
+      this->interp_dims_vec.push_back(r.size());
+    }
+  }
+
+  /**
+   * @brief Fills the output dimensions vector. (Disabled if output_ndim != 3)
+   */
+  template <typename DUMMY = void,
+            std::enable_if_t<(output_ndim == 3 && std::is_same_v<DUMMY, DUMMY>),
+                             int> = 0>
+  void flatten_output_dims() {
+    this->output_dims_vec =
+        std::vector<size_t>(this->output_dims.begin(), this->output_dims.end());
+  }
+
+  std::array<std::vector<REAL>, interp_ndim>
+      ranges; //!< Array containing vectors that define ranges for each
+              //!< dimensions of the grid.
+  std::vector<REAL>
+      flat_ranges; //!< Vector containing the contiguous per-dimension ranges
+  std::vector<size_t>
+      interp_dims_vec; //!< Vector containing the size of each interpolation
+                       //!< dimension for the grid.
+  std::array<size_t, output_ndim>
+      output_dims; //!< Array containing the size of each output dimension for
+                   //!< tables at each interpolation point (eg. {5, 5, 5} for
+                   //!< EIRENE-style TRIM tables).
+  std::vector<size_t> output_dims_vec; // Vector version of output_dims.
+  std::vector<REAL> grid;              //!< Vector containing the flat grid.
 };
 
 } // namespace VANTAGE::Reactions

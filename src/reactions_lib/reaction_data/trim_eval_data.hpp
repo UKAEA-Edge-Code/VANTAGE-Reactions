@@ -8,9 +8,6 @@
 #include <array>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/device_buffers.hpp>
-#include <type_traits>
-#include <utility>
 
 #include "grid_generators.hpp"
 
@@ -72,22 +69,22 @@ struct TrimEvalOnDevice
   /**
    * @brief Constructor for TrimEvalOnDevice.
    *
-   * @param h_grid Host buffer containing the tabulated distribution data.
-   * @param h_ranges Host buffer containing range boundaries for the
+   * @param d_grid Host buffer containing the tabulated distribution data.
+   * @param d_ranges Host buffer containing range boundaries for the
    * interpolation dimensions.
-   * @param h_dims Host buffer containing grid dimensions for the
+   * @param d_dims Host buffer containing grid dimensions for the
    * interpolation axes.
-   * @param h_trim_dims Host buffer containing TRIM grid dimensions.
+   * @param d_trim_dims Host buffer containing TRIM grid dimensions.
    */
-  TrimEvalOnDevice(const std::shared_ptr<BufferDevice<REAL>> &h_grid,
-                   const std::shared_ptr<BufferDevice<REAL>> &h_ranges,
-                   const std::shared_ptr<BufferDevice<size_t>> &h_dims,
-                   const std::shared_ptr<BufferDevice<size_t>> &h_trim_dims)
+  TrimEvalOnDevice(const std::shared_ptr<BufferDevice<REAL>> &d_grid,
+                   const std::shared_ptr<BufferDevice<REAL>> &d_ranges,
+                   const std::shared_ptr<BufferDevice<size_t>> &d_dims,
+                   const std::shared_ptr<BufferDevice<size_t>> &d_trim_dims)
       : TrimEvalOnDevice() {
-    this->d_grid = h_grid->ptr;
-    this->d_ranges = h_ranges->ptr;
-    this->d_dims = h_dims->ptr;
-    this->d_trim_dims = h_trim_dims->ptr;
+    this->d_grid_ptr = d_grid->ptr;
+    this->d_ranges_ptr = d_ranges->ptr;
+    this->d_dims_ptr = d_dims->ptr;
+    this->d_trim_dims_ptr = d_trim_dims->ptr;
   }
 
   /**
@@ -129,7 +126,7 @@ struct TrimEvalOnDevice
                             ? 0.0
                             : input_to_bin[i];
 
-      trim_dims_arr[i] = this->d_trim_dims[i];
+      trim_dims_arr[i] = this->d_trim_dims_ptr[i];
     }
 
     std::array<INT, output_ndim> binned_inputs =
@@ -137,39 +134,35 @@ struct TrimEvalOnDevice
 
     std::array<INT, interp_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges, this->d_dims[0]);
+        input[0], this->d_ranges_ptr, this->d_dims_ptr[0]);
     size_t aggregate_dims = 0;
     for (size_t i = 1; i < interp_ndim; i++) {
-      aggregate_dims += this->d_dims[i - 1];
+      aggregate_dims += this->d_dims_ptr[i - 1];
       grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges + aggregate_dims, this->d_dims[i]);
+          input[i], this->d_ranges_ptr + aggregate_dims, this->d_dims_ptr[i]);
     }
 
     auto grid_indices_ptr = grid_indices.data();
     INT grid_flat_index = interp_utils::coeff_index_on_device(
-        grid_indices_ptr, this->d_dims, (input_ndim - output_ndim));
+        grid_indices_ptr, this->d_dims_ptr, (input_ndim - output_ndim));
 
     auto grid_access_point = grid_flat_index * this->grid_stride;
 
     std::array<INT, output_ndim> trim_indices;
     std::array<REAL, output_ndim> trim_vals;
 
-    int field_access_point;
-    int field_stride;
-    int aggregate_dim;
-    int offset_factor;
     for (int idim = 0; idim < output_ndim; idim++) {
-      field_access_point = 0;
-      field_stride = 0;
-      aggregate_dim = 1;
-      offset_factor = 1;
+      int field_access_point = 0;
+      int field_stride = 0;
+      int aggregate_dim = 1;
+      int offset_factor = 1;
 
       for (int jdim = 0; jdim <= idim; jdim++) {
-        aggregate_dim *= d_trim_dims[jdim];
+        aggregate_dim *= this->d_trim_dims_ptr[jdim];
       }
 
       for (int jdim = 0; jdim < idim; jdim++) {
-        offset_factor *= d_trim_dims[jdim];
+        offset_factor *= this->d_trim_dims_ptr[jdim];
         field_access_point += offset_factor;
         // TODO try to optimize out the integer division
         field_stride += binned_inputs[jdim] * (aggregate_dim / offset_factor);
@@ -177,7 +170,8 @@ struct TrimEvalOnDevice
 
       trim_indices[idim] =
           field_access_point + field_stride + binned_inputs[idim];
-      trim_vals[idim] = this->d_grid[grid_access_point + trim_indices[idim]];
+      trim_vals[idim] =
+          this->d_grid_ptr[grid_access_point + trim_indices[idim]];
     }
     return trim_vals;
   }
@@ -187,10 +181,10 @@ public:
 
   static constexpr int interp_ndim = input_ndim - output_ndim;
 
-  REAL const *d_grid;
-  REAL const *d_ranges;
-  size_t const *d_dims;
-  size_t const *d_trim_dims;
+  REAL const *d_grid_ptr;
+  REAL const *d_ranges_ptr;
+  size_t const *d_dims_ptr;
+  size_t const *d_trim_dims_ptr;
 
   int panic_ind;
 };
@@ -280,14 +274,14 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
     NESOASSERT((grid_size == expected_grid_size),
                "Invalid size of input grid.");
 
-    this->h_grid = utils::make_buffer_device_ptr(sycl_target, grid);
-    this->h_ranges = utils::make_buffer_device_ptr(sycl_target, ranges_vec);
-    this->h_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
-    this->h_trim_dims =
+    this->d_grid = utils::make_buffer_device_ptr(sycl_target, grid);
+    this->d_ranges = utils::make_buffer_device_ptr(sycl_target, ranges_vec);
+    this->d_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
+    this->d_trim_dims =
         utils::make_buffer_device_ptr(sycl_target, trim_dims_vec);
 
     this->on_device_obj =
-        TrimEvalOnDevice<input_ndim>(h_grid, h_ranges, h_dims, h_trim_dims);
+        TrimEvalOnDevice<input_ndim>(d_grid, d_ranges, d_dims, d_trim_dims);
 
     this->on_device_obj->grid_stride = grid_stride;
 
@@ -301,10 +295,10 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
   TrimEval(const GridGenerator<interp_ndim, output_ndim> &grid_generator,
            SYCLTargetSharedPtr sycl_target,
            std::map<int, std::string> properties_map = get_default_map())
-      : TrimEval(grid_generator.flatten_grid(), grid_generator.flatten_ranges(),
-                 grid_generator.flatten_interp_dims(),
-                 grid_generator.flatten_output_dims(), sycl_target,
-                 properties_map) {
+      : TrimEval(
+            grid_generator.get_flat_grid(), grid_generator.get_flat_ranges(),
+            grid_generator.get_interp_dims(), grid_generator.get_output_dims(),
+            sycl_target, properties_map) {
     static_assert(interp_ndim == input_ndim - output_ndim,
                   "TrimGridGenerator interpolation dimensions must match "
                   "input_ndim - output_ndim");
@@ -316,10 +310,10 @@ struct TrimEval : public ReactionDataBase<TrimEvalOnDevice<input_ndim>> {
   };
 
 public:
-  std::shared_ptr<BufferDevice<REAL>> h_ranges;
-  std::shared_ptr<BufferDevice<size_t>> h_dims;
-  std::shared_ptr<BufferDevice<size_t>> h_trim_dims;
-  std::shared_ptr<BufferDevice<REAL>> h_grid;
+  std::shared_ptr<BufferDevice<REAL>> d_ranges;
+  std::shared_ptr<BufferDevice<size_t>> d_dims;
+  std::shared_ptr<BufferDevice<size_t>> d_trim_dims;
+  std::shared_ptr<BufferDevice<REAL>> d_grid;
 };
 
 } // namespace VANTAGE::Reactions

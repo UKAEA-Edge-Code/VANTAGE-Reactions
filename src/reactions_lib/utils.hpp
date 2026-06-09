@@ -2,11 +2,8 @@
 #define REACTIONS_UTILS_H
 #include <cassert>
 #include <cmath>
-#include <complex>
 #include <memory>
 #include <neso_particles.hpp>
-#include <neso_particles/compute_target.hpp>
-#include <neso_particles/device_buffers.hpp>
 #include <numeric>
 #include <type_traits>
 #include <vector>
