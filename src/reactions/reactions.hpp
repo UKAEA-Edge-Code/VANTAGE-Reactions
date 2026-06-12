@@ -1,6 +1,8 @@
 #ifndef REACTIONS_REACTIONS_H
 #define REACTIONS_REACTIONS_H
 
+#include "neso_test_assert.hpp"
+
 #include "../reactions_lib/binary_array_transform_data.hpp"
 #include "../reactions_lib/common_array_transforms.hpp"
 #include "../reactions_lib/common_markers.hpp"
@@ -22,7 +24,6 @@
 #include "../reactions_lib/transformation_wrapper.hpp"
 #include "../reactions_lib/unary_array_transform_data.hpp"
 #include "../reactions_lib/utils.hpp"
-#include "neso_test_assert.hpp"
 
 #include "../reactions_lib/cross_sections/AMJUEL_fit_cs.hpp"
 #include "../reactions_lib/cross_sections/constant_rate_cs.hpp"
@@ -33,15 +34,18 @@
 #include "../reactions_lib/reaction_data/array_lookup_data.hpp"
 #include "../reactions_lib/reaction_data/arrhenius_data.hpp"
 #include "../reactions_lib/reaction_data/cartesian_basis_reflection_data.hpp"
+#include "../reactions_lib/reaction_data/cartesian_grid_data.hpp"
 #include "../reactions_lib/reaction_data/extractor_data.hpp"
 #include "../reactions_lib/reaction_data/filtered_maxwellian_sampler.hpp"
 #include "../reactions_lib/reaction_data/fixed_array_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_coefficient_data.hpp"
 #include "../reactions_lib/reaction_data/fixed_rate_data.hpp"
+#include "../reactions_lib/reaction_data/grid_descriptors.hpp"
 #include "../reactions_lib/reaction_data/interpolate_data.hpp"
 #include "../reactions_lib/reaction_data/sampler_data.hpp"
 #include "../reactions_lib/reaction_data/specular_reflection_data.hpp"
 #include "../reactions_lib/reaction_data/spherical_basis_reflection_data.hpp"
+#include "../reactions_lib/reaction_data/trim_eval_data.hpp"
 
 #include "../reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"
