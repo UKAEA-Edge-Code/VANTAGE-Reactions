@@ -38,10 +38,10 @@ struct CartesianGridDataOnDevice
   /**
    * @brief Constructor for CartesianGridDataOnDevice.
    *
-   * @param d_grid Host buffer containing the tabulated data.
-   * @param d_ranges Host buffer containing range boundaries for the
+   * @param d_grid Device buffer containing the tabulated data.
+   * @param d_ranges Device buffer containing range boundaries for the
    * interpolation dimensions.
-   * @param d_dims Host buffer containing grid dimensions for the
+   * @param d_dims Device buffer containing grid dimensions for the
    * interpolation axes.
    */
   CartesianGridDataOnDevice(
@@ -113,7 +113,7 @@ public:
  * of the closest point in the range for that dimension that is less than the
  * input coordinate value. These per-dimension indices are then flattened via
  * row-major ordering into a single index, and the corresponding value is
- * retrieved from d_grid (device-side pointer to a host-side BufferDevice that
+ * retrieved from d_grid_ptr (a pointer to a BufferDevice that
  * is constructed from std::vector<REAL> grid).
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.

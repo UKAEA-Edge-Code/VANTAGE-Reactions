@@ -69,12 +69,12 @@ struct TrimEvalDataOnDevice
   /**
    * @brief Constructor for TrimEvalDataOnDevice.
    *
-   * @param d_grid Host buffer containing the tabulated distribution data.
-   * @param d_ranges Host buffer containing range boundaries for the
+   * @param d_grid Device buffer containing the tabulated distribution data.
+   * @param d_ranges Device buffer containing range boundaries for the
    * interpolation dimensions.
-   * @param d_dims Host buffer containing grid dimensions for the
+   * @param d_dims Device buffer containing grid dimensions for the
    * interpolation axes.
-   * @param d_trim_dims Host buffer containing TRIM grid dimensions.
+   * @param d_trim_dims Device buffer containing TRIM grid dimensions.
    */
   TrimEvalDataOnDevice(const std::shared_ptr<BufferDevice<REAL>> &d_grid,
                        const std::shared_ptr<BufferDevice<REAL>> &d_ranges,
