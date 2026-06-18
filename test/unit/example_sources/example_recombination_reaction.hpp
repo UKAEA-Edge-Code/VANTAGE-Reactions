@@ -1,5 +1,4 @@
-inline void
-recombination_reaction_example(ParticleGroupSharedPtr particle_group) {
+void recombination_reaction_example(ParticleGroupSharedPtr particle_group) {
 
   // In case we would like to remap the used Syms
   auto used_map = get_default_map();

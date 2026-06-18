@@ -1,4 +1,4 @@
-inline void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
+void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
 
   auto particle_spec = particle_group->get_particle_spec();
 

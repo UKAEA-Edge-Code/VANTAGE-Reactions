@@ -1,4 +1,4 @@
-inline void fixed_rate_coeff_example() {
+void fixed_rate_coeff_example() {
 
   // In case we would like to remap the used weight Sym
   auto used_map = get_default_map();

@@ -1,8 +1,9 @@
-inline void removal_strategy_example(ParticleGroupSharedPtr particle_group) {
+#include "example_common_functors.hpp"
+
+void removal_strategy_example(ParticleGroupSharedPtr particle_group) {
 
   auto subgroup_low_weight = particle_sub_group(
-      particle_group, [](auto w) { return w[0] < 1e-6; },
-      Access::read(Sym<REAL>("WEIGHT")));
+      particle_group, LowWeightMark{}, Access::read(Sym<REAL>("WEIGHT")));
 
   // The make_transformation_strategy helper function casts concrete
   // transformation strategies into std::shared_ptr<TransformationStrategy>.

@@ -145,7 +145,7 @@ struct DataCalculator : public AbstractDataCalculator {
   /**
    * @brief Getter of the total number of objects in the ReactionData tuple
    */
-  size_t get_data_tuple_size() const { return std::size(this->data); }
+  size_t get_data_tuple_size() const { return sizeof...(DATATYPE); }
 
 private:
   std::tuple<DATATYPE...> data;

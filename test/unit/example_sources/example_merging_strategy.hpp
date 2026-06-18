@@ -1,4 +1,4 @@
-inline void merging_strategy_example(ParticleGroupSharedPtr particle_group) {
+void merging_strategy_example(ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 

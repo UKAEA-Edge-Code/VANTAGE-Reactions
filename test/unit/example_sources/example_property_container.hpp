@@ -1,4 +1,4 @@
-inline void property_container_example() {
+void property_container_example() {
 
   // We first construct a few species objects. Here we only need the species
   // name, so we set the mass, charge, and ID to arbitrary values

@@ -14,7 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 add_library(VANTAGE-Reactions INTERFACE)
 add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 
-set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD 17)
+target_compile_features(VANTAGE-Reactions INTERFACE cxx_std_17)
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)

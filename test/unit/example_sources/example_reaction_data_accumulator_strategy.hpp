@@ -1,4 +1,4 @@
-inline void reaction_data_accumulator_strategy_example(
+void reaction_data_accumulator_strategy_example(
     ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = particle_sub_group(particle_group);

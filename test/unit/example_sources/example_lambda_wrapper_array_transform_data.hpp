@@ -1,4 +1,4 @@
-inline void lambda_wrapper_array_transform_examples() {
+void lambda_wrapper_array_transform_examples() {
 
   // 1D and 2D reaction data objects for the examples
   auto position_data_x = extract<1>("POSITION");

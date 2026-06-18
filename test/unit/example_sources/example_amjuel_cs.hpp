@@ -1,4 +1,4 @@
-inline void amjuel_h1_cs_example() {
+void amjuel_h1_cs_example() {
 
   // These are example values
   auto coeffs = std::array<REAL, 3>{1.0, 1.0, 1.0}; // a_n coefficients

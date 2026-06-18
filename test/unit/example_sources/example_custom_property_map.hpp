@@ -1,4 +1,4 @@
-inline void custom_property_map_example() {
+void custom_property_map_example() {
 
   auto custom_props = CustomPropertiesEnum();
 

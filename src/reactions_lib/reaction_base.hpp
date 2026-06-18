@@ -6,6 +6,7 @@
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
 #include <array>
+#include <concepts>
 #include <cstring>
 #include <neso_particles.hpp>
 #include <type_traits>
@@ -23,8 +24,6 @@ namespace VANTAGE::Reactions {
  * process descendants.
  */
 struct AbstractReaction : ProfilingBase {
-  AbstractReaction() = default;
-
   /**
    * @brief Constructor for AbstractReaction.
    *
@@ -60,13 +59,12 @@ struct AbstractReaction : ProfilingBase {
 
   virtual ~AbstractReaction() = default;
 
-public:
   /**
    * @brief Virtual functions to be overidden by an implementation in a derived
    * struct.
    */
   virtual void calculate_rates_v(ParticleSubGroupSharedPtr particle_sub_group,
-                                 INT cell_idx_start, INT cell_idx_end) {}
+                                 INT cell_idx_start, INT cell_idx_end) = 0;
 
   /**
    *  Specialisations should override calculate_rates_v not calculate_rates.
@@ -82,7 +80,7 @@ public:
   virtual void apply_v(ParticleSubGroupSharedPtr particle_sub_group,
                        INT cell_idx_start, INT cell_idx_end, double dt,
                        ParticleGroupSharedPtr child_group,
-                       bool full_weight = false) {}
+                       bool full_weight = false) = 0;
 
   /**
    *  Specialisations should override apply_v not apply.
@@ -101,10 +99,10 @@ public:
 
   virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
 
-  virtual void flush_buffer(size_t buffer_size) {}
-  virtual void flush_weight_buffer(size_t buffer_size) {}
+  virtual void flush_buffer(size_t buffer_size) = 0;
+  virtual void flush_weight_buffer(size_t buffer_size) = 0;
 
-  virtual void flush_pre_req_data() {}
+  virtual void flush_pre_req_data() = 0;
 
   /**
    * @brief Set the maximum size for data buffers on this reaction
@@ -177,51 +175,29 @@ private:
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
 };
 
-/**
- * @brief Base linear reaction type. Specifically meant for
- * reactions that only involve a single particle at the start of the reaction.
- *
- * @tparam num_products_per_parent The number of products produced per parent
- * by the derived linear reaction.
- * @tparam ReactionData typename for reaction_data constructor argument
- * @tparam ReactionKernels template class for reaction_kernels constructor
- * argument
- * @tparam DataCalc typename for the DataCalculator object used to calculate
- * prerequisite data (defaults to DataCalculator<>)
- */
+// template <typename T>
+// concept ReactionDataType =
+//     requires {
+//       typename T::ON_DEVICE_OBJ_TYPE;
+//       typename T::RNG_KERNEL_TYPE;
+//       { T::get_dim() } -> std::integral;
+//     } &&
+//     std::derived_from<
+//         T, ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::get_dim(),
+//                             typename T::RNG_KERNEL_TYPE>>;
+
 template <int num_products_per_parent, typename ReactionData,
-          typename ReactionKernels, typename DataCalc = DataCalculator<>>
-struct LinearReactionBase : public AbstractReaction {
+          typename ReactionKernels>
+struct LinearReactionBaseImpl : public AbstractReaction {
 
-  LinearReactionBase() = delete;
-
-  /**
-   * @brief Constructor for LinearReactionBase.
-   *
-   * @param sycl_target Compute device used by the instance.
-   * @param in_state Integer specifying the ID of the species on
-   * which the derived reaction is acting on.
-   * @param out_states Array of integers specifying the species IDs of the
-   * descendants produced by the derived reaction.
-   * @param reaction_data ReactionData object defining the reaction rate (used
-   * in calculate_rates)
-   * @param reaction_kernels ReactionKernels object defining the properties of
-   * the products and the feedback on the parent particle and fields (used in
-   * apply)
-   * @param data_calculator DataCalculator object defining any additional
-   * required data for the kernels, in addition to the rate
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (weight and total_reaction_rate).
-   */
-  LinearReactionBase(
+  LinearReactionBaseImpl(
       SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
-      DataCalc data_calculator,
       const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), data_calculator(data_calculator) {
+        reaction_kernels(reaction_kernels) {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for calculate_rates and
     // apply to operate correctly, ReactionData and
@@ -235,17 +211,9 @@ struct LinearReactionBase : public AbstractReaction {
             ReactionData>,
         "Template parameter ReactionData is not derived from "
         "ReactionDataBase...");
-    static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
-                  "Template parameter DataCalc is not derived from "
-                  "AbstractDataCalculator...");
     static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "ReactionKernelsBase...");
-    NESOASSERT(this->data_calculator.get_data_size() ==
-                   this->reaction_kernels.get_pre_ndims(),
-               "The number of ReactionData-derived objects in DataCalculator "
-               "does not match the required number of dimensions for the "
-               "provided ReactionKernels object.");
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
@@ -268,39 +236,7 @@ struct LinearReactionBase : public AbstractReaction {
     this->descendant_particles = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec,
         num_products_per_parent);
-
-    auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
-        AbstractReaction::get_sycl_target(), 0,
-        this->data_calculator.get_data_size());
-    empty_pre_req_data->fill(0);
-
-    this->set_pre_req_data(empty_pre_req_data);
   }
-
-  /**
-   * \overload
-   * @brief Constructor with no explicit DataCalculator
-   *
-   * @param sycl_target Compute device used by the instance.
-   * @param in_state Integer specifying the ID of the species on
-   * which the derived reaction is acting on.
-   * @param out_states Array of integers specifying the species IDs of the
-   * descendants produced by the derived reaction.
-   * @param reaction_data ReactionData object defining the reaction rate (used
-   * in calculate_rates)
-   * @param reaction_kernels ReactionKernels object defining the properties of
-   * the products and the feedback on the parent particle and fields (used in
-   * apply)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (weight and total_reaction_rate).
-   */
-  LinearReactionBase(
-      SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
-      ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const std::map<int, std::string> &properties_map = get_default_map())
-      : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
-                           reaction_kernels, DataCalc(), properties_map) {}
 
   /**
    * @brief Calculates the reaction rates for all particles in the given
@@ -410,9 +346,9 @@ struct LinearReactionBase : public AbstractReaction {
     this->blockwise_flush_pre_req_data(particle_sub_group, cell_idx_start,
                                        cell_idx_end);
 
-    this->data_calculator.fill_buffer(this->get_pre_req_data(),
-                                      particle_sub_group, cell_idx_start,
-                                      cell_idx_end);
+    auto pre_req_data = this->get_pre_req_data();
+    this->fill_pre_req_data(pre_req_data, particle_sub_group, cell_idx_start,
+                            cell_idx_end);
     auto loop = particle_loop(
         "descendant_products_loop", particle_sub_group,
         [=](auto descendant_particle, auto particle_index, auto req_int_props,
@@ -619,7 +555,13 @@ struct LinearReactionBase : public AbstractReaction {
     return std::vector<int>(out_states.begin(), out_states.end());
   }
 
-private:
+  virtual void fill_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data,
+                                 ParticleSubGroupSharedPtr particle_sub_group,
+                                 INT cell_idx_start, INT cell_idx_end) = 0;
+
+  virtual ~LinearReactionBaseImpl() = default;
+
+protected:
   int in_state;
   std::array<int, num_products_per_parent> out_states;
   ReactionData reaction_data;
@@ -631,7 +573,107 @@ private:
 
   std::vector<Sym<INT>> apply_int_syms;
   std::vector<Sym<REAL>> apply_real_syms;
+};
 
+/**
+ * @brief Base linear reaction type. Specifically meant for
+ * reactions that only involve a single particle at the start of the reaction.
+ *
+ * @tparam num_products_per_parent The number of products produced per parent
+ * by the derived linear reaction.
+ * @tparam ReactionData typename for reaction_data constructor argument
+ * @tparam ReactionKernels template class for reaction_kernels constructor
+ * argument
+ * @tparam DataCalc typename for the DataCalculator object used to calculate
+ * prerequisite data (defaults to DataCalculator<>)
+ */
+template <int num_products_per_parent, typename ReactionData,
+          typename ReactionKernels, typename DataCalc = DataCalculator<>>
+struct LinearReactionBase
+    : LinearReactionBaseImpl<num_products_per_parent, ReactionData,
+                             ReactionKernels> {
+
+  /**
+   * @brief Constructor for LinearReactionBase.
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param in_state Integer specifying the ID of the species on
+   * which the derived reaction is acting on.
+   * @param out_states Array of integers specifying the species IDs of the
+   * descendants produced by the derived reaction.
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in calculate_rates)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * apply)
+   * @param data_calculator DataCalculator object defining any additional
+   * required data for the kernels, in addition to the rate
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
+   */
+  LinearReactionBase(
+      SYCLTargetSharedPtr sycl_target, int in_state,
+      std::array<int, num_products_per_parent> out_states,
+      ReactionData reaction_data, ReactionKernels reaction_kernels,
+      DataCalc data_calculator,
+      const std::map<int, std::string> &properties_map = get_default_map())
+      : LinearReactionBaseImpl<num_products_per_parent, ReactionData,
+                               ReactionKernels>(
+            sycl_target, in_state, out_states, reaction_data, reaction_kernels,
+            properties_map),
+        data_calculator(data_calculator) {
+    static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
+                  "Template parameter DataCalc is not derived from "
+                  "AbstractDataCalculator...");
+    NESOASSERT(this->data_calculator.get_data_size() ==
+                   this->reaction_kernels.get_pre_ndims(),
+               "The number of ReactionData-derived objects in DataCalculator "
+               "does not match the required number of dimensions for the "
+               "provided ReactionKernels object.");
+
+    auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+        AbstractReaction::get_sycl_target(), 0,
+        this->data_calculator.get_data_size());
+    empty_pre_req_data->fill(0);
+
+    this->set_pre_req_data(empty_pre_req_data);
+  }
+
+  /**
+   * \overload
+   * @brief Constructor with no explicit DataCalculator
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param in_state Integer specifying the ID of the species on
+   * which the derived reaction is acting on.
+   * @param out_states Array of integers specifying the species IDs of the
+   * descendants produced by the derived reaction.
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in calculate_rates)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * apply)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
+   */
+  template <typename U = DataCalc,
+            std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
+  LinearReactionBase(
+      SYCLTargetSharedPtr sycl_target, int in_state,
+      std::array<int, num_products_per_parent> out_states,
+      ReactionData reaction_data, ReactionKernels reaction_kernels,
+      const std::map<int, std::string> &properties_map = get_default_map())
+      : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
+                           reaction_kernels, DataCalc(), properties_map) {}
+
+  void fill_pre_req_data(NDLocalArraySharedPtr<REAL, 2> &pre_req_data,
+                         ParticleSubGroupSharedPtr particle_sub_group,
+                         INT cell_idx_start, INT cell_idx_end) override {
+    this->data_calculator.fill_buffer(pre_req_data, particle_sub_group,
+                                      cell_idx_start, cell_idx_end);
+  }
+
+private:
   DataCalc data_calculator;
 };
 } // namespace VANTAGE::Reactions

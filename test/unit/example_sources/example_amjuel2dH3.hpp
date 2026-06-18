@@ -1,4 +1,4 @@
-inline void amjuel_2d_H3_example() {
+void amjuel_2d_H3_example() {
 
   // In case we wish to remap the default weight, fluid_temperature,
   // fluid_density, fluid_flow_speed, or particle velocity

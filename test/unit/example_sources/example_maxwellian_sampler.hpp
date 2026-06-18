@@ -1,4 +1,6 @@
-inline void maxwellian_sampler_example() {
+#include "example_common_functors.hpp"
+
+void maxwellian_sampler_example() {
 
   // In case we wish to remap the fluid_temperature, fluid_flow_speed, or
   // velocity
@@ -13,10 +15,9 @@ inline void maxwellian_sampler_example() {
   // documentation) This is because rejection sampling has an a priori unknown
   // number of samples
   //
-  // Here we use an arbitrary lambda, but this should in general be a standard
-  // uniform distribution
-  auto rng_lambda = [&]() -> REAL { return 0.5; };
-  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
+  // Here we use an arbitrary constant functor, but this should in general be a
+  // standard uniform distribution
+  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(ConstantRng{0.5}, 1000);
 
   // The sampler is templated against velocity space dimensionality - here 2D
   auto sampler_data = FilteredMaxwellianSampler<2>(
