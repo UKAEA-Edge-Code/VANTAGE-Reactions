@@ -1,5 +1,7 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include "include/reaction_controller_template_instantiations.hpp"
+#include "include/test_reaction_controller_functors.hpp"
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
@@ -31,16 +33,15 @@ TEST(ReactionController, single_reaction_multi_apply) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));
 
-  auto merged_group = particle_sub_group(
-      particle_group, [](auto IS) { return IS[0] == 1; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+  auto merged_group =
+      particle_sub_group(particle_group, InternalStateEquals(1),
+                         Access::read(Sym<INT>("INTERNAL_STATE")));
 
   auto reduction = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_group, 0.01);
@@ -48,9 +49,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
       ->execute();
 
   for (int icell = 0; icell < cell_count; icell++) {
@@ -75,9 +75,9 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   // check that the TOT_REACTION_RATE buffer has been flushed between
   // applications
-  auto parent_subgroup = particle_sub_group(
-      particle_group, [](auto IS) { return IS[0] == 0; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+  auto parent_subgroup =
+      particle_sub_group(particle_group, InternalStateEquals(0),
+                         Access::read(Sym<INT>("INTERNAL_STATE")));
 
   auto test_la = std::make_shared<LocalArray<REAL>>(
       particle_group->sycl_target, parent_subgroup->get_npart_local(), 0);
@@ -137,9 +137,8 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto reduction = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_sub_group(particle_group), 0.1);
@@ -147,18 +146,17 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
       ->execute();
 
-  auto merged_species_1 = particle_sub_group(
-      particle_group, [](auto IS) { return IS[0] == 1; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+  auto merged_species_1 =
+      particle_sub_group(particle_group, InternalStateEquals(1),
+                         Access::read(Sym<INT>("INTERNAL_STATE")));
 
-  auto merged_species_2 = particle_sub_group(
-      particle_group, [](auto IS) { return IS[0] == 2; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+  auto merged_species_2 =
+      particle_sub_group(particle_group, InternalStateEquals(2),
+                         Access::read(Sym<INT>("INTERNAL_STATE")));
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_species_1->get_npart_cell(icell), 2);
@@ -229,27 +227,25 @@ TEST(ReactionController, multi_reaction_multi_apply) {
   auto reduction = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_group, 0.1);
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
       ->execute();
 
-  auto merged_group = particle_sub_group(
-      particle_group, [](auto IS) { return IS[0] == 1; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+  auto merged_group =
+      particle_sub_group(particle_group, InternalStateEquals(1),
+                         Access::read(Sym<INT>("INTERNAL_STATE")));
 
-  auto merged_group2 = particle_sub_group(
-      particle_group, [](auto IS) { return IS[0] == 3; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+  auto merged_group2 =
+      particle_sub_group(particle_group, InternalStateEquals(3),
+                         Access::read(Sym<INT>("INTERNAL_STATE")));
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_group->get_npart_cell(icell), 2);
@@ -297,9 +293,8 @@ TEST(ReactionController, parent_transform) {
   auto reduction = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_group, 5e-15);
@@ -307,9 +302,8 @@ TEST(ReactionController, parent_transform) {
   auto reduction_after = std::make_shared<CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
-  particle_loop(
-      particle_group, [=](auto W, auto GA) { GA.fetch_add(0, 0, W[0]); },
-      Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
+  particle_loop(particle_group, WeightReducer{},
+                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
       ->execute();
 
   for (int icell = 0; icell < cell_count; icell++) {
@@ -347,16 +341,12 @@ TEST(ReactionController, ionisation_reaction) {
 
   reaction_controller.apply(particle_group, 1.5);
 
-  auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
   auto accessor = Access::read(Sym<REAL>("WEIGHT"));
 
-  auto lambda_remove = [](auto target) {
-    target->get_particle_group()->remove_particles(target);
-  };
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_direct_marking_strategy("small", lambda_marker, accessor)},
-      make_lambda_transformation_strategy("remove", lambda_remove));
+          make_direct_marking_strategy("small", SmallWeightMarker{}, accessor)},
+      make_lambda_transformation_strategy("remove", RemoveSubgroupTransform{}));
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
@@ -501,16 +491,12 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   reaction_controller.apply(particle_group, 0.1);
 
-  auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
   auto accessor = Access::read(Sym<REAL>("WEIGHT"));
 
-  auto lambda_remove = [](auto target) {
-    target->get_particle_group()->remove_particles(target);
-  };
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_direct_marking_strategy("small", lambda_marker, accessor)},
-      make_lambda_transformation_strategy("remove", lambda_remove));
+          make_direct_marking_strategy("small", SmallWeightMarker{}, accessor)},
+      make_lambda_transformation_strategy("remove", RemoveSubgroupTransform{}));
 
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
@@ -546,16 +532,12 @@ TEST(ReactionController, semi_dsmc_test) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
   auto accessor = Access::read(Sym<REAL>("WEIGHT"));
 
-  auto lambda_remove = [](auto target) {
-    target->get_particle_group()->remove_particles(target);
-  };
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_direct_marking_strategy("small", lambda_marker, accessor)},
-      make_lambda_transformation_strategy("remove", lambda_remove));
+          make_direct_marking_strategy("small", SmallWeightMarker{}, accessor)},
+      make_lambda_transformation_strategy("remove", RemoveSubgroupTransform{}));
   auto reaction_controller = ReactionController(
       std::vector<std::shared_ptr<TransformationWrapper>>{test_removal_wrapper},
       std::vector<std::shared_ptr<TransformationWrapper>>{});
@@ -574,21 +556,19 @@ TEST(ReactionController, semi_dsmc_test) {
 
   auto squared_reaction_data = FixedCoefficientData(1.0) * extract<1>("WEIGHT");
 
-  auto test_reaction_1 =
-      std::make_shared<LinearReactionBase<1, decltype(squared_reaction_data),
-                                          TestReactionKernels<1>>>(
-          particle_group->sycl_target, 0, std::array<int, 1>{1},
-          squared_reaction_data, TestReactionKernels<1>());
+  auto test_reaction_1 = std::make_shared<
+      LinearReactionBase<1, SquaredWeightData, TestReactionKernels<1>>>(
+      particle_group->sycl_target, 0, std::array<int, 1>{1},
+      squared_reaction_data, TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_1);
 
   auto squared_reaction_data_2 =
       FixedCoefficientData(3.0) * extract<1>("WEIGHT");
-  auto test_reaction_2 =
-      std::make_shared<LinearReactionBase<1, decltype(squared_reaction_data_2),
-                                          TestReactionKernels<1>>>(
-          particle_group->sycl_target, 0, std::array<int, 1>{2},
-          squared_reaction_data_2, TestReactionKernels<1>());
+  auto test_reaction_2 = std::make_shared<
+      LinearReactionBase<1, SquaredWeightData, TestReactionKernels<1>>>(
+      particle_group->sycl_target, 0, std::array<int, 1>{2},
+      squared_reaction_data_2, TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_2);
 
@@ -639,16 +619,12 @@ TEST(ReactionController, surface_mode_test) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
   auto accessor = Access::read(Sym<REAL>("WEIGHT"));
 
-  auto lambda_remove = [](auto target) {
-    target->get_particle_group()->remove_particles(target);
-  };
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_direct_marking_strategy("small", lambda_marker, accessor)},
-      make_lambda_transformation_strategy("remove", lambda_remove));
+          make_direct_marking_strategy("small", SmallWeightMarker{}, accessor)},
+      make_lambda_transformation_strategy("remove", RemoveSubgroupTransform{}));
 
   auto reaction_controller = ReactionController(
       std::vector<std::shared_ptr<TransformationWrapper>>{test_removal_wrapper},

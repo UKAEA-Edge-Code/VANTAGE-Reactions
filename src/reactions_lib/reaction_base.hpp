@@ -6,7 +6,6 @@
 #include "reaction_data.hpp"
 #include "reaction_kernels.hpp"
 #include <array>
-#include <concepts>
 #include <cstring>
 #include <neso_particles.hpp>
 #include <type_traits>
@@ -174,17 +173,6 @@ private:
   Sym<REAL> weight_sym;
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
 };
-
-// template <typename T>
-// concept ReactionDataType =
-//     requires {
-//       typename T::ON_DEVICE_OBJ_TYPE;
-//       typename T::RNG_KERNEL_TYPE;
-//       { T::get_dim() } -> std::integral;
-//     } &&
-//     std::derived_from<
-//         T, ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::get_dim(),
-//                             typename T::RNG_KERNEL_TYPE>>;
 
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels>
