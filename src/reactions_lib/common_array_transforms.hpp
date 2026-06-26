@@ -24,7 +24,7 @@ struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    * order from 0
    */
   PolynomialArrayTransform(const std::array<REAL, POLY_ORDER + 1> &coeffs)
-      : coeffs(coeffs) {};
+      : coeffs(coeffs){};
 
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
@@ -63,7 +63,7 @@ struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    *
    * @param mult The multiplicative constant to be used
    */
-  ScalerArrayTransform(const REAL &mult) : mult(mult) {};
+  ScalerArrayTransform(const REAL &mult) : mult(mult){};
 
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
@@ -95,7 +95,7 @@ struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    *
    * @param dir The array representing the projection direction vector
    */
-  UnaryProjectArrayTransform(const std::array<REAL, DIM> &dir) : dir(dir) {};
+  UnaryProjectArrayTransform(const std::array<REAL, DIM> &dir) : dir(dir){};
 
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
@@ -124,7 +124,7 @@ struct UnaryProjectNormalArrayTransform
    * @param dir The array representing the projection direction vector
    */
   UnaryProjectNormalArrayTransform(const std::array<REAL, DIM> &dir)
-      : dir(dir) {};
+      : dir(dir){};
 
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
@@ -199,7 +199,7 @@ struct UnaryArrayOperatorTransform
     : AbstractUnaryArrayTransform<DIM_IN, DIM_OUT> {
 
   UnaryArrayOperatorTransform() = default;
-  UnaryArrayOperatorTransform<DIM_IN, DIM_OUT, OP>(const OP &op) : op(op){};
+  UnaryArrayOperatorTransform(const OP &op) : op(op){};
 
   std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM_IN> &input) const {
 
@@ -221,7 +221,7 @@ struct UnaryElementwiseOperatorTransform
     : AbstractUnaryArrayTransform<DIM, DIM> {
 
   UnaryElementwiseOperatorTransform() = default;
-  UnaryElementwiseOperatorTransform<DIM, OP>(const OP &op) : op(op){};
+  UnaryElementwiseOperatorTransform(const OP &op) : op(op){};
 
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
@@ -252,8 +252,7 @@ struct BinaryArrayOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, DIM_OUT> {
 
   BinaryArrayOperatorTransform() = default;
-  BinaryArrayOperatorTransform<DIM1, DIM2, DIM_OUT, OP>(const OP &op)
-      : op(op){};
+  BinaryArrayOperatorTransform(const OP &op) : op(op){};
 
   std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM1> &input_1,
                                   const std::array<REAL, DIM2> &input_2) const {
@@ -278,7 +277,7 @@ struct BinaryElementwiseOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, std::max(DIM1, DIM2)> {
 
   BinaryElementwiseOperatorTransform() = default;
-  BinaryElementwiseOperatorTransform<DIM1, DIM2, OP>(const OP &op) : op(op) {
+  BinaryElementwiseOperatorTransform(const OP &op) : op(op) {
 
     if constexpr (DIM1 != DIM2) {
 

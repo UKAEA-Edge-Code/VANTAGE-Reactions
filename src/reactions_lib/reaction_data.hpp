@@ -357,8 +357,7 @@ struct ReactionDataBase {
 
   static constexpr size_t get_dim() { return dim; }
 
-  virtual ~ReactionDataBase<ON_DEVICE_TYPE, dim, RNG_TYPE, input_dim>() =
-      default;
+  virtual ~ReactionDataBase() = default;
 
   /**
    * @brief To be implemented by each derived class in order to handle required
