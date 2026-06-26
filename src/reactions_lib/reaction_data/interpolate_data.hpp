@@ -456,7 +456,7 @@ struct InterpolateData
                   const std::array<size_t, interp_ndim> &interp_indices,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
       : InterpolateData(dims_vec, ranges_vec, interp_indices, sycl_target,
-                        interp_data, ExtrapolationType::continue_linear) {};
+                        interp_data, ExtrapolationType::continue_linear){};
 
   /**
    * \overload

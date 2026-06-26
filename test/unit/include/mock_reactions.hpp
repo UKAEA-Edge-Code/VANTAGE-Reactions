@@ -9,7 +9,7 @@ using namespace VANTAGE::Reactions;
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
 
   TestReactionDataOnDevice() = default;
-  TestReactionDataOnDevice(REAL rate) : rate(rate) {};
+  TestReactionDataOnDevice(REAL rate) : rate(rate){};
 
   std::array<REAL, 1>
   calc_data(const Access::LoopIndex::Read &index,

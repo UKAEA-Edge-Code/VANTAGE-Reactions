@@ -22,7 +22,7 @@ struct ArrheniusDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param b_coeff REAL-valued power for the Arrhenius rate.
    */
   ArrheniusDataOnDevice(REAL a_coeff, REAL b_coeff)
-      : a_coeff(a_coeff), b_coeff(b_coeff) {};
+      : a_coeff(a_coeff), b_coeff(b_coeff){};
 
   /**
    * @brief Function to calculate the reaction rate for an Arrhenius rate

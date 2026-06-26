@@ -23,8 +23,8 @@ inline auto mesh_sycl_target_only() {
 }
 
 template <size_t ndim = 2>
-inline auto create_test_particle_group(int N_total)
-    -> std::shared_ptr<ParticleGroup> {
+inline auto
+create_test_particle_group(int N_total) -> std::shared_ptr<ParticleGroup> {
 
   auto dims = std::vector<int>(ndim, 2);
 

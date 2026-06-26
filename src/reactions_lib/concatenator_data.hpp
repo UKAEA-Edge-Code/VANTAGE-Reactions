@@ -27,7 +27,7 @@ struct ConcatenatorDataOnDevice
   ConcatenatorDataOnDevice() = default;
   ConcatenatorDataOnDevice(DATATYPE... data)
       : CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
-                              DATATYPE...>(data...) {};
+                              DATATYPE...>(data...){};
 
   static const size_t DIM = total_dim<DATATYPE...>();
 

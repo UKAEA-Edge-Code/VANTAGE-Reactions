@@ -39,7 +39,7 @@ struct UnaryArrayTransformDataOnDevice
    * @param transform The transform object to be applied
    */
   UnaryArrayTransformDataOnDevice(const TRANSFORM &transform)
-      : transform(transform) {};
+      : transform(transform){};
 
   /**
    * @brief Return the result of applying the contained transform on the input
