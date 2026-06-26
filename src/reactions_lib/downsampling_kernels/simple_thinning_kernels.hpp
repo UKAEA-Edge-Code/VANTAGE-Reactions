@@ -33,7 +33,7 @@ struct SimpleThinningOnDevice
    */
   SimpleThinningOnDevice(REAL thinning_ratio)
       : inverse_thinning_ratio(1 / thinning_ratio),
-        thinning_ratio(thinning_ratio){};
+        thinning_ratio(thinning_ratio) {};
 
   /**
    * @brief Apply the thinning algorithm

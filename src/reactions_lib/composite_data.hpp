@@ -27,7 +27,7 @@ struct CompositeDataOnDevice
 
   CompositeDataOnDevice() = default;
 
-  CompositeDataOnDevice(DATATYPE... data) : data(Tuple::to_tuple(data...)){};
+  CompositeDataOnDevice(DATATYPE... data) : data(Tuple::to_tuple(data...)) {};
 
 protected:
   Tuple::Tuple<DATATYPE...> data;
@@ -66,7 +66,7 @@ struct CompositeData
    * @param data Variadic argument with all of the contained ReactionData
    * objects
    */
-  CompositeData(DATATYPE... data) : data(std::make_tuple(data...)){};
+  CompositeData(DATATYPE... data) : data(std::make_tuple(data...)) {};
 
   /**
    * @brief To be called by derived class constructors to access virtual

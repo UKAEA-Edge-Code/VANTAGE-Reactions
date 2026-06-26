@@ -20,7 +20,7 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    *
    * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedCoefficientDataOnDevice(REAL rate) : rate(rate){};
+  FixedCoefficientDataOnDevice(REAL rate) : rate(rate) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate

@@ -38,7 +38,7 @@ struct FilteredMaxwellianOnDevice
    */
   FilteredMaxwellianOnDevice(const REAL &norm_ratio,
                              CROSS_SECTION cross_section)
-      : norm_ratio(norm_ratio), cross_section(cross_section){};
+      : norm_ratio(norm_ratio), cross_section(cross_section) {};
 
   /**
    * @brief Function to calculate the sampled ion velocities from a filtered

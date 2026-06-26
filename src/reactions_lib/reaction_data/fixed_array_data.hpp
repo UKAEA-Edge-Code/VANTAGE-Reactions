@@ -20,7 +20,7 @@ struct FixedArrayDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
    *
    * @param data REAL-valued array this object will returns.
    */
-  FixedArrayDataOnDevice(const std::array<REAL, ndim> &data) : data(data){};
+  FixedArrayDataOnDevice(const std::array<REAL, ndim> &data) : data(data) {};
 
   /**
    * @brief Returns fixed array

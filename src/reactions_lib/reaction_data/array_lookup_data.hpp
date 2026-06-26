@@ -33,7 +33,7 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
    */
   ArrayLookupDataOnDevice(const int &key_comp,
                           const std::array<REAL, N> &default_data)
-      : key_comp(key_comp), default_data(default_data){};
+      : key_comp(key_comp), default_data(default_data) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction

@@ -117,7 +117,7 @@ struct ReactionController {
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector<std::shared_ptr<TransformationWrapper>>{},
-            auto_clean_tot_rate_buffer, properties_map){};
+            auto_clean_tot_rate_buffer, properties_map) {};
 
   /**
    * \overload
@@ -139,7 +139,7 @@ struct ReactionController {
       : ReactionController(
             std::vector<std::shared_ptr<TransformationWrapper>>{},
             std::vector{child_transform}, auto_clean_tot_rate_buffer,
-            properties_map){};
+            properties_map) {};
 
   /**
    * \overload
@@ -162,7 +162,7 @@ struct ReactionController {
       const std::map<int, std::string> &properties_map = get_default_map())
       : ReactionController(std::vector{parent_transform},
                            std::vector{child_transform},
-                           auto_clean_tot_rate_buffer, properties_map){};
+                           auto_clean_tot_rate_buffer, properties_map) {};
 
   /**
    * @brief Function to populate the sub_group_selectors map and
