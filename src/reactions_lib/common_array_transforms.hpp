@@ -199,7 +199,7 @@ struct UnaryArrayOperatorTransform
     : AbstractUnaryArrayTransform<DIM_IN, DIM_OUT> {
 
   UnaryArrayOperatorTransform() = default;
-  UnaryArrayOperatorTransform<DIM_IN, DIM_OUT, OP>(const OP &op) : op(op){};
+  UnaryArrayOperatorTransform(const OP &op) : op(op) {};
 
   std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM_IN> &input) const {
 
@@ -221,7 +221,7 @@ struct UnaryElementwiseOperatorTransform
     : AbstractUnaryArrayTransform<DIM, DIM> {
 
   UnaryElementwiseOperatorTransform() = default;
-  UnaryElementwiseOperatorTransform<DIM, OP>(const OP &op) : op(op){};
+  UnaryElementwiseOperatorTransform(const OP &op) : op(op) {};
 
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
@@ -252,8 +252,7 @@ struct BinaryArrayOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, DIM_OUT> {
 
   BinaryArrayOperatorTransform() = default;
-  BinaryArrayOperatorTransform<DIM1, DIM2, DIM_OUT, OP>(const OP &op)
-      : op(op){};
+  BinaryArrayOperatorTransform(const OP &op) : op(op) {};
 
   std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM1> &input_1,
                                   const std::array<REAL, DIM2> &input_2) const {
@@ -278,7 +277,7 @@ struct BinaryElementwiseOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, std::max(DIM1, DIM2)> {
 
   BinaryElementwiseOperatorTransform() = default;
-  BinaryElementwiseOperatorTransform<DIM1, DIM2, OP>(const OP &op) : op(op) {
+  BinaryElementwiseOperatorTransform(const OP &op) : op(op) {
 
     if constexpr (DIM1 != DIM2) {
 
