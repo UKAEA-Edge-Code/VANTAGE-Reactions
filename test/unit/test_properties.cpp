@@ -381,7 +381,7 @@ TEST(Properties, properties_map_setting) {
   for (auto prop : returned_property_map) {
     EXPECT_EQ(count, prop.first);
     count++;
-    char test_prop[11];
+    char test_prop[20];
     std::sprintf(test_prop, "TEST_PROP%d", count);
     EXPECT_STREQ(test_prop, prop.second.c_str());
   }
