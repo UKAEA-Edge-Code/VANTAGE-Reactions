@@ -12,6 +12,8 @@
 #include "../reactions_lib/data_calculator.hpp"
 #include "../reactions_lib/downsampling_base.hpp"
 #include "../reactions_lib/merge_transformation.hpp"
+#include "../reactions_lib/pair_data_calculator.hpp"
+#include "../reactions_lib/pair_reaction_data.hpp"
 #include "../reactions_lib/particle_properties_map.hpp"
 #include "../reactions_lib/particle_spec_builder.hpp"
 #include "../reactions_lib/pipeline_data.hpp"
@@ -26,6 +28,7 @@
 #include "../reactions_lib/utils.hpp"
 
 #include "../reactions_lib/cross_sections/AMJUEL_fit_cs.hpp"
+#include "../reactions_lib/cross_sections/constant_cs.hpp"
 #include "../reactions_lib/cross_sections/constant_rate_cs.hpp"
 
 #include "../reactions_lib/reaction_data/AMJUEL_1D_data.hpp"
@@ -46,6 +49,8 @@
 #include "../reactions_lib/reaction_data/specular_reflection_data.hpp"
 #include "../reactions_lib/reaction_data/spherical_basis_reflection_data.hpp"
 #include "../reactions_lib/reaction_data/trim_eval_data.hpp"
+
+#include "../reactions_lib/pair_reaction_data/cs_pair_reaction_data.hpp"
 
 #include "../reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"

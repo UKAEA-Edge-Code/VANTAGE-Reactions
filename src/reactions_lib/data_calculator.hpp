@@ -73,8 +73,10 @@ struct DataCalculator : public AbstractDataCalculator {
    * @param buffer NDLocalArray buffer - size should conform to the stored
    * ReactionData tuple size
    * @param particle_sub_group Particle subgroup used to fill out the buffer
-   * @param cell_idx Cell index for which to invoke the corresponding particle
-   * loops
+   * @param cell_idx_start Cell index from which to invoke the corresponding
+   * particle loops
+   * @param cell_idx_end Cell index to which to invoke the corresponding
+   * particle loops
    */
   void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
                    ParticleSubGroupSharedPtr particle_sub_group,

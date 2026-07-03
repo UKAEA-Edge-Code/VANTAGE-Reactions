@@ -46,6 +46,20 @@ struct AbstractCrossSection {
   };
 
   /**
+   * @brief Get the greedy maximum value of sigma*v_r where sigma is this
+   * cross-section evaluated at v_r and v_r is the relative speed of the
+   * projectile and target. This should (in most cases) be implemented to return
+   * values less than or equal to the one with get_max_rate_val()
+   *
+   * @param relative_vel Magnitude of relative velocity of the projectile and
+   * target
+   * @return REAL-valued maximum rate
+   */
+  REAL get_max_rate_val(REAL relative_vel) const {
+    // TODO: check if this still causes issues (see workarounds below)
+    return this->get_max_rate_val();
+  };
+  /**
    * @brief Accept-reject function for when this cross-section is used in
    * rejection methods. Accepts if the uniform random number on (0,1) is less
    * than the ratio of sigma*v evaluated at a given relative speed to the

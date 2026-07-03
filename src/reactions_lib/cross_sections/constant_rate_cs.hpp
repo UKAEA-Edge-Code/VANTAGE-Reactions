@@ -35,7 +35,6 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
 
   /**
    * @brief Returns maximum value of the rate sigma*v of for this cross-section.
-   * This is constant in this class.
    *
    * @return REAL-valued constant (plus floating point error to account for
    * potential use in explicit rejection methods).
