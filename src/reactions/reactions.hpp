@@ -14,6 +14,7 @@
 #include "../reactions_lib/merge_transformation.hpp"
 #include "../reactions_lib/pair_data_calculator.hpp"
 #include "../reactions_lib/pair_reaction_data.hpp"
+#include "../reactions_lib/pair_reaction_kernels.hpp"
 #include "../reactions_lib/particle_properties_map.hpp"
 #include "../reactions_lib/particle_spec_builder.hpp"
 #include "../reactions_lib/pipeline_data.hpp"
