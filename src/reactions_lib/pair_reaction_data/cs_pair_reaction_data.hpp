@@ -15,10 +15,10 @@ namespace VANTAGE::Reactions {
  * particle pair
  *
  * @tparam vel_ndim The velocity space dimensionality
- * @tparam CROSS_SECTION The typename corresponding to the cross-section class
+ * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class
  * used
  */
-template <size_t vel_ndim, typename CROSS_SECTION>
+template <size_t vel_ndim, typename CROSS_SECTION_T>
 struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
 
   CSPairDataOnDevice() = default;
@@ -28,7 +28,7 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
    * @param cross_section Cross section object to be used in the rejection
    * method sampling
    */
-  CSPairDataOnDevice(CROSS_SECTION cross_section)
+  CSPairDataOnDevice(CROSS_SECTION_T cross_section)
       : cross_section(cross_section) {};
 
   std::array<REAL, 1>
@@ -62,19 +62,19 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
 
 public:
   int velocity_ind_a, velocity_ind_b;
-  CROSS_SECTION cross_section;
+  CROSS_SECTION_T cross_section;
 };
 
 /**
  * @brief Reaction class computing the sigma * v_r value for each particle pair
  *
  * @tparam vel_ndim The velocity space dimensionality
- * @tparam CROSS_SECTION The typename corresponding to the cross-section class
+ * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class
  * used
  */
-template <size_t vel_ndim, typename CROSS_SECTION = ConstantRateCrossSection>
-struct CSPairData
-    : public PairReactionDataBase<CSPairDataOnDevice<vel_ndim, CROSS_SECTION>> {
+template <size_t vel_ndim, typename CROSS_SECTION_T = ConstantRateCrossSection>
+struct CSPairData : public PairReactionDataBase<
+                        CSPairDataOnDevice<vel_ndim, CROSS_SECTION_T>> {
 
   constexpr static auto props = default_properties;
 
@@ -88,15 +88,15 @@ struct CSPairData
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names.
    */
-  CSPairData(CROSS_SECTION cross_section,
+  CSPairData(CROSS_SECTION_T cross_section,
              std::map<int, std::string> properties_map = get_default_map())
-      : PairReactionDataBase<CSPairDataOnDevice<vel_ndim, CROSS_SECTION>>(
+      : PairReactionDataBase<CSPairDataOnDevice<vel_ndim, CROSS_SECTION_T>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
     this->on_device_obj =
-        CSPairDataOnDevice<vel_ndim, CROSS_SECTION>(cross_section);
+        CSPairDataOnDevice<vel_ndim, CROSS_SECTION_T>(cross_section);
 
-    static_assert(std::is_base_of_v<AbstractCrossSection, CROSS_SECTION>,
-                  "Template parameter CROSS_SECTION is not derived from "
+    static_assert(std::is_base_of_v<AbstractCrossSection, CROSS_SECTION_T>,
+                  "Template parameter CROSS_SECTION_T is not derived from "
                   "AbstractCrossSection...");
 
     this->index_on_device_object();

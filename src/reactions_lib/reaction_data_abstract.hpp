@@ -82,13 +82,13 @@ constexpr bool check_abstract_calc_data_return_type() {
   }
 }
 
-template <typename ON_DEVICE_TYPE, typename ARGUMENT_PACK, size_t dim = 1,
-          typename RNG_TYPE = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
+template <typename ON_DEVICE_T, typename ARGUMENT_PACK_T, size_t dim = 1,
+          typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
 struct AbstractReactionData {
 
-  using RNG_KERNEL_TYPE = RNG_TYPE;
-  using ARG_PACK = ARGUMENT_PACK;
-  using ON_DEVICE_OBJ_TYPE = ON_DEVICE_TYPE;
+  using RNG_KERNEL_TYPE = RNG_KERNEL_T;
+  using ARGUMENT_PACK_TYPE = ARGUMENT_PACK_T;
+  using ON_DEVICE_OBJ_TYPE = ON_DEVICE_T;
   static const size_t DIM = dim;
   static const size_t INPUT_DIM = input_dim;
 
@@ -97,47 +97,47 @@ struct AbstractReactionData {
    * parameter signature and return type expected by this host base class.
    */
   static constexpr bool validate_on_device_type() {
-    if constexpr (ON_DEVICE_TYPE::INPUT_DIM > 0) {
-      using input_t = const std::array<typename ON_DEVICE_TYPE::INPUT_TYPE,
-                                       ON_DEVICE_TYPE::INPUT_DIM> &;
+    if constexpr (ON_DEVICE_T::INPUT_DIM > 0) {
+      using input_t = const std::array<typename ON_DEVICE_T::INPUT_TYPE,
+                                       ON_DEVICE_T::INPUT_DIM> &;
 
       static_assert(is_abstract_calc_data_callable_v<
-                        ON_DEVICE_TYPE, input_t,
-                        const typename ON_DEVICE_TYPE::ACC_PACK &,
-                        typename RNG_TYPE::KernelType &>,
-                    "ON_DEVICE_TYPE::calc_data parameter signature mismatch");
+                        ON_DEVICE_T, input_t,
+                        const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
+                        typename RNG_KERNEL_T::KernelType &>,
+                    "ON_DEVICE_T::calc_data parameter signature mismatch");
 
-      static_assert(check_abstract_calc_data_return_type<
-                        ON_DEVICE_TYPE,
-                        std::array<typename ON_DEVICE_TYPE::VALUE_TYPE,
-                                   ON_DEVICE_TYPE::DIM>,
-                        input_t, const typename ON_DEVICE_TYPE::ACC_PACK &,
-                        typename RNG_TYPE::KernelType &>(),
-                    "ON_DEVICE_TYPE::calc_data return type mismatch");
+      static_assert(
+          check_abstract_calc_data_return_type<
+              ON_DEVICE_T,
+              std::array<typename ON_DEVICE_T::VALUE_TYPE, ON_DEVICE_T::DIM>,
+              input_t, const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
+              typename RNG_KERNEL_T::KernelType &>(),
+          "ON_DEVICE_T::calc_data return type mismatch");
     }
     return true;
   }
 
   AbstractReactionData(
-      ARGUMENT_PACK argument_pack,
+      ARGUMENT_PACK_T argument_pack,
       std::map<int, std::string> properties_map = get_default_map())
       : argument_pack(argument_pack), properties_map(properties_map) {
 
     static_assert(validate_on_device_type());
-    this->rng_kernel = std::make_shared<RNG_TYPE>();
+    this->rng_kernel = std::make_shared<RNG_KERNEL_T>();
   }
 
-  ARGUMENT_PACK get_arg_pack() { return this->argument_pack; }
-  void set_arg_pack(const ARGUMENT_PACK &argument_pack) {
+  ARGUMENT_PACK_T get_arg_pack() { return this->argument_pack; }
+  void set_arg_pack(const ARGUMENT_PACK_T &argument_pack) {
     this->argument_pack = argument_pack;
     this->index_on_device_object();
   }
 
-  void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
+  void set_rng_kernel(std::shared_ptr<RNG_KERNEL_T> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
 
-  std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
+  std::shared_ptr<RNG_KERNEL_T> get_rng_kernel() { return this->rng_kernel; }
 
   static constexpr size_t get_dim() { return dim; }
 
@@ -153,7 +153,7 @@ struct AbstractReactionData {
    * @brief Getter for the SYCL device-specific
    * struct.
    */
-  const ON_DEVICE_TYPE &get_on_device_obj() {
+  const ON_DEVICE_T &get_on_device_obj() {
 
     NESOASSERT(this->on_device_obj.has_value(),
                "on_device_obj in AbstractReactionData not initialised");
@@ -161,20 +161,20 @@ struct AbstractReactionData {
   }
 
 protected:
-  std::optional<ON_DEVICE_TYPE> on_device_obj;
-  ARGUMENT_PACK argument_pack;
-  std::shared_ptr<RNG_TYPE> rng_kernel;
+  std::optional<ON_DEVICE_T> on_device_obj;
+  ARGUMENT_PACK_T argument_pack;
+  std::shared_ptr<RNG_KERNEL_T> rng_kernel;
   std::map<int, std::string> properties_map;
 };
 
-template <typename ACCESSOR_PACK, size_t dim = 1,
-          typename RNG_TYPE = DEFAULT_RNG_KERNEL, size_t input_dim = 0,
-          typename VAL_TYPE = REAL, typename IN_TYPE = REAL>
+template <typename ACCESSOR_PACK_T, size_t dim = 1,
+          typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL, size_t input_dim = 0,
+          typename VALUE_T = REAL, typename INPUT_T = REAL>
 struct AbstractReactionDataOnDevice {
-  using RNG_KERNEL_TYPE = RNG_TYPE;
-  using ACC_PACK = ACCESSOR_PACK;
-  using VALUE_TYPE = VAL_TYPE;
-  using INPUT_TYPE = IN_TYPE;
+  using RNG_KERNEL_TYPE = RNG_KERNEL_T;
+  using ACCESSOR_PACK_TYPE = ACCESSOR_PACK_T;
+  using VALUE_TYPE = VALUE_T;
+  using INPUT_TYPE = INPUT_T;
   static const size_t DIM = dim;
   static const size_t INPUT_DIM = input_dim;
 
@@ -182,18 +182,18 @@ struct AbstractReactionDataOnDevice {
 
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D == 0) && D == INPUT_DIM, int> = 0>
-  std::array<VAL_TYPE, dim>
-  calc_data(const ACCESSOR_PACK &accessor_pack,
-            typename RNG_TYPE::KernelType &rng_kernel) const {
+  std::array<VALUE_T, dim>
+  calc_data(const ACCESSOR_PACK_T &accessor_pack,
+            typename RNG_KERNEL_T::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
   }
 
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D > 0) && D == INPUT_DIM, int> = 0>
-  std::array<VAL_TYPE, dim>
-  calc_data(const std::array<IN_TYPE, INPUT_DIM> &input,
-            const ACCESSOR_PACK &accessor_pack,
-            typename RNG_TYPE::KernelType &rng_kernel) const {
+  std::array<VALUE_T, dim>
+  calc_data(const std::array<INPUT_T, INPUT_DIM> &input,
+            const ACCESSOR_PACK_T &accessor_pack,
+            typename RNG_KERNEL_T::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
   }
   static constexpr size_t get_dim() { return dim; }
