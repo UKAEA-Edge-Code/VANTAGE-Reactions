@@ -44,11 +44,7 @@
  *            |
  *            v
  *
- *            L2
- *            |
- *           (x)
- *            |
- *            L1
+ *     L1 ---(x) --- L2
  *
  *            |
  *            |
@@ -57,19 +53,19 @@
  *           (x)
  *
  * The underlying maths of the contraction (simplified here) is:
- * f(P1) = linear_interp(x(0), V1, V5, f(V1), f(V5))
- * f(P4) = linear_interp(x(0), V3, V7, f(V3), f(V7))
- * f(P2) = linear_interp(x(0), V2, V6, f(V2), f(V6))
- * f(P3) = linear_interp(x(0), V4, V8, f(V4), f(V8))
+ * f(P1) = linear_interp(x(2), V1, V5, f(V1), f(V5))
+ * f(P4) = linear_interp(x(2), V3, V7, f(V3), f(V7))
+ * f(P2) = linear_interp(x(2), V2, V6, f(V2), f(V6))
+ * f(P3) = linear_interp(x(2), V4, V8, f(V4), f(V8))
  *
  * then
  *
- * f(L1) = linear_interp(x(1), P1, P2, f(P1), f(P2))
- * f(L2) = linear_interp(x(1), P4, P3, f(P4), f(P3))
+ * f(L1) = linear_interp(x(1), P1, P4, f(P1), f(P4))
+ * f(L2) = linear_interp(x(1), P2, P3, f(P2), f(P3))
  *
  * finally
  *
- * f(x) = linear_interp(x(2), L1, L2, f(L1), f(L2))
+ * f(x) = linear_interp(x(0), L1, L2, f(L1), f(L2))
  *
  * Note x(0), x(1) and x(2) simply refers to the components of the 3D vector x
  * corresponding to the dimension that's being contracted.
