@@ -31,41 +31,16 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
   CSPairDataOnDevice(CROSS_SECTION cross_section)
       : cross_section(cross_section) {};
 
-  /**
-   * @brief Calculate sigma * v_r for a given pair of particles and given
-   * cross-section
-   *
-   * @param index Read-only accessor to a pair loop index for a ParticlePairLoop
-   * inside which calc_data is called. Access using
-   * index.get_loop_linear_index().
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction data calculation.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction data calculation.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction data calculation.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction data calculation.
-   * @param rng_kernel The random number generator kernel potentially used in
-   * the calculation
-   *
-   * @return A REAL-valued array of size dim containing the calculated reaction
-   * rate.
-   */
   std::array<REAL, 1>
-  calc_data(const Access::PairLoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props_a,
-            const Access::SymVector::Read<REAL> &req_real_props_a,
-            const Access::SymVector::Write<INT> &req_int_props_b,
-            const Access::SymVector::Read<REAL> &req_real_props_b,
+  calc_data(const PairReactionDataAccessors &accessor_pack,
             typename PairReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &rng_kernel) const {
 
     REAL rel_speed = 0;
     REAL rel_vel;
     for (int i = 0; i < vel_ndim; i++) {
-      rel_vel = req_real_props_a.at(this->velocity_ind_a, i) -
-                req_real_props_b.at(this->velocity_ind_b, i);
+      rel_vel = accessor_pack.req_real_props_a.at(this->velocity_ind_a, i) -
+                accessor_pack.req_real_props_b.at(this->velocity_ind_b, i);
       rel_speed += rel_vel * rel_vel;
     }
     rel_speed = Kernel::sqrt(rel_speed);
@@ -140,12 +115,13 @@ struct CSPairData
    */
   void index_on_device_object() {
 
+    auto arg_pack = this->get_arg_pack();
     this->on_device_obj->velocity_ind_a =
-        this->required_real_props_a.find_index(
+        arg_pack.required_real_props_a.find_index(
             this->properties_map.at(props.velocity));
 
     this->on_device_obj->velocity_ind_b =
-        this->required_real_props_b.find_index(
+        arg_pack.required_real_props_b.find_index(
             this->properties_map.at(props.velocity));
   };
 };

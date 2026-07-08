@@ -54,17 +54,18 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
           size_t dat_idx = 0u;
           (
               [&] {
+                auto arg_pack = args.get_arg_pack();
                 this->data_loop_int_syms_a.push_back(
-                    args.get_required_int_sym_vector_a());
+                    arg_pack.required_int_props_a.to_sym_vector());
 
                 this->data_loop_real_syms_a.push_back(
-                    args.get_required_real_sym_vector_a());
+                    arg_pack.required_real_props_a.to_sym_vector());
 
                 this->data_loop_int_syms_b.push_back(
-                    args.get_required_int_sym_vector_b());
+                    arg_pack.required_int_props_b.to_sym_vector());
 
                 this->data_loop_real_syms_b.push_back(
-                    args.get_required_real_sym_vector_b());
+                    arg_pack.required_real_props_b.to_sym_vector());
                 dat_idx++;
               }(),
               ...);
@@ -107,10 +108,11 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
                         auto req_real_props_a, auto req_int_props_b,
                         auto req_real_props_b, auto buffer, auto kernel) {
                       INT current_count = pair_index.get_loop_linear_index();
+                      auto accessors = PairReactionDataAccessors(
+                          pair_index, req_int_props_a, req_real_props_a,
+                          req_int_props_b, req_real_props_b);
                       std::array<REAL, data_dim> rate =
-                          reaction_data_on_device.calc_data(
-                              pair_index, req_int_props_a, req_real_props_a,
-                              req_int_props_b, req_real_props_b, kernel);
+                          reaction_data_on_device.calc_data(accessors, kernel);
                       for (auto i = 0; i < data_dim; i++) {
                         buffer.at(current_count, dat_dim_idx + i) = rate[i];
                       }
