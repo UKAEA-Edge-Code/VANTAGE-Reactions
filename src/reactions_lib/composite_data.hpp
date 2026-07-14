@@ -21,9 +21,19 @@ namespace VANTAGE::Reactions {
 template <size_t dim, size_t input_dim, typename VAL_TYPE, typename IN_TYPE,
           typename... DATATYPE>
 struct CompositeDataOnDevice
-    : public ReactionDataBaseOnDevice<
+    : public AbstractReactionDataOnDevice<
+          typename std::tuple_element_t<
+              0, std::tuple<DATATYPE...>>::ACCESSOR_PACK_TYPE,
           dim, TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
           input_dim, VAL_TYPE, IN_TYPE> {
+
+  static_assert(
+      (std::is_same_v<typename std::tuple_element_t<
+                          0, std::tuple<DATATYPE...>>::ACCESSOR_PACK_TYPE,
+                      typename DATATYPE::ACCESSOR_PACK_TYPE> &&
+       ...),
+      "All contained on-device data objects must use the same "
+      "ACCESSOR_PACK_TYPE.");
 
   CompositeDataOnDevice() = default;
 
@@ -55,27 +65,57 @@ get_on_device_objs(std::tuple<DATATYPE...> &data) {
 template <typename ON_DEVICE_TYPE, size_t dim, size_t input_dim,
           typename... DATATYPE>
 struct CompositeData
-    : public ReactionDataBase<
-          ON_DEVICE_TYPE, dim,
-          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+    : public AbstractReactionData<
+          ON_DEVICE_TYPE,
+          typename std::tuple_element_t<
+              0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE,
+          dim, TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
           input_dim> {
 
+  using ARGUMENT_PACK_TYPE = typename std::tuple_element_t<
+      0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE;
+
+  static_assert(
+      (std::is_same_v<typename std::tuple_element_t<
+                          0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE,
+                      typename DATATYPE::ARGUMENT_PACK_TYPE> &&
+       ...),
+      "All contained ReactionData objects must use the same "
+      "ARGUMENT_PACK_TYPE.");
   /**
    * @brief Constructor for CompositeData
    *
    * @param data Variadic argument with all of the contained ReactionData
    * objects
    */
-  CompositeData(DATATYPE... data) : data(std::make_tuple(data...)) {};
+  CompositeData(DATATYPE... data)
+      : AbstractReactionData<
+            ON_DEVICE_TYPE, ARGUMENT_PACK_TYPE, dim,
+            TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+            input_dim>(ARGUMENT_PACK_TYPE(), get_default_map()),
+        data(std::make_tuple(data...)) {};
 
   /**
-   * @brief To be called by derived class constructors to access virtual
-   * index_on_device_object() table
+   * @brief To be called by derived class constructors to set up the merged
+   * argument pack and RNG kernel from the contained child data objects.
    */
   void post_init() {
 
-    this->set_required_int_props(this->get_required_int_props_children());
-    this->set_required_real_props(this->get_required_real_props_children());
+    ARGUMENT_PACK_TYPE merged_pack = this->get_arg_pack();
+    std::apply(
+        [&](auto &&...args) {
+          ((merged_pack = merged_pack.merge_with(args.get_arg_pack())), ...);
+        },
+        this->data);
+
+    // Propagate merged pack to each child (also re-indexes children)
+    std::apply([&](auto &&...args) { ((args.set_arg_pack(merged_pack)), ...); },
+               this->data);
+
+    this->argument_pack = merged_pack;
+
+    this->index_on_device_object();
+
     this->set_rng_kernel(std::apply(
         tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
         this->get_rng_kernels_children()));
@@ -87,54 +127,17 @@ struct CompositeData
    */
   virtual void index_on_device_object() {};
 
+  void set_arg_pack(const ARGUMENT_PACK_TYPE &argument_pack) {
+    this->argument_pack = argument_pack;
+    this->post_init();
+  }
+
   std::tuple<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>
   get_rng_kernels_children() {
 
     return std::apply(
         [](auto &&...args) { return std::tuple(args.get_rng_kernel()...); },
         this->data);
-  }
-
-  ArgumentNameSet<REAL> get_required_real_props_children() {
-
-    auto new_set = ArgumentNameSet<REAL>();
-
-    std::apply(
-        [&](auto &&...args) {
-          ((new_set = new_set.merge_with(args.get_required_real_props())), ...);
-        },
-        this->data);
-
-    return new_set;
-  }
-
-  ArgumentNameSet<INT> get_required_int_props_children() {
-
-    auto new_set = ArgumentNameSet<INT>();
-
-    std::apply(
-        [&](auto &&...args) {
-          ((new_set = new_set.merge_with(args.get_required_int_props())), ...);
-        },
-        this->data);
-
-    return new_set;
-  }
-
-  void set_required_int_props(const ArgumentNameSet<INT> &props) {
-    this->required_int_props = props;
-    std::apply(
-        [&](auto &&...args) { ((args.set_required_int_props(props)), ...); },
-        this->data);
-    this->index_on_device_object();
-  }
-
-  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
-    this->required_real_props = props;
-    std::apply(
-        [&](auto &&...args) { ((args.set_required_real_props(props)), ...); },
-        this->data);
-    this->index_on_device_object();
   }
 
 protected:

@@ -40,11 +40,12 @@ struct DataCalculator : public AbstractDataCalculator {
         [&] {
           static_assert(
               std::is_base_of_v<
-                  ReactionDataBase<typename decltype(data)::ON_DEVICE_OBJ_TYPE,
-                                   data.get_dim(),
-                                   typename decltype(data)::RNG_KERNEL_TYPE>,
+                  AbstractReactionData<
+                      typename decltype(data)::ON_DEVICE_OBJ_TYPE,
+                      typename decltype(data)::ARGUMENT_PACK_TYPE,
+                      data.get_dim(), typename decltype(data)::RNG_KERNEL_TYPE>,
                   decltype(data)>,
-              "DATATYPE provided is not derived from ReactionDataBase.");
+              "DATATYPE provided is not derived from AbstractReactionData.");
           type_check_counter++;
         }(),
         ...);
@@ -55,10 +56,10 @@ struct DataCalculator : public AbstractDataCalculator {
           (
               [&] {
                 this->data_loop_int_syms.push_back(
-                    args.get_required_int_sym_vector());
+                    args.get_arg_pack().required_int_props.to_sym_vector());
 
                 this->data_loop_real_syms.push_back(
-                    args.get_required_real_sym_vector());
+                    args.get_arg_pack().required_real_props.to_sym_vector());
                 dat_idx++;
               }(),
               ...);
@@ -100,10 +101,10 @@ struct DataCalculator : public AbstractDataCalculator {
                         auto req_real_props, auto buffer, auto kernel) {
                       INT current_count =
                           particle_index.get_loop_linear_index();
+                      auto accessors = SingleReactionDataAccessors{
+                          particle_index, req_int_props, req_real_props};
                       std::array<REAL, data_dim> rate =
-                          reaction_data_on_device.calc_data(
-                              particle_index, req_int_props, req_real_props,
-                              kernel);
+                          reaction_data_on_device.calc_data(accessors, kernel);
                       for (auto i = 0; i < data_dim; i++) {
                         buffer.at(current_count, dat_dim_idx + i) = rate[i];
                       }

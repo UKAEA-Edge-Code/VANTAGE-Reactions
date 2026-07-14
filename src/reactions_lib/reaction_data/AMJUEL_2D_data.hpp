@@ -49,29 +49,20 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @brief Function to calculate the reaction rate for a 2D AMJUEL-based
    * reaction.
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
    * @return A REAL-valued array containing the calculated reaction rate.
    */
   std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
-    auto fluid_density_dat =
-        req_real_props.at(this->fluid_density_ind, index, 0);
-    auto fluid_temperature_dat =
-        req_real_props.at(this->fluid_temperature_ind, index, 0);
+    auto fluid_density_dat = accessors.req_real_props.at(
+        this->fluid_density_ind, accessors.index, 0);
+    auto fluid_temperature_dat = accessors.req_real_props.at(
+        this->fluid_temperature_ind, accessors.index, 0);
     REAL log_temp =
         Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
 
@@ -104,8 +95,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
 
     REAL rate = Kernel::exp(log_rate) * 1.0e-6;
 
-    rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
-            this->mult_const;
+    rate *= accessors.req_real_props.at(this->weight_ind, accessors.index, 0) *
+            fluid_density_dat * this->mult_const;
 
     return std::array<REAL, 1>{rate};
   }
@@ -172,15 +163,16 @@ struct AMJUEL2DData : public ReactionDataBase<
   void index_on_device_object() {
 
     this->on_device_obj->fluid_density_ind =
-        this->required_real_props.find_index(
+        this->argument_pack.required_real_props.find_index(
             this->properties_map.at(props.fluid_density));
 
     this->on_device_obj->fluid_temperature_ind =
-        this->required_real_props.find_index(
+        this->argument_pack.required_real_props.find_index(
             this->properties_map.at(props.fluid_temperature));
 
-    this->on_device_obj->weight_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.weight));
+    this->on_device_obj->weight_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->properties_map.at(props.weight));
   };
 };
 }; // namespace VANTAGE::Reactions

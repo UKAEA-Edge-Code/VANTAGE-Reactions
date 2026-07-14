@@ -229,12 +229,13 @@ struct LinearReactionBase : public AbstractReaction {
     // AbstractReactionKernels respectively
     static_assert(
         std::is_base_of_v<
-            ReactionDataBase<typename ReactionData::ON_DEVICE_OBJ_TYPE,
-                             reaction_data.get_dim(),
-                             typename ReactionData::RNG_KERNEL_TYPE>,
+            AbstractReactionData<typename ReactionData::ON_DEVICE_OBJ_TYPE,
+                                 typename ReactionData::ARGUMENT_PACK_TYPE,
+                                 reaction_data.get_dim(),
+                                 typename ReactionData::RNG_KERNEL_TYPE>,
             ReactionData>,
         "Template parameter ReactionData is not derived from "
-        "ReactionDataBase...");
+        "AbstractReactionData...");
     static_assert(std::is_base_of_v<AbstractDataCalculator, DataCalc>,
                   "Template parameter DataCalc is not derived from "
                   "AbstractDataCalculator...");
@@ -251,10 +252,10 @@ struct LinearReactionBase : public AbstractReaction {
     auto reaction_kernel_buffer = this->reaction_kernels;
 
     this->calculate_rates_int_syms =
-        reaction_data_buffer.get_required_int_sym_vector();
+        reaction_data_buffer.get_arg_pack().required_int_props.to_sym_vector();
 
     this->calculate_rates_real_syms =
-        reaction_data_buffer.get_required_real_sym_vector();
+        reaction_data_buffer.get_arg_pack().required_real_props.to_sym_vector();
 
     this->apply_int_syms = utils::build_sym_vector<INT>(
         reaction_kernel_buffer.get_required_int_props());
@@ -354,8 +355,10 @@ struct LinearReactionBase : public AbstractReaction {
         [=](auto particle_index, auto req_int_props, auto req_real_props,
             auto tot_rate, auto buffer, auto kernel) {
           INT current_count = particle_index.get_loop_linear_index();
-          std::array<REAL, data_dim> rate = reaction_data_on_device.calc_data(
-              particle_index, req_int_props, req_real_props, kernel);
+          auto accessors = SingleReactionDataAccessors{
+              particle_index, req_int_props, req_real_props};
+          std::array<REAL, data_dim> rate =
+              reaction_data_on_device.calc_data(accessors, kernel);
           buffer[current_count] = rate[0];
           tot_rate[0] += rate[0];
         },

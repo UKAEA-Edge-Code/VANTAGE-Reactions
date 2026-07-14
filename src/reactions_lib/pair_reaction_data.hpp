@@ -27,7 +27,10 @@ struct PairReactionDataAccessors {
   Access::SymVector::Read<REAL> req_real_props_b;
 };
 
-struct PairReactionDataArgumentPack {
+struct PairReactionDataArgumentPack
+    : AbstractArgumentPack<PairReactionDataArgumentPack> {
+
+  PairReactionDataArgumentPack() = default;
 
   PairReactionDataArgumentPack(ArgumentNameSet<INT> req_int_props_a,
                                ArgumentNameSet<REAL> req_real_props_a,
@@ -37,10 +40,34 @@ struct PairReactionDataArgumentPack {
         required_real_props_a(req_real_props_a),
         required_int_props_b(req_int_props_b),
         required_real_props_b(req_real_props_b) {};
+
+  /**
+   * @brief Merge this pack with another PairReactionDataArgumentPack,
+   * returning a new pack with the union of required properties (merging
+   * the _a and _b property sets separately).
+   */
+  PairReactionDataArgumentPack
+  merge_with_impl(const PairReactionDataArgumentPack &other) const {
+    PairReactionDataArgumentPack result;
+    result.required_int_props_a =
+        this->required_int_props_a.merge_with(other.required_int_props_a);
+    result.required_int_props_b =
+        this->required_int_props_b.merge_with(other.required_int_props_b);
+    result.required_real_props_a =
+        this->required_real_props_a.merge_with(other.required_real_props_a);
+    result.required_real_props_b =
+        this->required_real_props_b.merge_with(other.required_real_props_b);
+    return result;
+  }
+
   ArgumentNameSet<INT> required_int_props_a;
   ArgumentNameSet<REAL> required_real_props_a;
   ArgumentNameSet<INT> required_int_props_b;
   ArgumentNameSet<REAL> required_real_props_b;
+};
+
+template <> struct accessor_pack_for<PairReactionDataArgumentPack> {
+  using type = PairReactionDataAccessors;
 };
 
 using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
@@ -78,8 +105,7 @@ struct PairReactionDataBase
    * regarding the required REAL-based properties of the second particle for the
    * reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * used when remapping property names.
    */
   PairReactionDataBase(
       Properties<INT> required_int_props_a,
@@ -102,8 +128,7 @@ struct PairReactionDataBase
    * properties.
    *
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * used when remapping property names.
    */
   PairReactionDataBase(
       std::map<int, std::string> properties_map = get_default_map())
@@ -119,8 +144,7 @@ struct PairReactionDataBase
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * used when remapping property names.
    */
   PairReactionDataBase(
       Properties<INT> required_int_props,
@@ -137,8 +161,7 @@ struct PairReactionDataBase
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * used when remapping property names.
    */
   PairReactionDataBase(
       Properties<REAL> required_real_props,
@@ -157,8 +180,7 @@ struct PairReactionDataBase
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * used when remapping property names.
    */
   PairReactionDataBase(
       Properties<INT> required_int_props, Properties<REAL> required_real_props,

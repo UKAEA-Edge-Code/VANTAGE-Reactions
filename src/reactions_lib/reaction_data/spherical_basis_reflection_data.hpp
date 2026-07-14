@@ -27,14 +27,7 @@ struct SphericalBasisReflectionDataOnDevice
    * @brief Function to calculate the specularly reflected velocities
    *
    * @param input The v, theta, phi components of the reflected vector
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
@@ -43,17 +36,16 @@ struct SphericalBasisReflectionDataOnDevice
    */
   std::array<REAL, 3>
   calc_data(const std::array<REAL, 3> input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+            const SingleReactionDataAccessors &accessors,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     std::array<REAL, 3> surface_n;
     std::array<REAL, 3> vel;
 
     for (int vdim = 0; vdim < 3; vdim++) {
-      surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
-      vel[vdim] = req_real_props.at(vel_ind, index, vdim);
+      surface_n[vdim] =
+          accessors.req_real_props.at(normal_ind, accessors.index, vdim);
+      vel[vdim] = accessors.req_real_props.at(vel_ind, accessors.index, vdim);
     }
 
     return utils::normal_basis_to_cartesian(
@@ -109,11 +101,13 @@ struct SphericalBasisReflectionData
    */
   void index_on_device_object() {
 
-    this->on_device_obj->normal_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.boundary_intersection_normal));
+    this->on_device_obj->normal_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->properties_map.at(props.boundary_intersection_normal));
 
-    this->on_device_obj->vel_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.velocity));
+    this->on_device_obj->vel_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->properties_map.at(props.velocity));
   };
 };
 }; // namespace VANTAGE::Reactions

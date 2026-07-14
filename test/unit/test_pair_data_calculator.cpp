@@ -283,3 +283,84 @@ TEST(PairDataCalculator, cs_reaction_data_simple_and_constant) {
   A->sycl_target->free();
   A->domain->mesh->free();
 }
+
+// TEST(PairDataCalculator,
+//      cs_reaction_data_simple_and_constant_concatenator_data) {
+//   const int N_total = 800;
+//
+//   auto [A, B] = create_test_particle_groups_pairs(N_total);
+//
+//   particle_loop(
+//       "set_vel_A", A,
+//       [=](auto vel) {
+//         vel[0] = 2;
+//         vel[1] = 0;
+//       },
+//       Access::write(Sym<REAL>("VELOCITY")))
+//       ->execute();
+//
+//   particle_loop(
+//       "set_vel_B", B,
+//       [=](auto vel) {
+//         vel[0] = 4;
+//         vel[1] = 0;
+//       },
+//       Access::write(Sym<REAL>("VELOCITY")))
+//       ->execute();
+//
+//   int cell_count = A->domain->mesh->get_cell_count();
+//
+//   auto cellwise_pair_list =
+//       std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+//
+//   std::vector<int> c;
+//   std::vector<int> i;
+//   std::vector<int> j;
+//
+//   int npart_cell = std::round(A->get_npart_local() /
+//                               (double)A->domain->mesh->get_cell_count());
+//   c.reserve(cell_count * npart_cell);
+//   i.reserve(cell_count * npart_cell);
+//   j.reserve(cell_count * npart_cell);
+//
+//   std::mt19937 rng(9124234 + A->sycl_target->comm_pair.rank_parent);
+//
+//   for (int cellx = 0; cellx < cell_count; cellx++) {
+//     std::vector<int> pairs(npart_cell);
+//     std::iota(pairs.begin(), pairs.end(), 0);
+//     std::shuffle(pairs.begin(), pairs.end(), rng);
+//     for (int px = 0; px < npart_cell; px++) {
+//       c.push_back(cellx);
+//       i.push_back(pairs.at(px));
+//       j.push_back(pairs.at(px));
+//     }
+//   }
+//
+//   cellwise_pair_list->push_back(c, i, j);
+//
+//   auto cs_data = CSPairData<2>(ConstantRateCrossSection(2.5));
+//   auto cs_data_constant =
+//       CSPairData<2, ConstantCrossSection>(ConstantCrossSection(2.5, 1.0));
+//   auto pair_data_calculator =
+//       PairDataCalculator(ConcatenatorData(cs_data, cs_data_constant));
+//
+//   auto nd_arr = std::make_shared<NDLocalArray<REAL, 2>>(
+//       A->sycl_target, cell_count * npart_cell, 2);
+//
+//   nd_arr->fill(0);
+//
+//   auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
+//       A, B, cellwise_pair_list);
+//
+//   pair_data_calculator.fill_buffer(nd_arr, pair_list, 0, cell_count);
+//
+//   auto nd_arr_host = nd_arr->get();
+//
+//   for (int i = 0; i < nd_arr_host.size() - 1; i += 2) {
+//     EXPECT_DOUBLE_EQ(nd_arr_host.at(i), 2.5);
+//     EXPECT_DOUBLE_EQ(nd_arr_host.at(i + 1), 5.0);
+//   }
+//
+//   A->sycl_target->free();
+//   A->domain->mesh->free();
+// }

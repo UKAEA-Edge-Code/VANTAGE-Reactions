@@ -163,14 +163,7 @@ struct InterpolateDataOnDevice
    * @param interpolation_points An array containing all of the values needed
    * for grid-function evaluation. (Both the interpolation points as well as
    * pass-through values)
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation (the kernel type is inherited from the kernel type for
    * DATATYPE)
@@ -180,10 +173,9 @@ struct InterpolateDataOnDevice
    */
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      [[maybe_unused]]
+      const typename CompositeDataOnDevice<
+          output_ndim, interp_ndim + non_interp_ndim, REAL, REAL,
+          DATATYPE>::ACCESSOR_PACK_TYPE &accessors,
       typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
           KernelType &kernel) const {
 
@@ -304,8 +296,8 @@ struct InterpolateDataOnDevice
         vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
         origin_indices_ptr, this->d_hypercube_vertices_ptr,
         this->d_ranges_vec_ptr, non_interpolation_points, this->interp_indices,
-        this->non_interp_indices, this->d_dims_vec_ptr, index, req_int_props,
-        req_real_props, kernel);
+        this->non_interp_indices, this->d_dims_vec_ptr, accessors.index,
+        accessors.req_int_props, accessors.req_real_props, kernel);
 
     std::array<REAL, output_ndim> calculated_interpolated_vals;
     for (size_t i = 0; i < output_ndim; i++) {

@@ -40,11 +40,12 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
         [&] {
           static_assert(
               std::is_base_of_v<
-                  PairReactionDataBase<
+                  AbstractReactionData<
                       typename decltype(data)::ON_DEVICE_OBJ_TYPE,
+                      typename decltype(data)::ARGUMENT_PACK_TYPE,
                       data.get_dim(), typename decltype(data)::RNG_KERNEL_TYPE>,
                   decltype(data)>,
-              "DATATYPE provided is not derived from ReactionDataBase.");
+              "DATATYPE provided is not derived from AbstractReactionData.");
           type_check_counter++;
         }(),
         ...);

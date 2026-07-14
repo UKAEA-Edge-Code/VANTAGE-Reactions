@@ -58,26 +58,18 @@ struct CartesianGridDataOnDevice
    * return the grid value at the computed index.
    *
    * @param input The input coordinate array of size input_ndim.
-   * @param index Read-only accessor to a loop index for a ParticleLoop inside
-   * which calc_data is called (unused for this data type).
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation (unused for this data
-   * type).
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation (unused for this data
-   * type).
+   * @param accessors Bundled accessors for the ParticleLoop (unused for this
+   * data type).
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation (unused for this data type).
    *
    * @return A REAL-valued array of size 1 containing the grid value at the
    * computed flat index.
    */
-  std::array<REAL, 1> calc_data(
-      const std::array<REAL, input_ndim> &input,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
+  std::array<REAL, 1>
+  calc_data(const std::array<REAL, input_ndim> &input,
+            [[maybe_unused]] const SingleReactionDataAccessors &accessors,
+            [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
     std::array<INT, input_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
         input[0], this->d_ranges_ptr, this->d_dims_ptr[0]);

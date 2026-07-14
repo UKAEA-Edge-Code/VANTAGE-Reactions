@@ -82,9 +82,36 @@ constexpr bool check_abstract_calc_data_return_type() {
   }
 }
 
+/**
+ * @brief CRTP base class for argument packs, enforcing a uniform merge_with
+ * interface. Each concrete argument pack (e.g. SingleReactionDataArgumentPack,
+ * PairReactionDataArgumentPack) derives from this and implements
+ * merge_with_impl.
+ *
+ * @tparam Derived The concrete argument pack type.
+ */
+template <typename Derived> struct AbstractArgumentPack {
+
+  /**
+   * @brief Merge this pack with another of the same type, returning a new pack
+   * containing the union of all required properties.
+   *
+   * @param other The pack to merge with.
+   * @return A new pack of type Derived with merged required properties.
+   */
+  Derived merge_with(const Derived &other) const {
+    return static_cast<const Derived *>(this)->merge_with_impl(other);
+  }
+};
+
 template <typename ON_DEVICE_T, typename ARGUMENT_PACK_T, size_t dim = 1,
           typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
 struct AbstractReactionData {
+
+  static_assert(
+      std::is_base_of_v<AbstractArgumentPack<ARGUMENT_PACK_T>, ARGUMENT_PACK_T>,
+      "ARGUMENT_PACK_T must derive from "
+      "AbstractArgumentPack<ARGUMENT_PACK_T>");
 
   using RNG_KERNEL_TYPE = RNG_KERNEL_T;
   using ARGUMENT_PACK_TYPE = ARGUMENT_PACK_T;
@@ -198,6 +225,29 @@ struct AbstractReactionDataOnDevice {
   }
   static constexpr size_t get_dim() { return dim; }
 };
+
+/**
+ * @brief Compile-time mapping from a host-side argument-pack type to its
+ * matching device-side accessor-pack type.
+ *
+ * The primary template is deliberately left undefined so that only the known
+ * (host, device) pack pairings are admissible. The specialisations cover the
+ * single and pair reaction-data pack pairs. Concrete reaction-data leaf types
+ * that are pack-agnostic (e.g. UnaryArrayTransformData) take an
+ * ARGUMENT_PACK_T template argument and derive the accessor pack via
+ * accessor_pack_for_t<ARGUMENT_PACK_T>, so they can sit inside either a single
+ * or a pair pipeline.
+ *
+ * @tparam ARGUMENT_PACK_T A concrete argument-pack type deriving from
+ * AbstractArgumentPack.
+ */
+template <typename ARGUMENT_PACK_T> struct accessor_pack_for;
+
+/**
+ * @brief Convenience alias for accessor_pack_for<ARGUMENT_PACK_T>::type.
+ */
+template <typename ARGUMENT_PACK_T>
+using accessor_pack_for_t = typename accessor_pack_for<ARGUMENT_PACK_T>::type;
 
 }; // namespace VANTAGE::Reactions
 #endif

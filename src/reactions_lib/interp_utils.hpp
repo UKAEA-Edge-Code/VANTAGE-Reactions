@@ -276,9 +276,10 @@ inline void initial_func_eval_on_device(
           non_interpolation_points[i];
     }
 
-    grid_func_output =
-        grid_func_data.calc_data(grid_func_input, index, req_int_props,
-                                 req_real_props, rng_kernel.template get<0>());
+    auto accessors =
+        SingleReactionDataAccessors{index, req_int_props, req_real_props};
+    grid_func_output = grid_func_data.calc_data(grid_func_input, accessors,
+                                                rng_kernel.template get<0>());
 
     for (size_t idim = 0; idim < output_ndim; idim++) {
       vertex_func_evals[(point_index * output_ndim) + idim] =

@@ -94,32 +94,25 @@ struct TrimEvalDataOnDevice
    * interpolation point.
    *
    * @param input The input coordinate array of size input_ndim.
-   * @param index Read-only accessor to a loop index for a ParticleLoop inside
-   * which calc_data is called.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation. The panic counter is
-   * incremented when a TRIM coordinate falls outside 0.0 and 1.0.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation (unused here).
+   * @param accessors Bundled accessors for the ParticleLoop. The panic counter
+   * is incremented when a TRIM coordinate falls outside 0.0 and 1.0.
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation (unused here).
    *
    * @return A REAL-valued array of size output_ndim containing the TRIM values
    * at the interpolation point.
    */
-  std::array<REAL, output_ndim> calc_data(
-      const std::array<REAL, input_ndim> &input,
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
+  std::array<REAL, output_ndim>
+  calc_data(const std::array<REAL, input_ndim> &input,
+            const SingleReactionDataAccessors &accessors,
+            [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
 
     std::array<REAL, output_ndim> input_to_bin;
     std::array<INT, output_ndim> trim_dims_arr;
     for (size_t i = 0; i < output_ndim; i++) {
       input_to_bin[i] = input[i + interp_ndim];
 
-      req_int_props.at(this->panic_ind, index, i) +=
+      accessors.req_int_props.at(this->panic_ind, accessors.index, i) +=
           ((input_to_bin[i] < 0.0) || (input_to_bin[i] >= 1.0)) ? 1 : 0;
 
       input_to_bin[i] = ((input_to_bin[i] < 0.0) || (input_to_bin[i] >= 1.0))
@@ -307,8 +300,9 @@ struct TrimEvalData
   }
 
   void index_on_device_obj() {
-    this->on_device_obj->panic_ind = this->required_int_props.find_index(
-        this->properties_map.at(props.panic));
+    this->on_device_obj->panic_ind =
+        this->argument_pack.required_int_props.find_index(
+            this->properties_map.at(props.panic));
   };
 
 public:

@@ -40,16 +40,19 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
 
   auto particle_group = create_test_particle_group(1000);
 
-  auto req_int_props_ = sampler.get_required_int_sym_vector();
+  auto req_int_props_ =
+      sampler.get_arg_pack().required_int_props.to_sym_vector();
 
-  auto req_real_props_ = sampler.get_required_real_sym_vector();
+  auto req_real_props_ =
+      sampler.get_arg_pack().required_real_props.to_sym_vector();
 
   particle_loop(
       "vel_sampling_fail_loop", particle_group,
       [=](auto particle_index, auto req_int_props, auto req_real_props,
           auto kernel) {
-        auto test = sampler_on_device.calc_data(particle_index, req_int_props,
-                                                req_real_props, kernel);
+        auto accessors = SingleReactionDataAccessors{
+            particle_index, req_int_props, req_real_props};
+        auto test = sampler_on_device.calc_data(accessors, kernel);
       },
       Access::read(ParticleLoopIndex{}),
       Access::write(sym_vector<INT>(particle_group, req_int_props_)),

@@ -22,14 +22,7 @@ struct SpecularReflectionDataOnDevice
   /**
    * @brief Function to calculate the specularly reflected velocities
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
@@ -38,9 +31,7 @@ struct SpecularReflectionDataOnDevice
    */
   std::array<REAL, ndim>
   calc_data(const std::array<REAL, ndim> input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+            const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice<ndim>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
@@ -48,7 +39,8 @@ struct SpecularReflectionDataOnDevice
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim; vdim++) {
-      surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
+      surface_n[vdim] =
+          accessors.req_real_props.at(normal_ind, accessors.index, vdim);
     }
 
     return utils::reflect_vector(input, surface_n);
@@ -95,8 +87,9 @@ struct SpecularReflectionData
    */
   void index_on_device_object() {
 
-    this->on_device_obj->normal_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.boundary_intersection_normal));
+    this->on_device_obj->normal_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->properties_map.at(props.boundary_intersection_normal));
   };
 };
 }; // namespace VANTAGE::Reactions

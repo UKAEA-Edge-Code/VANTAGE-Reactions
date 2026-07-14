@@ -23,27 +23,18 @@ struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL> {
   /**
    * @brief Sample one number from the rng_kernel
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param rng_kernel The random number generator kernel to sample from
    *
    * @return Sampled random number
    */
   std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename RNG_KERNEL::KernelType &rng_kernel) const {
     bool is_kernel_valid = true;
-    auto rand = rng_kernel.at(index, 0, &is_kernel_valid);
+    auto rand = rng_kernel.at(accessors.index, 0, &is_kernel_valid);
     if (!is_kernel_valid) {
-      req_int_props.at(this->panic_ind, index, 0) += 1;
+      accessors.req_int_props.at(this->panic_ind, accessors.index, 0) += 1;
     }
     return std::array<REAL, 1>{rand};
   }
@@ -89,8 +80,9 @@ struct SamplerData
    */
   void index_on_device_object() {
 
-    this->on_device_obj->panic_ind = this->required_int_props.find_index(
-        this->properties_map.at(props.panic));
+    this->on_device_obj->panic_ind =
+        this->argument_pack.required_int_props.find_index(
+            this->properties_map.at(props.panic));
   };
 };
 }; // namespace VANTAGE::Reactions

@@ -34,39 +34,31 @@ struct ConcatenatorDataOnDevice
   /**
    * @brief Function to calculate the concatenated data
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties
-   * that need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernels used in the
    * calculation, a TupleRNG accessor
    *
    * @return Concatenated return arrays of all the contained device types
    */
   std::array<REAL, DIM> calc_data(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+      const typename CompositeDataOnDevice<
+          total_dim<DATATYPE...>(), 0, REAL, REAL,
+          DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
       typename TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
     std::array<REAL, DIM> result;
 
-    calc_data_recurse<0>(index, req_int_props, req_real_props, rng_kernel,
-                         result, 0);
+    calc_data_recurse<0>(accessors, rng_kernel, result, 0);
     return result;
   }
 
   template <std::size_t I>
   void calc_data_recurse(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+      const typename CompositeDataOnDevice<
+          total_dim<DATATYPE...>(), 0, REAL, REAL,
+          DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
       typename TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel,
@@ -75,14 +67,13 @@ struct ConcatenatorDataOnDevice
 
       const auto arg = Tuple::get<I>(this->data);
       constexpr auto data_dim = decltype(arg)::DIM;
-      std::array<REAL, data_dim> calculated_data = arg.calc_data(
-          index, req_int_props, req_real_props, rng_kernel.template get<I>());
+      std::array<REAL, data_dim> calculated_data =
+          arg.calc_data(accessors, rng_kernel.template get<I>());
       for (auto i = 0; i < data_dim; i++) {
         result[dat_dim_idx + i] = calculated_data[i];
       };
 
-      this->calc_data_recurse<I + 1>(index, req_int_props, req_real_props,
-                                     rng_kernel, result,
+      this->calc_data_recurse<I + 1>(accessors, rng_kernel, result,
                                      dat_dim_idx + data_dim);
     };
   }
