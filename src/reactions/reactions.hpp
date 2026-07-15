@@ -9,6 +9,7 @@
 #include "../reactions_lib/common_transformations.hpp"
 #include "../reactions_lib/composite_data.hpp"
 #include "../reactions_lib/concatenator_data.hpp"
+#include "../reactions_lib/cross_section_abstract.hpp"
 #include "../reactions_lib/data_calculator.hpp"
 #include "../reactions_lib/downsampling_base.hpp"
 #include "../reactions_lib/merge_transformation.hpp"
