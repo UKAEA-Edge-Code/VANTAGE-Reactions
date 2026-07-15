@@ -54,38 +54,30 @@ struct PipelineDataOnDevice
   /**
    * @brief Function to calculate the composed data
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties
-   * that need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernels used in the
    * calculation, a TupleRNG accessor
    *
    * @return Concatenated return arrays of all the contained device types
    */
   std::array<REAL, DIM> calc_data(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+      const typename CompositeDataOnDevice<
+          last_dim<DATATYPE...>(), 0, REAL, REAL,
+          DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
       typename TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
-    return calc_data_recurse<0, DATATYPE...>(std::array<REAL, 0>{}, index,
-                                             req_int_props, req_real_props,
+    return calc_data_recurse<0, DATATYPE...>(std::array<REAL, 0>{}, accessors,
                                              rng_kernel);
   }
 
   template <size_t I, typename T, typename... ARGS>
   std::array<REAL, DIM> calc_data_recurse(
       const std::array<typename T::INPUT_TYPE, T::INPUT_DIM> input,
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+      const typename CompositeDataOnDevice<
+          last_dim<DATATYPE...>(), 0, REAL, REAL,
+          DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
       typename TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
@@ -94,25 +86,21 @@ struct PipelineDataOnDevice
     if constexpr (I < (sizeof...(DATATYPE)) - 1) {
       if constexpr (T::INPUT_DIM > 0) {
         return this->calc_data_recurse<I + 1, ARGS...>(
-            arg.calc_data(input, index, req_int_props, req_real_props,
-                          rng_kernel.template get<I>()),
-            index, req_int_props, req_real_props, rng_kernel);
+            arg.calc_data(input, accessors, rng_kernel.template get<I>()),
+            accessors, rng_kernel);
       } else {
 
         return this->calc_data_recurse<I + 1, ARGS...>(
-            arg.calc_data(index, req_int_props, req_real_props,
-                          rng_kernel.template get<I>()),
-            index, req_int_props, req_real_props, rng_kernel);
+            arg.calc_data(accessors, rng_kernel.template get<I>()), accessors,
+            rng_kernel);
       }
     } else {
 
       if constexpr (T::INPUT_DIM > 0) {
-        return arg.calc_data(input, index, req_int_props, req_real_props,
-                             rng_kernel.template get<I>());
+        return arg.calc_data(input, accessors, rng_kernel.template get<I>());
       } else {
 
-        return arg.calc_data(index, req_int_props, req_real_props,
-                             rng_kernel.template get<I>());
+        return arg.calc_data(accessors, rng_kernel.template get<I>());
       }
     }
   }

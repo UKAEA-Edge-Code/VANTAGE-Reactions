@@ -270,7 +270,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @param other The Properties object to merge with
    */
-  Properties<PROP_TYPE> merge_with(Properties<PROP_TYPE> other) {
+  Properties<PROP_TYPE> merge_with(Properties<PROP_TYPE> other) const {
 
     auto new_simple_props = this->simple_props;
 
@@ -554,7 +554,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    * @return ArgumentNameSet containing union of argument names
    */
   ArgumentNameSet<PROP_TYPE>
-  merge_with(const ArgumentNameSet<PROP_TYPE> &other) {
+  merge_with(const ArgumentNameSet<PROP_TYPE> &other) const {
 
     auto new_set = *this;
     new_set.name_set.insert(other.name_set.begin(), other.name_set.end());

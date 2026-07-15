@@ -351,11 +351,12 @@ struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<DIM, DIM, 1> {
 };
 template <
     typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 inline auto operator+(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
@@ -366,11 +367,12 @@ inline auto operator+(const T &lhs, const U &rhs) {
 
 template <
     typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 inline auto operator*(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
@@ -382,11 +384,12 @@ inline auto operator*(const T &lhs, const U &rhs) {
 
 template <
     typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 inline auto operator-(const T &lhs, const U &rhs) {
 
   // TODO: change to Kernel::minus when available
@@ -398,11 +401,12 @@ inline auto operator-(const T &lhs, const U &rhs) {
 
 template <
     typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 inline auto operator/(const T &lhs, const U &rhs) {
 
   // TODO: change to Kernel::divides when available
@@ -415,42 +419,51 @@ inline auto operator/(const T &lhs, const U &rhs) {
 
 template <
     typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 
 inline auto dot_product(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(BinaryDotArrayTransform<T::DIM>(), lhs, rhs);
 };
-template <size_t DIM> inline auto scale_by(const REAL &mult) {
+template <size_t DIM, typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
+inline auto scale_by(const REAL &mult) {
 
-  return UnaryArrayTransformData(ScalerArrayTransform<DIM>(mult));
+  return UnaryArrayTransformData<ScalerArrayTransform<DIM>, ARGUMENT_PACK_T>(
+      ScalerArrayTransform<DIM>(mult));
 }
 
-template <size_t DIM_IN, typename LAMBDA>
+template <size_t DIM_IN, typename LAMBDA,
+          typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
 inline auto uatData(const LAMBDA &lambda) {
 
-  return UnaryArrayTransformData(
+  return UnaryArrayTransformData<
+      UnaryArrayOperatorTransform<DIM_IN, LAMBDA::OUTPUT_DIM, LAMBDA>,
+      ARGUMENT_PACK_T>(
       UnaryArrayOperatorTransform<DIM_IN, LAMBDA::OUTPUT_DIM, LAMBDA>(lambda));
 }
 
-template <size_t DIM_IN, typename LAMBDA>
+template <size_t DIM_IN, typename LAMBDA,
+          typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
 inline auto uetData(const LAMBDA &lambda) {
 
-  return UnaryArrayTransformData(
+  return UnaryArrayTransformData<
+      UnaryElementwiseOperatorTransform<DIM_IN, LAMBDA>, ARGUMENT_PACK_T>(
       UnaryElementwiseOperatorTransform<DIM_IN, LAMBDA>(lambda));
 }
 
 template <
     typename LAMBDA, typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 inline auto batData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
@@ -461,11 +474,12 @@ inline auto batData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
 
 template <
     typename LAMBDA, typename T, typename U,
-    std::enable_if_t<
-        std::is_base_of<ReactionDataBase<typename T::ON_DEVICE_OBJ_TYPE, T::DIM,
+    std::enable_if_t<std::is_base_of<AbstractReactionData<
+                                         typename T::ON_DEVICE_OBJ_TYPE,
+                                         typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
-                        T>::value,
-        bool> = true>
+                                     T>::value,
+                     bool> = true>
 inline auto betData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(

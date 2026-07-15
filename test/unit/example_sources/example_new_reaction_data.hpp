@@ -14,24 +14,18 @@ struct DummyDataOnDevice
   );
 
   std::array<REAL, 1> calc_data(
-      const Access::LoopIndex::Read
-          &index, // This is the NESO-Particles index accessor, needed for
-                  // accessing the particle data
-      const Access::SymVector::Write<INT>
-          &req_int_props, // These are the required integer properties (here
-                          // unused)
-      const Access::SymVector::Read<REAL>
-          &req_real_props, // These are the required real properties - there
-                           // will be only on but we will use the general
-                           // indexing approach
+      const SingleReactionDataAccessors
+          &accessors, // This bundles the NESO-Particles accessors needed for
+                      // accessing the particle data
       typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
           &kernel // This is the random kernel - unused here - see the
                   // FilteredMaxwellianSampler for an example where this is used
   ) const {
 
-    auto weight = req_real_props.at(
-        this->weight_ind, index, 0); // Here we access the required real prop at
-                                     // the weight_ind - the particle weight
+    auto weight = accessors.req_real_props.at(
+        this->weight_ind, accessors.index,
+        0); // Here we access the required real prop at
+            // the weight_ind - the particle weight
 
     return std::array<REAL, 1>{
         weight * this->rate}; // The rate is given as weight * rate
@@ -87,8 +81,9 @@ struct DummyData
     //
     // See the ArgumentNameClass class implementation, as well as the reaction
     // data base classes
-    this->on_device_obj->weight_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.weight)); // Use the contained
-                                                // map to get the name
+    this->on_device_obj->weight_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->properties_map.at(props.weight)); // Use the contained
+                                                    // map to get the name
   }
 };

@@ -31,12 +31,13 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
     static_assert(
         std::is_base_of_v<
-            ReactionDataBase<typename ReactionData::ON_DEVICE_OBJ_TYPE,
-                             ReactionData::DIM,
-                             typename ReactionData::RNG_KERNEL_TYPE>,
+            AbstractReactionData<typename ReactionData::ON_DEVICE_OBJ_TYPE,
+                                 typename ReactionData::ARGUMENT_PACK_TYPE,
+                                 ReactionData::DIM,
+                                 typename ReactionData::RNG_KERNEL_TYPE>,
             ReactionData>,
         "Template parameter ReactionData is not derived from "
-        "ReactionDataBase...");
+        "AbstractReactionData...");
 
     constexpr auto data_dim = ReactionData::DIM;
     this->values = std::make_shared<
@@ -44,9 +45,10 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         template_group->sycl_target,
         template_group->domain->mesh->get_cell_count(), data_dim, 1);
 
-    this->required_int_sums = this->reaction_data.get_required_int_sym_vector();
+    this->required_int_syms =
+        this->reaction_data.get_arg_pack().required_int_props.to_sym_vector();
     this->required_real_syms =
-        this->reaction_data.get_required_real_sym_vector();
+        this->reaction_data.get_arg_pack().required_real_props.to_sym_vector();
   }
   /**
    * @brief Accumulate the results of evaluating the stored ReactionData object
@@ -66,8 +68,10 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         "CellwiseReactionDataAccumulator_loop", target_subgroup,
         [=](auto buffer, auto particle_index, auto req_int_props,
             auto req_real_props, auto kernel) {
-          std::array<REAL, data_dim> data = reaction_data_on_device.calc_data(
-              particle_index, req_int_props, req_real_props, kernel);
+          auto accessors = SingleReactionDataAccessors{
+              particle_index, req_int_props, req_real_props};
+          std::array<REAL, data_dim> data =
+              reaction_data_on_device.calc_data(accessors, kernel);
 
           for (auto j = 0; j < data_dim; j++) {
             buffer.combine(j, 0, data[j]);
@@ -76,7 +80,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         Access::reduce(this->values, Kernel::plus<REAL>()),
         Access::read(ParticleLoopIndex{}),
         Access::write(
-            sym_vector<INT>(target_subgroup, this->required_int_sums)),
+            sym_vector<INT>(target_subgroup, this->required_int_syms)),
         Access::read(
             sym_vector<REAL>(target_subgroup, this->required_real_syms)),
         Access::read(this->reaction_data.get_rng_kernel()));
@@ -118,7 +122,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
 private:
   ReactionData reaction_data;
-  std::vector<Sym<INT>> required_int_sums;
+  std::vector<Sym<INT>> required_int_syms;
   std::vector<Sym<REAL>> required_real_syms;
 
   std::shared_ptr<

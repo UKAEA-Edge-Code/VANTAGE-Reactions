@@ -25,12 +25,25 @@ struct AbstractUnaryArrayTransform {
  * @brief On-device reaction data applying a unary array transform to an input
  * array
  *
+ * The unary transform is a pure transform stage: it applies the transform to
+ * its input array and does not itself read any particle properties, so the
+ * argument/accessor pack is only a type-level compatibility tag required by the
+ * enclosing pipeline. The accessor pack is therefore a template parameter
+ * (defaulting to SingleReactionDataAccessors) rather than being derived from
+ * child data objects, allowing the same stage to be used inside either a single
+ * or a pair pipeline.
+ *
  * @tparam TRANSFORM Transform derived from AbstractUnaryArrayTransform
+ * @tparam ACCESSOR_PACK_T Bundled device accessors for the ParticleLoop inside
+ * which calc_data is called (Optional, defaults to
+ * SingleReactionDataAccessors).
  */
-template <typename TRANSFORM>
+template <typename TRANSFORM,
+          typename ACCESSOR_PACK_T = SingleReactionDataAccessors>
 struct UnaryArrayTransformDataOnDevice
-    : public ReactionDataBaseOnDevice<TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
-                                      TRANSFORM::IN_DIM> {
+    : public AbstractReactionDataOnDevice<ACCESSOR_PACK_T, TRANSFORM::OUT_DIM,
+                                          DEFAULT_RNG_KERNEL, TRANSFORM::IN_DIM,
+                                          REAL, REAL> {
 
   UnaryArrayTransformDataOnDevice() = default;
   /**
@@ -45,14 +58,9 @@ struct UnaryArrayTransformDataOnDevice
    * @brief Return the result of applying the contained transform on the input
    *
    * @param input Input array
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop. Unused by the
+   * transform itself but carried so the signature matches the accessor pack
+   * expected by the enclosing pipeline.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
@@ -60,9 +68,7 @@ struct UnaryArrayTransformDataOnDevice
    */
   std::array<REAL, TRANSFORM::OUT_DIM>
   calc_data(const std::array<REAL, TRANSFORM::IN_DIM> &input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+            const ACCESSOR_PACK_T &accessors,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     return this->transform.apply(input);
@@ -75,13 +81,23 @@ private:
 /**
  * @brief Host type for data applying a unary transform on an input array
  *
+ * As with the on-device type, the argument pack is a template parameter
+ * (defaulting to SingleReactionDataArgumentPack) so that the stage can be
+ * placed inside either a single or a pair pipeline. The matching device
+ * accessor pack is derived via accessor_pack_for_t.
+ *
  * @tparam TRANSFORM The transformation type being applied
+ * @tparam ARGUMENT_PACK_T Bundled host-side property requirements
+ * (Optional, defaults to SingleReactionDataArgumentPack).
  */
-template <typename TRANSFORM>
+template <typename TRANSFORM,
+          typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
 struct UnaryArrayTransformData
-    : public ReactionDataBase<UnaryArrayTransformDataOnDevice<TRANSFORM>,
-                              TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
-                              TRANSFORM::IN_DIM> {
+    : public AbstractReactionData<
+          UnaryArrayTransformDataOnDevice<TRANSFORM,
+                                          accessor_pack_for_t<ARGUMENT_PACK_T>>,
+          ARGUMENT_PACK_T, TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
+          TRANSFORM::IN_DIM> {
 
   /**
    * @brief Constructor for UnaryArrayTransformData
@@ -89,8 +105,14 @@ struct UnaryArrayTransformData
    * @param transform Unary transform object (derived from
    * AbstractUnaryTransform) to be applied on input data
    */
-  UnaryArrayTransformData(const TRANSFORM &transform) {
-    this->on_device_obj = UnaryArrayTransformDataOnDevice(transform);
+  UnaryArrayTransformData(const TRANSFORM &transform)
+      : AbstractReactionData<
+            UnaryArrayTransformDataOnDevice<
+                TRANSFORM, accessor_pack_for_t<ARGUMENT_PACK_T>>,
+            ARGUMENT_PACK_T, TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
+            TRANSFORM::IN_DIM>(ARGUMENT_PACK_T(), get_default_map()) {
+    this->on_device_obj = UnaryArrayTransformDataOnDevice<
+        TRANSFORM, accessor_pack_for_t<ARGUMENT_PACK_T>>(transform);
   };
 
   /**

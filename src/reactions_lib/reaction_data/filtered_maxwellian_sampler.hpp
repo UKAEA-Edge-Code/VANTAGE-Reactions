@@ -44,26 +44,17 @@ struct FilteredMaxwellianOnDevice
    * @brief Function to calculate the sampled ion velocities from a filtered
    * Maxwellian
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel - assumed uniform
    *
    * @return A REAL-valued array of size ndim that contains the calculated
    * sampled ion velocities.
    */
   std::array<REAL, ndim>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
-    auto fluid_temperature_dat =
-        req_real_props.at(this->fluid_temperature_ind, index, 0);
+    auto fluid_temperature_dat = accessors.req_real_props.at(
+        this->fluid_temperature_ind, accessors.index, 0);
 
     bool accepted = false;
 
@@ -78,11 +69,13 @@ struct FilteredMaxwellianOnDevice
 
     std::array<REAL, ndim> neutral_vels;
     for (int i = 0; i < ndim; i++) {
-      neutral_vels[i] = req_real_props.at(this->velocity_ind, index, i);
+      neutral_vels[i] =
+          accessors.req_real_props.at(this->velocity_ind, accessors.index, i);
     }
     std::array<REAL, ndim> fluid_flows;
     for (int i = 0; i < ndim; i++) {
-      fluid_flows[i] = req_real_props.at(this->fluid_flow_speed_ind, index, i);
+      fluid_flows[i] = accessors.req_real_props.at(this->fluid_flow_speed_ind,
+                                                   accessors.index, i);
     }
     int sample_counter = 0;
     bool is_kernel_valid = true;
@@ -93,8 +86,8 @@ struct FilteredMaxwellianOnDevice
       // Get the unit variance zero mean normal variates
       for (int i = 0; i < num_req_samples; i += 2) {
 
-        rand1 = kernel.at(index, i, &is_kernel_valid);
-        rand2 = kernel.at(index, i + 1, &is_kernel_valid);
+        rand1 = kernel.at(accessors.index, i, &is_kernel_valid);
+        rand2 = kernel.at(accessors.index, i + 1, &is_kernel_valid);
         if (!is_kernel_valid) {
           break;
         }
@@ -104,7 +97,7 @@ struct FilteredMaxwellianOnDevice
         total_samples[i + 1] = current_samples[1];
       };
       if (!is_kernel_valid) {
-        req_int_props.at(this->panic_ind, index, 0) += 1;
+        accessors.req_int_props.at(this->panic_ind, accessors.index, 0) += 1;
 
         break;
       }
@@ -124,9 +117,9 @@ struct FilteredMaxwellianOnDevice
       REAL value_at = this->cross_section.get_value_at(relative_vel);
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 
-      rand1 = kernel.at(index, num_req_samples, &is_kernel_valid);
+      rand1 = kernel.at(accessors.index, num_req_samples, &is_kernel_valid);
       if (!is_kernel_valid) {
-        req_int_props.at(this->panic_ind, index, 0) += 1;
+        accessors.req_int_props.at(this->panic_ind, accessors.index, 0) += 1;
 
         break;
       }
@@ -226,18 +219,20 @@ struct FilteredMaxwellianSampler
   void index_on_device_object() {
 
     this->on_device_obj->fluid_flow_speed_ind =
-        this->required_real_props.find_index(
+        this->argument_pack.required_real_props.find_index(
             this->properties_map.at(props.fluid_flow_speed));
 
     this->on_device_obj->fluid_temperature_ind =
-        this->required_real_props.find_index(
+        this->argument_pack.required_real_props.find_index(
             this->properties_map.at(props.fluid_temperature));
 
-    this->on_device_obj->panic_ind = this->required_int_props.find_index(
-        this->properties_map.at(props.panic));
+    this->on_device_obj->panic_ind =
+        this->argument_pack.required_int_props.find_index(
+            this->properties_map.at(props.panic));
 
-    this->on_device_obj->velocity_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.velocity));
+    this->on_device_obj->velocity_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->properties_map.at(props.velocity));
   };
 };
 }; // namespace VANTAGE::Reactions

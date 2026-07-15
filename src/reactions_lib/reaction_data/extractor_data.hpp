@@ -21,23 +21,14 @@ struct ExtractorDataOnDevice : public ReactionDataBaseOnDevice<ncomp> {
   /**
    * @brief Function to extract particle dat values into an array
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
    * @return A REAL-valued array of size ncomp containing the extracted data
    */
   std::array<REAL, ncomp> calc_data(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+      const SingleReactionDataAccessors &accessors,
       typename ReactionDataBaseOnDevice<ncomp>::RNG_KERNEL_TYPE::KernelType
           &kernel) const {
 
@@ -45,7 +36,8 @@ struct ExtractorDataOnDevice : public ReactionDataBaseOnDevice<ncomp> {
 
     for (int i = 0; i < ncomp; i++) {
 
-      result[i] = req_real_props.at(this->prop_ind, index, i);
+      result[i] =
+          accessors.req_real_props.at(this->prop_ind, accessors.index, i);
     }
 
     return result;
@@ -74,7 +66,7 @@ struct ExtractorData
       : ReactionDataBase<ExtractorDataOnDevice<ncomp>, ncomp>(),
         extracted_sym(extracted_sym) {
 
-    this->required_real_props.add(extracted_sym.name);
+    this->argument_pack.required_real_props.add(extracted_sym.name);
     this->on_device_obj = ExtractorDataOnDevice<ncomp>();
 
     this->index_on_device_object();
@@ -86,7 +78,8 @@ struct ExtractorData
   void index_on_device_object() {
 
     this->on_device_obj->prop_ind =
-        this->required_real_props.find_index(this->extracted_sym.name);
+        this->argument_pack.required_real_props.find_index(
+            this->extracted_sym.name);
   };
 
 private:

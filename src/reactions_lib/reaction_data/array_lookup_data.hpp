@@ -38,21 +38,12 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    */
   std::array<REAL, N>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice<N>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
@@ -60,11 +51,12 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
 
     if constexpr (ephemeral_dat) {
 
-      key_val =
-          req_int_props.at_ephemeral(this->key_ind, index, this->key_comp);
+      key_val = accessors.req_int_props.at_ephemeral(
+          this->key_ind, accessors.index, this->key_comp);
     } else {
 
-      key_val = req_int_props.at(this->key_ind, index, this->key_comp);
+      key_val = accessors.req_int_props.at(this->key_ind, accessors.index,
+                                           this->key_comp);
     }
 
     const std::array<REAL, N> *val_ptr = nullptr;
@@ -112,7 +104,7 @@ struct ArrayLookupData
     this->on_device_obj =
         ArrayLookupDataOnDevice<N, ephemeral_dat>(key_sym_comp, default_values);
 
-    this->required_int_props.add(key_sym.name);
+    this->argument_pack.required_int_props.add(key_sym.name);
     this->lut =
         std::make_shared<BlockedBinaryTree<int, std::array<REAL, N>, 8>>(
             sycl_target);
@@ -131,7 +123,7 @@ struct ArrayLookupData
   void index_on_device_object() {
 
     this->on_device_obj->key_ind =
-        this->required_int_props.find_index(this->key_sym.name);
+        this->argument_pack.required_int_props.find_index(this->key_sym.name);
   };
 
 private:
