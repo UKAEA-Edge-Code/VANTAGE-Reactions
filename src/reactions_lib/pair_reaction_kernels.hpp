@@ -194,6 +194,8 @@ struct PairReactionKernelsBase {
     return this->descendant_matrix_spec_b;
   }
   const INT &get_pre_ndims() const { return this->pre_req_ndims; }
+  const INT &get_num_products_a() const { return this->num_products_a; }
+  const INT &get_num_products_b() const { return this->num_products_b; }
 
 protected:
   void set_required_descendant_int_props_a(
@@ -218,6 +220,7 @@ protected:
 
   template <int ndim_velocity = 2, int num_products_per_parent = 0>
   void set_descendant_matrix_spec_a() {
+    this->num_products_a = num_products_per_parent;
     if constexpr (num_products_per_parent < 1) {
       return;
     } else {
@@ -255,6 +258,7 @@ protected:
 
   template <int ndim_velocity = 2, int num_products_per_parent = 0>
   void set_descendant_matrix_spec_b() {
+    this->num_products_b = num_products_per_parent;
     if constexpr (num_products_per_parent < 1) {
       return;
     } else {
@@ -307,6 +311,8 @@ protected:
       std::make_shared<ProductMatrixSpec>();
 
   INT pre_req_ndims;
+  INT num_products_a;
+  INT num_products_b;
 
   std::map<int, std::string> properties_map;
 };

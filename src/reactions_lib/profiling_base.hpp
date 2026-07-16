@@ -43,6 +43,20 @@ struct ProfilingBase {
   }
 
   /**
+   * Start a region to be profiled directly using the passed sycl target. The
+   * object returned from this call should be passed to `end_profiling_region`.
+   *
+   * @param sycl_target SYCLTarget object used to instantiate profiling
+   * @param key1 Name of region that is being profiled.
+   * @returns Region object to pass to `end_profiling_region`.
+   */
+  [[nodiscard]] inline std::optional<NESO::Particles::ProfileRegion>
+  start_profiling_region(NESO::Particles::SYCLTargetSharedPtr &sycl_target,
+                         const std::string key1) {
+    return sycl_target->profile_map.start_region(get_profiling_name(), key1,
+                                                 PROFILING_LEVEL);
+  }
+  /**
    * End a region to be profiled.
    *
    * @param subgroup ParticleSubGroup to extract SYCLTarget from.
@@ -52,6 +66,18 @@ struct ProfilingBase {
   end_profiling_region(NESO::Particles::ParticleSubGroupSharedPtr &subgroup,
                        std::optional<NESO::Particles::ProfileRegion> &region) {
     auto &sycl_target = get_particle_group(subgroup)->sycl_target;
+    sycl_target->profile_map.end_region(region);
+  }
+
+  /**
+   * End a region to be profiled.
+   *
+   * @param sycl_target SYCLTarget object used to finalize profiling
+   * @param region Region that is being profiled.
+   */
+  inline void
+  end_profiling_region(NESO::Particles::SYCLTargetSharedPtr &sycl_target,
+                       std::optional<NESO::Particles::ProfileRegion> &region) {
     sycl_target->profile_map.end_region(region);
   }
 };
