@@ -25,6 +25,7 @@
 #include "../reactions_lib/reaction_data_accumulator.hpp"
 #include "../reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include "../reactions_lib/reaction_kernels.hpp"
+#include "../reactions_lib/swpm_reaction.hpp"
 #include "../reactions_lib/transformation_wrapper.hpp"
 #include "../reactions_lib/unary_array_transform_data.hpp"
 #include "../reactions_lib/utils.hpp"

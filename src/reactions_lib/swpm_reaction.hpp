@@ -168,7 +168,7 @@ public:
             sym_vector<REAL>(pair_list.B, this->calculate_rates_real_syms_b))),
         Access::write(this->total_reaction_rate),
         Access::write(this->device_rate_buffer),
-        Access::read(args.get_rng_kernel()));
+        Access::read(reaction_data.get_rng_kernel()));
 
     calc_rate_loop->execute(cell_idx_start, cell_idx_end);
 
@@ -225,26 +225,26 @@ public:
           reaction_kernel_on_device.scattering_kernel(
               modified_weight, particle_index_a, particle_index_b, pair_index,
               descendant_particles_a, descendant_particles_b, req_int_props_a,
-              req_real_props_a, req_int_props_b, req_real_props_b,
-              out_states_arr, pre_req_data, dt);
+              req_real_props_a, req_int_props_b, req_real_props_b, products,
+              pre_req_data, dt);
 
           reaction_kernel_on_device.weight_kernel(
               modified_weight, particle_index_a, particle_index_b, pair_index,
               descendant_particles_a, descendant_particles_b, req_int_props_a,
-              req_real_props_a, req_int_props_b, req_real_props_b,
-              out_states_arr, pre_req_data, dt);
+              req_real_props_a, req_int_props_b, req_real_props_b, products,
+              pre_req_data, dt);
 
           reaction_kernel_on_device.tranformation_kernel(
               modified_weight, particle_index_a, particle_index_b, pair_index,
               descendant_particles_a, descendant_particles_b, req_int_props_a,
-              req_real_props_a, req_int_props_b, req_real_props_b,
-              out_states_arr, pre_req_data, dt);
+              req_real_props_a, req_int_props_b, req_real_props_b, products,
+              pre_req_data, dt);
 
           reaction_kernel_on_device.feedback_kernel(
               modified_weight, particle_index_a, particle_index_b, pair_index,
               descendant_particles_a, descendant_particles_b, req_int_props_a,
-              req_real_props_a, req_int_props_b, req_real_props_b,
-              out_states_arr, pre_req_data, dt);
+              req_real_props_a, req_int_props_b, req_real_props_b, products,
+              pre_req_data, dt);
         },
         Access::read(this->weight_change_sym),
         Access::write(this->descendant_particles_a),
@@ -263,11 +263,10 @@ public:
         Access::read(device_rate_buffer), Access::read(this->pre_req_data),
         Access::write(this->total_reaction_rate));
 
-    INT npart_block =
-        pair_list.get_num_pairs_range(cell_idx_start, cell_idx_end);
-    this->descendant_particles->reset(npart_block);
+    this->descendant_particles_a->reset(npart_block);
+    this->descendant_particles_b->reset(npart_block);
 
-    loop->execute(cell_idx_start, cell_idx_end);
+    application_loop->execute(cell_idx_start, cell_idx_end);
 
     child_group->add_particles_local(this->descendant_particles_a, pair_list.A);
     child_group->add_particles_local(this->descendant_particles_b, pair_list.B);
