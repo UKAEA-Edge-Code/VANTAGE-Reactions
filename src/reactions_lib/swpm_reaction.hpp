@@ -1,15 +1,14 @@
 #ifndef REACTIONS_SWPM_REACTION_H
 #define REACTIONS_SWPM_REACTION_H
 #include "pair_data_calculator.hpp"
-#include "pair_reaction_data.hpp"
 #include "pair_reaction_data/cs_pair_reaction_data.hpp"
 #include "pair_reaction_kernels.hpp"
 #include "profiling_base.hpp"
+#include "reaction_base.hpp"
 #include <array>
 #include <cstring>
 #include <neso_particles.hpp>
 #include <type_traits>
-
 #include <vector>
 
 using namespace NESO::Particles;
@@ -51,11 +50,14 @@ struct SWPMReaction : ProfilingBase {
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for calculate_rates and
     // apply to operate correctly, ReactionData and
-    // ReactionKernels have to be derived from PairReactionKernelsBase and
-    // AbstractReactionKernels respectively
-    static_assert(std::is_base_of_v<CSPairData, ReactionData>,
-                  "Template parameter ReactionData is not derived from "
-                  "CSPairData...");
+    // ReactionKernels have to be derived from CSPairData and
+    // PairReactionKernelsBase respectively
+    static_assert(
+        std::is_base_of_v<CSPairData<ReactionData::VEL_NDIM,
+                                     typename ReactionData::CROSS_SECTION_TYPE>,
+                          ReactionData>,
+        "Template parameter ReactionData is not derived from "
+        "CSPairData...");
     static_assert(std::is_base_of_v<AbstractPairDataCalculator, DataCalc>,
                   "Template parameter DataCalc is not derived from "
                   "AbstractPairDataCalculator...");
@@ -67,7 +69,7 @@ struct SWPMReaction : ProfilingBase {
             this->reaction_kernels.get_pre_ndims(),
         "The number of ReactionData-derived objects in PairDataCalculator "
         "does not match the required number of dimensions for the "
-        "provided ReactionKernels object.");
+        "provided PairReactionKernels object.");
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
@@ -108,11 +110,11 @@ struct SWPMReaction : ProfilingBase {
 
     this->descendant_particles_a = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec_a,
-        reaction_kernel_buffer->get_num_products_a());
+        reaction_kernel_buffer.get_num_products_a());
 
     this->descendant_particles_b = std::make_shared<DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec_b,
-        reaction_kernel_buffer->get_num_products_b());
+        reaction_kernel_buffer.get_num_products_b());
 
     auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
         SWPMReaction::get_sycl_target(), 0,
@@ -121,6 +123,21 @@ struct SWPMReaction : ProfilingBase {
 
     this->pre_req_data = empty_pre_req_data;
   }
+
+  SWPMReaction(
+      SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      std::array<int, num_products> products, ReactionData reaction_data,
+      ReactionKernels reaction_kernels,
+      const std::map<int, std::string> &properties_map = get_default_map())
+      : reactants(reactants), products(products), reaction_data(reaction_data),
+        reaction_kernels(reaction_kernels), data_calculator(DataCalc()),
+        sycl_target_stored(sycl_target),
+        device_rate_buffer(
+            std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
+        pre_req_data(
+            std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
+        max_buffer_size(16384 *
+                        get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {}
 
   virtual ~SWPMReaction() = default;
 
@@ -133,15 +150,15 @@ public:
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
     INT npart_block =
-        pair_list.get_num_pairs_range(cell_idx_start, cell_idx_end);
+        pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
     this->adaptive_flush_buffer(npart_block);
 
     NESOASSERT(pair_list.A->sycl_target == sycl_target_stored,
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");
 
-    // Here we will wait for the collision-cell-wise reduction of the buffer wrt
-    // the CellDatConst containing the current max of sigma*v
+    // Here we will wait for the collision-cell-wise reduction of the buffer
+    // wrt the CellDatConst containing the current max of sigma*v
 
     auto calc_rate_loop = particle_pair_loop(
         "pair_data_calc_loop", {pair_list},
@@ -198,7 +215,7 @@ public:
                "the sycl_target passed to Reaction object...");
 
     INT npart_block =
-        pair_list.get_num_pairs_range(cell_idx_start, cell_idx_end);
+        pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
     this->adaptive_flush_pre_req_data(npart_block);
 
     this->data_calculator.fill_buffer(this->pre_req_data, pair_list,
@@ -220,7 +237,7 @@ public:
 
           reaction_kernel_on_device.parent_kernel(
               particle_index_a, particle_index_b, descendant_particles_a,
-              descendant_particles_b);
+              descendant_particles_b, products);
 
           reaction_kernel_on_device.scattering_kernel(
               modified_weight, particle_index_a, particle_index_b, pair_index,
@@ -234,7 +251,7 @@ public:
               req_real_props_a, req_int_props_b, req_real_props_b, products,
               pre_req_data, dt);
 
-          reaction_kernel_on_device.tranformation_kernel(
+          reaction_kernel_on_device.transformation_kernel(
               modified_weight, particle_index_a, particle_index_b, pair_index,
               descendant_particles_a, descendant_particles_b, req_int_props_a,
               req_real_props_a, req_int_props_b, req_real_props_b, products,
@@ -301,7 +318,7 @@ public:
    * @param buffer_size Size of the empty buffer that needs to be created and
    * stored.
    */
-  void flush_buffer(size_t buffer_size) override {
+  void flush_buffer(size_t buffer_size) {
     auto empty_device_rate_buffer = std::make_shared<LocalArray<REAL>>(
         this->sycl_target_stored, buffer_size, 0);
     this->device_rate_buffer = empty_device_rate_buffer;
@@ -327,14 +344,14 @@ public:
   /**
    * @brief Flushes the stored pre_req_data by setting all values to 0.0.
    */
-  void flush_pre_req_data() override { this->get_pre_req_data()->fill(0.0); }
+  void flush_pre_req_data() { this->get_pre_req_data()->fill(0.0); }
 
   /**
    * @brief Creates an empty pre_req_data buffer of a specified size, keeping
    * the current number of columns
    *
-   * @param buffer_size Number of the empty buffer rows that need to be created
-   * and stored.
+   * @param buffer_size Number of the empty buffer rows that need to be
+   * created and stored.
    */
   void flush_pre_req_data(size_t buffer_size) {
     auto shape = this->pre_req_data->index.shape;
@@ -350,9 +367,10 @@ public:
    *
    * @param particle_sub_group Particle subgroup used to infer the number of
    * particles in the cell
-   * @param cell_idx_start Index of the first cell for which the buffer flush is
-   * performed
-   * @param cell_idx_end Loop end index - cell up to which the buffer is flushed
+   * @param cell_idx_start Index of the first cell for which the buffer flush
+   * is performed
+   * @param cell_idx_end Loop end index - cell up to which the buffer is
+   * flushed
    */
   void adaptive_flush_pre_req_data(size_t requested_size) {
     auto shape = this->pre_req_data->index.shape;
@@ -427,6 +445,5 @@ private:
 
   DataCalc data_calculator;
 };
-
-} // namespace VANTAGE::Reactions
+}; // namespace VANTAGE::Reactions
 #endif

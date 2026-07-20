@@ -54,6 +54,7 @@
 #include "../reactions_lib/reaction_data/trim_eval_data.hpp"
 
 #include "../reactions_lib/pair_reaction_data/cs_pair_reaction_data.hpp"
+#include "../reactions_lib/pair_reaction_data/hard_sphere_scattering_data.hpp"
 
 #include "../reactions_lib/reaction_kernels/base_cx_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/base_ionisation_kernels.hpp"
@@ -61,6 +62,8 @@
 #include "../reactions_lib/reaction_kernels/general_absorption_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/general_linear_scattering_kernels.hpp"
 #include "../reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
+
+#include "../reactions_lib/pair_reaction_kernels/general_pair_scattering_kernel.hpp"
 
 #include "../reactions_lib/derived_reactions/electron_impact_ionisation.hpp"
 #include "../reactions_lib/derived_reactions/recombination_reaction.hpp"

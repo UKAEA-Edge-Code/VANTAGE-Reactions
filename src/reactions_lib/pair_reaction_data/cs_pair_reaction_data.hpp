@@ -76,6 +76,9 @@ template <size_t vel_ndim, typename CROSS_SECTION_T = ConstantRateCrossSection>
 struct CSPairData : public PairReactionDataBase<
                         CSPairDataOnDevice<vel_ndim, CROSS_SECTION_T>> {
 
+  static const size_t VEL_NDIM = vel_ndim;
+  using CROSS_SECTION_TYPE = CROSS_SECTION_T;
+
   constexpr static auto props = default_properties;
 
   constexpr static auto required_simple_real_props =
@@ -111,7 +114,7 @@ struct CSPairData : public PairReactionDataBase<
   CSPairData() : CSPairData(ConstantRateCrossSection(0.0)) {}
 
   /**
-   * @brief Index the particle velocity temperature
+   * @brief Index the particle velocity
    */
   void index_on_device_object() {
 

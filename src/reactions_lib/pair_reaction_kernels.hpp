@@ -339,7 +339,8 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param out_states Array defining the IDs of descendant particles
    */
   void parent_kernel(
-      Access::LoopIndex::Read &index_a, Access::LoopIndex::Read &index_b,
+      Access::PairLoopIndex::Read &index_a,
+      Access::PairLoopIndex::Read &index_b,
       Access::DescendantProducts::Write &descendant_products_a,
       Access::DescendantProducts::Write &descendant_products_b,
       const std::array<int, num_products_per_parent> &out_states) const {
@@ -374,17 +375,19 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void scattering_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index_a,
-      Access::LoopIndex::Read &index_b, Access::PairLoopIndex::Read &pair_index,
-      Access::DescendantProducts::Write &descendant_products_a,
-      Access::DescendantProducts::Write &descendant_products_b,
-      Access::SymVector::Write<INT> &req_int_props_a,
-      Access::SymVector::Write<REAL> &req_real_props_a,
-      Access::SymVector::Write<INT> &req_int_props_b,
-      Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+  void
+  scattering_kernel(REAL &modified_weight, Access::PairLoopIndex::Read &index_a,
+                    Access::PairLoopIndex::Read &index_b,
+                    Access::PairLoopIndex::Read &pair_index,
+                    Access::DescendantProducts::Write &descendant_products_a,
+                    Access::DescendantProducts::Write &descendant_products_b,
+                    Access::SymVector::Write<INT> &req_int_props_a,
+                    Access::SymVector::Write<REAL> &req_real_props_a,
+                    Access::SymVector::Write<INT> &req_int_props_b,
+                    Access::SymVector::Write<REAL> &req_real_props_b,
+                    const std::array<int, num_products_per_parent> &out_states,
+                    Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                    double dt) const {
     return;
   }
   /**
@@ -415,17 +418,19 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void feedback_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index_a,
-      Access::LoopIndex::Read &index_b, Access::PairLoopIndex::Read &pair_index,
-      Access::DescendantProducts::Write &descendant_products_a,
-      Access::DescendantProducts::Write &descendant_products_b,
-      Access::SymVector::Write<INT> &req_int_props_a,
-      Access::SymVector::Write<REAL> &req_real_props_a,
-      Access::SymVector::Write<INT> &req_int_props_b,
-      Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+  void
+  feedback_kernel(REAL &modified_weight, Access::PairLoopIndex::Read &index_a,
+                  Access::PairLoopIndex::Read &index_b,
+                  Access::PairLoopIndex::Read &pair_index,
+                  Access::DescendantProducts::Write &descendant_products_a,
+                  Access::DescendantProducts::Write &descendant_products_b,
+                  Access::SymVector::Write<INT> &req_int_props_a,
+                  Access::SymVector::Write<REAL> &req_real_props_a,
+                  Access::SymVector::Write<INT> &req_int_props_b,
+                  Access::SymVector::Write<REAL> &req_real_props_b,
+                  const std::array<int, num_products_per_parent> &out_states,
+                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                  double dt) const {
     return;
   }
 
@@ -459,8 +464,9 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    *
    */
   void transformation_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index_a,
-      Access::LoopIndex::Read &index_b, Access::PairLoopIndex::Read &pair_index,
+      REAL &modified_weight, Access::PairLoopIndex::Read &index_a,
+      Access::PairLoopIndex::Read &index_b,
+      Access::PairLoopIndex::Read &pair_index,
       Access::DescendantProducts::Write &descendant_products_a,
       Access::DescendantProducts::Write &descendant_products_b,
       Access::SymVector::Write<INT> &req_int_props_a,
@@ -500,8 +506,9 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param dt The current time step size.
    *
    */
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index_a,
-                     Access::LoopIndex::Read &index_b,
+  void weight_kernel(REAL &modified_weight,
+                     Access::PairLoopIndex::Read &index_a,
+                     Access::PairLoopIndex::Read &index_b,
                      Access::PairLoopIndex::Read &pair_index,
                      Access::DescendantProducts::Write &descendant_products_a,
                      Access::DescendantProducts::Write &descendant_products_b,

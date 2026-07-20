@@ -22,9 +22,8 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   LinearScatteringKernelsOnDevice() = default;
 
   /**
-   * @brief General scattering kernel - assumes that pre_req_data stores ion
-   * velcocities sampled from the ion distribution and sets the product's
-   * velocity components to those values
+   * @brief General scattering kernel - assumes that pre_req_data stores
+   * post-scattering velocities
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
