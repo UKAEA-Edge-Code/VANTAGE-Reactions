@@ -1,3 +1,5 @@
+#include <random>
+#include <tuple>
 inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
   // Number of dimensions of the pre-calculated grid
   static constexpr int interp_ndim = 2;
@@ -83,9 +85,27 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
   // InterpolateDataOnDevice.
   auto props_extract = extract<interp_ndim>("PROPS");
 
-  auto trim_indices_extract = extract<trim_ndim>("TRIM_INDICES");
+  const int rank = particle_group->sycl_target->comm_pair.rank_parent;
+  auto rng = std::mt19937(52234126 + rank);
+  std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
-  auto concatenator = ConcatenatorData(props_extract, trim_indices_extract);
+  auto rng_lambda = [&]() -> REAL {
+    REAL rng_sample = 0.0;
+    do {
+      rng_sample = uniform_dist_2(rng);
+    } while (rng_sample == 0.0);
+    return rng_sample;
+  };
+
+  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+
+  auto trim_sampler = SamplerData(trim_rng_kernel);
+  // This is hard-coded here to avoid bloated general implementation for
+  // arbitrary number of samplers. (quite easy in C++20)
+  auto trim_sampler_concat =
+      ConcatenatorData(trim_sampler, trim_sampler, trim_sampler);
+
+  auto concatenator = ConcatenatorData(props_extract, trim_sampler_concat);
 
   // Pipeline that handles the pass-through of values.
   auto pipeline = pipe(concatenator, interpolate_data);
