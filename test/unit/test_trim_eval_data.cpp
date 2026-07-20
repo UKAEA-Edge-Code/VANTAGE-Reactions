@@ -31,11 +31,11 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
     invalid_trim_dims_vec.push_back(uniform_dist_0(rng));
   }
 
-  std::vector<REAL> invalid_ranges_vec;
+  std::vector<REAL> invalid_coords_vec;
   for (int i = 0; i < ndim; i++) {
     // Deliberately over-allocating
     for (int j = 0; j < invalid_dims_vec[i] + 2; j++) {
-      invalid_ranges_vec.push_back(uniform_dist_1(rng));
+      invalid_coords_vec.push_back(uniform_dist_1(rng));
     }
   }
 
@@ -50,7 +50,7 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   auto num_grid_elems = 0;
   for (int i = 0; i < ndim; i++) {
     // Deliberately under-allocating
-    num_grid_elems += invalid_ranges_vec[i] - 2;
+    num_grid_elems += invalid_coords_vec[i] - 2;
   }
 
   num_grid_elems *= invalid_grid_stride;
@@ -64,7 +64,7 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // Extra brackets around TrimEval needed due to googletest-related
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW((TrimEvalData<input_ndim>(invalid_grid_vec, invalid_ranges_vec,
+    EXPECT_THROW((TrimEvalData<input_ndim>(invalid_grid_vec, invalid_coords_vec,
                                            invalid_dims_vec,
                                            invalid_trim_dims_vec, sycl_target)),
                  std::logic_error);
@@ -78,7 +78,7 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // Extra brackets around TrimEval needed due to googletest-related
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW((TrimEvalData<input_ndim>(invalid_grid_vec, invalid_ranges_vec,
+    EXPECT_THROW((TrimEvalData<input_ndim>(invalid_grid_vec, invalid_coords_vec,
                                            dims_vec, invalid_trim_dims_vec,
                                            sycl_target)),
                  std::logic_error);
@@ -93,15 +93,15 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(
-        (TrimEvalData<input_ndim>(invalid_grid_vec, invalid_ranges_vec,
+        (TrimEvalData<input_ndim>(invalid_grid_vec, invalid_coords_vec,
                                   dims_vec, trim_dims_vec, sycl_target)),
         std::logic_error);
 
   // Test grid_size error
-  std::vector<REAL> ranges_vec;
+  std::vector<REAL> coords_vec;
   for (int i = 0; i < ndim; i++) {
     for (int j = 0; j < dims_vec[i]; j++) {
-      ranges_vec.push_back(uniform_dist_1(rng));
+      coords_vec.push_back(uniform_dist_1(rng));
     }
   }
 
@@ -109,7 +109,7 @@ TEST(TrimEval, INVALID_BOUNDS_CHECK) {
   // preprocessor issue.
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(
-        (TrimEvalData<input_ndim>(invalid_grid_vec, ranges_vec, dims_vec,
+        (TrimEvalData<input_ndim>(invalid_grid_vec, coords_vec, dims_vec,
                                   trim_dims_vec, sycl_target)),
         std::logic_error);
 

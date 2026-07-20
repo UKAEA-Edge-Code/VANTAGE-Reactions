@@ -63,7 +63,7 @@ A few pre-requisites for the construction of :class:`InterpolateData`:
   - ``interp_ndim``, a ``size_t`` template parameter that specifies how many dimensions out of the total number of dimensions of the grid to interpolate.
   - ``non_interp_ndim``, a ``size_t`` template parameter that is effectively the inverse of ``interp_ndim`` (default value is 0).
   - ``dims_vec`` , a ``std::vector<size_t>`` that contains the lengths of the extent of each dimension in the grid.
-  - ``ranges_vec``, a ``std::vector<REAL>`` that is a vector containing a concatenated list of all of values of each dimension in the same order as ``dims_vec``. For example if ``dims_vec = {3, 2}`` then ``ranges_vec = {dim0_val_0, dim0_val_1, dim0_val_2, dim1_val_0, dim1_val_1}``.
+  - ``coords_vec``, a ``std::vector<REAL>`` that is a vector containing a concatenated list of all of values of each dimension in the same order as ``dims_vec``. For example if ``dims_vec = {3, 2}`` then ``coords_vec = {dim0_val_0, dim0_val_1, dim0_val_2, dim1_val_0, dim1_val_1}``.
   - ``interp_indices``, a ``std::array<REAL, interp_ndim>`` that just specifies which of the dimensions of the grid are to be interpolated.
   - ``extrapolation_type``, an enum specifying the choice of how to handle extrapolation as explained in `Extrapolation`_.
 

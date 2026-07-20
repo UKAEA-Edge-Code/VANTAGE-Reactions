@@ -53,7 +53,7 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
 
   auto dims_vec = grid_descriptor.get_interp_dims();
 
-  auto ranges_vec = grid_descriptor.get_flat_ranges();
+  auto coords_vec = grid_descriptor.get_flat_coords();
 
   // Helper class that provides a calc_data() that retrieves values from the
   // pre-calculated grid in grid_descriptor.
@@ -72,7 +72,7 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
   // InterpolateData.
   auto interpolate_data =
       InterpolateData<trim_ndim, interp_ndim, decltype(grid_func_data),
-                      trim_ndim>(dims_vec, ranges_vec, interp_indices,
+                      trim_ndim>(dims_vec, coords_vec, interp_indices,
                                  particle_group->sycl_target, grid_func_data);
   // If a different extrapolation other than continue_linear is needed, then
   // just add either:

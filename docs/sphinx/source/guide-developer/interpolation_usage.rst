@@ -72,7 +72,7 @@ In short, the :class:`GridDescriptor` takes in an array of vectors (where each v
 
 The resulting :class:`GridDescriptor` object can then be passed to :class:`CartesianGridData` (which contains the crucial :func:`calc_data` in the on-device object) and this is the object that is then passed to :class:`InterpolateData`.
 
-For convenience, the ``dims_vec`` and ``ranges_vec`` that are needed for :class:`InterpolateData` can also be retrieved from the :class:`GridDescriptor` object via getters (ie. :func:`get_interp_dims` and :func:`get_flat_ranges`).
+For convenience, the ``dims_vec`` and ``coords_vec`` that are needed for :class:`InterpolateData` can also be retrieved from the :class:`GridDescriptor` object via getters (ie. :func:`get_interp_dims` and :func:`get_flat_coords`).
 
 .. _trim_case:
 

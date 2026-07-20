@@ -29,7 +29,7 @@ inline void interpolation_example(ParticleGroupSharedPtr particle_group) {
 
   auto dims_vec = grid_descriptor.get_interp_dims();
 
-  auto ranges_vec = grid_descriptor.get_flat_ranges();
+  auto coords_vec = grid_descriptor.get_flat_coords();
 
   // Helper class that provides a calc_data() that retrieves values from the
   // pre-calculated grid in grid_descriptor.
@@ -42,7 +42,7 @@ inline void interpolation_example(ParticleGroupSharedPtr particle_group) {
   // with results from another ReactionData-derived object acting as inputs for
   // InterpolateData.
   auto interpolate_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
-      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
+      dims_vec, coords_vec, particle_group->sycl_target, grid_func_data);
   // If a different extrapolation other than continue_linear is needed, then
   // just add either:
   //  - ExtrapolationType::clamp_to_edge
