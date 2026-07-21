@@ -53,7 +53,10 @@ public:
     source_density,
     fluid_density,
     fluid_temperature,
-    fluid_flow_speed
+    fluid_flow_speed,
+    surface_basis_e1,
+    surface_basis_e2,
+    surface_basis_pi
   };
 };
 
@@ -120,7 +123,10 @@ private:
       {default_properties.source_density, "SOURCE_DENSITY"},
       {default_properties.fluid_density, "FLUID_DENSITY"},
       {default_properties.fluid_temperature, "FLUID_TEMPERATURE"},
-      {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
+      {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"},
+      {default_properties.surface_basis_e1, "SURFACE_BASIS_E1"},
+      {default_properties.surface_basis_e2, "SURFACE_BASIS_E2"},
+      {default_properties.surface_basis_pi, "SURFACE_BASIS_PI"}};
 };
 
 inline auto get_default_map() { return PropertiesMap().get_map(); }
