@@ -16,6 +16,17 @@ class Vantagereactions(CMakePackage):
     version("working", branch="reactions-base", preferred=True)
 
     variant("enable_tests", default=False, description="Enable tests")
+    variant(
+        "header_only",
+        default=False,
+        description=(
+            "Build as a header-only INTERFACE library instead of a compiled "
+            "SHARED/STATIC library (maps to "
+            "-DVANTAGE_REACTIONS_HEADER_ONLY=ON). The compiled build is the "
+            "default; opt into this only if you need the legacy header-only "
+            "behaviour."
+        ),
+    )
 
     depends_on("c")
     depends_on("cxx")
@@ -27,5 +38,6 @@ class Vantagereactions(CMakePackage):
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
+        args.append(self.define_from_variant("VANTAGE_REACTIONS_HEADER_ONLY", "header_only"))
 
         return args

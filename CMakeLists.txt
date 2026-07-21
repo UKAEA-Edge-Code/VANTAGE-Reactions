@@ -7,14 +7,50 @@ project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
+# RPATH so installed binaries/libraries find their deps without
+# LD_LIBRARY_PATH juggling (matches neso-particles).
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
 # Produce compile_commands.json for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-# Create interface/Header only library
-add_library(VANTAGE-Reactions INTERFACE)
-add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
+# ---------------------------------------------------------------------------
+# Library type
+# ---------------------------------------------------------------------------
+# By default VANTAGE-Reactions is built as a compiled library (SHARED, or
+# STATIC when BUILD_SHARED_LIBS is OFF) that ships pre-compiled template
+# instantiations and SYCL device code. The original header-only INTERFACE
+# target is still available with -DVANTAGE_REACTIONS_HEADER_ONLY=ON.
+option(VANTAGE_REACTIONS_HEADER_ONLY "Build header-only (no compiled library)" OFF)
 
-target_compile_features(VANTAGE-Reactions INTERFACE cxx_std_17)
+if(VANTAGE_REACTIONS_HEADER_ONLY)
+  add_library(VANTAGE-Reactions INTERFACE)
+  add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
+else()
+  if(DEFINED BUILD_SHARED_LIBS AND NOT BUILD_SHARED_LIBS)
+    set(VANTAGE_REACTIONS_DEFAULT_LIB_TYPE STATIC)
+  else()
+    set(VANTAGE_REACTIONS_DEFAULT_LIB_TYPE SHARED)
+  endif()
+  set(VANTAGE_REACTIONS_LIB_TYPE "${VANTAGE_REACTIONS_DEFAULT_LIB_TYPE}"
+      CACHE STRING "Library type (STATIC or SHARED)")
+  set_property(CACHE VANTAGE_REACTIONS_LIB_TYPE PROPERTY STRINGS STATIC SHARED)
+  add_library(VANTAGE-Reactions ${VANTAGE_REACTIONS_LIB_TYPE})
+  add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
+endif()
+
+set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD 17)
+set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD_REQUIRED ON)
+
+# Export version macros to consumers (matches neso-particles). INTERFACE is
+# used so the same line is valid in both build modes: on the compiled target it
+# propagates to consumers (the library TU does not consume the macros); on the
+# header-only INTERFACE target it is the only permitted scope.
+target_compile_definitions(VANTAGE-Reactions
+    INTERFACE VANTAGE_REACTIONS_VERSION_MAJOR=${CMAKE_PROJECT_VERSION_MAJOR}
+              VANTAGE_REACTIONS_VERSION_MINOR=${CMAKE_PROJECT_VERSION_MINOR}
+              VANTAGE_REACTIONS_VERSION_PATCH=${CMAKE_PROJECT_VERSION_PATCH})
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
@@ -29,6 +65,11 @@ add_subdirectory(src)
 # Set the build type environment variable
 ############################################################
 option(REACTIONS_ENABLE_TESTS "Build tests." ON)
+# The external-consumer smoke test (test/external_consumer/) is a standalone
+# CMake project that links ONLY the installed compiled library via
+# find_package(VANTAGE-Reactions). It cannot be built as part of the main
+# build because it requires a prior `cmake --install`. CI runs it as a
+# separate post-install step; see run_tests.sh and .github/workflows/tests-ci.yml.
 
 if (REACTIONS_ENABLE_TESTS)
   add_subdirectory(test)
@@ -52,9 +93,14 @@ configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+write_basic_package_version_file(
+  ${PROJECT_NAME}ConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY AnyNewerVersion)
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
 )
 export(

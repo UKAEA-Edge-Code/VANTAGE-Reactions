@@ -60,4 +60,6 @@
 #include "../reactions_lib/downsampling_kernels/simple_thinning_kernels.hpp"
 #include "../reactions_lib/downsampling_kernels/vranic_merging_kernels.hpp"
 
+#include "../reactions_lib/extern_templates.hpp"
+
 #endif

@@ -1,4 +1,17 @@
 # Instructions for adding/creating new reactions
+
+> **Note (runtime library):** in addition to the three header files described
+> below, adding a new **public** reaction now also means adding its explicit
+> template instantiation to
+> `src/reactions_lib/instantiations/instantiations.cpp` (with a matching
+> `extern template class …` declaration in
+> `src/reactions_lib/extern_templates.hpp`). Without those edits the
+> compiled `libVANTAGE-Reactions.so` will not contain the new specialization,
+> and a consumer that only links the installed library will see unresolved
+> symbols for that combination — they would have to fall back to compiling
+> the headers themselves or add an explicit instantiation in their own
+> code. Reactions that are strictly internal / test-only can skip this step.
+
 - To add a new reaction, 3 header files(and their corresponding folders) need to be added to `src/reactions_lib`.
 ## Header file for ReactionData
 - A header file defining the data and reaction rate calculation for a given reaction needs to be created.

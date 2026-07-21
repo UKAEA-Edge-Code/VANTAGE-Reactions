@@ -27,6 +27,27 @@ jobs:
         run: |
           docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
 
+      - name: external-consumer-smoke-test
+        # Builds and runs test/external_consumer against the spack-installed
+        # libVANTAGE-Reactions.so from the prior unit-tests container. The
+        # consumer project only sees the installed tree (no source-tree
+        # access), so it is a true runtime-library smoke test. Reuses ci_test's
+        # filesystem state; `docker start` resurrects the exited ci_test with
+        # the image entrypoint (`/bin/bash`) so `docker exec` can run.
+        run: |
+          docker start ci_test && docker exec ci_test bash -lc '
+            cd /root/Reactions &&
+            source /opt/spack/share/spack/setup-env.sh &&
+            spack env activate -p -d environments/spack_omp_accelerated &&
+            spack load vantagereactions &&
+            VANTAGE_PREFIX=$(spack location -i vantagereactions) &&
+            DEPS="${VANTAGE_PREFIX};$(spack location -i neso-particles);$(spack location -i adaptivecpp)" &&
+            rm -rf build-consumer &&
+            cmake -S test/external_consumer -B build-consumer -DCMAKE_PREFIX_PATH="${DEPS}" &&
+            cmake --build build-consumer &&
+            ./build-consumer/consumer_smoke
+          '
+
   docs:
     runs-on: ubuntu-24.04
     steps:

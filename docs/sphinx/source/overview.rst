@@ -11,5 +11,6 @@ Overview
    overview/reactions
    overview/marking_transformations
    overview/reaction_controllers
+   overview/supported_instantiations
 
 

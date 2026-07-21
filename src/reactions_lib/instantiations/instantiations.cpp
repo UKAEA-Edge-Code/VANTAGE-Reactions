@@ -1,11 +1,11 @@
-#include "include/example_template_instantiations.hpp"
+// Explicit template instantiations shipped by the compiled VANTAGE-Reactions
+// library. Compiled only when VANTAGE_REACTIONS_HEADER_ONLY is OFF (see
+// src/CMakeLists.txt). The matching `extern template` declarations live in
+// src/reactions_lib/extern_templates.hpp, included from reactions.hpp.
 
-// In compiled-library mode the library ships these explicit instantiations
-// (src/reactions_lib/instantiations/instantiations.cpp) and the matching
-// extern-template declarations suppress implicit instantiation in every
-// consumer. Only emit them from the test TU in header-only mode, otherwise
-// the linker sees duplicate symbols.
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
+#include "reactions/reactions.hpp"
+#include "reactions_lib/extern_templates.hpp"
+
 namespace VANTAGE::Reactions {
 
 // ---------------------------------------------------------------------------
@@ -21,8 +21,15 @@ template class LinearReactionBase<
 template class LinearReactionBase<1, FixedRateData,
                                   LinearScatteringKernels<2, true>,
                                   ScatteringDataCalculator>;
+template class LinearReactionBase<
+    1, FixedRateData, CXReactionKernels<3>,
+    DataCalculator<FixedRateData, FixedRateData, FixedRateData>>;
+template class LinearReactionBase<1, FixedRateData,
+                                  LinearScatteringKernels<3, true>,
+                                  ScatteringDataCalculator3D>;
 
 template class ElectronImpactIonisation<FixedRateData, FixedRateData, 2>;
+template class ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData, 2>;
 template class Recombination<
     FixedRateData, DataCalculator<FixedRateData, FixedRateData, FixedRateData>,
     2>;
@@ -34,6 +41,8 @@ template class CXReactionKernels<2>;
 template class IoniseReactionKernels<2>;
 template class RecombReactionKernels<2, 2>;
 template class LinearScatteringKernels<2, true>;
+template class CXReactionKernels<3>;
+template class LinearScatteringKernels<3, true>;
 
 // ---------------------------------------------------------------------------
 // DataCalculator specialisations
@@ -65,4 +74,3 @@ template class FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
 template class CellwiseReactionDataAccumulator<KinEnergyData>;
 
 } // namespace VANTAGE::Reactions
-#endif // VANTAGE_REACTIONS_HEADER_ONLY

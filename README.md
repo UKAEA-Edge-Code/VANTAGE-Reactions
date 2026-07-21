@@ -1,6 +1,6 @@
 # Edge Code Reactions Library
 
-VANTAGE-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library.
+VANTAGE-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library. By default it is built and installed as a compiled runtime library (`libVANTAGE-Reactions.so`) that ships pre-compiled template instantiations and SYCL device code; a header-only build is available as an opt-out via `-DVANTAGE_REACTIONS_HEADER_ONLY=ON`.
 
 Features provided by the library are:
 - An extensible reaction abstraction, designed to be modular, separating the data and the actions on the parents/products 
