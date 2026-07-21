@@ -57,10 +57,10 @@ struct HSScatteringDataOnDevice
     }
 
     for (int i = 0; i < vel_ndim; i++) {
-      output[i] =
-          com_vel[i] * this->tot_mass_inv + random_nums[i] * random_norm_inv;
-      output[vel_ndim + i] =
-          com_vel[i] * this->tot_mass_inv - random_nums[i] * random_norm_inv;
+      output[i] = com_vel[i] * this->tot_mass_inv +
+                  rel_speed * random_nums[i] * random_norm_inv;
+      output[vel_ndim + i] = com_vel[i] * this->tot_mass_inv -
+                             rel_speed * random_nums[i] * random_norm_inv;
     }
     return output;
   }

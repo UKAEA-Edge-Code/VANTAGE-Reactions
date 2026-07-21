@@ -250,6 +250,8 @@ struct PairScatteringKernels : public PairReactionKernelsBase {
 
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.weight};
+  constexpr static std::array<int, 1> required_simple_int_props = {
+      props.weight};
   constexpr static std::array<int, 1> required_descendant_simple_int_props = {
       props.internal_state};
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
@@ -275,10 +277,10 @@ struct PairScatteringKernels : public PairReactionKernelsBase {
     this->set_required_descendant_real_props_a(
         Properties<REAL>(required_descendant_simple_real_props));
 
-    this->set_required_descendant_int_props_a(
+    this->set_required_descendant_int_props_b(
         Properties<INT>(required_descendant_simple_int_props));
 
-    this->set_required_descendant_real_props_a(
+    this->set_required_descendant_real_props_b(
         Properties<REAL>(required_descendant_simple_real_props));
 
     this->pair_scattering_kernels_on_device.descendant_internal_state_ind =
