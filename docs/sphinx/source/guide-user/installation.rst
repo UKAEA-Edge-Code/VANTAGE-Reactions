@@ -152,3 +152,138 @@ Similarly, to enable testing of failure states on GPU:
 ::
 
     TEST_NESOASSERT=ON SYCL_DEVICE_FILTER=GPU mpirun -n 1 unit_tests
+
+Compile and run an individual unit test
+=======================================
+
+By default the unit tests are built as a single ``unit_tests`` executable that
+contains every ``test_*.cpp`` under ``test/unit/``. That is what the commands
+above run, and what CI and ``run_tests.sh`` use. For faster iteration on a
+single test (or a small set), enable *split mode*, which builds one executable
+per ``test_*.cpp`` linked against a shared object library of the non-test
+translation units (the GoogleTest/MPI ``Main.cpp`` plus the two test-only
+template-instantiation sources).
+
+There are two ways to use split mode: through the Spack package (the
+supported path, recommended if you installed via Spack) or by configuring the
+source tree with CMake directly (useful for fast iteration in a clone without
+re-running a Spack install).
+
+Via the Spack package
+~~~~~~~~~~~~~~~~~~~~~
+
+The ``vantagereactions`` Spack package exposes two variants that map onto the
+CMake options:
+
+* ``tests_split`` (bool, default off) — enables split mode.
+* ``test_filter`` (multi-valued string, default ``all``) — selects which
+  ``test_*.cpp`` stems to build. ``all`` (the default) builds every test;
+  otherwise pass one or more stems, comma-separated.
+
+Both are only meaningful when tests are enabled (``+enable_tests``);
+requesting ``+tests_split`` without ``+enable_tests`` results in a concretization
+error.
+
+.. note::
+
+    ``vantagereactions`` and ``neso-particles`` live in custom Spack repos
+    (``VANTAGE-repo`` and ``NESO-Spack``) that are only registered inside the
+    project's environments under ``environments/``, so split-mode specs must be
+    installed **inside one of those environments** — a bare ``spack install
+    vantagereactions...`` outside an env fails with ``'vantagereactions' does not
+    exist``. Inside an activated environment, Spack further refuses specs that
+    are not already listed in the env's ``spack.yaml`` (``Cannot install '...'
+    because no matching specs are in the current environment.``). The commands
+    below use ``spack -e <env> install --add``, which adds the spec to the
+    environment and installs it in one step. Remove it afterwards with
+    ``spack -e <env> rm '<spec>'`` (and ``concretize -f``) so it stops being
+    concretized alongside the monolith.
+
+.. warning::
+
+    The split spec **must repeat the** ``^`` **dependency constraints** that the
+    environment's monolith root spec pins. The project environments only pin the SYCL
+    *provider* (``adaptivecpp``) in their ``packages:`` block, not the
+    ``compilationflow`` variant or ``neso-particles~build_tests``; those live on
+    the root spec itself. A bare split spec (``vantagereactions+enable_tests
+    +tests_split`` with no ``^`` constraints) concretizes a separate DAG (the
+    project envs use ``concretizer: unify: false``) but against the *default*
+    ``adaptivecpp compilationflow`` and ``neso-particles+build_tests`` — i.e.
+    the wrong backend and an unnecessary test build of neso-particles.
+
+    The fix is to carry the same ``^`` suffix as the monolith root spec. For
+    ``spack_default`` that is ``build_type=Release ^neso-particles~build_tests
+    ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest``. The commands
+    below include it. (For ``spack_omp_accelerated``, copy the ``^`` suffix from
+    that env's own root spec — it pins the omp-accelerated ``compilationflow``.)
+
+Installation with split mode on, building every ``test_*.cpp`` as its own
+executable (substitute the environment you are using, e.g.
+``environments/spack_default``, and its matching ``^`` suffix)::
+
+    spack -e environments/spack_default install --add \
+        'vantagereactions+enable_tests+tests_split build_type=Release ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest'
+
+To build only one test (the fastest path when iterating on a single file),
+pass its stem via ``test_filter``:
+::
+
+    spack -e environments/spack_default install --add \
+        'vantagereactions+enable_tests+tests_split test_filter=test_reaction_controller build_type=Release ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest'
+
+A comma-separated list selects several:
+::
+
+    spack -e environments/spack_default install --add \
+        'vantagereactions+enable_tests+tests_split test_filter=test_properties,test_species build_type=Release ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest'
+
+An unknown stem fails at concretization (typo-proofing). The built executables
+land under the per-package build stage — they are a development convenience and
+are **not** installed into the Spack prefix, so ``spack load vantagereactions``
+does not put them on ``PATH``. Find them with:
+::
+
+    spack -e environments/spack_default location -b \
+        'vantagereactions+enable_tests+tests_split test_filter=test_reaction_controller build_type=Release ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest'
+
+and run with MPI as usual:
+::
+
+    OMP_NUM_THREADS=1 mpirun -n 1 <build_dir>/test/unit/test_reaction_controller
+
+Via a direct CMake configure of the source tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you are working in a clone of the repository and already have the
+dependencies installed (e.g. via a prior ``spack install``), you can configure
+the source tree with CMake directly and pass the same two options as CMake
+cache variables:
+::
+
+    cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \
+        -DREACTIONS_ENABLE_TESTS=ON -DREACTIONS_TESTS_SPLIT=ON \
+        -DCMAKE_BUILD_TYPE=Release
+    cmake --build build
+
+With no further options this produces one executable per ``test_*.cpp``, named
+after the source stem (e.g. ``test_reaction_controller``, ``test_species``).
+Run the one you want with MPI as before:
+::
+
+    OMP_NUM_THREADS=1 mpirun -n 1 build/test/unit/test_reaction_controller
+
+To build only a single test, pass its source stem via
+``REACTIONS_TEST_FILTER``:
+::
+
+    cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \
+        -DREACTIONS_ENABLE_TESTS=ON -DREACTIONS_TESTS_SPLIT=ON \
+        -DREACTIONS_TEST_FILTER=test_reaction_controller \
+        -DCMAKE_BUILD_TYPE=Release
+    cmake --build build
+    OMP_NUM_THREADS=1 mpirun -n 1 build/test/unit/test_reaction_controller
+
+``REACTIONS_TEST_FILTER`` accepts a single stem or a semicolon-separated list,
+e.g. ``-DREACTIONS_TEST_FILTER="test_properties;test_species"``. An empty
+value (the default) builds every ``test_*.cpp``. A stem that does not match any
+``test_*.cpp`` is a hard configure error, so typos are caught early.

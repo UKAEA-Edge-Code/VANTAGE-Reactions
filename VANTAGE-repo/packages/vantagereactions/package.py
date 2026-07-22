@@ -27,6 +27,29 @@ class Vantagereactions(CMakePackage):
             "behaviour."
         ),
     )
+    variant(
+        "tests_split",
+        default=False,
+        description=(
+            "Build one executable per test_*.cpp instead of the single "
+            "unit_tests monolith (maps to -DREACTIONS_TESTS_SPLIT=ON). "
+            "Off by default; the monolith is what CI and run_tests.sh use. "
+            "Only meaningful with +enable_tests."
+        ),
+    )
+    variant(
+        "test_filter",
+        default="all",
+        values=any,
+        multi=True,
+        description=(
+            "When +tests_split, build only these test_*.cpp stems. 'all' "
+            "(the default) builds every test_*.cpp. Otherwise one or more "
+            "stems, e.g. test_filter=test_reaction_controller or "
+            "test_filter=test_properties,test_species. Maps to "
+            "-DREACTIONS_TEST_FILTER. An unknown stem fails at configure time."
+        ),
+    )
 
     depends_on("c")
     depends_on("cxx")
@@ -35,9 +58,18 @@ class Vantagereactions(CMakePackage):
     depends_on("sycl", type=("build", "link", "run"))
     depends_on("googletest", type=("build", "link", "run"))
 
+    # tests_split is only meaningful when tests are built.
+    conflicts("+tests_split", when="~enable_tests")
+
     def cmake_args(self):
         args = []
         args.append(self.define_from_variant("REACTIONS_ENABLE_TESTS", "enable_tests"))
         args.append(self.define_from_variant("VANTAGE_REACTIONS_HEADER_ONLY", "header_only"))
-
+        args.append(self.define_from_variant("REACTIONS_TESTS_SPLIT", "tests_split"))
+        # test_filter is a multi-valued variant of test_*.cpp stems; 'all'
+        # (the default) means no filter (build every test_*.cpp). CMake wants a
+        # semicolon list, so join the spack variant values.
+        test_filter = self.spec.variants["test_filter"].value
+        if test_filter and "all" not in test_filter:
+            args.append(self.define("REACTIONS_TEST_FILTER", ";".join(test_filter)))
         return args
