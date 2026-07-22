@@ -148,7 +148,11 @@ Verifying the installed library
 A standalone CMake project lives at ``test/external_consumer/`` that
 configures against only the installed tree via
 ``find_package(VANTAGE-Reactions)``, links the installed library, and
-exercises one of the supported instantiations. It is intended to be run as
-a post-install smoke test (`cmake --install`, then configure and build the
-consumer project against the install prefix) to confirm the runtime
-library is genuinely linkable without the source tree.
+ODR-uses (via a null pointer) **every** shipped instantiation listed
+above. Each ODR-use forces the consumer TU to respect the matching
+``extern template`` declaration and let the library provide the
+definition, so a missing instantiation surfaces as an unresolved symbol
+at link time. It is intended to be run as a post-install smoke test
+(`cmake --install`, then configure and build the consumer project
+against the install prefix) to confirm the runtime library is genuinely
+linkable without the source tree.

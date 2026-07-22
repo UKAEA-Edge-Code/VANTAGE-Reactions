@@ -117,6 +117,34 @@ Similarly for HIP-specific installations (for AMD GPUs), the environment is prov
 
 The ``spack.yaml`` files do have some limited guidance on things like specifying GPU architecture and some dependencies but there may need to be more modifications system-side to make things work smoothly.
 
+Header-only (INTERFACE) opt-out
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default ``VANTAGE-Reactions`` is built as a **compiled runtime library**
+(``SHARED``/``STATIC``) and consumers link the installed ``.so``/``.a``. A
+header-only ``INTERFACE`` target is available as an opt-out, mapping to
+``-DVANTAGE_REACTIONS_HEADER_ONLY=ON``. In that mode no ``.so`` is built and
+every consumer compiles the headers itself (the pre-shipped template
+instantiations and ``extern template`` declarations are not used). Opt in
+only if you need the legacy header-only behaviour; the compiled build is
+recommended.
+
+Via the Spack package, add the ``+header_only`` variant to the spec (inside
+an activated environment, repeating the environment's ``^`` dependency
+constraints as for the other variants above). For ``spack_default``::
+
+    spack -e environments/spack_default install --add \
+        'vantagereactions+header_only build_type=Release ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest'
+
+Via a direct CMake configure of the source tree, pass the cache variable
+instead::
+
+    cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \
+        -DVANTAGE_REACTIONS_HEADER_ONLY=ON -DCMAKE_BUILD_TYPE=Release
+
+See :doc:`../overview/supported_instantiations` for which template
+instantiations ship pre-compiled in the default (compiled) build.
+
 If any compatibility issues are present when attempting these optional variants, please contact the repo maintainers for support.
 
 Run unit-tests (CPU)
