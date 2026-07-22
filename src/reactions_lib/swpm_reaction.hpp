@@ -148,12 +148,7 @@ struct SWPMReaction : ProfilingBase {
         max_buffer_size(16384 *
                         get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {}
 
-  virtual ~SWPMReaction() {
-    if (this->submitted_sigma_v_max_loop) {
-      this->sigma_v_max_loop->wait();
-      this->submitted_sigma_v_max_loop = false;
-    }
-  };
+  virtual ~SWPMReaction() = default;
 
 public:
   template <typename TARGET, typename PAIR_LIST>
@@ -205,38 +200,6 @@ public:
                                                      cell_idx_end);
   }
 
-  template <typename TARGET, typename PAIR_LIST>
-  void launch_sigma_v_max_loop(
-      CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
-      INT cell_idx_start, INT cell_idx_end) {
-
-    this->prepare_sigma_v_bounds();
-
-    if (this->submitted_sigma_v_max_loop) {
-      this->sigma_v_max_loop->wait();
-      this->submitted_sigma_v_max_loop = false;
-    }
-    NESOASSERT(pair_list.A->sycl_target == sycl_target_stored,
-               "sycl_target assigned to particle_group is not the same as "
-               "the sycl_target passed to Reaction object...");
-    this->sigma_v_max_loop = particle_pair_loop(
-        "max_sigma_v_loop", pair_list,
-        [](auto pair_index, auto max_sigma_v, auto buffer, auto coll_cell,
-           auto cell_id) {
-          INT current_count = pair_index.get_loop_linear_index();
-          max_sigma_v.fetch_max(cell_id[0], coll_cell[0],
-                                buffer[current_count]);
-        },
-        Access::read(ParticlePairLoopIndex{}),
-        Access::max(this->sigma_v_bounds),
-        Access::read(this->device_rate_buffer),
-        Access::A(Access::read(this->collision_cell_sym)),
-        Access::A(Access::read(this->cell_id_sym)));
-
-    this->sigma_v_max_loop->submit(cell_idx_start, cell_idx_end);
-    this->submitted_sigma_v_max_loop = true;
-  }
-
   std::vector<std::vector<REAL>> get_sigma_v_bounds(INT cell_idx_start,
                                                     INT cell_idx_end) {
 
@@ -247,11 +210,6 @@ public:
       this->num_mesh_cells = cell_idx_end;
     }
     this->prepare_sigma_v_bounds();
-
-    if (this->submitted_sigma_v_max_loop) {
-      this->sigma_v_max_loop->wait();
-      this->submitted_sigma_v_max_loop = false;
-    }
 
     auto bounds = this->sigma_v_bounds->get();
 
@@ -518,6 +476,34 @@ protected:
     return std::vector<int>(this->reactants.begin(), this->reactants.end());
   }
 
+  template <typename TARGET, typename PAIR_LIST>
+  void launch_sigma_v_max_loop(
+      CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+      INT cell_idx_start, INT cell_idx_end) {
+
+    this->prepare_sigma_v_bounds();
+
+    NESOASSERT(pair_list.A->sycl_target == sycl_target_stored,
+               "sycl_target assigned to particle_group is not the same as "
+               "the sycl_target passed to Reaction object...");
+    // Loop set as member for future async work
+    this->sigma_v_max_loop = particle_pair_loop(
+        "max_sigma_v_loop", pair_list,
+        [](auto pair_index, auto max_sigma_v, auto buffer, auto coll_cell,
+           auto cell_id) {
+          INT current_count = pair_index.get_loop_linear_index();
+          max_sigma_v.fetch_max(cell_id[0], coll_cell[0],
+                                buffer[current_count]);
+        },
+        Access::read(ParticlePairLoopIndex{}),
+        Access::max(this->sigma_v_bounds),
+        Access::read(this->device_rate_buffer),
+        Access::A(Access::read(this->collision_cell_sym)),
+        Access::A(Access::read(this->cell_id_sym)));
+
+    this->sigma_v_max_loop->execute(cell_idx_start, cell_idx_end);
+  }
+
 private:
   Sym<REAL> total_reaction_rate;
   LocalArraySharedPtr<REAL> device_rate_buffer;
@@ -556,7 +542,6 @@ private:
   REAL default_rel_vel;
 
   ParticlePairLoopBaseSharedPtr sigma_v_max_loop;
-  bool submitted_sigma_v_max_loop = false;
 
   DataCalc data_calculator;
 };
