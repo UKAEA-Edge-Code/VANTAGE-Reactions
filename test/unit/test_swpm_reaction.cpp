@@ -62,7 +62,8 @@ TEST(SWPMReactions, simple_hs_scattering) {
   auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
       A, B, cellwise_pair_list);
 
-  auto cs_data = CSPairData<2>(ConstantRateCrossSection(0.1));
+  auto cs_data =
+      CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.05, 1.0));
 
   auto rng_lambda = [&]() -> REAL { return 0.6; };
 
@@ -83,10 +84,18 @@ TEST(SWPMReactions, simple_hs_scattering) {
           A->sycl_target, std::array<int, 2>{0, 0}, std::array<int, 2>{1, 2},
           cs_data, scattering_kernels, pair_data_calculator);
 
-  //  for (int i = 0; i < cell_count; i++) {
-  //    swpm_reaction.calculate_rates(pair_list, i, i + 1);
-  //  }
-  swpm_reaction.calculate_rates(pair_list, 0, cell_count);
+  auto bounds = swpm_reaction.get_sigma_v_bounds(0, cell_count);
+  for (auto it = bounds[0].begin(); it != bounds[0].end(); it++) {
+    EXPECT_DOUBLE_EQ(*it, 0.05);
+  }
+  for (int i = 0; i < cell_count; i++) {
+    swpm_reaction.calculate_rates(pair_list, i, i + 1);
+    auto bounds = swpm_reaction.get_sigma_v_bounds(i, i + 1);
+    EXPECT_DOUBLE_EQ(bounds[0][0], 0.1);
+    for (auto it = bounds[0].begin() + 1; it != bounds[0].end(); it++) {
+      EXPECT_DOUBLE_EQ(*it, 0.05);
+    }
+  }
   particle_loop(
       "copy_weight_change_test", A,
       [=](auto tot_rate, auto weight_change) {
@@ -99,10 +108,9 @@ TEST(SWPMReactions, simple_hs_scattering) {
   auto descendant_particles = std::make_shared<ParticleGroup>(
       A->domain, A->get_particle_spec(), A->sycl_target);
 
-  //  for (int i = 0; i < cell_count; i++) {
-  //    swpm_reaction.apply(pair_list, i, i + 1, 1.0, descendant_particles);
-  //  }
-  swpm_reaction.apply(pair_list, 0, cell_count, 1.0, descendant_particles);
+  for (int i = 0; i < cell_count; i++) {
+    swpm_reaction.apply(pair_list, i, i + 1, 1.0, descendant_particles);
+  }
 
   // Expected velocities:
   // Centre-of-mass velocity: (1.2*2+2*4)/3.2 = 3.25

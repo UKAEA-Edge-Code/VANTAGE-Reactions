@@ -45,6 +45,20 @@ struct ConstantCrossSection : public AbstractCrossSection {
   };
 
   /**
+   * @brief Get the greedy maximum value of sigma*v_r where sigma is this
+   * cross-section evaluated at v_r and v_r is the relative speed of the
+   * projectile and target. This should (in most cases) be implemented to return
+   * values less than or equal to the one with get_max_rate_val()
+   *
+   * @param relative_vel Magnitude of relative velocity of the projectile and
+   * target
+   * @return REAL-valued maximum rate
+   */
+  REAL get_max_rate_val_greedy(const REAL &relative_vel) const {
+    return this->constant_sigma * relative_vel;
+  };
+
+  /**
    * @brief Get the greedy maximum value of sigma*v_r.
    *
    * @param relative_vel Magnitude of relative velocity of the projectile and

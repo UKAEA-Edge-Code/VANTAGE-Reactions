@@ -52,7 +52,7 @@ struct AbstractCrossSection {
    * target
    * @return REAL-valued maximum rate
    */
-  REAL get_max_rate_val(REAL relative_vel) const {
+  REAL get_max_rate_val_greedy(const REAL &relative_vel) const {
     // TODO: check if this still causes issues (see workarounds below)
     return this->get_max_rate_val();
   };

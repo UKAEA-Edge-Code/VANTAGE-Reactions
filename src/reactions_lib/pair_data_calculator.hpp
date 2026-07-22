@@ -104,7 +104,7 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
                 // instead of execute
                 constexpr auto data_dim = reaction_data_on_device.get_dim();
                 auto loop = particle_pair_loop(
-                    "pair_data_calc_loop", {pair_list},
+                    "pair_data_calc_loop", pair_list,
                     [=](auto pair_index, auto req_int_props_a,
                         auto req_real_props_a, auto req_int_props_b,
                         auto req_real_props_b, auto buffer, auto kernel) {

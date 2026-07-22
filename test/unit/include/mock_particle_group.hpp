@@ -175,6 +175,7 @@ inline auto create_test_particle_groups_pairs(int N_total)
       ParticleProp(Sym<REAL>("POSITION"), ndim, true),
       ParticleProp(Sym<REAL>("VELOCITY"), ndim),
       ParticleProp(Sym<INT>("CELL_ID"), 1, true),
+      ParticleProp(Sym<INT>("COLLISION_CELL"), 1),
       ParticleProp(Sym<INT>("REACTIONS_PANIC_FLAG"), 1),
       ParticleProp(Sym<INT>("REACTIONS_GROUPING_INDEX"), 1),
       ParticleProp(Sym<INT>("REACTIONS_LINEAR_INDEX"), 1),
@@ -235,6 +236,7 @@ inline auto create_test_particle_groups_pairs(int N_total)
           1.0 + 2.0 * dimx;
     }
     initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
+    initial_distribution[Sym<INT>("COLLISION_CELL")][px][0] = 0;
     initial_distribution[Sym<INT>("ID")][px][0] = px;
     initial_distribution[Sym<REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
     initial_distribution[Sym<REAL>("WEIGHT")][px][0] = 1.0;

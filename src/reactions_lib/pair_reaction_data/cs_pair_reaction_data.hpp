@@ -57,7 +57,7 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
    * @return REAL-valued maximum rate
    */
   REAL get_cs_max_rate_val(REAL max_rel_vel) {
-    return this->cross_section.get_max_rate_val(max_rel_vel);
+    return this->cross_section.get_max_rate_val_greedy(max_rel_vel);
   }
 
 public:
@@ -112,6 +112,17 @@ struct CSPairData : public PairReactionDataBase<
    *
    */
   CSPairData() : CSPairData(ConstantRateCrossSection(0.0)) {}
+
+  /**
+   * @brief Return the maximum rate value from the contained cross section up to
+   * some maximum relative velocity
+   *
+   * @param max_rel_vel
+   * @return REAL-valued maximum rate
+   */
+  REAL get_cs_max_rate_val(REAL max_rel_vel) {
+    return this->on_device_obj.value().get_cs_max_rate_val(max_rel_vel);
+  }
 
   /**
    * @brief Index the particle velocity

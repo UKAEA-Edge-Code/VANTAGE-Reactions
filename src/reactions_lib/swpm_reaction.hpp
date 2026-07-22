@@ -11,6 +11,8 @@
 #include <type_traits>
 #include <vector>
 
+// TODO: docs!
+
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
@@ -32,6 +34,7 @@ struct SWPMReaction : ProfilingBase {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
+        max_num_coll_cells(128), default_rel_vel(1.0), num_mesh_cells(1),
         max_buffer_size(16384 *
                         get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
 
@@ -46,6 +49,9 @@ struct SWPMReaction : ProfilingBase {
     this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
     this->weight_change_sym =
         Sym<REAL>(properties_map.at(default_properties.weight_change));
+    this->collision_cell_sym =
+        Sym<INT>(properties_map.at(default_properties.collision_cell_id));
+    this->cell_id_sym = Sym<INT>(properties_map.at(default_properties.cell_id));
 
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for calculate_rates and
@@ -122,12 +128,14 @@ struct SWPMReaction : ProfilingBase {
     empty_pre_req_data->fill(0);
 
     this->pre_req_data = empty_pre_req_data;
+    this->sigma_v_bounds = std::make_shared<NDLocalArray<REAL, 2>>(
+        this->sycl_target_stored, 0, this->max_num_coll_cells);
   }
 
   SWPMReaction(
-      SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
-      ReactionKernels reaction_kernels,
+      SYCLTargetSharedPtr sycl_target, size_t num_cells,
+      std::array<int, 2> reactants, std::array<int, num_products> products,
+      ReactionData reaction_data, ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
       : reactants(reactants), products(products), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), data_calculator(DataCalc()),
@@ -136,10 +144,16 @@ struct SWPMReaction : ProfilingBase {
             std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
             std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
+        max_num_coll_cells(128), default_rel_vel(1.0), num_mesh_cells(1),
         max_buffer_size(16384 *
                         get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {}
 
-  virtual ~SWPMReaction() = default;
+  virtual ~SWPMReaction() {
+    if (this->submitted_sigma_v_max_loop) {
+      this->sigma_v_max_loop->wait();
+      this->submitted_sigma_v_max_loop = false;
+    }
+  };
 
 public:
   template <typename TARGET, typename PAIR_LIST>
@@ -149,6 +163,8 @@ public:
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
+    this->num_mesh_cells = pair_list.A->domain->mesh->get_cell_count();
+
     INT npart_block =
         pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
     this->adaptive_flush_buffer(npart_block);
@@ -157,11 +173,8 @@ public:
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");
 
-    // Here we will wait for the collision-cell-wise reduction of the buffer
-    // wrt the CellDatConst containing the current max of sigma*v
-
     auto calc_rate_loop = particle_pair_loop(
-        "pair_data_calc_loop", {pair_list},
+        "pair_data_calc_loop", pair_list,
         [=](auto pair_index, auto req_int_props_a, auto req_real_props_a,
             auto req_int_props_b, auto req_real_props_b, auto tot_rate,
             auto buffer, auto kernel) {
@@ -188,8 +201,70 @@ public:
         Access::read(reaction_data.get_rng_kernel()));
 
     calc_rate_loop->execute(cell_idx_start, cell_idx_end);
+    this->launch_sigma_v_max_loop<TARGET, PAIR_LIST>(pair_list, cell_idx_start,
+                                                     cell_idx_end);
+  }
 
-    // Here we will queue up the next reduction into the CellDatConst
+  template <typename TARGET, typename PAIR_LIST>
+  void launch_sigma_v_max_loop(
+      CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+      INT cell_idx_start, INT cell_idx_end) {
+
+    this->prepare_sigma_v_bounds();
+
+    if (this->submitted_sigma_v_max_loop) {
+      this->sigma_v_max_loop->wait();
+      this->submitted_sigma_v_max_loop = false;
+    }
+    NESOASSERT(pair_list.A->sycl_target == sycl_target_stored,
+               "sycl_target assigned to particle_group is not the same as "
+               "the sycl_target passed to Reaction object...");
+    this->sigma_v_max_loop = particle_pair_loop(
+        "max_sigma_v_loop", pair_list,
+        [](auto pair_index, auto max_sigma_v, auto buffer, auto coll_cell,
+           auto cell_id) {
+          INT current_count = pair_index.get_loop_linear_index();
+          max_sigma_v.fetch_max(cell_id[0], coll_cell[0],
+                                buffer[current_count]);
+        },
+        Access::read(ParticlePairLoopIndex{}),
+        Access::max(this->sigma_v_bounds),
+        Access::read(this->device_rate_buffer),
+        Access::A(Access::read(this->collision_cell_sym)),
+        Access::A(Access::read(this->cell_id_sym)));
+
+    this->sigma_v_max_loop->submit(cell_idx_start, cell_idx_end);
+    this->submitted_sigma_v_max_loop = true;
+  }
+
+  std::vector<std::vector<REAL>> get_sigma_v_bounds(INT cell_idx_start,
+                                                    INT cell_idx_end) {
+
+    // This makes sure that we get the correct default bounds on first call, and
+    // then avoids resetting the bounds - there could be issues from call order
+    // if reactions are used for different meshes
+    if (this->num_mesh_cells < cell_idx_end) {
+      this->num_mesh_cells = cell_idx_end;
+    }
+    this->prepare_sigma_v_bounds();
+
+    if (this->submitted_sigma_v_max_loop) {
+      this->sigma_v_max_loop->wait();
+      this->submitted_sigma_v_max_loop = false;
+    }
+
+    auto bounds = this->sigma_v_bounds->get();
+
+    std::vector<std::vector<REAL>> bound_vec;
+    bound_vec.reserve(cell_idx_end - cell_idx_start);
+
+    for (int i = cell_idx_start; i < cell_idx_end; i++) {
+      bound_vec.emplace_back(bounds.begin() + i * this->max_num_coll_cells,
+                             bounds.begin() +
+                                 (i + 1) * this->max_num_coll_cells);
+    }
+
+    return bound_vec;
   }
 
   template <typename TARGET, typename PAIR_LIST>
@@ -221,7 +296,7 @@ public:
     this->data_calculator.fill_buffer(this->pre_req_data, pair_list,
                                       cell_idx_start, cell_idx_end);
     auto application_loop = particle_pair_loop(
-        "descendant_products_loop", {pair_list},
+        "descendant_products_loop", pair_list,
         [=](auto weight_change, auto descendant_particles_a,
             auto descendant_particles_b, auto particle_index_a,
             auto particle_index_b, auto pair_index, auto req_int_props_a,
@@ -313,6 +388,14 @@ public:
   }
 
   /**
+   * @brief Set the maximum number of collision cells per cell
+   *
+   * @param max_num_coll_cells Maximum number of collision cells per mesh cell
+   */
+  void set_max_num_coll_cells(size_t max_cells) {
+    this->max_num_coll_cells = max_cells;
+  }
+  /**
    * @brief Creates an empty rate buffer of a specified size
    *
    * @param buffer_size Size of the empty buffer that needs to be created and
@@ -389,6 +472,27 @@ public:
     }
   }
 
+  void prepare_sigma_v_bounds() {
+    auto shape = this->sigma_v_bounds->index.shape;
+    if (shape[0] != this->num_mesh_cells ||
+        shape[1] < this->max_num_coll_cells) {
+      this->sigma_v_bounds = std::make_shared<NDLocalArray<REAL, 2>>(
+          this->sycl_target_stored, this->num_mesh_cells,
+          this->max_num_coll_cells);
+      this->sigma_v_bounds->fill(
+          this->reaction_data.get_cs_max_rate_val(this->default_rel_vel));
+    }
+  }
+  /**
+   * @brief Set the default relative velocity used for rate bounds
+   *
+   * @param default_rel_vel Default maximum velocity used for initial rate
+   * bounds
+   */
+  void set_default_rel_vel(size_t default_rel_vel) {
+    this->default_rel_vel = default_rel_vel;
+  }
+
 protected:
   const LocalArraySharedPtr<REAL> &get_device_rate_buffer() {
     return this->device_rate_buffer;
@@ -424,6 +528,8 @@ private:
                     //!< derived reaction.
   Sym<REAL> weight_sym;
   Sym<REAL> weight_change_sym;
+  Sym<INT> collision_cell_sym;
+  Sym<INT> cell_id_sym;
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
                           //
   std::array<int, 2> reactants;
@@ -442,6 +548,15 @@ private:
   std::vector<Sym<REAL>> apply_real_syms_a;
   std::vector<Sym<INT>> apply_int_syms_b;
   std::vector<Sym<REAL>> apply_real_syms_b;
+
+  NDLocalArraySharedPtr<REAL, 2> sigma_v_bounds;
+  size_t max_num_coll_cells;
+  size_t num_mesh_cells;
+
+  REAL default_rel_vel;
+
+  ParticlePairLoopBaseSharedPtr sigma_v_max_loop;
+  bool submitted_sigma_v_max_loop = false;
 
   DataCalc data_calculator;
 };
