@@ -1,7 +1,9 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
+#include "reactions_lib/utils.hpp"
 #include <neso_particles.hpp>
 #include <reactions/reactions.hpp>
+#include <utility>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
@@ -47,23 +49,24 @@ public:
 struct coefficient_values_1D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 1;
-  const int dim0 = 8;
+  static constexpr int dim0 = 8;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  static inline const std::vector<REAL> dim0_range = {
+      1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
 
   static constexpr auto grid_func_lambda =
       [](const std::array<REAL, ndim> &vals) { return (2 * vals[0]); };
 
-  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
-  GridDescriptor<ndim> grid_descriptor;
+  static inline const auto grid_func =
+      utils::LambdaWrapper<decltype(grid_func_lambda)>(grid_func_lambda);
+  static inline const auto grid_descriptor =
+      GridDescriptor<ndim>({dim0_range}, grid_func_lambda);
 
 public:
   coefficient_values_1D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda),
-        grid_descriptor({this->dim0_range}, this->grid_func_lambda) {
+      : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
@@ -88,14 +91,14 @@ public:
 struct coefficient_values_2D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 2;
-  const size_t dim0 = 8;
-  const size_t dim1 = 10;
+  static constexpr size_t dim0 = 8;
+  static constexpr size_t dim1 = 10;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  static inline const std::vector<REAL> dim0_range = {
+      1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
   // Generated with python: numpy.logspace(1, 5, 10)
-  std::vector<REAL> dim1_range = {
+  static inline const std::vector<REAL> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
@@ -103,15 +106,15 @@ private:
   static constexpr auto grid_func_lambda =
       [](const std::array<REAL, ndim> &vals) { return (vals[0] * vals[1]); };
 
-  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
-  GridDescriptor<ndim> grid_descriptor;
+  static inline const auto grid_func =
+      utils::LambdaWrapper<decltype(grid_func_lambda)>(grid_func_lambda);
+  static inline const auto grid_descriptor =
+      GridDescriptor<ndim>({dim0_range, dim1_range}, grid_func_lambda);
 
 public:
   coefficient_values_2D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda),
-        grid_descriptor({this->dim0_range, this->dim1_range},
-                        this->grid_func_lambda) {
+      : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
@@ -152,11 +155,11 @@ private:
   static constexpr REAL c1dtd1td2 =
       1.0 / static_cast<REAL>(trim_dim1 * trim_dim2);
 
-  static inline std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
-                                                  trim_dim2};
+  static inline const std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
+                                                        trim_dim2};
 
   // generated using: numpy.logspace(0, numpy.log10(5e3), 100)
-  const std::vector<REAL> dim0_range = {
+  static inline const std::vector<REAL> dim0_range = {
       1.00000000e+00, 1.08984148e+00, 1.18775445e+00, 1.29446407e+00,
       1.41076064e+00, 1.53750546e+00, 1.67563723e+00, 1.82617896e+00,
       1.99024558e+00, 2.16905218e+00, 2.36392304e+00, 2.57630139e+00,
@@ -185,7 +188,7 @@ private:
 
   // generated using: 90.0 - numpy.logspace(numpy.log10(90.0),
   // numpy.log10(90.0 - 8.5e1), 70) just replace the first element to 0.0;
-  const std::vector<REAL> dim1_range = {
+  static inline const std::vector<REAL> dim1_range = {
       0.00000000e+00, 3.69217858e+00, 7.23288847e+00, 1.06283435e+01,
       1.38845028e+01, 1.70070806e+01, 2.00015572e+01, 2.28731878e+01,
       2.56270120e+01, 2.82678627e+01, 3.08003747e+01, 3.32289923e+01,
@@ -205,7 +208,7 @@ private:
       8.38350185e+01, 8.40879319e+01, 8.43304698e+01, 8.45630578e+01,
       8.47861041e+01, 8.50000000e+01};
 
-  static const inline auto trim_grid_func_0 =
+  static constexpr auto trim_grid_func_0 =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0> result;
@@ -217,7 +220,7 @@ private:
         return result;
       };
 
-  static const inline auto trim_grid_func_1 =
+  static constexpr auto trim_grid_func_1 =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0 * trim_dim1> result;
@@ -232,7 +235,7 @@ private:
         return result;
       };
 
-  static const inline auto trim_grid_func_2 =
+  static constexpr auto trim_grid_func_2 =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2> result;
@@ -251,7 +254,7 @@ private:
         return result;
       };
 
-  static const inline auto trim_grid_func_lambda =
+  static constexpr auto trim_grid_func_lambda =
       [](const std::array<REAL, ndim> &vals,
          const std::array<INT, trim_ndim> &trim_indices,
          const std::array<REAL, trim_ndim> &rand_nums) {
@@ -271,7 +274,7 @@ private:
             trim_vals_trim_dim0, trim_vals_trim_dim1, trim_vals_trim_dim2};
       };
 
-  static const inline auto trim_grid_func_concat_lambda =
+  static constexpr auto trim_grid_func_concat_lambda =
       [](const std::array<REAL, ndim> &vals,
          const std::array<REAL, trim_ndim> &rand_nums) {
         auto trim_vals_trim_dim0 =
@@ -300,16 +303,21 @@ private:
         return result;
       };
 
-  utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
-  utils::LambdaWrapper<decltype(trim_grid_func_concat_lambda)>
-      trim_grid_func_concat;
-  GridDescriptor<ndim, trim_ndim> grid_descriptor;
+  static inline const auto trim_grid_func =
+      utils::LambdaWrapper<decltype(trim_grid_func_lambda)>(
+          trim_grid_func_lambda);
+  static inline const auto trim_grid_func_concat =
+      utils::LambdaWrapper<decltype(trim_grid_func_concat_lambda)>(
+          trim_grid_func_concat_lambda);
+  GridDescriptor<ndim, trim_ndim>
+      grid_descriptor; // non-static and assigned via initializer list in
+                       // constructor because of runtime dependency on rand_nums
 
 public:
   trim_coefficient_values(
       const std::array<REAL, trim_ndim> &rand_nums,
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda),
+      : abstract_coefficient_values(),
         grid_descriptor({this->dim0_range, this->dim1_range},
                         {trim_dim0, trim_dim1, trim_dim2},
                         this->trim_grid_func_concat_lambda, rand_nums) {
@@ -359,11 +367,11 @@ private:
   static constexpr REAL c1dtd1td2 =
       1.0 / static_cast<REAL>(trim_dim1 * trim_dim2);
 
-  static inline std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
-                                                  trim_dim2};
+  static inline const std::vector<size_t> trim_dims_vec{trim_dim0, trim_dim1,
+                                                        trim_dim2};
 
   // generated using: numpy.logspace(1e4, numpy.log10(4e4), 100)
-  const std::vector<REAL> dim0_range = {
+  static inline const std::vector<REAL> dim0_range = {
       1.0000e+04, 1.0141e+04, 1.0284e+04, 1.0429e+04, 1.0576e+04, 1.0725e+04,
       1.0876e+04, 1.1030e+04, 1.1185e+04, 1.1343e+04, 1.1503e+04, 1.1665e+04,
       1.1830e+04, 1.1997e+04, 1.2166e+04, 1.2337e+04, 1.2511e+04, 1.2688e+04,
@@ -384,7 +392,7 @@ private:
 
   // generated using: 90.0 - numpy.logspace(numpy.log10(90.0 - 4.5e1),
   // numpy.log10(90.0 - 8.5e1), 70) just replace the first element to 0.0;
-  const std::vector<REAL> dim1_range = {
+  static inline const std::vector<REAL> dim1_range = {
       4.5000e+01, 4.6410e+01, 4.7777e+01, 4.9100e+01, 5.0382e+01, 5.1624e+01,
       5.2826e+01, 5.3991e+01, 5.5120e+01, 5.6213e+01, 5.7272e+01, 5.8298e+01,
       5.9292e+01, 6.0254e+01, 6.1186e+01, 6.2089e+01, 6.2964e+01, 6.3812e+01,
@@ -398,7 +406,7 @@ private:
       8.3341e+01, 8.3549e+01, 8.3751e+01, 8.3947e+01, 8.4137e+01, 8.4321e+01,
       8.4499e+01, 8.4671e+01, 8.4838e+01, 8.5000e+01};
 
-  static const inline auto trim_grid_func_0 =
+  static constexpr auto trim_grid_func_0 =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0> result;
@@ -410,7 +418,7 @@ private:
         return result;
       };
 
-  static const inline auto trim_grid_func_1 =
+  static constexpr auto trim_grid_func_1 =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0 * trim_dim1> result;
@@ -425,7 +433,7 @@ private:
         return result;
       };
 
-  static const inline auto trim_grid_func_2 =
+  static constexpr auto trim_grid_func_2 =
       [](const REAL &dim0_val, const REAL &dim1_val,
          const std::array<REAL, trim_ndim> &rand_nums) {
         std::array<REAL, trim_dim0 * trim_dim1 * trim_dim2> result;
@@ -444,7 +452,7 @@ private:
         return result;
       };
 
-  static const inline auto trim_grid_func_lambda =
+  static constexpr auto trim_grid_func_lambda =
       [](const std::array<REAL, ndim> &vals,
          const std::array<INT, trim_ndim> &trim_indices,
          const std::array<REAL, trim_ndim> &rand_nums) {
@@ -464,7 +472,7 @@ private:
             trim_vals_trim_dim0, trim_vals_trim_dim1, trim_vals_trim_dim2};
       };
 
-  static const inline auto trim_grid_func_concat_lambda =
+  static constexpr auto trim_grid_func_concat_lambda =
       [](const std::array<REAL, ndim> &vals,
          const std::array<REAL, trim_ndim> &rand_nums) {
         auto trim_vals_trim_dim0 =
@@ -493,16 +501,21 @@ private:
         return result;
       };
 
-  utils::LambdaWrapper<decltype(trim_grid_func_lambda)> trim_grid_func;
-  utils::LambdaWrapper<decltype(trim_grid_func_concat_lambda)>
-      trim_grid_func_concat;
-  GridDescriptor<ndim, trim_ndim> grid_descriptor;
+  static inline const auto trim_grid_func =
+      utils::LambdaWrapper<decltype(trim_grid_func_lambda)>(
+          trim_grid_func_lambda);
+  static inline const auto trim_grid_func_concat =
+      utils::LambdaWrapper<decltype(trim_grid_func_concat_lambda)>(
+          trim_grid_func_concat_lambda);
+  GridDescriptor<ndim, trim_ndim>
+      grid_descriptor; // non-static and assigned via initializer list in
+                       // constructor because of runtime dependency on rand_nums
 
 public:
   trim_coefficient_values_asym(
       const std::array<REAL, trim_ndim> &rand_nums,
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), trim_grid_func(trim_grid_func_lambda),
+      : abstract_coefficient_values(),
         grid_descriptor(
             {this->dim0_range, this->dim1_range},
             std::array<size_t, trim_ndim>{trim_dim0, trim_dim1, trim_dim2},
@@ -539,38 +552,38 @@ public:
 struct coefficient_values_3D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 3;
-  const int dim0 = 8;
-  const int dim1 = 10;
-  const int dim2 = 15;
+  static constexpr int dim0 = 8;
+  static constexpr int dim1 = 10;
+  static constexpr int dim2 = 15;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  static inline const std::vector<REAL> dim0_range = {
+      1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
   // Generated with python: numpy.logspace(1, 5, 10)
-  std::vector<REAL> dim1_range = {
+  static inline const std::vector<REAL> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
   // Generated with python: numpy.power(numpy.linspace(1, 15, 15), 2)*1.5 -
   // 100.0
-  std::vector<REAL> dim2_range = {-98.5, -94.,  -86.5, -76., -62.5,
-                                  -46.,  -26.5, -4.,   21.5, 50.,
-                                  81.5,  116.,  153.5, 194., 237.5};
+  static inline const std::vector<REAL> dim2_range = {
+      -98.5, -94., -86.5, -76., -62.5, -46., -26.5, -4.,
+      21.5,  50.,  81.5,  116., 153.5, 194., 237.5};
 
   static constexpr auto grid_func_lambda =
       [](const std::array<REAL, ndim> &vals) {
         return (vals[0] * vals[1] * vals[2]);
       };
 
-  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
-  GridDescriptor<ndim> grid_descriptor;
+  static inline const auto grid_func =
+      utils::LambdaWrapper<decltype(grid_func_lambda)>(grid_func_lambda);
+  static inline const auto grid_descriptor = GridDescriptor<ndim>(
+      {dim0_range, dim1_range, dim2_range}, grid_func_lambda);
 
 public:
   coefficient_values_3D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda),
-        grid_descriptor({this->dim0_range, this->dim1_range, this->dim2_range},
-                        this->grid_func_lambda) {
+      : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
@@ -599,26 +612,26 @@ public:
 struct coefficient_values_4D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 4;
-  const int dim0 = 8;
-  const int dim1 = 10;
-  const int dim2 = 15;
-  const int dim3 = 23;
+  static constexpr int dim0 = 8;
+  static constexpr int dim1 = 10;
+  static constexpr int dim2 = 15;
+  static constexpr int dim3 = 23;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  static inline const std::vector<REAL> dim0_range = {
+      1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
   // Generated with python: numpy.logspace(1, 5, 10)
-  std::vector<REAL> dim1_range = {
+  static inline const std::vector<REAL> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
   // Generated with python: numpy.power(numpy.linspace(1, 15, 15), 2)*1.5 -
   // 100.0
-  std::vector<REAL> dim2_range = {-98.5, -94.,  -86.5, -76., -62.5,
-                                  -46.,  -26.5, -4.,   21.5, 50.,
-                                  81.5,  116.,  153.5, 194., 237.5};
+  static inline const std::vector<REAL> dim2_range = {
+      -98.5, -94., -86.5, -76., -62.5, -46., -26.5, -4.,
+      21.5,  50.,  81.5,  116., 153.5, 194., 237.5};
   // Generated with python: numpy.power(numpy.logspace(1, 8, 23), 1.5)
-  std::vector<REAL> dim3_range = {
+  static inline const std::vector<REAL> dim3_range = {
       3.16227766e+01, 9.49014236e+01, 2.84803587e+02, 8.54708813e+02,
       2.56502091e+03, 7.69774706e+03, 2.31012970e+04, 6.93280669e+04,
       2.08056754e+05, 6.24387997e+05, 1.87381742e+06, 5.62341325e+06,
@@ -631,16 +644,15 @@ private:
         return (vals[0] * vals[1] * vals[2] * vals[3]);
       };
 
-  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
-  GridDescriptor<ndim> grid_descriptor;
+  static inline const auto grid_func =
+      utils::LambdaWrapper<decltype(grid_func_lambda)>(grid_func_lambda);
+  static inline const auto grid_descriptor = GridDescriptor<ndim>(
+      {dim0_range, dim1_range, dim2_range, dim3_range}, grid_func_lambda);
 
 public:
   coefficient_values_4D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda),
-        grid_descriptor({this->dim0_range, this->dim1_range, this->dim2_range,
-                         this->dim3_range},
-                        this->grid_func_lambda) {
+      : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
@@ -671,27 +683,27 @@ public:
 struct coefficient_values_5D : abstract_coefficient_values {
 private:
   static constexpr int ndim = 5;
-  const int dim0 = 8;
-  const int dim1 = 10;
-  const int dim2 = 15;
-  const int dim3 = 23;
-  const int dim4 = 35;
+  static constexpr int dim0 = 8;
+  static constexpr int dim1 = 10;
+  static constexpr int dim2 = 15;
+  static constexpr int dim3 = 23;
+  static constexpr int dim4 = 35;
 
   // Generated with python: numpy.linspace(1.0e18, 8.0e18, 8)
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  static inline const std::vector<REAL> dim0_range = {
+      1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18, 5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
   // Generated with python: numpy.logspace(1, 5, 10)
-  std::vector<REAL> dim1_range = {
+  static inline const std::vector<REAL> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
   // Generated with python: numpy.power(numpy.linspace(1, 15, 15), 2)*1.5 -
   // 100.0
-  std::vector<REAL> dim2_range = {-98.5, -94.,  -86.5, -76., -62.5,
-                                  -46.,  -26.5, -4.,   21.5, 50.,
-                                  81.5,  116.,  153.5, 194., 237.5};
+  static inline const std::vector<REAL> dim2_range = {
+      -98.5, -94., -86.5, -76., -62.5, -46., -26.5, -4.,
+      21.5,  50.,  81.5,  116., 153.5, 194., 237.5};
   // Generated with python: numpy.power(numpy.logspace(1, 8, 23), 1.5)
-  std::vector<REAL> dim3_range = {
+  static inline const std::vector<REAL> dim3_range = {
       3.16227766e+01, 9.49014236e+01, 2.84803587e+02, 8.54708813e+02,
       2.56502091e+03, 7.69774706e+03, 2.31012970e+04, 6.93280669e+04,
       2.08056754e+05, 6.24387997e+05, 1.87381742e+06, 5.62341325e+06,
@@ -699,7 +711,7 @@ private:
       1.36887451e+09, 4.10805608e+09, 1.23284674e+10, 3.69983041e+10,
       1.11033632e+11, 3.33217094e+11, 1.00000000e+12};
   // Generated with python: numpy.power(numpy.logspace(1, 5, 35), 0.1)
-  std::vector<REAL> dim4_range = {
+  static inline const std::vector<REAL> dim4_range = {
       1.25892541, 1.29349486, 1.32901356, 1.36550759, 1.40300372, 1.44152948,
       1.48111314, 1.52178375, 1.56357114, 1.606506,   1.65061983, 1.695945,
       1.74251478, 1.79036334, 1.8395258,  1.89003823, 1.9419377,  1.99526231,
@@ -712,16 +724,16 @@ private:
         return (vals[0] * vals[1] * vals[2] * vals[3] * vals[4]);
       };
 
-  utils::LambdaWrapper<decltype(grid_func_lambda)> grid_func;
-  GridDescriptor<ndim> grid_descriptor;
+  static inline const auto grid_func =
+      utils::LambdaWrapper<decltype(grid_func_lambda)>(grid_func_lambda);
+  static inline const auto grid_descriptor = GridDescriptor<ndim>(
+      {dim0_range, dim1_range, dim2_range, dim3_range, dim4_range},
+      grid_func_lambda);
 
 public:
   coefficient_values_5D(
       std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
-      : abstract_coefficient_values(), grid_func(grid_func_lambda),
-        grid_descriptor({this->dim0_range, this->dim1_range, this->dim2_range,
-                         this->dim3_range, this->dim4_range},
-                        this->grid_func_lambda) {
+      : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();

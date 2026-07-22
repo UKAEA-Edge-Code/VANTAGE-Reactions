@@ -40,17 +40,12 @@ else()
   add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 endif()
 
-set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD 17)
-set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD_REQUIRED ON)
-
-# Export version macros to consumers (matches neso-particles). INTERFACE is
-# used so the same line is valid in both build modes: on the compiled target it
-# propagates to consumers (the library TU does not consume the macros); on the
-# header-only INTERFACE target it is the only permitted scope.
-target_compile_definitions(VANTAGE-Reactions
-    INTERFACE VANTAGE_REACTIONS_VERSION_MAJOR=${CMAKE_PROJECT_VERSION_MAJOR}
-              VANTAGE_REACTIONS_VERSION_MINOR=${CMAKE_PROJECT_VERSION_MINOR}
-              VANTAGE_REACTIONS_VERSION_PATCH=${CMAKE_PROJECT_VERSION_PATCH})
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+message(STATUS CMAKE_CXX_STANDARD " is " ${CMAKE_CXX_STANDARD})
+set_property(TARGET VANTAGE-Reactions PROPERTY CXX_STANDARD
+    ${CMAKE_CXX_STANDARD})
 
 find_package(MPI REQUIRED)
 find_package(NESO-Particles REQUIRED)
