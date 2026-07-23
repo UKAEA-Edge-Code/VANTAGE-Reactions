@@ -36,18 +36,18 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
 
   auto coeffs_data = trim_coefficient_values(random_grid_nums, sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_flat_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_flat_vec = coeffs_data.get_ranges_flat_vec();
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
   auto trim_grid_func = coeffs_data.get_grid_func_concat();
 
-  std::array<std::vector<REAL>, ndim> coords;
+  std::array<std::vector<REAL>, ndim> ranges;
 
   for (int idim = 0; idim < dims_vec[0]; idim++) {
-    coords[0].push_back(coords_flat_vec[idim]);
+    ranges[0].push_back(ranges_flat_vec[idim]);
   }
   for (int i = 1; i < ndim; i++) {
     for (int j = 0; j < dims_vec[i]; j++) {
-      coords[i].push_back(coords_flat_vec[dims_vec[i - 1] + j]);
+      ranges[i].push_back(ranges_flat_vec[dims_vec[i - 1] + j]);
     }
   }
 
@@ -70,7 +70,7 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
     EXPECT_THROW(
-        (GridDescriptor<ndim, trim_ndim>(coords, invalid_trim_dims,
+        (GridDescriptor<ndim, trim_ndim>(ranges, invalid_trim_dims,
                                          trim_grid_func, random_grid_nums)),
         std::logic_error);
 }

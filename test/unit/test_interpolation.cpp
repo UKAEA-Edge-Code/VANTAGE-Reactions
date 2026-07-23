@@ -27,7 +27,7 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
@@ -59,7 +59,7 @@ TEST(InterpolationTest, REACTION_DATA_1D_PIPELINE) {
   auto prop0_extract = extract<1>("PROP0");
 
   auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
-      dims_vec, coords_vec, particle_group->sycl_target, grid_func_data);
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(prop0_extract, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -125,7 +125,7 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   // Setup the mock data.
   auto coeffs_data = coefficient_values_2D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
@@ -166,7 +166,7 @@ TEST(InterpolationTest, REACTION_DATA_2D_PIPELINE) {
   auto concatenator = ConcatenatorData(prop0_extract, prop1_extract);
 
   auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
-      dims_vec, coords_vec, particle_group->sycl_target, grid_func_data);
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -232,7 +232,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
   // Setup the mock data.
   auto coeffs_data = coefficient_values_3D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
@@ -282,7 +282,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
       ConcatenatorData(prop0_extract, prop1_extract, prop2_extract);
 
   auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
-      dims_vec, coords_vec, particle_group->sycl_target, grid_func_data);
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -349,7 +349,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
   // Setup the mock data.
   auto coeffs_data = coefficient_values_4D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
@@ -407,7 +407,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
                                        prop2_extract, prop3_extract);
 
   auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
-      dims_vec, coords_vec, particle_group->sycl_target, grid_func_data);
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -475,7 +475,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
   // Setup the mock data.
   auto coeffs_data = coefficient_values_5D(particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto grid = coeffs_data.get_coeffs_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
@@ -541,7 +541,7 @@ TEST(InterpolationTest, REACTION_DATA_5D_PIPELINE) {
                        prop3_extract, prop4_extract);
 
   auto interpolator_data = InterpolateData<1, ndim, decltype(grid_func_data)>(
-      dims_vec, coords_vec, particle_group->sycl_target, grid_func_data);
+      dims_vec, ranges_vec, particle_group->sycl_target, grid_func_data);
 
   auto pipeline = pipe(concatenator, interpolator_data);
   auto extract_expected_value = extract<1>("EXPECTED_INTERPOLATION_VALUE");
@@ -621,7 +621,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   auto coeffs_data =
       trim_coefficient_values(random_grid_nums, particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func_data = coeffs_data.get_grid_func_data();
@@ -633,9 +633,9 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
     dims_arr[i] = dims_vec[i];
   }
 
-  auto h_coords_arr = std::make_shared<BufferDevice<REAL>>(
-      particle_group->sycl_target, coords_vec);
-  auto d_coords_arr = h_coords_arr->ptr;
+  auto h_ranges_arr = std::make_shared<BufferDevice<REAL>>(
+      particle_group->sycl_target, ranges_vec);
+  auto d_ranges_arr = h_ranges_arr->ptr;
 
   std::array<INT, trim_ndim> trim_dims_arr;
   for (int i = 0; i < trim_ndim; i++) {
@@ -663,8 +663,8 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
         auto indices = std::array<INT, ndim>{index0, index1};
 
-        props.at(0) = d_coords_arr[index0];
-        props.at(1) = d_coords_arr[dims_arr[0] + index1];
+        props.at(0) = d_ranges_arr[index0];
+        props.at(1) = d_ranges_arr[dims_arr[0] + index1];
         auto coords = std::array<REAL, ndim>{props.at(0), props.at(1)};
 
         auto current_count = index.get_loop_linear_index();
@@ -705,7 +705,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
   auto interpolator_data =
       InterpolateData<trim_ndim, ndim, decltype(grid_func_data), trim_ndim>(
-          dims_vec, coords_vec, interp_indices, particle_group->sycl_target,
+          dims_vec, ranges_vec, interp_indices, particle_group->sycl_target,
           grid_func_data, ExtrapolationType::continue_linear);
 
   auto pipeline = pipe(concatenator, interpolator_data);
@@ -791,7 +791,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
   auto coeffs_data =
       trim_coefficient_values(random_grid_nums, particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func_data = coeffs_data.get_grid_func_data();
@@ -861,7 +861,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
 
   auto interpolator_data =
       InterpolateData<trim_ndim, ndim, decltype(grid_func_data), trim_ndim>(
-          dims_vec, coords_vec, interp_indices, particle_group->sycl_target,
+          dims_vec, ranges_vec, interp_indices, particle_group->sycl_target,
           grid_func_data, ExtrapolationType::continue_linear);
 
   auto pipeline = pipe(concatenator, interpolator_data);
@@ -947,7 +947,7 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
   auto coeffs_data = trim_coefficient_values_asym(random_grid_nums,
                                                   particle_group->sycl_target);
   auto dims_vec = coeffs_data.get_dims_vec();
-  auto coords_vec = coeffs_data.get_coords_flat_vec();
+  auto ranges_vec = coeffs_data.get_ranges_flat_vec();
   auto lower_bounds = coeffs_data.get_lower_bounds();
   auto upper_bounds = coeffs_data.get_upper_bounds();
   auto grid_func_data = coeffs_data.get_grid_func_data();
@@ -1017,7 +1017,7 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
 
   auto interpolator_data =
       InterpolateData<trim_ndim, ndim, decltype(grid_func_data), trim_ndim>(
-          dims_vec, coords_vec, interp_indices, particle_group->sycl_target,
+          dims_vec, ranges_vec, interp_indices, particle_group->sycl_target,
           grid_func_data, ExtrapolationType::continue_linear);
 
   auto pipeline = pipe(concatenator, interpolator_data);

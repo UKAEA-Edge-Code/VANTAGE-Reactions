@@ -15,7 +15,7 @@ struct abstract_coefficient_values {
 
 protected:
   std::vector<REAL> coeffs_vec;
-  std::vector<REAL> coords_flat_vec;
+  std::vector<REAL> ranges_flat_vec;
   std::vector<REAL> lower_bounds;
   std::vector<REAL> upper_bounds;
   std::vector<size_t> dims_vec;
@@ -24,8 +24,8 @@ protected:
 public:
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
 
-  const std::vector<REAL> &get_coords_flat_vec() {
-    return this->coords_flat_vec;
+  const std::vector<REAL> &get_ranges_flat_vec() {
+    return this->ranges_flat_vec;
   }
 
   const std::vector<size_t> &get_dims_vec() { return this->dims_vec; }
@@ -38,7 +38,7 @@ public:
     std::optional<CartesianGridData<input_ndim>> return_val;
     if (this->sycl_target) {
       return_val = CartesianGridData<input_ndim>(
-          this->coeffs_vec, this->coords_flat_vec, this->dims_vec,
+          this->coeffs_vec, this->ranges_flat_vec, this->dims_vec,
           this->sycl_target.value());
     }
     // deliberately error if no value is set.
@@ -70,7 +70,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->upper_bounds.push_back(this->dim0_range[this->dim0 - 1]);
@@ -118,7 +118,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
@@ -324,7 +324,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
@@ -523,7 +523,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
@@ -587,7 +587,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
@@ -656,7 +656,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);
@@ -737,7 +737,7 @@ public:
 
     this->sycl_target = sycl_target;
     this->coeffs_vec = grid_descriptor.get_flat_grid();
-    this->coords_flat_vec = grid_descriptor.get_flat_coords();
+    this->ranges_flat_vec = grid_descriptor.get_flat_ranges();
     this->dims_vec = grid_descriptor.get_interp_dims();
     this->lower_bounds.push_back(this->dim0_range[0]);
     this->lower_bounds.push_back(this->dim1_range[0]);

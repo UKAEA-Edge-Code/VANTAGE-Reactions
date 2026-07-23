@@ -44,7 +44,11 @@
  *            |
  *            v
  *
- *     L1 ---(x) --- L2
+ *            L2
+ *            |
+ *           (x)
+ *            |
+ *            L1
  *
  *            |
  *            |
@@ -53,19 +57,19 @@
  *           (x)
  *
  * The underlying maths of the contraction (simplified here) is:
- * f(P1) = linear_interp(x(2), V1, V5, f(V1), f(V5))
- * f(P4) = linear_interp(x(2), V3, V7, f(V3), f(V7))
- * f(P2) = linear_interp(x(2), V2, V6, f(V2), f(V6))
- * f(P3) = linear_interp(x(2), V4, V8, f(V4), f(V8))
+ * f(P1) = linear_interp(x(0), V1, V5, f(V1), f(V5))
+ * f(P4) = linear_interp(x(0), V3, V7, f(V3), f(V7))
+ * f(P2) = linear_interp(x(0), V2, V6, f(V2), f(V6))
+ * f(P3) = linear_interp(x(0), V4, V8, f(V4), f(V8))
  *
  * then
  *
- * f(L1) = linear_interp(x(1), P1, P4, f(P1), f(P4))
- * f(L2) = linear_interp(x(1), P2, P3, f(P2), f(P3))
+ * f(L1) = linear_interp(x(1), P1, P2, f(P1), f(P2))
+ * f(L2) = linear_interp(x(1), P4, P3, f(P4), f(P3))
  *
  * finally
  *
- * f(x) = linear_interp(x(0), L1, L2, f(L1), f(L2))
+ * f(x) = linear_interp(x(2), L1, L2, f(L1), f(L2))
  *
  * Note x(0), x(1) and x(2) simply refers to the components of the 3D vector x
  * corresponding to the dimension that's being contracted.
@@ -221,16 +225,16 @@ struct InterpolateDataOnDevice
     // still have coordinate values that are less than the interpolation
     // values in that dimension (ie. to the left of the interpolation point in
     // every dimension).
-    // Note that the actual coordinates for the dimensions used in this
-    // calculation are the "extended" versions which are padded with
-    // -INF_INTERP_DOUBLE below their lower bounds and +INF_INTERP_DOUBLE above
-    // their upper bounds. This is for the sake of aiding in extrapolation
-    // handling and is reset after extrapolation handling.
+    // Note that the actual ranges for the dimensions used in this calculation
+    // are the "extended" versions which are padded with -INF_INTERP_DOUBLE
+    // below their lower bounds and +INF_INTERP_DOUBLE above their upper
+    // bounds. This is for the sake of aiding in extrapolation handling and is
+    // reset after extrapolation handling.
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i] = static_cast<INT>(interp_utils::calc_floor_point_index(
           mut_interpolation_points[i],
-          this->d_extended_coords_vec_ptr +
-              this->d_extended_coords_strides_ptr[i],
+          this->d_extended_ranges_vec_ptr +
+              this->d_extended_ranges_strides_ptr[i],
           this->d_extended_dims_vec_ptr[i] - 1));
     }
 
@@ -252,10 +256,10 @@ struct InterpolateDataOnDevice
       out_of_range = (above_range || below_range);
 
       above_clamp_to_edge =
-          this->d_coords_vec_ptr[this->d_dims_vec_ptr[i] - 1 +
-                                 this->d_coords_strides_ptr[i]];
+          this->d_ranges_vec_ptr[this->d_dims_vec_ptr[i] - 1 +
+                                 this->d_ranges_strides_ptr[i]];
       below_clamp_to_edge =
-          this->d_coords_vec_ptr[this->d_coords_strides_ptr[i]];
+          this->d_ranges_vec_ptr[this->d_ranges_strides_ptr[i]];
 
       mut_interpolation_points[i] = (above_range && this->clamp_to_edge)
                                         ? above_clamp_to_edge
@@ -266,11 +270,11 @@ struct InterpolateDataOnDevice
       out_of_range_clamp_to_zero = (out_of_range && this->clamp_to_zero);
     }
 
-    // Limit origin_indices to be between the standard dimensional coordinates.
+    // Limit origin_indices to be between the standard dimensional ranges.
     // Note that the upper limit is set by this->d_dims_vec_ptr[i] - 2 since
-    // that represents the penultimate element in the standard dimensional
-    // coordinate which is the last left-most index that can be selected such
-    // that the linear gradient can be calculated.
+    // that represents the penultimate element in the standard dimensional range
+    // which is the last left-most index that can be selected such that the
+    // linear gradient can be calculated.
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i]--;
       origin_indices[i] =
@@ -299,7 +303,7 @@ struct InterpolateDataOnDevice
         decltype(interp_data), output_ndim, interp_ndim, non_interp_ndim>(
         vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
         origin_indices_ptr, this->d_hypercube_vertices_ptr,
-        this->d_coords_vec_ptr, non_interpolation_points, this->interp_indices,
+        this->d_ranges_vec_ptr, non_interpolation_points, this->interp_indices,
         this->non_interp_indices, this->d_dims_vec_ptr, index, req_int_props,
         req_real_props, kernel);
 
@@ -321,7 +325,7 @@ struct InterpolateDataOnDevice
       interp_utils::contract_hypercube_on_device<output_ndim>(
           mut_interpolation_points_ptr, dim_index,
           this->d_hypercube_vertices_ptr, origin_indices_ptr,
-          vertex_func_evals_ptr, this->d_coords_vec_ptr, this->d_dims_vec_ptr,
+          vertex_func_evals_ptr, this->d_ranges_vec_ptr, this->d_dims_vec_ptr,
           output_evals_ptr, varying_dim_ptr, vertex_coord_ptr);
 
       // This now accounts for the smaller size of output_evals, and makes
@@ -350,11 +354,11 @@ struct InterpolateDataOnDevice
 public:
   size_t const *d_hypercube_vertices_ptr;
   size_t const *d_dims_vec_ptr;
-  REAL const *d_coords_vec_ptr;
-  REAL const *d_extended_coords_vec_ptr;
+  REAL const *d_ranges_vec_ptr;
+  REAL const *d_extended_ranges_vec_ptr;
   size_t const *d_extended_dims_vec_ptr;
-  size_t const *d_coords_strides_ptr;
-  size_t const *d_extended_coords_strides_ptr;
+  size_t const *d_ranges_strides_ptr;
+  size_t const *d_extended_ranges_strides_ptr;
 
   std::array<size_t, interp_ndim> interp_indices;
   std::array<size_t, non_interp_ndim> non_interp_indices;
@@ -398,10 +402,10 @@ struct InterpolateData
    *
    * @param dims_vec A vector containing the lengths of each dimension that
    * defines the grid of pre-computed values.
-   * @param coords_vec A vector that contains the coordinate values for
+   * @param ranges_vec A vector that contains the range of values for
    * each axis that defines the grid of pre-computed values. The values in
-   * coords_vec can be thought of as a set of concatenated arrays where each
-   * segment's length within the 1D coords_vec is defined in dims_vec.
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
    * @param interp_indices An array of indices that correspond to the indices of
    * the full input array that will be passed to calc_data that are to be
    * interpolated.
@@ -414,7 +418,7 @@ struct InterpolateData
    * continue_linear, clamp_to_zero or clamp_to_edge.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<REAL> &coords_vec,
+                  const std::vector<REAL> &ranges_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type)
@@ -422,7 +426,7 @@ struct InterpolateData
             InterpolateDataOnDevice<output_ndim, interp_ndim, non_interp_ndim,
                                     typename DATATYPE::ON_DEVICE_OBJ_TYPE>,
             output_ndim, interp_ndim + non_interp_ndim, DATATYPE>(interp_data),
-        dims_vec(dims_vec), coords_vec(coords_vec),
+        dims_vec(dims_vec), ranges_vec(ranges_vec),
         interp_indices(interp_indices), sycl_target(sycl_target),
         extrapolation_type(extrapolation_type) {
     this->post_init();
@@ -435,10 +439,10 @@ struct InterpolateData
    *
    * @param dims_vec A vector containing the lengths of each dimension that
    * defines the grid of pre-computed values.
-   * @param coords_vec A vector that contains the coordinate values for
+   * @param ranges_vec A vector that contains the range of values for
    * each axis that defines the grid of pre-computed values. The values in
-   * coords_vec can be thought of as a set of concatenated arrays where each
-   * segment's length within the 1D coords_vec is defined in dims_vec.
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
    * @param interp_indices An array of indices that correspond to the indices
    * of the full input array that will be passed to calc_data that are to be
    * interpolated.
@@ -448,10 +452,10 @@ struct InterpolateData
    * the grid-function evaluation reaction data object.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<REAL> &coords_vec,
+                  const std::vector<REAL> &ranges_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
-      : InterpolateData(dims_vec, coords_vec, interp_indices, sycl_target,
+      : InterpolateData(dims_vec, ranges_vec, interp_indices, sycl_target,
                         interp_data, ExtrapolationType::continue_linear) {};
 
   /**
@@ -463,19 +467,19 @@ struct InterpolateData
    *
    * @param dims_vec A vector containing the lengths of each dimension that
    * defines the grid of pre-computed values.
-   * @param coords_vec A vector that contains the coordinate values for
+   * @param ranges_vec A vector that contains the range of values for
    * each axis that defines the grid of pre-computed values. The values in
-   * coords_vec can be thought of as a set of concatenated arrays where each
-   * segment's length within the 1D coords_vec is defined in dims_vec.
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
    * @param sycl_target SYCL target pointer used to interface with
    * NESO-Particles routines
    * @param interp_data ReactionDataBase derived object corresponding to
    * the grid-function evaluation reaction data object.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<REAL> &coords_vec,
+                  const std::vector<REAL> &ranges_vec,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
-      : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
+      : InterpolateData(dims_vec, ranges_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data) {
     for (size_t i = 0; i < interp_ndim; i++)
       this->interp_indices[i] = i;
@@ -489,10 +493,10 @@ struct InterpolateData
    *
    * @param dims_vec A vector containing the lengths of each dimension that
    * defines the grid of pre-computed values.
-   * @param coords_vec A vector that contains the coordinate values for
+   * @param ranges_vec A vector that contains the range of values for
    * each axis that defines the grid of pre-computed values. The values in
-   * coords_vec can be thought of as a set of concatenated arrays where each
-   * segment's length within the 1D coords_vec is defined in dims_vec.
+   * ranges_vec can be thought of as a set of concatenated arrays where each
+   * segment's length within the 1D ranges_vec is defined in dims_vec.
    * @param sycl_target SYCL target pointer used to interface with
    * NESO-Particles routines
    * @param interp_data ReactionDataBase derived object corresponding to
@@ -502,10 +506,10 @@ struct InterpolateData
    * continue_linear, clamp_to_zero or clamp_to_edge.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<REAL> &coords_vec,
+                  const std::vector<REAL> &ranges_vec,
                   SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type)
-      : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
+      : InterpolateData(dims_vec, ranges_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data, extrapolation_type) {
     for (size_t i = 0; i < interp_ndim; i++)
       this->interp_indices[i] = i;
@@ -536,49 +540,49 @@ struct InterpolateData
                                                               this->dims_vec);
     this->on_device_obj->d_dims_vec_ptr = this->d_dims_vec->ptr;
 
-    std::vector<size_t> coords_strides(interp_ndim);
+    std::vector<size_t> ranges_strides(interp_ndim);
     std::vector<size_t> extended_dims_vec(interp_ndim);
-    std::vector<size_t> extended_coords_strides(interp_ndim);
+    std::vector<size_t> extended_ranges_strides(interp_ndim);
     for (size_t idim = 0; idim < interp_ndim; idim++) {
       extended_dims_vec[idim] = this->dims_vec[idim] + 2;
       for (size_t j = 0; j < idim; j++) {
-        coords_strides[idim] += this->dims_vec[j];
-        extended_coords_strides[idim] += extended_dims_vec[j];
+        ranges_strides[idim] += this->dims_vec[j];
+        extended_ranges_strides[idim] += extended_dims_vec[j];
       }
     }
 
-    std::vector<REAL> extended_coords_vec;
+    std::vector<REAL> extended_ranges_vec;
     for (size_t idim = 0; idim < interp_ndim; idim++) {
-      extended_coords_vec.push_back(-INF_INTERP_DOUBLE);
-      for (size_t icoord = 0; icoord < this->dims_vec[idim]; icoord++) {
-        extended_coords_vec.push_back(
-            coords_vec[icoord + coords_strides[idim]]);
+      extended_ranges_vec.push_back(-INF_INTERP_DOUBLE);
+      for (size_t irange = 0; irange < this->dims_vec[idim]; irange++) {
+        extended_ranges_vec.push_back(
+            ranges_vec[irange + ranges_strides[idim]]);
       }
-      extended_coords_vec.push_back(INF_INTERP_DOUBLE);
+      extended_ranges_vec.push_back(INF_INTERP_DOUBLE);
     }
 
-    this->d_extended_coords_vec = std::make_shared<BufferDevice<REAL>>(
-        this->sycl_target, extended_coords_vec);
-    this->on_device_obj->d_extended_coords_vec_ptr =
-        this->d_extended_coords_vec->ptr;
+    this->d_extended_ranges_vec = std::make_shared<BufferDevice<REAL>>(
+        this->sycl_target, extended_ranges_vec);
+    this->on_device_obj->d_extended_ranges_vec_ptr =
+        this->d_extended_ranges_vec->ptr;
 
     this->d_extended_dims_vec = std::make_shared<BufferDevice<size_t>>(
         this->sycl_target, extended_dims_vec);
     this->on_device_obj->d_extended_dims_vec_ptr =
         this->d_extended_dims_vec->ptr;
 
-    this->d_coords_vec = std::make_shared<BufferDevice<REAL>>(this->sycl_target,
-                                                              this->coords_vec);
-    this->on_device_obj->d_coords_vec_ptr = this->d_coords_vec->ptr;
+    this->d_ranges_vec = std::make_shared<BufferDevice<REAL>>(this->sycl_target,
+                                                              this->ranges_vec);
+    this->on_device_obj->d_ranges_vec_ptr = this->d_ranges_vec->ptr;
 
-    this->d_coords_strides = std::make_shared<BufferDevice<size_t>>(
-        this->sycl_target, coords_strides);
-    this->on_device_obj->d_coords_strides_ptr = this->d_coords_strides->ptr;
+    this->d_ranges_strides = std::make_shared<BufferDevice<size_t>>(
+        this->sycl_target, ranges_strides);
+    this->on_device_obj->d_ranges_strides_ptr = this->d_ranges_strides->ptr;
 
-    this->d_extended_coords_strides = std::make_shared<BufferDevice<size_t>>(
-        this->sycl_target, extended_coords_strides);
-    this->on_device_obj->d_extended_coords_strides_ptr =
-        this->d_extended_coords_strides->ptr;
+    this->d_extended_ranges_strides = std::make_shared<BufferDevice<size_t>>(
+        this->sycl_target, extended_ranges_strides);
+    this->on_device_obj->d_extended_ranges_strides_ptr =
+        this->d_extended_ranges_strides->ptr;
 
     this->d_hypercube_vertices = std::make_shared<BufferDevice<size_t>>(
         this->sycl_target, initial_hypercube);
@@ -588,16 +592,16 @@ struct InterpolateData
 
   SYCLTargetSharedPtr sycl_target;
   std::vector<size_t> dims_vec;
-  std::vector<REAL> coords_vec;
+  std::vector<REAL> ranges_vec;
   std::array<size_t, interp_ndim> interp_indices;
   ExtrapolationType extrapolation_type;
 
   std::shared_ptr<BufferDevice<size_t>> d_dims_vec;
-  std::shared_ptr<BufferDevice<REAL>> d_coords_vec;
-  std::shared_ptr<BufferDevice<REAL>> d_extended_coords_vec;
+  std::shared_ptr<BufferDevice<REAL>> d_ranges_vec;
+  std::shared_ptr<BufferDevice<REAL>> d_extended_ranges_vec;
   std::shared_ptr<BufferDevice<size_t>> d_extended_dims_vec;
-  std::shared_ptr<BufferDevice<size_t>> d_coords_strides;
-  std::shared_ptr<BufferDevice<size_t>> d_extended_coords_strides;
+  std::shared_ptr<BufferDevice<size_t>> d_ranges_strides;
+  std::shared_ptr<BufferDevice<size_t>> d_extended_ranges_strides;
   std::shared_ptr<BufferDevice<size_t>> d_hypercube_vertices;
 };
 }; // namespace VANTAGE::Reactions

@@ -49,15 +49,15 @@ inline constexpr bool is_std_array_of_real_v = is_std_array_of_real<T>::value;
  * @tparam ndim Number of dimensions.
  * @tparam FUNC Type of callable taking const std::array<REAL, ndim> &
  * (coordinate values).
- * @param coords Per-dimension coordinate vectors defining the grid.
+ * @param ranges Per-dimension range vectors defining the grid coordinates.
  * @param func Callable invoked once per grid point with the coordinate array.
  */
 template <int ndim, typename FUNC>
-inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
+inline void iterate_points(const std::array<std::vector<REAL>, ndim> &ranges,
                            const FUNC &func) {
   std::array<size_t, ndim> num_points;
   for (int i = 0; i < ndim; i++) {
-    num_points[i] = coords[i].size();
+    num_points[i] = ranges[i].size();
   }
 
   size_t total = 1;
@@ -68,11 +68,11 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
   std::array<size_t, ndim> idx;
   idx.fill(0);
   for (size_t flat_idx = 0; flat_idx < total; flat_idx++) {
-    std::array<REAL, ndim> point_coords;
+    std::array<REAL, ndim> coords;
     for (int i = 0; i < ndim; i++) {
-      point_coords[i] = coords[i][idx[i]];
+      coords[i] = ranges[i][idx[i]];
     }
-    func(point_coords);
+    func(coords);
 
     // Counter incrementing and resetting:
     // When idx[i] overflows num_points[i] it resets to 0 and carries
@@ -128,7 +128,7 @@ inline void append(REAL *ptr, size_t &offset, const REAL *data, size_t n) {
 /**
  * @brief Struct for describing the underlying grid that will be used by either
  * CartesianGridData or TrimEvalData. It generates the grid at construction and
- * it also handles flattening of data relating to interpolation coordinates,
+ * it also handles flattening of data relating to interpolation ranges,
  * interpolation dimensions, trim dimensions, and the nested per-point tables
  * (depending on the value of output_ndim).
  *
@@ -150,7 +150,7 @@ inline void append(REAL *ptr, size_t &offset, const REAL *data, size_t n) {
  */
 template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   /**
-   * @brief Construct from interpolation coordinates and a
+   * @brief Construct from interpolation ranges and a
    * generator function (with optional additional context).
    *
    * The generator function is called once per interpolation point in row-major
@@ -160,7 +160,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * @tparam FUNC Generator callable type.
    * @tparam Context Type names of any additional context data needed for the
    * generator.
-   * @param coords_in Per-dimension interpolation coordinate vectors.
+   * @param ranges_in Per-dimension interpolation range vectors.
    * @param func Generator callable with signature
    *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
    * returning a REAL value.
@@ -171,9 +171,9 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 0) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &coords_in,
+  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &ranges_in,
                  const FUNC &func, const Context &...context)
-      : coords(coords_in) {
+      : ranges(ranges_in) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
                              decltype(context)...>;
@@ -182,7 +182,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
 
     // Compute total number of interpolation points and allocate the grid vector
     size_t num_points = 1;
-    for (const auto &r : this->coords) {
+    for (const auto &r : this->ranges) {
       num_points *= r.size();
     }
     this->grid.assign(num_points, 0.0);
@@ -191,19 +191,19 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
     // append the func results to the flat grid buffer.
     size_t point_idx = 0;
     grid_utils::iterate_points<interp_ndim>(
-        this->coords, [&](const std::array<REAL, interp_ndim> &coords) {
+        this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
           size_t offset = 0;
           grid_utils::append(&(this->grid[point_idx]), offset,
                              std::array<REAL, 1>{func(coords, context...)});
           ++point_idx;
         });
 
-    flatten_coords();
+    flatten_ranges();
     flatten_interp_dims();
   }
 
   /**
-   * @brief Construct from interpolation coordinates, trim dimensions, and a
+   * @brief Construct from interpolation ranges, trim dimensions, and a
    * generator function (with optional additional context).
    *
    * The generator function is called once per interpolation point in row-major
@@ -214,7 +214,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * @tparam FUNC Generator callable type.
    * @tparam Context Type names of any additional context data needed for the
    * generator.
-   * @param coords Per-dimension interpolation coordinate vectors.
+   * @param ranges_in Per-dimension interpolation range vectors.
    * @param trim_dims_arr TRIM grid dimensions per output axis.
    * @param func Generator callable with signature
    *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
@@ -226,10 +226,10 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 3) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &coords,
+  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &ranges,
                  const std::array<size_t, output_ndim> &trim_dims_arr,
                  const FUNC &func, const Context &...context)
-      : coords(coords), output_dims(trim_dims_arr) {
+      : ranges(ranges), output_dims(trim_dims_arr) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
                              decltype(context)...>;
@@ -246,7 +246,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
 
     // Compute total number of grid points and allocate the grid vector
     size_t num_points = 1;
-    for (const auto &r : this->coords) {
+    for (const auto &r : this->ranges) {
       num_points *= r.size();
     }
     num_points *= grid_stride;
@@ -258,7 +258,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
     size_t grid_access_index = 0;
 
     grid_utils::iterate_points<interp_ndim>(
-        this->coords, [&](const std::array<REAL, interp_ndim> &coords) {
+        this->ranges, [&](const std::array<REAL, interp_ndim> &coords) {
           grid_access_index = point_idx * grid_stride;
           size_t offset = 0;
           grid_utils::append(&(this->grid[grid_access_index]), offset,
@@ -270,16 +270,16 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
           ++point_idx;
         });
 
-    flatten_coords();
+    flatten_ranges();
     flatten_interp_dims();
     flatten_output_dims();
   }
 
   /**
-   * @brief Return the flattened vector of all of the coordinates for each
-   * dimension of the grid.
+   * @brief Return the flattened vector of all of the ranges for each dimension
+   * of the grid.
    */
-  const std::vector<REAL> &get_flat_coords() const { return this->flat_coords; }
+  const std::vector<REAL> &get_flat_ranges() const { return this->flat_ranges; }
 
   /**
    * @brief Return the vector containing the sizes of each dimension of the
@@ -308,17 +308,17 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
 
 private:
   /**
-   * @brief Flatten the per-dimension interpolation coordinate vectors into a
-   * single contiguous vector.
+   * @brief Flatten the per-dimension interpolation range vectors into a single
+   * contiguous vector.
    */
-  void flatten_coords() {
+  void flatten_ranges() {
     size_t total = 0;
-    for (const auto &r : this->coords) {
+    for (const auto &r : this->ranges) {
       total += r.size();
     }
 
-    for (const auto &r : this->coords) {
-      this->flat_coords.insert(this->flat_coords.end(), r.begin(), r.end());
+    for (const auto &r : this->ranges) {
+      this->flat_ranges.insert(this->flat_ranges.end(), r.begin(), r.end());
     }
   }
 
@@ -326,7 +326,7 @@ private:
    * @brief Fills the interp_dims vector.
    */
   void flatten_interp_dims() {
-    for (const auto &r : this->coords) {
+    for (const auto &r : this->ranges) {
       this->interp_dims_vec.push_back(r.size());
     }
   }
@@ -344,10 +344,10 @@ private:
   }
 
   std::array<std::vector<REAL>, interp_ndim>
-      coords; //!< Array containing vectors that define coordinates for each
-              //!< dimension of the grid.
-  std::vector<REAL> flat_coords; //!< Vector containing the contiguous
-                                 //!< per-dimension coordinates
+      ranges; //!< Array containing vectors that define ranges for each
+              //!< dimensions of the grid.
+  std::vector<REAL>
+      flat_ranges; //!< Vector containing the contiguous per-dimension ranges
   std::vector<size_t>
       interp_dims_vec; //!< Vector containing the size of each interpolation
                        //!< dimension for the grid.
