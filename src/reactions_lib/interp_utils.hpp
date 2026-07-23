@@ -44,7 +44,7 @@ inline INT coeff_index_on_device(INT const *indices, size_t const *dims_vec,
 
 /**
  * @brief Similar to coeff_index_on_device in that it returns an index on a
- * contiguous row-major array containing the ranges of each dimension of
+ * contiguous row-major array containing the coordinates of each dimension of
  * relevance for the interpolation.
  *
  * @param sub_index The index for the specific dimension of interest
@@ -52,9 +52,9 @@ inline INT coeff_index_on_device(INT const *indices, size_t const *dims_vec,
  * dimension of a 4D grid, the dim_index=2
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  *
- * @return std::size_t that specifies the index on a contiguous ranges array.
+ * @return std::size_t that specifies the index on a contiguous coords array.
  */
-inline size_t range_index_on_device(const size_t &sub_index,
+inline size_t coord_index_on_device(const size_t &sub_index,
                                     const size_t &dim_index,
                                     size_t const *dims_vec) {
   size_t index = sub_index;
@@ -72,15 +72,16 @@ inline size_t range_index_on_device(const size_t &sub_index,
  * lowest(or left-most) index.
  *
  * @param x_interp Value of the interpolation point for a given dimension
- * @param dim_range Pointer to a vector containing the range of values for a
- * given dimension.
- * @param last_index The last index in the range of the given dimension.
+ * @param dim_coords Pointer to a vector containing the coordinate values for
+ * a given dimension.
+ * @param last_index The last index in the coordinate values of the given
+ * dimension.
  *
  * @return std::size_t The index on a given dimension that is the closest to
  * x_interp.
  */
 inline size_t calc_floor_point_index(const REAL &x_interp,
-                                     REAL const *dim_range,
+                                     REAL const *dim_coords,
                                      const size_t &last_index) {
   size_t L = 0;
   size_t R = last_index;
@@ -88,9 +89,9 @@ inline size_t calc_floor_point_index(const REAL &x_interp,
 
   while ((R - L) > 1) {
     m = L + ((R - L) / 2);
-    if (dim_range[m] < x_interp) {
+    if (dim_coords[m] < x_interp) {
       L = m;
-    } else if (dim_range[m] > x_interp) {
+    } else if (dim_coords[m] > x_interp) {
       R = m;
     } else {
       // for exact matches
@@ -205,7 +206,7 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * @param hypercube_vertices Pointer to a vector containing the vertices of the
  * hypercube (integers whose binary representations give the normalised
  * positions of the vertices).
- * @param ranges_vec Pointer to the flattened ranges array used to recover the
+ * @param coords_vec Pointer to the flattened coords array used to recover the
  * coordinate value for each interpolated dimension.
  * @param non_interpolation_points Values passed through without modification to
  * calc_data(...)
@@ -231,7 +232,7 @@ template <typename DATATYPE, int output_ndim, int interp_ndim,
 inline void initial_func_eval_on_device(
     REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
     INT const *origin_indices, size_t const *hypercube_vertices,
-    REAL const *ranges_vec,
+    REAL const *coords_vec,
     const std::array<REAL, non_interp_ndim> &non_interpolation_points,
     const std::array<size_t, interp_ndim> &interpolation_indices,
     const std::array<size_t, non_interp_ndim> &non_interpolation_indices,
@@ -264,7 +265,7 @@ inline void initial_func_eval_on_device(
       vertex_coord[vertex_index] =
           origin_indices[vertex_index] +
           binary_extract(hypercube_vertices[point_index], vertex_index);
-      vertex_val[vertex_index] = ranges_vec[range_index_on_device(
+      vertex_val[vertex_index] = coords_vec[coord_index_on_device(
           vertex_coord[vertex_index], vertex_index, dims_vec)];
 
       grid_func_input[interpolation_indices[vertex_index]] =
@@ -305,8 +306,8 @@ inline void initial_func_eval_on_device(
  * interpolation point).
  * @param vertex_func_evals Pointer to a vector that
  * contains the function evaluations at initial vertices.
- * @param ranges_vec Pointer to a vector containing a
- * contiguous array of the ranges of each dimension of relevance for the
+ * @param coords_vec Pointer to a vector containing a
+ * contiguous array of the coordinates of each dimension of relevance for the
  * interpolation.
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
  * @param output_evals Pointer to a vector that contains
@@ -321,7 +322,7 @@ template <int output_ndim>
 inline void contract_hypercube_on_device(
     const REAL *interp_points, const size_t &dim_index,
     size_t const *hypercube_vertices, const INT *origin_indices,
-    const REAL *vertex_func_evals, REAL const *ranges_vec,
+    const REAL *vertex_func_evals, REAL const *coords_vec,
     size_t const *dims_vec, REAL *output_evals, INT *varying_dim,
     INT *vertex_coord) {
   size_t ndim = dim_index + 1;
@@ -338,7 +339,7 @@ inline void contract_hypercube_on_device(
   }
 
   INT vertex_0, vertex_1;
-  REAL range_val_0, range_val_1, eval_point_0, eval_point_1;
+  REAL coord_val_0, coord_val_1, eval_point_0, eval_point_1;
 
   for (size_t i = 0; i < num_out_points; i++) {
     INT index_0 = i;
@@ -347,17 +348,17 @@ inline void contract_hypercube_on_device(
     vertex_0 = varying_dim[index_0];
     vertex_1 = varying_dim[index_1];
 
-    range_val_0 = // x0
-        ranges_vec[range_index_on_device(vertex_0, dim_index, dims_vec)];
-    range_val_1 = // x1
-        ranges_vec[range_index_on_device(vertex_1, dim_index, dims_vec)];
+    coord_val_0 = // x0
+        coords_vec[coord_index_on_device(vertex_0, dim_index, dims_vec)];
+    coord_val_1 = // x1
+        coords_vec[coord_index_on_device(vertex_1, dim_index, dims_vec)];
 
     for (size_t idim = 0; idim < output_ndim; idim++) {
       eval_point_0 = vertex_func_evals[(index_0 * output_ndim) + idim]; // f0
       eval_point_1 = vertex_func_evals[(index_1 * output_ndim) + idim]; // f1
 
       output_evals[(index_0 * output_ndim) + idim] =
-          linear_interp(interp_points[dim_index], range_val_0, range_val_1,
+          linear_interp(interp_points[dim_index], coord_val_0, coord_val_1,
                         eval_point_0, eval_point_1);
     }
   }
