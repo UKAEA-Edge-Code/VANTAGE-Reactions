@@ -14,3 +14,4 @@ Overview
    overview/supported_instantiations
 
 
+   overview/on_device_linear_interpolation

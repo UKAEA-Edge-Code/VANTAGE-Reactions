@@ -24,11 +24,11 @@ namespace VANTAGE::Reactions {
  *
  * An input coordinate is split into two parts. The first interp_ndim components
  * (where interp_ndim = input_ndim - output_ndim) are interpolation coordinates.
- * For each such component an index for it in the corresponding range vector is
- * computed, exactly as in CartesianGridDataOnDevice. These per-dimension
- * indices are flattened with row-major ordering into a flat grid index, and the
- * base data offset is flat_index * grid_stride, (details of the grid_stride
- * calculation are in the TrimEvalData docstrings).
+ * For each such component an index for it in the corresponding coordinate
+ * vector is computed, exactly as in CartesianGridDataOnDevice. These
+ * per-dimension indices are flattened with row-major ordering into a flat grid
+ * index, and the base data offset is flat_index * grid_stride, (details of the
+ * grid_stride calculation are in the TrimEvalData docstrings).
  *
  * The remaining output_ndim components are TRIM coordinates between 0.0
  * and 1.0. Each is uniformly binned against the corresponding entry in
@@ -70,19 +70,19 @@ struct TrimEvalDataOnDevice
    * @brief Constructor for TrimEvalDataOnDevice.
    *
    * @param d_grid Device buffer containing the tabulated distribution data.
-   * @param d_ranges Device buffer containing range boundaries for the
+   * @param d_coords Device buffer containing coordinate boundaries for the
    * interpolation dimensions.
    * @param d_dims Device buffer containing grid dimensions for the
    * interpolation axes.
    * @param d_trim_dims Device buffer containing TRIM grid dimensions.
    */
   TrimEvalDataOnDevice(const std::shared_ptr<BufferDevice<REAL>> &d_grid,
-                       const std::shared_ptr<BufferDevice<REAL>> &d_ranges,
+                       const std::shared_ptr<BufferDevice<REAL>> &d_coords,
                        const std::shared_ptr<BufferDevice<size_t>> &d_dims,
                        const std::shared_ptr<BufferDevice<size_t>> &d_trim_dims)
       : TrimEvalDataOnDevice() {
     this->d_grid_ptr = d_grid->ptr;
-    this->d_ranges_ptr = d_ranges->ptr;
+    this->d_coords_ptr = d_coords->ptr;
     this->d_dims_ptr = d_dims->ptr;
     this->d_trim_dims_ptr = d_trim_dims->ptr;
   }
@@ -134,12 +134,12 @@ struct TrimEvalDataOnDevice
 
     std::array<INT, interp_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
-        input[0], this->d_ranges_ptr, this->d_dims_ptr[0]);
+        input[0], this->d_coords_ptr, this->d_dims_ptr[0]);
     size_t aggregate_dims = 0;
     for (size_t i = 1; i < interp_ndim; i++) {
       aggregate_dims += this->d_dims_ptr[i - 1];
       grid_indices[i] = interp_utils::calc_floor_point_index(
-          input[i], this->d_ranges_ptr + aggregate_dims, this->d_dims_ptr[i]);
+          input[i], this->d_coords_ptr + aggregate_dims, this->d_dims_ptr[i]);
     }
 
     auto grid_indices_ptr = grid_indices.data();
@@ -182,7 +182,7 @@ public:
   static constexpr int interp_ndim = input_ndim - output_ndim;
 
   REAL const *d_grid_ptr;
-  REAL const *d_ranges_ptr;
+  REAL const *d_coords_ptr;
   size_t const *d_dims_ptr;
   size_t const *d_trim_dims_ptr;
 
@@ -190,11 +190,11 @@ public:
 };
 
 /**
- * @brief Reaction rate data calculation managing buffers for grid, ranges,
+ * @brief Reaction rate data calculation managing buffers for grid, coords,
  * dims, and trim_dims, enabling on-device tabulated distribution evaluation.
  *
  * The evaluation works with the BufferDevice objects that are constructed for
- * the input vectors (grid, ranges_vec, dims_vec, trim_dims_vec). All input
+ * the input vectors (grid, coords_vec, dims_vec, trim_dims_vec). All input
  * vectors are 1D vectors and are accessed using the logic in the on-device
  * calc_data(...). The interpolated points are calculated with the same indexing
  * as in CartesianGridDataOnDevice. The TRIM dimensions are uniformly binned.
@@ -225,8 +225,8 @@ struct TrimEvalData
    * @brief Constructor for TrimEvalData.
    *
    * @param grid Flat vector of grid values (tabulated distribution data).
-   * @param ranges_vec Range boundaries for the interpolation dimensions (used
-   * for index computation).
+   * @param coords_vec Coordinate boundaries for the interpolation dimensions
+   * (used for index computation).
    * @param dims_vec Grid dimensions for the interpolation axes.
    * @param trim_dims_vec Trim grid dimensions (ie. number of bins per TRIM
    * axis).
@@ -235,7 +235,7 @@ struct TrimEvalData
    * @param properties_map Map of property indices to names.
    */
   TrimEvalData(const std::vector<REAL> &grid,
-               const std::vector<REAL> &ranges_vec,
+               const std::vector<REAL> &coords_vec,
                const std::vector<size_t> &dims_vec,
                const std::vector<size_t> &trim_dims_vec,
                SYCLTargetSharedPtr sycl_target,
@@ -259,31 +259,31 @@ struct TrimEvalData
     }
 
     auto grid_size = grid.size();
-    auto ranges_size = ranges_vec.size();
+    auto coords_size = coords_vec.size();
 
     auto expected_grid_size = 1;
-    auto expected_ranges_size = 0;
+    auto expected_coords_size = 0;
 
     for (auto &idim : dims_vec) {
       expected_grid_size *= idim;
-      expected_ranges_size += idim;
+      expected_coords_size += idim;
     }
 
     expected_grid_size *= grid_stride;
 
-    NESOASSERT((ranges_size == expected_ranges_size),
-               "Invalid size of input ranges vector.");
+    NESOASSERT((coords_size == expected_coords_size),
+               "Invalid size of input coords vector.");
     NESOASSERT((grid_size == expected_grid_size),
                "Invalid size of input grid.");
 
     this->d_grid = utils::make_buffer_device_ptr(sycl_target, grid);
-    this->d_ranges = utils::make_buffer_device_ptr(sycl_target, ranges_vec);
+    this->d_coords = utils::make_buffer_device_ptr(sycl_target, coords_vec);
     this->d_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
     this->d_trim_dims =
         utils::make_buffer_device_ptr(sycl_target, trim_dims_vec);
 
     this->on_device_obj =
-        TrimEvalDataOnDevice<input_ndim>(d_grid, d_ranges, d_dims, d_trim_dims);
+        TrimEvalDataOnDevice<input_ndim>(d_grid, d_coords, d_dims, d_trim_dims);
 
     this->on_device_obj->grid_stride = grid_stride;
 
@@ -298,7 +298,7 @@ struct TrimEvalData
                SYCLTargetSharedPtr sycl_target,
                std::map<int, std::string> properties_map = get_default_map())
       : TrimEvalData(
-            grid_descriptor.get_flat_grid(), grid_descriptor.get_flat_ranges(),
+            grid_descriptor.get_flat_grid(), grid_descriptor.get_flat_coords(),
             grid_descriptor.get_interp_dims(),
             grid_descriptor.get_output_dims(), sycl_target, properties_map) {
     static_assert(interp_ndim == input_ndim - output_ndim,
@@ -312,7 +312,7 @@ struct TrimEvalData
   };
 
 public:
-  std::shared_ptr<BufferDevice<REAL>> d_ranges;
+  std::shared_ptr<BufferDevice<REAL>> d_coords;
   std::shared_ptr<BufferDevice<size_t>> d_dims;
   std::shared_ptr<BufferDevice<size_t>> d_trim_dims;
   std::shared_ptr<BufferDevice<REAL>> d_grid;
