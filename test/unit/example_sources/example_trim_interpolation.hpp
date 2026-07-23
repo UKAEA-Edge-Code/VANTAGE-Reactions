@@ -40,7 +40,7 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
         }();
         std::array<REAL, trim_table_length> result;
         for (size_t i = 0; i < trim_table_length; i++) {
-          result[i] = Kernel::pow(static_cast<REAL>(i + 50), 3.0);
+          result[i] = std::pow((i + 50), 3.0);
         }
 
         return result;
