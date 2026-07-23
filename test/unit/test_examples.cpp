@@ -25,6 +25,7 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_fixed_coeff.hpp"
 #include "./example_sources/example_general_absorption_kernels.hpp"
 #include "./example_sources/example_general_linear_scattering_kernels.hpp"
+#include "./example_sources/example_interpolation.hpp"
 #include "./example_sources/example_ionisation_kernels.hpp"
 #include "./example_sources/example_lambda_wrapper_array_transform_data.hpp"
 #include "./example_sources/example_linear_reaction_CX.hpp"
@@ -44,6 +45,7 @@ using namespace VANTAGE::Reactions;
 #include "./example_sources/example_spec_builder.hpp"
 #include "./example_sources/example_spherical_basis_reflection.hpp"
 #include "./example_sources/example_transformation_wrapper.hpp"
+#include "./example_sources/example_trim_interpolation.hpp"
 #include "./example_sources/example_unary_array_transform_data.hpp"
 #include "./example_sources/example_uniform_velocity_binning.hpp"
 #include "./example_sources/example_vranic_merging_strategy.hpp"
@@ -93,6 +95,8 @@ TEST(Examples, all) {
   distributor_strategy_example(particle_group);
   direct_marking_example(particle_group);
   direct_transformation_example(particle_group);
+  interpolation_example(particle_group);
+  trim_interpolation_example(particle_group);
 
   particle_group->add_particle_dat(Sym<INT>("REACTIONS_GROUPING_INDEX"), 1);
   particle_group->add_particle_dat(Sym<INT>("REACTIONS_LINEAR_INDEX"), 1);

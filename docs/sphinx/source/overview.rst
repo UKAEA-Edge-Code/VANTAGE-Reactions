@@ -11,5 +11,4 @@ Overview
    overview/reactions
    overview/marking_transformations
    overview/reaction_controllers
-
-
+   overview/on_device_linear_interpolation
