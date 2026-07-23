@@ -11,17 +11,40 @@
 #include <type_traits>
 #include <vector>
 
-// TODO: docs!
-
 using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
+/**
+ * @brief Class for binary reactions based on the Stochastic Weighted Particle
+ * Method
+ *
+ */
 template <int num_products, typename ReactionData, typename ReactionKernels,
           typename DataCalc = PairDataCalculator<>>
 struct SWPMReaction : ProfilingBase {
   SWPMReaction() = default;
 
+  /**
+   * @brief Constructor for SWPMReaction
+   *
+   * @param sycl_target  Compute device used by the instance. This must be the
+   * same sycl_target that is assigned to the particle group(s) from which pairs
+   * acted on by this reaction are derived.
+   * @param reactants The reactant species IDs
+   * @param products Product species IDs of the descendants produced by this
+   * reaction
+   * @param reaction_data Reaction data object derived from CSPairData, used to
+   * calculate the reaction rate (sigma * v_rel) associated with individual
+   * pairs
+   * @param reaction_kernels PairReactionKernels object defining the properties
+   * of the products and the feedback on the parent particles and fields
+   * @param data_calculator PairDataCalculator object defining any additional
+   * required data for the kernels
+   * @param properties_map (Optional) A std::map<int, std::string> object used
+   * when remapping property names (tot_reaction_rate,weight_change,
+   * collision_cell_id, cell_id)
+   */
   SWPMReaction(
       SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
       std::array<int, num_products> products, ReactionData reaction_data,
@@ -46,7 +69,6 @@ struct SWPMReaction : ProfilingBase {
 
     this->total_reaction_rate =
         Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
-    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
     this->weight_change_sym =
         Sym<REAL>(properties_map.at(default_properties.weight_change));
     this->collision_cell_sym =
@@ -133,6 +155,26 @@ struct SWPMReaction : ProfilingBase {
   }
 
   SWPMReaction(
+      /**
+       * \overload
+       * @brief Constructor for SWPMReaction with no explicit PairDataCalculator
+       *
+       * @param sycl_target  Compute device used by the instance. This must be
+       * the same sycl_target that is assigned to the particle group(s) from
+       * which pairs acted on by this reaction are derived.
+       * @param reactants The reactant species IDs
+       * @param products Product species IDs of the descendants produced by this
+       * reaction
+       * @param reaction_data Reaction data object derived from CSPairData, used
+       * to calculate the reaction rate (sigma * v_rel) associated with
+       * individual pairs
+       * @param reaction_kernels PairReactionKernels object defining the
+       * properties of the products and the feedback on the parent particles and
+       * fields
+       * @param properties_map (Optional) A std::map<int, std::string> object
+       * used when remapping property names (tot_reaction_rate,weight_change,
+       * collision_cell_id, cell_id)
+       */
       SYCLTargetSharedPtr sycl_target, size_t num_cells,
       std::array<int, 2> reactants, std::array<int, num_products> products,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
@@ -151,6 +193,17 @@ struct SWPMReaction : ProfilingBase {
   virtual ~SWPMReaction() = default;
 
 public:
+  /**
+   * @brief Calculates the pairwise reaction rate (sigma * v_rel) for each pair
+   * in a pair list, and for a given cell block. Stores the reaction rate in the
+   * on-reaction buffer, updates the per-particle total rate, and calls the
+   * function to update the maximum encountered rates per collision cell.
+   *
+   * @param pair_list Pair list for which the rates are computed
+   * @param cell_idx_start The index of the first cell over which to run the
+   * pair loop
+   * @param cell_idx_end The index up to which to run the loop over
+   */
   template <typename TARGET, typename PAIR_LIST>
   void calculate_rates_v(CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                          INT cell_idx_start, INT cell_idx_end) {
@@ -200,6 +253,14 @@ public:
                                                      cell_idx_end);
   }
 
+  /**
+   * @brief Retrieve the sigma * v_rel bounds for all collision cells within a
+   * mesh cell block
+   *
+   * @param cell_idx_start Starting index of mesh cell block
+   * @param cell_idx_end End index of the mesh cell block
+   * @return
+   */
   std::vector<std::vector<REAL>> get_sigma_v_bounds(INT cell_idx_start,
                                                     INT cell_idx_end) {
 
@@ -234,6 +295,24 @@ public:
     this->end_profiling_region(sycl_target_stored, r0);
   }
 
+  /**
+   * @brief Creates and processes any descendant products from the reaction and
+   * modifies background fields and/or parent particles based on the reaction
+   * kernel object.
+   *
+   * Unlike linear reactions, the weight change for each particle is assumed to
+   * be calculated outside of the reaction, and the weight_change particle dat
+   * set to that value.
+   *
+   * @param pair_list Pair list containing the reactants to which this reaction
+   * should be applied
+   * @param cell_idx_start The index of the first cell over which to run the
+   * pair loop
+   * @param cell_idx_end The index up to which to run the loop over
+   * @param dt The current time step size.
+   * @param child_group ParticleGroupSharedPtr that contains a particle group
+   * into which descendants are placed after generation.
+   */
   template <typename TARGET, typename PAIR_LIST>
   void apply_v(CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                INT cell_idx_start, INT cell_idx_end, double dt,
@@ -365,6 +444,12 @@ public:
     this->device_rate_buffer = empty_device_rate_buffer;
   }
 
+  /**
+   * @brief Flush the rate buffer to a requested size, allocating extra memory
+   * if necessary
+   *
+   * @param requested_size Requested size of the buffer
+   */
   void adaptive_flush_buffer(size_t requested_size) {
     auto device_rate_buffer_size = this->device_rate_buffer->size;
 
@@ -403,15 +488,10 @@ public:
   }
 
   /**
-   * @brief Flushes the pre_req_data buffer blockwise, allocating extra memory
+   * @brief Flushes the pre_req_data buffer adaptively, allocating extra memory
    * if necessary.
    *
-   * @param particle_sub_group Particle subgroup used to infer the number of
-   * particles in the cell
-   * @param cell_idx_start Index of the first cell for which the buffer flush
-   * is performed
-   * @param cell_idx_end Loop end index - cell up to which the buffer is
-   * flushed
+   * @param requested_size Requested size of the buffer
    */
   void adaptive_flush_pre_req_data(size_t requested_size) {
     auto shape = this->pre_req_data->index.shape;
@@ -430,10 +510,17 @@ public:
     }
   }
 
+  /**
+   * @brief Reallocate the rate bound buffer if the number of mesh cells or the
+   * maximum number of collision cells per mesh cell has changed. If the rate
+   * buffer is reallocated, the buffer is filled with the default sigma * v_rel
+   * bounds based on the default maximum relative velocity assumed by the
+   * reaction.
+   */
   void prepare_sigma_v_bounds() {
     auto shape = this->sigma_v_bounds->index.shape;
     if (shape[0] != this->num_mesh_cells ||
-        shape[1] < this->max_num_coll_cells) {
+        shape[1] != this->max_num_coll_cells) {
       this->sigma_v_bounds = std::make_shared<NDLocalArray<REAL, 2>>(
           this->sycl_target_stored, this->num_mesh_cells,
           this->max_num_coll_cells);
@@ -476,6 +563,15 @@ protected:
     return std::vector<int>(this->reactants.begin(), this->reactants.end());
   }
 
+  /**
+   * @brief Launch the loop that updates the maximum sigma * v_rel per collision
+   * cell buffer using the current values in the rate buffer
+   *
+   * @param pair_list Pair list used to get the mesh and collision cell per pair
+   * @param cell_idx_start The index of the first cell over which to run the
+   * pair loop
+   * @param cell_idx_end The index up to which to run the loop over
+   */
   template <typename TARGET, typename PAIR_LIST>
   void launch_sigma_v_max_loop(
       CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
@@ -512,7 +608,6 @@ private:
       pre_req_data; //!< Real-valued local matrix for storing
                     //!< any pre-requisite data relating to a
                     //!< derived reaction.
-  Sym<REAL> weight_sym;
   Sym<REAL> weight_change_sym;
   Sym<INT> collision_cell_sym;
   Sym<INT> cell_id_sym;
