@@ -1,5 +1,3 @@
-#include "example_common_functors.hpp"
-
 void simple_thinning_strategy_example(ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
@@ -8,7 +6,9 @@ void simple_thinning_strategy_example(ParticleGroupSharedPtr particle_group) {
 
   // Below is a placeholder rng kernel, in practice this would be a uniformly
   // sampled value - here we just use a constant number
-  auto rng_kernel = host_per_particle_block_rng<REAL>(ConstantRng{0.01}, 1);
+  auto rng_lambda = [&]() -> REAL { return 0.01; };
+
+  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
 
   auto thinning_strat = make_simple_thinning_strategy(
       particle_group, // The particle group

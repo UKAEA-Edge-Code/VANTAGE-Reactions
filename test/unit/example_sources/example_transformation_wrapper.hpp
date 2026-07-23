@@ -1,5 +1,3 @@
-#include "example_common_functors.hpp"
-
 void transformation_wrapper_example(ParticleGroupSharedPtr particle_group) {
 
   // A transformation wrapper can be constructed with a vector of marking
@@ -11,8 +9,9 @@ void transformation_wrapper_example(ParticleGroupSharedPtr particle_group) {
   // weights < 1e6"
   auto wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
-          make_direct_marking_strategy("low_weight", LowWeightMark{},
-                                       Access::read(Sym<REAL>("WEIGHT")))},
+          make_direct_marking_strategy(
+              "low_weight", [](auto w) { return w[0] < 1e-6; },
+              Access::read(Sym<REAL>("WEIGHT")))},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
   // Wrappers can be copied and/or extended
@@ -29,11 +28,13 @@ void transformation_wrapper_example(ParticleGroupSharedPtr particle_group) {
 
   wrapper_ID0->add_marking_strategy(
       VANTAGE::Reactions::make_direct_marking_strategy(
-          "id0", IdEqualsMark{0}, Access::read(Sym<INT>("ID"))));
+          "id0", [](auto id) { return id[0] == 0; },
+          Access::read(Sym<INT>("ID"))));
 
   wrapper_ID1->add_marking_strategy(
       VANTAGE::Reactions::make_direct_marking_strategy(
-          "id1", IdEqualsMark{1}, Access::read(Sym<INT>("ID"))));
+          "id1", [](auto id) { return id[0] == 1; },
+          Access::read(Sym<INT>("ID"))));
 
   // Wrappers, unlike strategies, can act on both groups or subgroups
   //
