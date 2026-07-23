@@ -89,9 +89,9 @@ Extrapolation
 
 If the desired point has coordinates either partially or fully outside of the valid range of any/all dimensions of the pre-calculated grid then a choice must be made as to how to handle this. The options for this in VANTAGE-Reactions are:
 
-  - Continue with the linear interpolation using the gradient and intercept calculation from the edge of the grid.
-  - Clamp the function evaluation to zero if any dimensional components of the coordinates of the desired point are outside the grid.
-  - Clamp the function evaulation to be as if it were calculated from the grid points at the edge of the grid (no gradient or intercept continuation).
+  - **default**: Continue with the linear interpolation using the gradient and intercept calculation from the edge of the grid.
+  - `ExtrapolationType::clamp_to_zero`: Clamp the function evaluation to zero if any dimensional components of the coordinates of the desired point are outside the grid.
+  - `ExtrapolationType::clamp_to_edge`: Clamp the function evaluation to be as if it were calculated from the grid points at the edge of the grid (no gradient or intercept continuation).
   
 Integration with Reactions
 ==========================
