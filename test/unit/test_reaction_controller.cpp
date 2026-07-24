@@ -1,14 +1,19 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
-#include "include/reaction_controller_template_instantiations.hpp"
 #include "include/test_reaction_controller_functors.hpp"
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles/particle_sub_group/particle_sub_group.hpp>
+#include <utility>
 
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
+
+// Was in reaction_controller_template_instantiations.hpp; kept here because
+// semi_dsmc_test spells its reaction type with it.
+using SquaredWeightData =
+    decltype(std::declval<FixedCoefficientData>() * extract<1>("WEIGHT"));
 
 TEST(ReactionController, single_reaction_multi_apply) {
   const int N_total = 1600;

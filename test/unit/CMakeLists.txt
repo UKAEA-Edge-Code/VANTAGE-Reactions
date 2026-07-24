@@ -23,14 +23,6 @@ if(NOT REACTIONS_TESTS_SPLIT)
 
   target_link_libraries(${EXECUTABLE} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
   target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
-  # When the library is compiled it ships the example instantiations itself
-  # (src/reactions_lib/instantiations/instantiations.cpp); in that case the test
-  # TU must NOT re-instantiate them or the linker sees duplicate symbols. Mirror
-  # the library's build mode into the test compile definitions so the seed
-  # explicit-instantiation TU can gate itself.
-  if(VANTAGE_REACTIONS_HEADER_ONLY)
-    target_compile_definitions(${EXECUTABLE} PRIVATE VANTAGE_REACTIONS_HEADER_ONLY=1)
-  endif()
   target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
   add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${src_unit})
@@ -40,27 +32,19 @@ else()
   ############################################################
   # Split mode: one executable per test_*.cpp
   ############################################################
-  # Non-test TUs shared by every per-file exe: the gtest/MPI main + the two
-  # test-only template-instantiation TUs that satisfy extern template
-  # declarations used by some tests. Compiled once into an OBJECT library and
-  # linked into each exe; the linker drops unreferenced instantiation objects.
+  # Non-test TUs shared by every per-file exe: just the gtest/MPI main.
+  # Compiled once into an OBJECT library and linked into each exe.
   set(common_sources
-      ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/example_template_instantiations.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/reaction_controller_template_instantiations.cpp)
+      ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp)
   add_library(unit_test_common OBJECT ${common_sources})
   target_link_libraries(unit_test_common PRIVATE
       VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest Threads::Threads)
   target_compile_definitions(unit_test_common PRIVATE GPU_SELECTOR=0)
-  if(VANTAGE_REACTIONS_HEADER_ONLY)
-    target_compile_definitions(unit_test_common PRIVATE VANTAGE_REACTIONS_HEADER_ONLY=1)
-  endif()
   target_compile_options(unit_test_common PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
   add_sycl_to_target(TARGET unit_test_common SOURCES ${common_sources})
 
-  # The per-file executables are the test_*.cpp sources. Main.cpp and the two
-  # *_template_instantiations.cpp do not match test_*.cpp so they are excluded
-  # from this glob by construction.
+  # The per-file executables are the test_*.cpp sources. Main.cpp does not
+  # match test_*.cpp so it is excluded from this glob by construction.
   file(GLOB_RECURSE test_sources "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 
   # Apply REACTIONS_TEST_FILTER (empty = all; stem / ;-list = subset).
@@ -93,9 +77,6 @@ else()
         VANTAGE::Reactions NESO-Particles::NESO-Particles
         GTest::gtest unit_test_common Threads::Threads)
     target_compile_definitions(${name} PRIVATE GPU_SELECTOR=0)
-    if(VANTAGE_REACTIONS_HEADER_ONLY)
-      target_compile_definitions(${name} PRIVATE VANTAGE_REACTIONS_HEADER_ONLY=1)
-    endif()
     target_compile_options(${name} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
     add_sycl_to_target(TARGET ${name} SOURCES ${src})
     # Per-file executables are a dev-loop convenience: not installed. Only the

@@ -4,8 +4,6 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
-#include "include/example_template_instantiations.hpp"
-
 #include "./example_sources/example_accumulator_strategy.hpp"
 #include "./example_sources/example_amjuel1d.hpp"
 #include "./example_sources/example_amjuel2d.hpp"

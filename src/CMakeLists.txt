@@ -21,6 +21,13 @@ target_sources(
 )
 
 if(VANTAGE_REACTIONS_HEADER_ONLY)
+  # Propagate the build mode to consumers. extern_templates.hpp gates its
+  # `extern template` block on #ifndef VANTAGE_REACTIONS_HEADER_ONLY; in
+  # header-only mode the library ships no symbols, so consumers must define
+  # this macro to disable the suppression and implicitly instantiate.
+  # INTERFACE visibility flows to every linking target (in-tree and via the
+  # installed exported Targets.cmake).
+  target_compile_definitions(VANTAGE-Reactions INTERFACE VANTAGE_REACTIONS_HEADER_ONLY=1)
   target_link_libraries(VANTAGE-Reactions
       INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles)
 else()
