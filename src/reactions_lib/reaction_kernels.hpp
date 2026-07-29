@@ -38,22 +38,7 @@ struct ReactionKernelsBase {
       Properties<INT> required_int_props, Properties<REAL> required_real_props,
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : required_int_props(
-            required_int_props.merge_with(required_int_props_ephemeral)),
-        required_real_props(
-            required_real_props.merge_with(required_real_props_ephemeral)),
-        required_int_props_ephemeral(required_int_props_ephemeral),
-        required_real_props_ephemeral(required_real_props_ephemeral),
-        pre_req_ndims(pre_req_ndims) {
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
-    this->properties_map = properties_map;
-  }
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -65,10 +50,7 @@ struct ReactionKernelsBase {
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(
-      std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
-                            Properties<INT>(), Properties<REAL>(), 0,
-                            properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -88,10 +70,7 @@ struct ReactionKernelsBase {
    */
   ReactionKernelsBase(
       Properties<INT> required_int_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(required_int_props, Properties<REAL>(),
-                            Properties<INT>(), Properties<REAL>(),
-                            pre_req_ndims, properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -111,10 +90,7 @@ struct ReactionKernelsBase {
    */
   ReactionKernelsBase(
       Properties<REAL> required_real_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(Properties<INT>(), required_real_props,
-                            Properties<INT>(), Properties<REAL>(),
-                            pre_req_ndims, properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -137,10 +113,7 @@ struct ReactionKernelsBase {
   ReactionKernelsBase(
       Properties<INT> required_int_props, Properties<REAL> required_real_props,
       INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(required_int_props, required_real_props,
-                            Properties<INT>(), Properties<REAL>(),
-                            pre_req_ndims, properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   virtual ~ReactionKernelsBase() = default;
 
@@ -149,60 +122,41 @@ struct ReactionKernelsBase {
    * properties
    *
    */
-  std::vector<std::string> get_required_int_props() {
-    return this->required_int_props.get_prop_names(this->properties_map);
-  }
+  std::vector<std::string> get_required_int_props();
 
   /**
    * @brief Return all required real property names, including ephemeral
    * properties
    *
    */
-  std::vector<std::string> get_required_real_props() {
-    return this->required_real_props.get_prop_names(this->properties_map);
-  }
+  std::vector<std::string> get_required_real_props();
 
   /**
    * @brief Return names of required ephemeral integer properties
    *
    */
-  std::vector<std::string> get_required_int_props_ephemeral() {
-    return this->required_int_props_ephemeral.get_prop_names(
-        this->properties_map);
-  }
+  std::vector<std::string> get_required_int_props_ephemeral();
+
   /**
    * @brief Return names of required ephemeral real properties
    *
    */
-  std::vector<std::string> get_required_real_props_ephemeral() {
-    return this->required_real_props_ephemeral.get_prop_names(
-        this->properties_map);
-  }
+  std::vector<std::string> get_required_real_props_ephemeral();
 
-  const Properties<INT> &get_required_descendant_int_props() {
-    return this->required_descendant_int_props;
-  }
+  const Properties<INT> &get_required_descendant_int_props();
 
-  const Properties<REAL> &get_required_descendant_real_props() {
-    return this->required_descendant_real_props;
-  }
+  const Properties<REAL> &get_required_descendant_real_props();
 
-  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec() {
-    return this->descendant_matrix_spec;
-  }
+  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec();
 
-  const INT &get_pre_ndims() const { return this->pre_req_ndims; }
+  const INT &get_pre_ndims() const;
 
 protected:
   void set_required_descendant_int_props(
-      const Properties<INT> &required_descendant_int_props) {
-    this->required_descendant_int_props = required_descendant_int_props;
-  }
+      const Properties<INT> &required_descendant_int_props);
 
   void set_required_descendant_real_props(
-      const Properties<REAL> &required_descendant_real_props) {
-    this->required_descendant_real_props = required_descendant_real_props;
-  }
+      const Properties<REAL> &required_descendant_real_props);
 
   template <int ndim_velocity = 2, int num_products_per_parent = 0>
   void set_descendant_matrix_spec() {
@@ -390,4 +344,9 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
   }
 };
 }; // namespace VANTAGE::Reactions
+
+#ifdef VANTAGE_REACTIONS_HEADER_ONLY
+#include "reaction_kernels_impl.hpp"
+#endif
+
 #endif

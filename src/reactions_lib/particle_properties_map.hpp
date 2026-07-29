@@ -73,17 +73,7 @@ struct PropertiesMap {
    * @param custom_map User-provided custom map to replace the default
    * private_map.
    */
-  PropertiesMap(std::map<int, std::string> custom_map)
-      : private_map(custom_map) {
-    // replace default_properties.fluid_flow_speed with the last enum in
-    // standard_properties_enum if any changes are made to it.
-    for (int i = 0; i < default_properties.fluid_flow_speed; i++) {
-      NESOWARN(
-          this->private_map.find(i) != this->private_map.end(),
-          "The custom properties map provided does not contain all enums from "
-          "default_properties in it's list of keys.");
-    }
-  }
+  PropertiesMap(std::map<int, std::string> custom_map);
 
 public:
   std::map<int, std::string> get_map() { return this->private_map; }
@@ -123,29 +113,18 @@ private:
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
-inline auto get_default_map() { return PropertiesMap().get_map(); }
+std::map<int, std::string> get_default_map();
 
 /**
  * @brief Function to check whether a custom map is a subset of the default map.
  *
  * @return True if the given custom map is a subset of the default map.
  */
-inline bool map_subset_check(std::map<int, std::string> custom_map) {
-  auto default_map = get_default_map();
-  auto default_map_size = default_map.size();
-  auto custom_map_size = custom_map.size();
-
-  if (custom_map_size < default_map_size) {
-    return false;
-  }
-
-  for (auto it = default_map.begin(); it != default_map.end(); it++) {
-    if (custom_map.find(it->first) == custom_map.end()) {
-      return false;
-    }
-  }
-
-  return true;
-};
+bool map_subset_check(std::map<int, std::string> custom_map);
 }; // namespace VANTAGE::Reactions
+
+#ifdef VANTAGE_REACTIONS_HEADER_ONLY
+#include "particle_properties_map_impl.hpp"
+#endif
+
 #endif

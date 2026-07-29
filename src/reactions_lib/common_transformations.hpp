@@ -28,11 +28,7 @@ struct SimpleRemovalTransformationStrategy : TransformationStrategy {
    *
    * @param target_subgroup ParticleSubgroup to remove
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
-    auto particle_group = target_subgroup->get_particle_group();
-
-    particle_group->remove_particles(target_subgroup);
-  }
+  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override;
 };
 
 /**
@@ -56,18 +52,13 @@ struct CompositeTransform : TransformationStrategy {
    * transform member function.
    */
   CompositeTransform(
-      std::vector<std::shared_ptr<TransformationStrategy>> components)
-      : components(components) {}
+      std::vector<std::shared_ptr<TransformationStrategy>> components);
   /**
    * @brief Apply all children of this transform in order of addition
    *
    * @param target_subgroup Particle subgroup to apply the transform to
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
-    for (auto &comp : this->components) {
-      comp->transform(target_subgroup);
-    }
-  }
+  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override;
 
   /**
    * @brief Add a transformation to the composite
@@ -75,9 +66,7 @@ struct CompositeTransform : TransformationStrategy {
    * @param strat TransformationStrategy to be added (will be applied after
    * previously added strategies are added)
    */
-  void add_transformation(std::shared_ptr<TransformationStrategy> strat) {
-    this->components.push_back(strat);
-  }
+  void add_transformation(std::shared_ptr<TransformationStrategy> strat);
 
 private:
   std::vector<std::shared_ptr<TransformationStrategy>> components;
@@ -672,4 +661,9 @@ uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
 }
 
 } // namespace VANTAGE::Reactions
+
+#ifdef VANTAGE_REACTIONS_HEADER_ONLY
+#include "common_transformations_impl.hpp"
+#endif
+
 #endif

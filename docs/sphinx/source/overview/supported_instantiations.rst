@@ -15,9 +15,11 @@ the headers itself, exactly as before; there is no compiled ``.so`` to link.
 
 All shipped instantiations are compiled into a **single translation unit**
 (``src/reactions_lib/instantiations/instantiations.cpp``); this is intentional
-and keeps the library's compile-time memory footprint characterised by one TU
-rather than spread across many. If a future memory benchmark shows regression,
-the TU will be split rather than coverage dropped.
+and keeps the library's compile-time memory footprint characterised by one
+(heavy) TU rather than spread across many. The non-template definitions that the
+instantiations need live in a second, lightweight TU
+(``src/reactions_lib/compiled/definitions.cpp``) — see the developer guide for
+the header/impl split behind it.
 
 Two names refer to the same exported target:
 

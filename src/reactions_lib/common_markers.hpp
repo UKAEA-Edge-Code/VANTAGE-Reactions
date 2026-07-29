@@ -1,5 +1,6 @@
 #ifndef REACTIONS_COMMON_MARKERS_H
 #define REACTIONS_COMMON_MARKERS_H
+#include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
 #include <neso_particles.hpp>
 
@@ -22,20 +23,10 @@ public:
    *
    * @param min_npart Minimum number of particles in a cell.
    */
-  MinimumNPartInCellMarker(INT min_npart) : min_npart(min_npart) {};
+  MinimumNPartInCellMarker(INT min_npart);
 
   ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
-
-    auto min_npart = this->min_npart;
-    auto marker_subgroup = std::make_shared<ParticleSubGroup>(
-        particle_group,
-        [=](auto cell_info_npart) {
-          return cell_info_npart.get() >= min_npart;
-        },
-        Access::read(CellInfoNPart{}));
-    return marker_subgroup;
-  };
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group);
 
 private:
   INT min_npart;
@@ -58,37 +49,23 @@ public:
    * used to remap the Sym for the Panic property.
    */
   PanickedParticleMarker(
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
-    this->panic_sym = Sym<INT>(properties_map.at(default_properties.panic));
-  };
+      const std::map<int, std::string> &properties_map = get_default_map());
 
   ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
-
-    auto marker_subgroup = std::make_shared<ParticleSubGroup>(
-        particle_group, [=](auto panic) { return panic[0] > 0; },
-        Access::read(this->panic_sym));
-    return marker_subgroup;
-  };
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group);
 
 private:
   Sym<INT> panic_sym;
 };
 
-inline bool
-panicked(ParticleSubGroupSharedPtr particle_group,
-         const std::map<int, std::string> &properties_map = get_default_map()) {
-
-  auto marker = PanickedParticleMarker(properties_map);
-
-  return marker.make_marker_subgroup(particle_group)->get_npart_local();
-}
+bool panicked(
+    ParticleSubGroupSharedPtr particle_group,
+    const std::map<int, std::string> &properties_map = get_default_map());
 
 } // namespace VANTAGE::Reactions
+
+#ifdef VANTAGE_REACTIONS_HEADER_ONLY
+#include "common_markers_impl.hpp"
+#endif
+
 #endif

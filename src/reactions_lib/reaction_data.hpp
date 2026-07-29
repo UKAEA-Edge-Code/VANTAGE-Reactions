@@ -143,6 +143,184 @@ constexpr bool check_calc_data_return_type() {
 }
 
 /**
+ * @brief Non-template implementation base for reaction data objects.
+ *
+ * Holds the required properties, property maps and constructors that do not
+ * depend on the on-device type, dimension or RNG type.
+ */
+struct ReactionDataBaseImpl {
+
+  /**
+   * @brief Constructor for ReactionDataBaseImpl.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param required_int_props_ephemeral Properties<INT> object containing
+   * information regarding the required INT-based ephemeral properties for the
+   * reaction data.
+   * @param required_real_props_ephemeral Properties<REAL> object containing
+   * information regarding the required REAL-based ephemeral properties for the
+   * reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBaseImpl(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      Properties<INT> required_int_props_ephemeral,
+      Properties<REAL> required_real_props_ephemeral,
+      std::map<int, std::string> properties_map = get_default_map())
+      : required_int_props(
+            ArgumentNameSet(required_int_props, properties_map)
+                .merge_with(ArgumentNameSet(required_int_props_ephemeral,
+                                            properties_map))),
+        required_real_props(
+            ArgumentNameSet(required_real_props, properties_map)
+                .merge_with(ArgumentNameSet(required_real_props_ephemeral,
+                                            properties_map))),
+        properties_map(properties_map) {}
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBaseImpl that sets no required
+   * properties.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBaseImpl(
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBaseImpl(Properties<INT>(), Properties<REAL>(),
+                             Properties<INT>(), Properties<REAL>(),
+                             properties_map) {}
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBaseImpl that sets only required int
+   * properties.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBaseImpl(
+      Properties<INT> required_int_props,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBaseImpl(required_int_props, Properties<REAL>(),
+                             Properties<INT>(), Properties<REAL>(),
+                             properties_map) {}
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBaseImpl that sets only required real
+   * properties.
+   *
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBaseImpl(
+      Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBaseImpl(Properties<INT>(), required_real_props,
+                             Properties<INT>(), Properties<REAL>(),
+                             properties_map) {}
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataBaseImpl that sets only required int
+   * and real properties.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (in get_required_real_props(...) and
+   * get_required_int_props(...)).
+   */
+  ReactionDataBaseImpl(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map())
+      : ReactionDataBaseImpl(required_int_props, required_real_props,
+                             Properties<INT>(), Properties<REAL>(),
+                             properties_map) {}
+
+  /**
+   * @brief Return all required integer properties, including ephemeral
+   *
+   */
+  ArgumentNameSet<INT> get_required_int_props() {
+    return this->required_int_props;
+  }
+
+  /**
+   * @brief Setter for required integer properties
+   *
+   * @param props ArgumentNameSet to use
+   */
+  virtual void set_required_int_props(const ArgumentNameSet<INT> &props) {
+    this->required_int_props = props;
+    this->index_on_device_object();
+  }
+
+  /**
+   * @brief Return all required integer properties as a vector of Syms
+   *
+   */
+  std::vector<Sym<INT>> get_required_int_sym_vector() {
+    return this->required_int_props.to_sym_vector();
+  }
+
+  /**
+   * @brief Return all required real properteis, including ephemeral
+   * properties
+   *
+   */
+  ArgumentNameSet<REAL> get_required_real_props() {
+    return this->required_real_props;
+  }
+
+  /**
+   * @brief Return all required real properties as a vector of Syms
+   *
+   */
+  std::vector<Sym<REAL>> get_required_real_sym_vector() {
+    return this->required_real_props.to_sym_vector();
+  }
+
+  /**
+   * @brief Setter for required real properties
+   *
+   * @param props ArgumentNameSet to use
+   */
+  virtual void set_required_real_props(const ArgumentNameSet<REAL> &props) {
+    this->required_real_props = props;
+    this->index_on_device_object();
+  }
+
+  virtual ~ReactionDataBaseImpl() = default;
+
+  /**
+   * @brief To be implemented by each derived class in order to handle required
+   * property indexing on the on-device object
+   */
+  virtual void index_on_device_object() {};
+
+protected:
+  ArgumentNameSet<INT> required_int_props;
+  ArgumentNameSet<REAL> required_real_props;
+  std::map<int, std::string> properties_map;
+};
+
+/**
  * @brief Base reaction data object.
  *
  * @tparam ON_DEVICE_TYPE Type of the on-device object
@@ -154,7 +332,7 @@ constexpr bool check_calc_data_return_type() {
  */
 template <typename ON_DEVICE_TYPE, size_t dim = 1,
           typename RNG_TYPE = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
-struct ReactionDataBase {
+struct ReactionDataBase : public ReactionDataBaseImpl {
 
   using RNG_KERNEL_TYPE = RNG_TYPE;
   using ON_DEVICE_OBJ_TYPE = ON_DEVICE_TYPE;
@@ -213,16 +391,9 @@ struct ReactionDataBase {
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral,
       std::map<int, std::string> properties_map = get_default_map())
-      : required_int_props(
-            ArgumentNameSet(required_int_props, properties_map)
-                .merge_with(ArgumentNameSet(required_int_props_ephemeral,
-                                            properties_map))),
-        required_real_props(
-            ArgumentNameSet(required_real_props, properties_map)
-                .merge_with(ArgumentNameSet(required_real_props_ephemeral,
-                                            properties_map))),
-        properties_map(properties_map) {
-
+      : ReactionDataBaseImpl(required_int_props, required_real_props,
+                             required_int_props_ephemeral,
+                             required_real_props_ephemeral, properties_map) {
     static_assert(validate_on_device_type());
     this->rng_kernel = std::make_shared<RNG_TYPE>();
   }
@@ -296,58 +467,6 @@ struct ReactionDataBase {
       : ReactionDataBase(required_int_props, required_real_props,
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
-  /**
-   * @brief Return all required integer properties, including ephemeral
-   *
-   */
-  ArgumentNameSet<INT> get_required_int_props() {
-    return this->required_int_props;
-  }
-
-  /**
-   * @brief Setter for required integer properties
-   *
-   * @param props ArgumentNameSet to use
-   */
-  void set_required_int_props(const ArgumentNameSet<INT> &props) {
-    this->required_int_props = props;
-    this->index_on_device_object();
-  }
-
-  /**
-   * @brief Return all required integer properties as a vector of Syms
-   *
-   */
-  std::vector<Sym<INT>> get_required_int_sym_vector() {
-    return this->required_int_props.to_sym_vector();
-  }
-
-  /**
-   * @brief Return all required real properteis, including ephemeral
-   * properties
-   *
-   */
-  ArgumentNameSet<REAL> get_required_real_props() {
-    return this->required_real_props;
-  }
-
-  /**
-   * @brief Return all required real properties as a vector of Syms
-   *
-   */
-  std::vector<Sym<REAL>> get_required_real_sym_vector() {
-    return this->required_real_props.to_sym_vector();
-  }
-
-  /**
-   * @brief Setter for required real properties
-   *
-   * @param props ArgumentNameSet to use
-   */
-  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
-    this->required_real_props = props;
-    this->index_on_device_object();
-  }
 
   void set_rng_kernel(std::shared_ptr<RNG_TYPE> rng_kernel) {
     this->rng_kernel = rng_kernel;
@@ -356,14 +475,6 @@ struct ReactionDataBase {
   std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
 
   static constexpr size_t get_dim() { return dim; }
-
-  virtual ~ReactionDataBase() = default;
-
-  /**
-   * @brief To be implemented by each derived class in order to handle required
-   * property indexing on the on-device object
-   */
-  virtual void index_on_device_object() {};
 
   /**
    * @brief Getter for the SYCL device-specific
@@ -378,10 +489,7 @@ struct ReactionDataBase {
 
 protected:
   std::optional<ON_DEVICE_TYPE> on_device_obj;
-  ArgumentNameSet<INT> required_int_props;
-  ArgumentNameSet<REAL> required_real_props;
   std::shared_ptr<RNG_TYPE> rng_kernel;
-  std::map<int, std::string> properties_map;
 };
 
 /**

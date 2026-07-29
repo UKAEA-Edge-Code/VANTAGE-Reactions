@@ -26,14 +26,7 @@ struct MarkingStrategy : ProfilingBase {
    * @returns Marker sub group.
    */
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group) {
-    // This function should never actually be called. If it is called and we do
-    // not have a return value then the calling function will receive an
-    // undefined value. By setting a value we at least know what the returned
-    // value is and can pick one that is detectable. By returning a nullptr the
-    // calling code will hopefully segfault.
-    return nullptr;
-  }
+  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group);
 
   /**
    * Create the marker sub group. Specialisations should override
@@ -44,13 +37,7 @@ struct MarkingStrategy : ProfilingBase {
    * @returns Marker sub group.
    */
   virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group) {
-    auto r0 =
-        this->start_profiling_region(particle_group, "make_marker_subgroup");
-    auto sub_group = this->make_marker_subgroup_v(particle_group);
-    this->end_profiling_region(particle_group, r0);
-    return sub_group;
-  }
+  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group);
 
   virtual ~MarkingStrategy() = default;
 };
@@ -88,7 +75,7 @@ struct TransformationStrategy : ProfilingBase {
    *
    * @param target_subgroup ParticleSubGroup to be transformed.
    */
-  virtual void transform_v(ParticleSubGroupSharedPtr target_subgroup) {}
+  virtual void transform_v(ParticleSubGroupSharedPtr target_subgroup);
 
   /**
    * This is the method which should be called by downstream code to apply a
@@ -98,11 +85,7 @@ struct TransformationStrategy : ProfilingBase {
    *
    * @param target_subgroup ParticleSubGroup to be transformed.
    */
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup) {
-    auto r0 = this->start_profiling_region(target_subgroup, "transform");
-    this->transform_v(target_subgroup);
-    this->end_profiling_region(target_subgroup, r0);
-  }
+  virtual void transform(ParticleSubGroupSharedPtr target_subgroup);
 
   virtual ~TransformationStrategy() = default;
 };
@@ -146,9 +129,7 @@ struct TransformationWrapper {
    */
   TransformationWrapper(
       std::vector<std::shared_ptr<MarkingStrategy>> marking_strategy,
-      std::shared_ptr<TransformationStrategy> transformation_strategy)
-      : marking_strat(marking_strategy),
-        transformation_strat(transformation_strategy) {}
+      std::shared_ptr<TransformationStrategy> transformation_strategy);
 
   /**
    * \overload
@@ -159,8 +140,7 @@ struct TransformationWrapper {
    * TransformationStrategy.
    */
   TransformationWrapper(
-      std::shared_ptr<TransformationStrategy> transformation_strategy)
-      : transformation_strat(transformation_strategy) {}
+      std::shared_ptr<TransformationStrategy> transformation_strategy);
 
   /**
    * @brief Applies the marking and transformation strategies to a given
@@ -239,9 +219,7 @@ struct TransformationWrapper {
    *
    * @param marking_strategy Strategy to be added
    */
-  void add_marking_strategy(std::shared_ptr<MarkingStrategy> marking_strategy) {
-    this->marking_strat.push_back(marking_strategy);
-  }
+  void add_marking_strategy(std::shared_ptr<MarkingStrategy> marking_strategy);
 
   virtual ~TransformationWrapper() = default;
 
@@ -521,4 +499,9 @@ make_lambda_transformation_strategy(std::string &&name, LAMBDA &&lambda) {
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 }
 } // namespace VANTAGE::Reactions
+
+#ifdef VANTAGE_REACTIONS_HEADER_ONLY
+#include "transformation_wrapper_impl.hpp"
+#endif
+
 #endif
