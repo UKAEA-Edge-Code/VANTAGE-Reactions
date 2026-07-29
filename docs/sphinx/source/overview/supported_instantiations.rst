@@ -37,8 +37,8 @@ lines live in ``src/reactions_lib/instantiations/instantiations.cpp``; the
 consumer TUs live in ``src/reactions_lib/extern_templates.hpp`` (included
 from the public ``reactions.hpp``).
 
-Reactions used in the examples
-------------------------------
+Linear reactions
+----------------
 
 * ``LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
   DataCalculator<FixedRateData, FixedRateData>>``
@@ -89,7 +89,7 @@ Kernel classes
 
 * ``CXReactionKernels<2>``
 * ``IoniseReactionKernels<2>``
-* ``RecombReactionKernels<2, 2>``
+* ``RecombReactionKernels<2>``
 * ``LinearScatteringKernels<2, true>``
 * ``CXReactionKernels<3>``
 * ``LinearScatteringKernels<3, true>``
@@ -100,10 +100,10 @@ Kernel classes
 * ``SpecularReflectionKernels<3>``
 * ``LinearScatteringKernels<3, false>``
 * ``IoniseReactionKernels<3>``
-* ``RecombReactionKernels<3, 3>``
+* ``RecombReactionKernels<3>``
 
 :class:`DataCalculator` specialisations
-------------------------------------------
+---------------------------------------
 
 * ``DataCalculator<FixedRateData>``
 * ``DataCalculator<FixedRateData, FixedRateData>``
@@ -140,31 +140,39 @@ Downsampling strategies
 * ``VranicMergingKernels<3>``
 * ``DownsamplingStrategy<VranicMergingKernels<3>>``
 
-Other heavy reaction data types
--------------------------------
+Reaction data types
+-------------------
 
 * ``FilteredMaxwellianSampler<2, ConstantRateCrossSection>``
+* ``FilteredMaxwellianSampler<3, ConstantRateCrossSection>``
+* ``FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 0, 0>>``
+* ``FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 2, 0>>``
+* ``FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 2, 2>>``
+* ``FilteredMaxwellianSampler<2, AMJUELFitCrossSection<3, 3, 3>>``
+* ``FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 0, 0>>``
+* ``FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 2, 0>>``
+* ``FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 2, 2>>``
+* ``FilteredMaxwellianSampler<3, AMJUELFitCrossSection<3, 3, 3>>``
 * ``CellwiseReactionDataAccumulator<KinEnergyData>``
 * ``AMJUEL1DData<3>``
 * ``AMJUEL1DData<9>``
 * ``AMJUEL2DData<2, 2>``
-* ``AMJUEL2DDataH3<2, 2>``
+* ``AMJUEL2DDataH3<2, 2, 2>``
 * ``FixedArrayData<3>``
-* ``ArrayLookupData<1>``
+* ``ArrayLookupData<1, false>``
 * ``ArrayLookupData<1, true>``
 * ``AMJUELFitCrossSection<2, 0, 0>``
 * ``AMJUELFitCrossSection<2, 2, 0>``
 * ``AMJUELFitCrossSection<2, 2, 2>``
 * ``AMJUELFitCrossSection<3, 3, 3>``
-* ``FilteredMaxwellianSampler<3>``
 * ``ExtractorData<1>``
 * ``ExtractorData<2>``
 * ``ExtractorData<3>``
 * ``SpecularReflectionData<2>``
 * ``SpecularReflectionData<3>``
 
-Interpolation / grid family
----------------------------
+Interpolation / grid family (int-parametrized only)
+---------------------------------------------------
 
 * ``CartesianGridData<1>``
 * ``CartesianGridData<2>``

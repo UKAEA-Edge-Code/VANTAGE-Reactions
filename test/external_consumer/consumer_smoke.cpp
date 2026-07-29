@@ -364,6 +364,38 @@ int main() {
   H18 *h18 = nullptr;
   (void)h18;
 
+  using H19 = FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 0, 0>>;
+  H19 *h19 = nullptr;
+  (void)h19;
+
+  using H20 = FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 2, 0>>;
+  H20 *h20 = nullptr;
+  (void)h20;
+
+  using H21 = FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 2, 2>>;
+  H21 *h21 = nullptr;
+  (void)h21;
+
+  using H22 = FilteredMaxwellianSampler<2, AMJUELFitCrossSection<3, 3, 3>>;
+  H22 *h22 = nullptr;
+  (void)h22;
+
+  using H23 = FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 0, 0>>;
+  H23 *h23 = nullptr;
+  (void)h23;
+
+  using H24 = FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 2, 0>>;
+  H24 *h24 = nullptr;
+  (void)h24;
+
+  using H25 = FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 2, 2>>;
+  H25 *h25 = nullptr;
+  (void)h25;
+
+  using H26 = FilteredMaxwellianSampler<3, AMJUELFitCrossSection<3, 3, 3>>;
+  H26 *h26 = nullptr;
+  (void)h26;
+
   // --- Interpolation / grid family -----------------------------------------
   using G0 = CartesianGridData<1>;
   G0 *g0 = nullptr;
