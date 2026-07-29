@@ -5,6 +5,7 @@
 #include "../utils.hpp"
 #include <iostream>
 #include <neso_particles.hpp>
+#include <type_traits>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -213,6 +214,15 @@ struct FilteredMaxwellianSampler
    * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
    * be set as the rng_kernel in ReactionDataBase.
    */
+  // ponytail: FUNC is defaulted (not deduced) so the enable_if below
+  // substitutes into a viable SFINAE context for the default-CROSS_SECTION
+  // constructor; without the default, FUNC is undeducible and this overload
+  // is never selected.
+  template <typename FUNC = void,
+            std::enable_if_t<
+                std::is_same_v<CROSS_SECTION, ConstantRateCrossSection> &&
+                    std::is_void_v<FUNC>,
+                int> = 0>
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel)
