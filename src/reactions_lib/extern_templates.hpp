@@ -45,6 +45,20 @@ using ScatteringDataCalculator3D =
     decltype(DataCalculator<VelocityReflectionPipeline3D>(
         std::declval<VelocityReflectionPipeline3D>()));
 
+using SphericalReflectionPipeline = decltype(pipe(
+    std::declval<FixedArrayData<3>>(), SphericalBasisReflectionData()));
+
+using CartesianReflectionPipeline = decltype(pipe(
+    std::declval<FixedArrayData<3>>(), CartesianBasisReflectionData()));
+
+using ScatteringDataCalculatorSpherical =
+    decltype(DataCalculator<SphericalReflectionPipeline>(
+        std::declval<SphericalReflectionPipeline>()));
+
+using ScatteringDataCalculatorCartesian =
+    decltype(DataCalculator<CartesianReflectionPipeline>(
+        std::declval<CartesianReflectionPipeline>()));
+
 using KinEnergyData = decltype(std::declval<WeightExtractor>() *
                                std::declval<VelocityExtractor>() *
                                std::declval<VelocityExtractor>());
@@ -84,7 +98,7 @@ extern template class Recombination<
 // ---------------------------------------------------------------------------
 extern template class CXReactionKernels<2>;
 extern template class IoniseReactionKernels<2>;
-extern template class RecombReactionKernels<2, 2>;
+extern template class RecombReactionKernels<2>;
 extern template class LinearScatteringKernels<2, true>;
 extern template class CXReactionKernels<3>;
 extern template class LinearScatteringKernels<3, true>;
@@ -118,6 +132,109 @@ extern template class DownsamplingStrategy<SimpleThinningKernels>;
 // ---------------------------------------------------------------------------
 extern template class FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
 extern template class CellwiseReactionDataAccumulator<KinEnergyData>;
+
+// ---------------------------------------------------------------------------
+// Kernel classes
+// ---------------------------------------------------------------------------
+extern template class GeneralAbsorptionKernels<2>;
+extern template class SpecularReflectionKernels<2>;
+extern template class LinearScatteringKernels<2, false>;
+extern template class GeneralAbsorptionKernels<3>;
+extern template class SpecularReflectionKernels<3>;
+extern template class LinearScatteringKernels<3, false>;
+extern template class IoniseReactionKernels<3>;
+extern template class RecombReactionKernels<3, 3>;
+
+// ---------------------------------------------------------------------------
+// DataCalculator specialisations
+// ---------------------------------------------------------------------------
+extern template class DataCalculator<FilteredMaxwellianSampler<2>>;
+extern template class DataCalculator<FilteredMaxwellianSampler<3>>;
+extern template class DataCalculator<FixedRateData, FixedRateData,
+                                     FixedRateData, FixedRateData>;
+extern template class DataCalculator<SphericalReflectionPipeline>;
+extern template class DataCalculator<CartesianReflectionPipeline>;
+extern template class DataCalculator<VelocityReflectionPipeline3D>;
+
+// ---------------------------------------------------------------------------
+// Reactions
+// ---------------------------------------------------------------------------
+// Default 4th arg (DataCalc = DataCalculator<>)
+extern template class LinearReactionBase<0, FixedRateData,
+                                         GeneralAbsorptionKernels<2>>;
+extern template class LinearReactionBase<0, FixedRateData,
+                                         SpecularReflectionKernels<2>>;
+
+extern template class LinearReactionBase<1, FixedRateData,
+                                         LinearScatteringKernels<2, false>,
+                                         ScatteringDataCalculator>;
+extern template class LinearReactionBase<
+    1, FixedRateData, CXReactionKernels<2>,
+    DataCalculator<FilteredMaxwellianSampler<2>>>;
+extern template class LinearReactionBase<
+    1, FixedRateData, CXReactionKernels<3>,
+    DataCalculator<FilteredMaxwellianSampler<3>>>;
+extern template class LinearReactionBase<1, FixedRateData,
+                                         LinearScatteringKernels<3, true>,
+                                         ScatteringDataCalculatorSpherical>;
+extern template class LinearReactionBase<1, FixedRateData,
+                                         LinearScatteringKernels<3, true>,
+                                         ScatteringDataCalculatorCartesian>;
+
+extern template class Recombination<
+    FixedRateData,
+    DataCalculator<FixedRateData, FixedRateData, FixedRateData, FixedRateData>,
+    3>;
+
+extern template class ElectronImpactIonisation<FixedRateData, FixedRateData, 3>;
+
+// ---------------------------------------------------------------------------
+// Transformation strategies
+// ---------------------------------------------------------------------------
+extern template class CellwiseAccumulator<INT>;
+extern template class WeightedCellwiseAccumulator<INT>;
+extern template class ParticleDatZeroer<INT>;
+extern template class CellwiseDistributor<REAL>;
+extern template class CellwiseDistributor<INT>;
+extern template class MergeTransformationStrategy<3>;
+
+// ---------------------------------------------------------------------------
+// Downsampling strategies
+// ---------------------------------------------------------------------------
+extern template class VranicMergingKernels<3>;
+extern template class DownsamplingStrategy<VranicMergingKernels<3>>;
+
+// ---------------------------------------------------------------------------
+// Reaction data types
+// ---------------------------------------------------------------------------
+extern template class AMJUEL1DData<3>;
+extern template class AMJUEL1DData<9>;
+extern template class AMJUEL2DData<2, 2>;
+extern template class AMJUEL2DDataH3<2, 2>;
+extern template class FixedArrayData<3>;
+extern template class ArrayLookupData<1>;
+extern template class ArrayLookupData<1, true>;
+extern template class AMJUELFitCrossSection<2, 0, 0>;
+extern template class AMJUELFitCrossSection<2, 2, 0>;
+extern template class AMJUELFitCrossSection<2, 2, 2>;
+extern template class AMJUELFitCrossSection<3, 3, 3>;
+extern template class FilteredMaxwellianSampler<3>;
+extern template class ExtractorData<1>;
+extern template class ExtractorData<2>;
+extern template class ExtractorData<3>;
+extern template class SpecularReflectionData<2>;
+extern template class SpecularReflectionData<3>;
+
+// ---------------------------------------------------------------------------
+// Interpolation / grid family (int-parametrized only)
+// ---------------------------------------------------------------------------
+extern template class CartesianGridData<1>;
+extern template class CartesianGridData<2>;
+extern template class CartesianGridData<3>;
+extern template class CartesianGridData<4>;
+extern template class CartesianGridData<5>;
+extern template class TrimEvalData<5>;
+extern template class TrimEvalData<7>;
 
 #endif // VANTAGE_REACTIONS_HEADER_ONLY
 

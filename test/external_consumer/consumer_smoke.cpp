@@ -78,6 +78,54 @@ int main() {
   R8 *p8 = nullptr;
   (void)p8;
 
+  using R9 = LinearReactionBase<0, FixedRateData, GeneralAbsorptionKernels<2>>;
+  R9 *p9 = nullptr;
+  (void)p9;
+
+  using R10 =
+      LinearReactionBase<0, FixedRateData, SpecularReflectionKernels<2>>;
+  R10 *p10 = nullptr;
+  (void)p10;
+
+  using R11 =
+      LinearReactionBase<1, FixedRateData, LinearScatteringKernels<2, false>,
+                         ScatteringDataCalculator>;
+  R11 *p11 = nullptr;
+  (void)p11;
+
+  using R12 = LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
+                                 DataCalculator<FilteredMaxwellianSampler<2>>>;
+  R12 *p12 = nullptr;
+  (void)p12;
+
+  using R13 = LinearReactionBase<1, FixedRateData, CXReactionKernels<3>,
+                                 DataCalculator<FilteredMaxwellianSampler<3>>>;
+  R13 *p13 = nullptr;
+  (void)p13;
+
+  using R14 =
+      LinearReactionBase<1, FixedRateData, LinearScatteringKernels<3, true>,
+                         ScatteringDataCalculatorSpherical>;
+  R14 *p14 = nullptr;
+  (void)p14;
+
+  using R15 =
+      LinearReactionBase<1, FixedRateData, LinearScatteringKernels<3, true>,
+                         ScatteringDataCalculatorCartesian>;
+  R15 *p15 = nullptr;
+  (void)p15;
+
+  using R16 = Recombination<FixedRateData,
+                            DataCalculator<FixedRateData, FixedRateData,
+                                           FixedRateData, FixedRateData>,
+                            3>;
+  R16 *p16 = nullptr;
+  (void)p16;
+
+  using R17 = ElectronImpactIonisation<FixedRateData, FixedRateData, 3>;
+  R17 *p17 = nullptr;
+  (void)p17;
+
   // --- Kernel classes ------------------------------------------------------
   using K0 = CXReactionKernels<2>;
   K0 *k0 = nullptr;
@@ -103,6 +151,38 @@ int main() {
   K5 *k5 = nullptr;
   (void)k5;
 
+  using K6 = GeneralAbsorptionKernels<2>;
+  K6 *k6 = nullptr;
+  (void)k6;
+
+  using K7 = SpecularReflectionKernels<2>;
+  K7 *k7 = nullptr;
+  (void)k7;
+
+  using K8 = LinearScatteringKernels<2, false>;
+  K8 *k8 = nullptr;
+  (void)k8;
+
+  using K9 = GeneralAbsorptionKernels<3>;
+  K9 *k9 = nullptr;
+  (void)k9;
+
+  using K10 = SpecularReflectionKernels<3>;
+  K10 *k10 = nullptr;
+  (void)k10;
+
+  using K11 = LinearScatteringKernels<3, false>;
+  K11 *k11 = nullptr;
+  (void)k11;
+
+  using K12 = IoniseReactionKernels<3>;
+  K12 *k12 = nullptr;
+  (void)k12;
+
+  using K13 = RecombReactionKernels<3, 3>;
+  K13 *k13 = nullptr;
+  (void)k13;
+
   // --- DataCalculator specialisations --------------------------------------
   using D0 = DataCalculator<FixedRateData>;
   D0 *d0 = nullptr;
@@ -119,6 +199,31 @@ int main() {
   using D3 = DataCalculator<VelocityReflectionPipeline>;
   D3 *d3 = nullptr;
   (void)d3;
+
+  using D4 = DataCalculator<FilteredMaxwellianSampler<2>>;
+  D4 *d4 = nullptr;
+  (void)d4;
+
+  using D5 = DataCalculator<FilteredMaxwellianSampler<3>>;
+  D5 *d5 = nullptr;
+  (void)d5;
+
+  using D6 = DataCalculator<FixedRateData, FixedRateData, FixedRateData,
+                            FixedRateData>;
+  D6 *d6 = nullptr;
+  (void)d6;
+
+  using D7 = DataCalculator<SphericalReflectionPipeline>;
+  D7 *d7 = nullptr;
+  (void)d7;
+
+  using D8 = DataCalculator<CartesianReflectionPipeline>;
+  D8 *d8 = nullptr;
+  (void)d8;
+
+  using D9 = DataCalculator<VelocityReflectionPipeline3D>;
+  D9 *d9 = nullptr;
+  (void)d9;
 
   // --- Common transformation strategies ------------------------------------
   using T0 = CellwiseAccumulator<REAL>;
@@ -137,6 +242,30 @@ int main() {
   T3 *t3 = nullptr;
   (void)t3;
 
+  using T4 = CellwiseAccumulator<INT>;
+  T4 *t4 = nullptr;
+  (void)t4;
+
+  using T5 = WeightedCellwiseAccumulator<INT>;
+  T5 *t5 = nullptr;
+  (void)t5;
+
+  using T6 = ParticleDatZeroer<INT>;
+  T6 *t6 = nullptr;
+  (void)t6;
+
+  using T7 = CellwiseDistributor<REAL>;
+  T7 *t7 = nullptr;
+  (void)t7;
+
+  using T8 = CellwiseDistributor<INT>;
+  T8 *t8 = nullptr;
+  (void)t8;
+
+  using T9 = MergeTransformationStrategy<3>;
+  T9 *t9 = nullptr;
+  (void)t9;
+
   // --- Downsampling strategies ---------------------------------------------
   using S0 = VranicMergingKernels<2>;
   S0 *s0 = nullptr;
@@ -150,6 +279,14 @@ int main() {
   S2 *s2 = nullptr;
   (void)s2;
 
+  using S3 = VranicMergingKernels<3>;
+  S3 *s3 = nullptr;
+  (void)s3;
+
+  using S4 = DownsamplingStrategy<VranicMergingKernels<3>>;
+  S4 *s4 = nullptr;
+  (void)s4;
+
   // --- Other heavy reaction data types -------------------------------------
   using H0 = FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
   H0 *h0 = nullptr;
@@ -158,6 +295,103 @@ int main() {
   using H1 = CellwiseReactionDataAccumulator<KinEnergyData>;
   H1 *h1 = nullptr;
   (void)h1;
+
+  using H2 = AMJUEL1DData<3>;
+  H2 *h2 = nullptr;
+  (void)h2;
+
+  using H3 = AMJUEL1DData<9>;
+  H3 *h3 = nullptr;
+  (void)h3;
+
+  using H4 = AMJUEL2DData<2, 2>;
+  H4 *h4 = nullptr;
+  (void)h4;
+
+  using H5 = AMJUEL2DDataH3<2, 2>;
+  H5 *h5 = nullptr;
+  (void)h5;
+
+  using H6 = FixedArrayData<3>;
+  H6 *h6 = nullptr;
+  (void)h6;
+
+  using H7 = ArrayLookupData<1>;
+  H7 *h7 = nullptr;
+  (void)h7;
+
+  using H8 = ArrayLookupData<1, true>;
+  H8 *h8 = nullptr;
+  (void)h8;
+
+  using H9 = AMJUELFitCrossSection<2, 0, 0>;
+  H9 *h9 = nullptr;
+  (void)h9;
+
+  using H10 = AMJUELFitCrossSection<2, 2, 0>;
+  H10 *h10 = nullptr;
+  (void)h10;
+
+  using H11 = AMJUELFitCrossSection<2, 2, 2>;
+  H11 *h11 = nullptr;
+  (void)h11;
+
+  using H12 = AMJUELFitCrossSection<3, 3, 3>;
+  H12 *h12 = nullptr;
+  (void)h12;
+
+  using H13 = FilteredMaxwellianSampler<3>;
+  H13 *h13 = nullptr;
+  (void)h13;
+
+  using H14 = ExtractorData<1>;
+  H14 *h14 = nullptr;
+  (void)h14;
+
+  using H15 = ExtractorData<2>;
+  H15 *h15 = nullptr;
+  (void)h15;
+
+  using H16 = ExtractorData<3>;
+  H16 *h16 = nullptr;
+  (void)h16;
+
+  using H17 = SpecularReflectionData<2>;
+  H17 *h17 = nullptr;
+  (void)h17;
+
+  using H18 = SpecularReflectionData<3>;
+  H18 *h18 = nullptr;
+  (void)h18;
+
+  // --- Interpolation / grid family -----------------------------------------
+  using G0 = CartesianGridData<1>;
+  G0 *g0 = nullptr;
+  (void)g0;
+
+  using G1 = CartesianGridData<2>;
+  G1 *g1 = nullptr;
+  (void)g1;
+
+  using G2 = CartesianGridData<3>;
+  G2 *g2 = nullptr;
+  (void)g2;
+
+  using G3 = CartesianGridData<4>;
+  G3 *g3 = nullptr;
+  (void)g3;
+
+  using G4 = CartesianGridData<5>;
+  G4 *g4 = nullptr;
+  (void)g4;
+
+  using G5 = TrimEvalData<5>;
+  G5 *g5 = nullptr;
+  (void)g5;
+
+  using G6 = TrimEvalData<7>;
+  G6 *g6 = nullptr;
+  (void)g6;
 
   std::cout << "consumer_smoke: linked against libVANTAGE-Reactions.so OK\n";
   return 0;

@@ -54,6 +54,22 @@ Reactions used in the examples
   ScatteringDataCalculator3D>`` (3D counterpart of the 2D scattering reaction;
   ``ScatteringDataCalculator3D`` is the 3D analogue of
   ``ScatteringDataCalculator``, built from ``SpecularReflectionData<3>``)
+* ``LinearReactionBase<0, FixedRateData, GeneralAbsorptionKernels<2>>``
+* ``LinearReactionBase<0, FixedRateData, SpecularReflectionKernels<2>>``
+* ``LinearReactionBase<1, FixedRateData, LinearScatteringKernels<2, false>,
+  ScatteringDataCalculator>``
+* ``LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
+  DataCalculator<FilteredMaxwellianSampler<2>>>``
+* ``LinearReactionBase<1, FixedRateData, CXReactionKernels<3>,
+  DataCalculator<FilteredMaxwellianSampler<3>>>``
+* ``LinearReactionBase<1, FixedRateData, LinearScatteringKernels<3, true>,
+  ScatteringDataCalculatorSpherical>`` (spherical-basis scattering data;
+  ``ScatteringDataCalculatorSpherical`` is built from a
+  ``FixedArrayData<3>`` + ``SphericalBasisReflectionData`` pipeline)
+* ``LinearReactionBase<1, FixedRateData, LinearScatteringKernels<3, true>,
+  ScatteringDataCalculatorCartesian>`` (Cartesian-basis scattering data;
+  ``ScatteringDataCalculatorCartesian`` is built from a
+  ``FixedArrayData<3>`` + ``CartesianBasisReflectionData`` pipeline)
 
 Derived reactions
 -----------------
@@ -64,6 +80,9 @@ Derived reactions
   snippets)
 * ``Recombination<FixedRateData, DataCalculator<FixedRateData,
   FixedRateData, FixedRateData>, 2>``
+* ``ElectronImpactIonisation<FixedRateData, FixedRateData, 3>``
+* ``Recombination<FixedRateData, DataCalculator<FixedRateData,
+  FixedRateData, FixedRateData, FixedRateData>, 3>``
 
 Kernel classes
 --------------
@@ -74,6 +93,14 @@ Kernel classes
 * ``LinearScatteringKernels<2, true>``
 * ``CXReactionKernels<3>``
 * ``LinearScatteringKernels<3, true>``
+* ``GeneralAbsorptionKernels<2>``
+* ``SpecularReflectionKernels<2>``
+* ``LinearScatteringKernels<2, false>``
+* ``GeneralAbsorptionKernels<3>``
+* ``SpecularReflectionKernels<3>``
+* ``LinearScatteringKernels<3, false>``
+* ``IoniseReactionKernels<3>``
+* ``RecombReactionKernels<3, 3>``
 
 :class:`DataCalculator` specialisations
 ------------------------------------------
@@ -82,6 +109,13 @@ Kernel classes
 * ``DataCalculator<FixedRateData, FixedRateData>``
 * ``DataCalculator<FixedRateData, FixedRateData, FixedRateData>``
 * ``DataCalculator<VelocityReflectionPipeline>``
+* ``DataCalculator<FilteredMaxwellianSampler<2>>``
+* ``DataCalculator<FilteredMaxwellianSampler<3>>``
+* ``DataCalculator<FixedRateData, FixedRateData, FixedRateData,
+  FixedRateData>``
+* ``DataCalculator<SphericalReflectionPipeline>``
+* ``DataCalculator<CartesianReflectionPipeline>``
+* ``DataCalculator<VelocityReflectionPipeline3D>``
 
 Common transformation strategies
 --------------------------------
@@ -90,6 +124,12 @@ Common transformation strategies
 * ``WeightedCellwiseAccumulator<REAL>``
 * ``ParticleDatZeroer<REAL>``
 * ``MergeTransformationStrategy<2>``
+* ``CellwiseAccumulator<INT>``
+* ``WeightedCellwiseAccumulator<INT>``
+* ``ParticleDatZeroer<INT>``
+* ``CellwiseDistributor<REAL>``
+* ``CellwiseDistributor<INT>``
+* ``MergeTransformationStrategy<3>``
 
 Downsampling strategies
 -----------------------
@@ -97,12 +137,42 @@ Downsampling strategies
 * ``VranicMergingKernels<2>``
 * ``DownsamplingStrategy<VranicMergingKernels<2>>``
 * ``DownsamplingStrategy<SimpleThinningKernels>``
+* ``VranicMergingKernels<3>``
+* ``DownsamplingStrategy<VranicMergingKernels<3>>``
 
 Other heavy reaction data types
 -------------------------------
 
 * ``FilteredMaxwellianSampler<2, ConstantRateCrossSection>``
 * ``CellwiseReactionDataAccumulator<KinEnergyData>``
+* ``AMJUEL1DData<3>``
+* ``AMJUEL1DData<9>``
+* ``AMJUEL2DData<2, 2>``
+* ``AMJUEL2DDataH3<2, 2>``
+* ``FixedArrayData<3>``
+* ``ArrayLookupData<1>``
+* ``ArrayLookupData<1, true>``
+* ``AMJUELFitCrossSection<2, 0, 0>``
+* ``AMJUELFitCrossSection<2, 2, 0>``
+* ``AMJUELFitCrossSection<2, 2, 2>``
+* ``AMJUELFitCrossSection<3, 3, 3>``
+* ``FilteredMaxwellianSampler<3>``
+* ``ExtractorData<1>``
+* ``ExtractorData<2>``
+* ``ExtractorData<3>``
+* ``SpecularReflectionData<2>``
+* ``SpecularReflectionData<3>``
+
+Interpolation / grid family
+---------------------------
+
+* ``CartesianGridData<1>``
+* ``CartesianGridData<2>``
+* ``CartesianGridData<3>``
+* ``CartesianGridData<4>``
+* ``CartesianGridData<5>``
+* ``TrimEvalData<5>``
+* ``TrimEvalData<7>``
 
 Baseline, not a closed surface
 ==============================
@@ -133,11 +203,11 @@ In particular:
 
 * reactions that use a ``ReactionData`` type other than ``FixedRateData`` are
   *not* in the shipped set *except* for ``ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData, 2>``
-  (the documented AMJUEL ionisation composition); other AMJUEL degrees (e.g.
-  ``AMJUEL1DData<N>`` with ``N != 9``) and other AMJUEL-backed reactions are not
-  shipped — instantiate them yourself;
-* recombinations with a ``DataCalculator`` arity not listed above (4+, or
-  reordered types) are *not* shipped — instantiate them yourself;
+  (the documented AMJUEL ionisation composition); other AMJUEL-backed
+  *reactions* are not shipped — instantiation is left to the user (the standalone
+  AMJUEL data types listed above, e.g. ``AMJUEL1DData<3>``, *are* shipped);
+* recombinations with a ``DataCalculator`` arity not listed above (5+, or
+  reordered types) are *not* shipped — instantiation is left to the user;
 * any new public reaction added to the library should also add its explicit
   instantiation to ``instantiations.cpp`` and its ``extern template`` to
   ``extern_templates.hpp`` (see ``src/reactions_lib/add_new_reactions.md``).
