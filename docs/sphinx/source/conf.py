@@ -15,6 +15,10 @@ author = 'Stefan Mijin, Sanket Gadgil'
 
 extensions = ["breathe"]
 
+breathe_projects = {"reactions": "../../build/doxygen/xml"}
+breathe_default_project = "reactions"
+breathe_default_members = ()
+
 templates_path = ['_templates']
 exclude_patterns = []
 numfig=True
@@ -33,5 +37,8 @@ html_theme_options = {
     "navbar_align": "left",
     "primary_sidebar_end": [],
     "navigation_depth": 0,
-    "show_nav_level": 3
+    "show_nav_level": 3,
+    "external_links": [
+        {"name": "Doxygen (class graphs)", "url": "../../doxygen/html/index.html"},
+    ],
 }

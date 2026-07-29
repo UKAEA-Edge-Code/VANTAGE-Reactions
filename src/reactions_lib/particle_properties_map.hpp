@@ -30,7 +30,7 @@ namespace VANTAGE::Reactions {
  */
 struct StandardPropertiesEnum {
 public:
-  enum {
+  enum StandardPropertyID {
     reacted_flag,
     grouping_index,
     linear_index,
