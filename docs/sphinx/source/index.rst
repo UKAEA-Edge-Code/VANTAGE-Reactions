@@ -13,6 +13,7 @@ VANTAGE-Reactions documentation
    overview
    guide-user
    guide-developer
+   api
 
 
 
