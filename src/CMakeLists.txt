@@ -38,6 +38,7 @@ else()
   if(src_compiled)
     target_sources(VANTAGE-Reactions PRIVATE ${src_compiled})
     add_sycl_to_target(TARGET VANTAGE-Reactions SOURCES ${src_compiled})
+
     # IntelSYCL's add_sycl_to_target applies -fsycl and the SYCL include path
     # via per-source COMPILE_OPTIONS/INCLUDE_DIRECTORIES. CMake silently drops
     # per-source properties for sources added to a target with target_sources()

@@ -18,9 +18,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # ---------------------------------------------------------------------------
 # Library type
 # ---------------------------------------------------------------------------
-# By default VANTAGE-Reactions is built as a compiled library (SHARED, or
-# STATIC when BUILD_SHARED_LIBS is OFF) that ships pre-compiled template
-# instantiations and SYCL device code. The original header-only INTERFACE
+# By default VANTAGE-Reactions is built as a compiled library that ships 
+# pre-compiled template instantiations. The original header-only INTERFACE
 # target is still available with -DVANTAGE_REACTIONS_HEADER_ONLY=ON.
 option(VANTAGE_REACTIONS_HEADER_ONLY "Build header-only (no compiled library)" OFF)
 
@@ -28,15 +27,7 @@ if(VANTAGE_REACTIONS_HEADER_ONLY)
   add_library(VANTAGE-Reactions INTERFACE)
   add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 else()
-  if(DEFINED BUILD_SHARED_LIBS AND NOT BUILD_SHARED_LIBS)
-    set(VANTAGE_REACTIONS_DEFAULT_LIB_TYPE STATIC)
-  else()
-    set(VANTAGE_REACTIONS_DEFAULT_LIB_TYPE SHARED)
-  endif()
-  set(VANTAGE_REACTIONS_LIB_TYPE "${VANTAGE_REACTIONS_DEFAULT_LIB_TYPE}"
-      CACHE STRING "Library type (STATIC or SHARED)")
-  set_property(CACHE VANTAGE_REACTIONS_LIB_TYPE PROPERTY STRINGS STATIC SHARED)
-  add_library(VANTAGE-Reactions ${VANTAGE_REACTIONS_LIB_TYPE})
+  add_library(VANTAGE-Reactions SHARED)
   add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 endif()
 

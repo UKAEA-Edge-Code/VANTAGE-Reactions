@@ -121,9 +121,8 @@ Header-only (INTERFACE) opt-out
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default ``VANTAGE-Reactions`` is built as a **compiled runtime library**
-(``SHARED``/``STATIC``) and consumers link the installed ``.so``/``.a``. A
-header-only ``INTERFACE`` target is available as an opt-out, mapping to
-``-DVANTAGE_REACTIONS_HEADER_ONLY=ON``. In that mode no ``.so`` is built and
+and consumers link the installed ``.so``. A header-only ``INTERFACE`` target is available as an opt-out,
+mapping to ``-DVANTAGE_REACTIONS_HEADER_ONLY=ON``. In that mode no ``.so`` is built and
 every consumer compiles the headers itself (the pre-shipped template
 instantiations and ``extern template`` declarations are not used). Opt in
 only if you need the legacy header-only behaviour; the compiled build is
@@ -188,9 +187,7 @@ By default the unit tests are built as a single ``unit_tests`` executable that
 contains every ``test_*.cpp`` under ``test/unit/``. That is what the commands
 above run, and what CI and ``run_tests.sh`` use. For faster iteration on a
 single test (or a small set), enable *split mode*, which builds one executable
-per ``test_*.cpp`` linked against a shared object library of the non-test
-translation units (the GoogleTest/MPI ``Main.cpp`` plus the two test-only
-template-instantiation sources).
+per ``test_*.cpp`` linked against the shared object library.
 
 There are two ways to use split mode: through the Spack package (the
 supported path, recommended if you installed via Spack) or by configuring the
