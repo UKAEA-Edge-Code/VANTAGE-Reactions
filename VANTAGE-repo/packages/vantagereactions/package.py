@@ -15,6 +15,9 @@ class Vantagereactions(CMakePackage):
     version("main", branch="main")
     version("working", branch="reactions-base", preferred=True)
 
+    # TODO collapse variants (no need to tests_split, test_filter or header-only)
+    # remember to update docs
+
     variant("enable_tests", default=False, description="Enable tests")
     variant(
         "header_only",

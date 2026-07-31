@@ -1,5 +1,3 @@
-file(GLOB_RECURSE src_unit "*.cpp")
-
 set(EXECUTABLE unit_tests)
 
 # ---------------------------------------------------------------------------
@@ -19,13 +17,25 @@ if(NOT REACTIONS_TESTS_SPLIT)
   ############################################################
   # Default: the unit_tests monolith (unchanged behaviour)
   ############################################################
-  add_executable(${EXECUTABLE} ${src_unit})
+  set(common_sources
+      ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/instantiations/instantiations.cpp)
+  add_library(unit_test_common OBJECT ${common_sources})
+  target_link_libraries(unit_test_common PRIVATE
+      VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
+  target_compile_definitions(unit_test_common PRIVATE GPU_SELECTOR=0)
+  target_compile_options(unit_test_common PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
+  add_sycl_to_target(TARGET unit_test_common SOURCES ${common_sources})
 
-  target_link_libraries(${EXECUTABLE} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
+  file(GLOB_RECURSE test_sources "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
+  
+  add_executable(${EXECUTABLE} ${test_sources})
+
+  target_link_libraries(${EXECUTABLE} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest unit_test_common)
   target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
   target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-  add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${src_unit})
+  add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${test_sources})
 
   install(TARGETS ${EXECUTABLE} DESTINATION bin)
 else()
@@ -35,10 +45,11 @@ else()
   # Non-test TUs shared by every per-file exe: just the gtest/MPI main.
   # Compiled once into an OBJECT library and linked into each exe.
   set(common_sources
-      ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp)
+      ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/instantiations/instantiations.cpp)
   add_library(unit_test_common OBJECT ${common_sources})
   target_link_libraries(unit_test_common PRIVATE
-      VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest Threads::Threads)
+      VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
   target_compile_definitions(unit_test_common PRIVATE GPU_SELECTOR=0)
   target_compile_options(unit_test_common PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
   add_sycl_to_target(TARGET unit_test_common SOURCES ${common_sources})
@@ -75,7 +86,7 @@ else()
     add_executable(${name} ${src})
     target_link_libraries(${name} PRIVATE
         VANTAGE::Reactions NESO-Particles::NESO-Particles
-        GTest::gtest unit_test_common Threads::Threads)
+        GTest::gtest unit_test_common)
     target_compile_definitions(${name} PRIVATE GPU_SELECTOR=0)
     target_compile_options(${name} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
     add_sycl_to_target(TARGET ${name} SOURCES ${src})

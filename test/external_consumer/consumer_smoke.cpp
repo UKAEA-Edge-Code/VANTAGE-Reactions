@@ -12,9 +12,9 @@
 // setup, which is out of scope for proving the runtime library is consumable.
 //
 // Every instantiation the library ships (see
-// src/reactions_lib/instantiations/instantiations.cpp and the matching
-// `extern template` declarations in src/reactions_lib/extern_templates.hpp) is
-// named below. ODR-using the type (even via a pointer) requires the class
+// src/instantiations/instantiations.cpp and the matching
+// `extern template` declarations in include/reactions_lib/extern_templates.hpp)
+// is named below. ODR-using the type (even via a pointer) requires the class
 // template to be complete, which forces the consumer TU to respect the
 // extern-template declaration and let the library provide the definition. If
 // the library did not ship a given instantiation the link would fail with an
