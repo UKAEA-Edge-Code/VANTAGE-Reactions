@@ -293,17 +293,16 @@ Via a direct CMake configure of the source tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are working in a clone of the repository and already have the
-dependencies installed (e.g. via a prior ``spack install``), you can configure
-the source tree with CMake directly and pass the same two options as CMake variables:
+dependencies installed (e.g. via a prior ``spack install`` or via running ``spack install --only dependencies``), 
+you can configure the source tree with CMake directly and pass the same options as CMake variables:
 ::
 
-    cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \
-        -DREACTIONS_ENABLE_TESTS=ON -DREACTIONS_TESTS_SPLIT=ON \
-        -DCMAKE_BUILD_TYPE=Release
+    spack build-env neso-particles -- cmake -S . -B build \
+        -DREACTIONS_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build
 
-With no further options this produces one executable per ``test_*.cpp``, named
-after the source stem (e.g. ``test_reaction_controller``, ``test_species``).
+With no further options this produces a monolithic ``unit_tests`` executable combining all unit tests and additionally
+one executable per ``test_*.cpp``, named after the source stem (e.g. ``test_reaction_controller``, ``test_species``).
 Run the one you want with MPI as before:
 ::
 
@@ -313,8 +312,8 @@ To build only a single test, pass its source stem via
 ``REACTIONS_TEST_FILTER``:
 ::
 
-    cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \
-        -DREACTIONS_ENABLE_TESTS=ON -DREACTIONS_TESTS_SPLIT=ON \
+    spack build-env neso-particles -- cmake -S . -B build \
+        -DREACTIONS_ENABLE_TESTS=ON \
         -DREACTIONS_TEST_FILTER=test_reaction_controller \
         -DCMAKE_BUILD_TYPE=Release
     cmake --build build
@@ -322,5 +321,5 @@ To build only a single test, pass its source stem via
 
 ``REACTIONS_TEST_FILTER`` accepts a single stem or a semicolon-separated list,
 e.g. ``-DREACTIONS_TEST_FILTER="test_properties;test_species"``. An empty
-value (the default) builds every ``test_*.cpp``. A stem that does not match any
-``test_*.cpp`` is a hard configure error, so typos are caught early.
+value (the default) builds every ``test_*.cpp`` and the monolithic ``unit_tests`` as well. 
+A stem that does not match any ``test_*.cpp`` is a hard configure error, so typos are caught early.

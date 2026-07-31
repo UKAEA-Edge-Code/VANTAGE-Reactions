@@ -1,4 +1,4 @@
-Find_package(Threads REQUIRED)
+# Find_package(Threads REQUIRED)
 find_package(GTest)
 
 if(NOT GTest_FOUND)

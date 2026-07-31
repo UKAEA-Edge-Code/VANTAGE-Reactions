@@ -15,21 +15,10 @@ list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 # Produce compile_commands.json for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-# ---------------------------------------------------------------------------
-# Library type
-# ---------------------------------------------------------------------------
-# By default VANTAGE-Reactions is built as a compiled library that ships 
-# pre-compiled template instantiations. The original header-only INTERFACE
-# target is still available with -DVANTAGE_REACTIONS_HEADER_ONLY=ON.
-option(VANTAGE_REACTIONS_HEADER_ONLY "Build header-only (no compiled library)" OFF)
+# Designate as shared library and alias definition
+add_library(VANTAGE-Reactions SHARED)
+add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
 
-if(VANTAGE_REACTIONS_HEADER_ONLY)
-  add_library(VANTAGE-Reactions INTERFACE)
-  add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
-else()
-  add_library(VANTAGE-Reactions SHARED)
-  add_library(VANTAGE::Reactions ALIAS VANTAGE-Reactions)
-endif()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -67,61 +56,40 @@ target_sources(
 )
 
 ############################################################
-# Install in header-only mode
-############################################################
-
-if (VANTAGE_REACTIONS_HEADER_ONLY)
-  # Propagate the build mode to consumers. extern_templates.hpp gates its
-  # `extern template` block on #ifndef VANTAGE_REACTIONS_HEADER_ONLY; in
-  # header-only mode the library ships no symbols, so consumers must define
-  # this macro to disable the suppression and implicitly instantiate.
-  # INTERFACE visibility flows to every linking target (in-tree and via the
-  # installed exported Targets.cmake).
-  target_compile_definitions(VANTAGE-Reactions INTERFACE VANTAGE_REACTIONS_HEADER_ONLY=1)
-  target_link_libraries(VANTAGE-Reactions
-      INTERFACE MPI::MPI_CXX NESO-Particles::NESO-Particles)
-
-  message(STATUS "Header only library linked.")
-endif()
-
-############################################################
 # Install compiled runtime library
 ############################################################
+# Compiled library sources: explicit template instantiations (and any future
+# non-template definitions). Compiled with SYCL enabled on this target so the
+# device code lives in the library, not in every consumer.
+file(GLOB_RECURSE src_compiled "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+message(STATUS "src files:")
+message(STATUS ${src_compiled})
 
-if (NOT VANTAGE_REACTIONS_HEADER_ONLY)
-  # Compiled library sources: explicit template instantiations (and any future
-  # non-template definitions). Compiled with SYCL enabled on this target so the
-  # device code lives in the library, not in every consumer.
-  file(GLOB_RECURSE src_compiled "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-  message(STATUS "src files:")
-  message(STATUS ${src_compiled})
-  
-  
-  target_sources(VANTAGE-Reactions PRIVATE ${src_compiled})
-  add_sycl_to_target(TARGET VANTAGE-Reactions SOURCES ${src_compiled})
-  
-  # IntelSYCL's add_sycl_to_target applies -fsycl and the SYCL include path
-  # via per-source COMPILE_OPTIONS/INCLUDE_DIRECTORIES. CMake silently drops
-  # per-source properties for sources added to a target with target_sources()
-  # from a subdirectory when the target was created in the parent scope (this
-  # target is created in the root CMakeLists.txt), so the compiled
-  # instantiations TU never receives them and fails with 'CL/sycl.hpp' not
-  # found. Re-apply them at the target level. AdaptiveCpp drives SYCL through
-  # a per-target compiler launcher instead of per-source flags, so it is
-  # unaffected; the guard keeps this fix specific to the IntelSYCL backend.
-  if(TARGET IntelSYCL::SYCL_CXX)
-    target_compile_options(
-      VANTAGE-Reactions
-      PRIVATE $<TARGET_PROPERTY:IntelSYCL::SYCL_CXX,INTERFACE_COMPILE_OPTIONS>)
-    target_include_directories(
-      VANTAGE-Reactions
-      PRIVATE $<TARGET_PROPERTY:IntelSYCL::SYCL_CXX,INTERFACE_INCLUDE_DIRECTORIES>)
-  endif()
-  
-  target_link_libraries(VANTAGE-Reactions
-      PUBLIC MPI::MPI_CXX NESO-Particles::NESO-Particles)
-  message(STATUS "Runtime library linked.")
+
+target_sources(VANTAGE-Reactions PRIVATE ${src_compiled})
+add_sycl_to_target(TARGET VANTAGE-Reactions SOURCES ${src_compiled})
+
+# IntelSYCL's add_sycl_to_target applies -fsycl and the SYCL include path
+# via per-source COMPILE_OPTIONS/INCLUDE_DIRECTORIES. CMake silently drops
+# per-source properties for sources added to a target with target_sources()
+# from a subdirectory when the target was created in the parent scope (this
+# target is created in the root CMakeLists.txt), so the compiled
+# instantiations TU never receives them and fails with 'CL/sycl.hpp' not
+# found. Re-apply them at the target level. AdaptiveCpp drives SYCL through
+# a per-target compiler launcher instead of per-source flags, so it is
+# unaffected; the guard keeps this fix specific to the IntelSYCL backend.
+if(TARGET IntelSYCL::SYCL_CXX)
+  target_compile_options(
+    VANTAGE-Reactions
+    PRIVATE $<TARGET_PROPERTY:IntelSYCL::SYCL_CXX,INTERFACE_COMPILE_OPTIONS>)
+  target_include_directories(
+    VANTAGE-Reactions
+    PRIVATE $<TARGET_PROPERTY:IntelSYCL::SYCL_CXX,INTERFACE_INCLUDE_DIRECTORIES>)
 endif()
+
+target_link_libraries(VANTAGE-Reactions
+    PUBLIC MPI::MPI_CXX NESO-Particles::NESO-Particles)
+message(STATUS "Runtime library linked.")
 
 ############################################################
 # Set the build type environment variable
