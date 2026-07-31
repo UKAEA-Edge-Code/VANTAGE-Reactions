@@ -61,7 +61,7 @@ Note the paths listed for the ``gcc`` command (for convenience the path can be s
 Defining external packages (optional)
 =====================================
 
-If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18:20) are pre-installed, then they can be designated as external packages that spack will try and use when installing Reactions.
+If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18:20) are pre-installed, then they can be designated as external packages that spack will try and use them when installing Reactions.
 This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly.
 To designate a package as an external one, the path of the root directory of the package must be known, then the following command sets the package as external:
 ::
@@ -100,7 +100,7 @@ For a standard install (CPU-only, using GCC) run the commands:
 
 Note if there is a compiler error or out-of-RAM crash when running the command then add ``-j1`` after ``spack install`` and try again.
 
-NOTE - It is recommended to not exceed ``-j2`` if there's less than 16GB of system RAM.
+NOTE - It is recommended to not exceed ``-j4`` if there's less than 16GB of system RAM.
 
 Optional variants
 ~~~~~~~~~~~~~~~~~
@@ -116,6 +116,22 @@ For CUDA-specific installations, the environments are provided but given the sub
 Similarly for HIP-specific installations (for AMD GPUs), the environment is provided but again depending on the subtleties of your system, there may need to be more modifications.
 
 The ``spack.yaml`` files do have some limited guidance on things like specifying GPU architecture and some dependencies but there may need to be more modifications system-side to make things work smoothly.
+
+Using VANTAGE-Reactions with your application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default ``VANTAGE-Reactions`` is built as a **compiled runtime library** and 
+ships a curated set of pre-compiled template instantiations and SYCL device code in
+``libVANTAGE-Reactions.so``. Include the installed library via
+``find_package(VANTAGE-Reactions)`` when compiling your application with ``CMake``.
+
+Two names refer to the same exported target:
+
+* the in-source build alias ``VANTAGE::Reactions``,
+* the installed EXPORT target ``VANTAGE-Reactions::VANTAGE-Reactions``.
+
+Link either one to your application; consumers are recommended to put them
+in ``target_link_libraries(<consumer> PRIVATE <name>)``.
 
 Header-only (INTERFACE) opt-out
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,14 +151,11 @@ constraints as for the other variants above). For ``spack_default``::
     spack -e environments/spack_default install --add \
         'vantagereactions+header_only build_type=Release ^neso-particles~build_tests ^neso.adaptivecpp compilationflow=omplibraryonly ^googletest'
 
-Via a direct CMake configure of the source tree, pass the cache variable
+Via a direct CMake configure of the source tree, pass the CMake variable
 instead::
 
     cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \
         -DVANTAGE_REACTIONS_HEADER_ONLY=ON -DCMAKE_BUILD_TYPE=Release
-
-See :doc:`../overview/supported_instantiations` for which template
-instantiations ship pre-compiled in the default (compiled) build.
 
 If any compatibility issues are present when attempting these optional variants, please contact the repo maintainers for support.
 
@@ -231,7 +244,7 @@ error.
     *provider* (``adaptivecpp``) in their ``packages:`` block, not the
     ``compilationflow`` variant or ``neso-particles~build_tests``; those live on
     the root spec itself. A bare split spec (``vantagereactions+enable_tests
-    +tests_split`` with no ``^`` constraints) concretizes a separate DAG (the
+    +tests_split`` with no ``^`` constraints) concretizes a separate dependency tree (the
     project envs use ``concretizer: unify: false``) but against the *default*
     ``adaptivecpp compilationflow`` and ``neso-particles+build_tests`` — i.e.
     the wrong backend and an unnecessary test build of neso-particles.
@@ -281,8 +294,7 @@ Via a direct CMake configure of the source tree
 
 If you are working in a clone of the repository and already have the
 dependencies installed (e.g. via a prior ``spack install``), you can configure
-the source tree with CMake directly and pass the same two options as CMake
-cache variables:
+the source tree with CMake directly and pass the same two options as CMake variables:
 ::
 
     cmake -S . -B build -DCMAKE_PREFIX_PATH="<installed deps>" \

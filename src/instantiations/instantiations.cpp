@@ -8,8 +8,8 @@
 // See docs/sphinx/source/overview/supported_instantiations.rst for the
 // rationale and the consumer-facing list.
 
-#include "reactions/reactions.hpp"
-#include "reactions_lib/extern_templates.hpp"
+#include "../../include/reactions/reactions.hpp"
+#include "../../include/reactions_lib/extern_templates.hpp"
 
 namespace VANTAGE::Reactions {
 
