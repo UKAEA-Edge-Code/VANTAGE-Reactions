@@ -22,7 +22,8 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
       std::dynamic_pointer_cast<CartesianHMesh>(A->domain->mesh),
       subdivision_order);
 
-  auto cc_manager = CollisionCellManager(coll_cell_h, std::vector<INT>{0});
+  auto cc_manager =
+      CollisionCellManager(A->sycl_target, coll_cell_h, std::vector<INT>{0});
 
   cc_manager.bin_particles(particle_subgroup);
 
@@ -52,7 +53,7 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
   auto npart_coll_cell = cc_manager.get_npart_coll_cell(particle_subgroup, 0);
 
   for (int i = 0; i < cell_count; i++) {
-    EXPECT_EQ(npart_coll_cell->at(i, 0), N_total / (4 * cell_count));
+    EXPECT_EQ(npart_coll_cell->at(i, 0), N_total / cell_count);
   }
   std::vector<REAL> resolutions(cell_count, 1.0);
 

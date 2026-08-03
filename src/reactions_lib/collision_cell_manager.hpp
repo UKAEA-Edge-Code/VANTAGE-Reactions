@@ -34,11 +34,15 @@ struct CollisionCellManager {
   CollisionCellManager() = delete;
 
   CollisionCellManager(
+      SYCLTargetSharedPtr sycl_target,
       std::shared_ptr<AbstractCollCellHierarchy> coll_cell_hierarchy,
       std::vector<INT> species_ids,
       const std::map<int, std::string> &properties_map = get_default_map())
       : coll_cell_hierarchy(coll_cell_hierarchy), species_ids(species_ids) {
 
+    this->coll_cell_partition = std::make_shared<DSMC::CollisionCellPartition>(
+        sycl_target, coll_cell_hierarchy->get_num_coll_cells().size(),
+        species_ids);
     this->species_id_sym =
         Sym<INT>(properties_map.at(default_properties.internal_state));
     this->coll_cell_sym =
