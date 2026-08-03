@@ -83,7 +83,7 @@ struct PropertiesMap {
       NESOWARN(
           this->private_map.find(i) != this->private_map.end(),
           "The custom properties map provided does not contain all enums from "
-          "default_properties in it's list of keys.");
+          "default_properties in its list of keys.");
     }
   }
 

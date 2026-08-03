@@ -4,6 +4,7 @@
 #include "neso_test_assert.hpp"
 
 #include "../reactions_lib/binary_array_transform_data.hpp"
+#include "../reactions_lib/collision_cell_manager.hpp"
 #include "../reactions_lib/common_array_transforms.hpp"
 #include "../reactions_lib/common_markers.hpp"
 #include "../reactions_lib/common_transformations.hpp"
@@ -71,4 +72,5 @@
 #include "../reactions_lib/downsampling_kernels/simple_thinning_kernels.hpp"
 #include "../reactions_lib/downsampling_kernels/vranic_merging_kernels.hpp"
 
+#include "../reactions_lib/coll_cell_hierarchies/coll_cell_cartesian_hierarchy.hpp"
 #endif
