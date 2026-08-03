@@ -37,7 +37,9 @@ find_sycl_if_required()
 file(GLOB_RECURSE include_headers "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 
 message(STATUS "header files:")
-message(STATUS ${include_headers})
+
+string(REPLACE ";" "\n" delim_include_headers "${include_headers}")
+message(STATUS ${delim_include_headers})
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(HEADER_FILES ${include_headers})
@@ -63,8 +65,10 @@ target_sources(
 # device code lives in the library, not in every consumer.
 file(GLOB_RECURSE src_compiled "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 message(STATUS "src files:")
-message(STATUS ${src_compiled})
 
+string(REPLACE ";" "\n" delim_src_compiled "${src_compiled}")
+
+message(STATUS ${delim_src_compiled})
 
 target_sources(VANTAGE-Reactions PRIVATE ${src_compiled})
 add_sycl_to_target(TARGET VANTAGE-Reactions SOURCES ${src_compiled})

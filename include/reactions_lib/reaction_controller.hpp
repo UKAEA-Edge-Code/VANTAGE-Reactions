@@ -276,9 +276,5 @@ private:
   }
 };
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "reaction_controller_impl.hpp"
-#endif
-
 } // namespace VANTAGE::Reactions
 #endif

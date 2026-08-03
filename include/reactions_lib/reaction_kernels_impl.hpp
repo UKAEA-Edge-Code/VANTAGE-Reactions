@@ -2,11 +2,10 @@
 #define VANTAGE_REACTIONS_REACTION_KERNELS_IMPL_H
 
 #include "reaction_kernels.hpp"
-#include "vantage_inline.hpp"
 
 namespace VANTAGE::Reactions {
 
-VANTAGE_REACTIONS_INLINE ReactionKernelsBase::ReactionKernelsBase(
+ReactionKernelsBase::ReactionKernelsBase(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     Properties<INT> required_int_props_ephemeral,
     Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims,
@@ -26,83 +25,78 @@ VANTAGE_REACTIONS_INLINE ReactionKernelsBase::ReactionKernelsBase(
   this->properties_map = properties_map;
 }
 
-VANTAGE_REACTIONS_INLINE
 ReactionKernelsBase::ReactionKernelsBase(
     std::map<int, std::string> properties_map)
     : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
                           Properties<INT>(), Properties<REAL>(), 0,
                           properties_map) {}
 
-VANTAGE_REACTIONS_INLINE ReactionKernelsBase::ReactionKernelsBase(
+ReactionKernelsBase::ReactionKernelsBase(
     Properties<INT> required_int_props, INT pre_req_ndims,
     std::map<int, std::string> properties_map)
     : ReactionKernelsBase(required_int_props, Properties<REAL>(),
                           Properties<INT>(), Properties<REAL>(), pre_req_ndims,
                           properties_map) {}
 
-VANTAGE_REACTIONS_INLINE ReactionKernelsBase::ReactionKernelsBase(
+ReactionKernelsBase::ReactionKernelsBase(
     Properties<REAL> required_real_props, INT pre_req_ndims,
     std::map<int, std::string> properties_map)
     : ReactionKernelsBase(Properties<INT>(), required_real_props,
                           Properties<INT>(), Properties<REAL>(), pre_req_ndims,
                           properties_map) {}
 
-VANTAGE_REACTIONS_INLINE ReactionKernelsBase::ReactionKernelsBase(
+ReactionKernelsBase::ReactionKernelsBase(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     INT pre_req_ndims, std::map<int, std::string> properties_map)
     : ReactionKernelsBase(required_int_props, required_real_props,
                           Properties<INT>(), Properties<REAL>(), pre_req_ndims,
                           properties_map) {}
 
-VANTAGE_REACTIONS_INLINE std::vector<std::string>
-ReactionKernelsBase::get_required_int_props() {
+std::vector<std::string> ReactionKernelsBase::get_required_int_props() {
   return this->required_int_props.get_prop_names(this->properties_map);
 }
 
-VANTAGE_REACTIONS_INLINE std::vector<std::string>
-ReactionKernelsBase::get_required_real_props() {
+std::vector<std::string> ReactionKernelsBase::get_required_real_props() {
   return this->required_real_props.get_prop_names(this->properties_map);
 }
 
-VANTAGE_REACTIONS_INLINE std::vector<std::string>
+std::vector<std::string>
 ReactionKernelsBase::get_required_int_props_ephemeral() {
   return this->required_int_props_ephemeral.get_prop_names(
       this->properties_map);
 }
 
-VANTAGE_REACTIONS_INLINE std::vector<std::string>
+std::vector<std::string>
 ReactionKernelsBase::get_required_real_props_ephemeral() {
   return this->required_real_props_ephemeral.get_prop_names(
       this->properties_map);
 }
 
-VANTAGE_REACTIONS_INLINE const Properties<INT> &
+const Properties<INT> &
 ReactionKernelsBase::get_required_descendant_int_props() {
   return this->required_descendant_int_props;
 }
 
-VANTAGE_REACTIONS_INLINE const Properties<REAL> &
+const Properties<REAL> &
 ReactionKernelsBase::get_required_descendant_real_props() {
   return this->required_descendant_real_props;
 }
 
-VANTAGE_REACTIONS_INLINE std::shared_ptr<ProductMatrixSpec>
+std::shared_ptr<ProductMatrixSpec>
 ReactionKernelsBase::get_descendant_matrix_spec() {
   return this->descendant_matrix_spec;
 }
 
-VANTAGE_REACTIONS_INLINE const INT &ReactionKernelsBase::get_pre_ndims() const {
+const INT &ReactionKernelsBase::get_pre_ndims() const {
   return this->pre_req_ndims;
 }
 
-VANTAGE_REACTIONS_INLINE void
-ReactionKernelsBase::set_required_descendant_int_props(
+void ReactionKernelsBase::set_required_descendant_int_props(
     const Properties<INT> &required_descendant_int_props) {
   this->required_descendant_int_props = required_descendant_int_props;
 }
 
-VANTAGE_REACTIONS_INLINE void
-ReactionKernelsBase::set_required_descendant_real_props(
+void ReactionKernelsBase::set_required_descendant_real_props(
     const Properties<REAL> &required_descendant_real_props) {
   this->required_descendant_real_props = required_descendant_real_props;
 }

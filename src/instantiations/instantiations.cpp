@@ -1,6 +1,5 @@
 // Explicit template instantiations shipped by the compiled VANTAGE-Reactions
-// library. Compiled only when VANTAGE_REACTIONS_HEADER_ONLY is OFF (see
-// src/CMakeLists.txt). The matching `extern template` declarations live in
+// library. The matching `extern template` declarations live in
 // include/reactions_lib/extern_templates.hpp, included from reactions.hpp.
 //
 // The set is a pay-once baseline for the documented configurations; it is

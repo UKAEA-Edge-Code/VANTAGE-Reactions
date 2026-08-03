@@ -2,11 +2,10 @@
 #define VANTAGE_REACTIONS_REACTION_BASE_IMPL_H
 
 #include "reaction_base.hpp"
-#include "vantage_inline.hpp"
 
 namespace VANTAGE::Reactions {
 
-VANTAGE_REACTIONS_INLINE AbstractReaction::AbstractReaction(
+AbstractReaction::AbstractReaction(
     SYCLTargetSharedPtr sycl_target,
     const std::map<int, std::string> &properties_map)
     : sycl_target_stored(sycl_target),
@@ -28,18 +27,18 @@ VANTAGE_REACTIONS_INLINE AbstractReaction::AbstractReaction(
   this->pre_req_data->fill(0.0);
 }
 
-VANTAGE_REACTIONS_INLINE void
-AbstractReaction::calculate_rates(ParticleSubGroupSharedPtr particle_sub_group,
-                                  INT cell_idx_start, INT cell_idx_end) {
+void AbstractReaction::calculate_rates(
+    ParticleSubGroupSharedPtr particle_sub_group, INT cell_idx_start,
+    INT cell_idx_end) {
   auto r0 = this->start_profiling_region(particle_sub_group, "calculate_rates");
   this->calculate_rates_v(particle_sub_group, cell_idx_start, cell_idx_end);
   this->end_profiling_region(particle_sub_group, r0);
 }
 
-VANTAGE_REACTIONS_INLINE void
-AbstractReaction::apply(ParticleSubGroupSharedPtr particle_sub_group,
-                        INT cell_idx_start, INT cell_idx_end, double dt,
-                        ParticleGroupSharedPtr child_group, bool full_weight) {
+void AbstractReaction::apply(ParticleSubGroupSharedPtr particle_sub_group,
+                             INT cell_idx_start, INT cell_idx_end, double dt,
+                             ParticleGroupSharedPtr child_group,
+                             bool full_weight) {
   auto r0 = this->start_profiling_region(particle_sub_group, "apply");
   this->apply_v(particle_sub_group, cell_idx_start, cell_idx_end, dt,
                 child_group, full_weight);

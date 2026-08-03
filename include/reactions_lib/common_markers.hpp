@@ -64,8 +64,4 @@ bool panicked(
 
 } // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "common_markers_impl.hpp"
-#endif
-
 #endif

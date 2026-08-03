@@ -636,8 +636,4 @@ private:
 };
 } // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "reaction_base_impl.hpp"
-#endif
-
 #endif

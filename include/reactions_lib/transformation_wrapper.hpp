@@ -500,8 +500,4 @@ make_lambda_transformation_strategy(std::string &&name, LAMBDA &&lambda) {
 }
 } // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "transformation_wrapper_impl.hpp"
-#endif
-
 #endif

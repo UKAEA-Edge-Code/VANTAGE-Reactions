@@ -54,20 +54,14 @@ Header/impl split (compiled build)
 To keep consumer compile times low in the default compiled build, some headers
 (containing non-template code) under ``include/reactions_lib/`` are split into 
 declarations (``X.hpp``) and definitions (``X_impl.hpp``). 
-Non-template function bodies are marked with the ``VANTAGE_REACTIONS_INLINE`` 
-macro (from ``vantage_inline.hpp``), which expands to ``inline`` only in header-only mode
-(``-DVANTAGE_REACTIONS_HEADER_ONLY=ON``); in the compiled build, the bodies
-are compiled exactly once into ``src/compiled/definitions.cpp``
-(which includes every ``*_impl.hpp``).
 
 When adding new non-template code to the library:
 
 #. put the declaration in ``X.hpp`` and the definition in ``X_impl.hpp``
-   (create the pair if adding a new component), and include ``X_impl.hpp``
-   at the bottom of ``X.hpp`` guarded by ``#ifdef VANTAGE_REACTIONS_HEADER_ONLY``;
-#. mark each non-template definition ``VANTAGE_REACTIONS_INLINE``;
+   (create the pair if adding a new component)
 #. add the ``#include`` of the new ``X_impl.hpp`` to
    ``src/compiled/definitions.cpp``.
 
 Template code still lives entirely in headers, as before — this split only
-concerns non-template definitions.
+concerns non-template definitions. 
+See :ref:`instantiating_unsupported_combos` for more details on instantiating new templated objects.

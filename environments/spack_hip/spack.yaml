@@ -9,7 +9,7 @@
 spack:
   # add package specs to the `specs` list
   specs:
-  - vantage.vantagereactions+enable_tests build_type=Release ^neso.neso-particles ^neso.adaptivecpp compilationflow=hip amdgpu_target=gfx1201 ^googletest
+  - vantage.vantagereactions+enable_tests build_type=RelWithDebInfo ^neso.neso-particles ^neso.adaptivecpp compilationflow=hip amdgpu_target=gfx1201 ^googletest
 
   view: false
   concretizer:

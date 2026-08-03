@@ -1,18 +1,9 @@
 #ifndef VANTAGE_REACTIONS_EXTERN_TEMPLATES_HPP
 #define VANTAGE_REACTIONS_EXTERN_TEMPLATES_HPP
 
-// This header is included at the end of reactions.hpp. It does two things:
-//
-//  1. Always defines the type aliases used to name the supported runtime
-//     instantiations (VelocityReflectionPipeline2D, ScatteringDataCalculator2D,
-//     KinEnergyData2D). The aliases are in unevaluated decltype contexts, so
-//     they do not themselves trigger template instantiation.
-//
-//  2. In compiled mode (the default) it declares `extern template` for the
-//     instantiations the library ships, so consumers do not re-instantiate
-//     what the library already provides. In header-only mode
-//     (-DVANTAGE_REACTIONS_HEADER_ONLY=ON) these declarations are absent and
-//     every consumer instantiates from headers, exactly as before.
+// This header is included at the end of reactions.hpp. It declares `extern
+// template` for the instantiations the library ships, so consumers do not
+// re-instantiate what the library already provides.
 //
 // The matching explicit instantiations live in
 // src/instantiations/instantiations.cpp.
@@ -21,13 +12,8 @@
 
 namespace VANTAGE::Reactions {
 
-#ifndef VANTAGE_REACTIONS_HEADER_ONLY
-
-// TODO Check which ones can be moved into test-only header
-
 // The declarations below are grouped to mirror
-// src/instantiations/instantiations.cpp and the consumer-facing
-// list in docs/sphinx/source/overview/supported_instantiations.rst.
+// src/instantiations/instantiations.cpp
 
 // ---------------------------------------------------------------------------
 // Kernel classes
@@ -77,8 +63,6 @@ extern template class FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
 extern template class FilteredMaxwellianSampler<3, ConstantRateCrossSection>;
 extern template class SpecularReflectionData<2>;
 extern template class SpecularReflectionData<3>;
-
-#endif // VANTAGE_REACTIONS_HEADER_ONLY
 
 } // namespace VANTAGE::Reactions
 

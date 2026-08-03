@@ -123,8 +123,4 @@ std::map<int, std::string> get_default_map();
 bool map_subset_check(std::map<int, std::string> custom_map);
 }; // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "particle_properties_map_impl.hpp"
-#endif
-
 #endif

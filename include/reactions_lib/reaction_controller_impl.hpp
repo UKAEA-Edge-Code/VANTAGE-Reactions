@@ -1,9 +1,7 @@
 #ifndef REACTIONS_REACTION_CONTROLLER_IMPL_H
 #define REACTIONS_REACTION_CONTROLLER_IMPL_H
 #include "reaction_controller.hpp"
-#include "vantage_inline.hpp"
 
-VANTAGE_REACTIONS_INLINE
 VANTAGE::Reactions::ReactionController::ReactionController(
     std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
     std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
@@ -39,7 +37,6 @@ VANTAGE::Reactions::ReactionController::ReactionController(
       std::make_shared<HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
 }
 
-VANTAGE_REACTIONS_INLINE
 VANTAGE::Reactions::ReactionController::ReactionController(
     bool auto_clean_tot_rate_buffer,
     const std::map<int, std::string> &properties_map)
@@ -47,7 +44,6 @@ VANTAGE::Reactions::ReactionController::ReactionController(
                          std::vector<std::shared_ptr<TransformationWrapper>>{},
                          auto_clean_tot_rate_buffer, properties_map) {}
 
-VANTAGE_REACTIONS_INLINE
 VANTAGE::Reactions::ReactionController::ReactionController(
     std::shared_ptr<TransformationWrapper> child_transform,
     bool auto_clean_tot_rate_buffer,
@@ -56,7 +52,6 @@ VANTAGE::Reactions::ReactionController::ReactionController(
                          std::vector{child_transform},
                          auto_clean_tot_rate_buffer, properties_map) {}
 
-VANTAGE_REACTIONS_INLINE
 VANTAGE::Reactions::ReactionController::ReactionController(
     std::shared_ptr<TransformationWrapper> parent_transform,
     std::shared_ptr<TransformationWrapper> child_transform,
@@ -66,7 +61,6 @@ VANTAGE::Reactions::ReactionController::ReactionController(
                          std::vector{child_transform},
                          auto_clean_tot_rate_buffer, properties_map) {}
 
-VANTAGE_REACTIONS_INLINE
 void VANTAGE::Reactions::ReactionController::controller_pre_process() {
   for (int r = 0; r < this->reactions.size(); r++) {
     this->reactions[r]->set_max_buffer_size(this->max_particles_per_cell *
@@ -101,14 +95,12 @@ void VANTAGE::Reactions::ReactionController::controller_pre_process() {
   }
 }
 
-VANTAGE_REACTIONS_INLINE
 void VANTAGE::Reactions::ReactionController::add_reaction(
     std::shared_ptr<AbstractReaction> reaction) {
   this->reactions.push_back(reaction);
   this->controller_pre_process();
 }
 
-VANTAGE_REACTIONS_INLINE
 void VANTAGE::Reactions::ReactionController::apply_parent_transforms_impl(
     ParticleSubGroupSharedPtr target, ParticleGroupSharedPtr particle_group) {
 
@@ -130,7 +122,6 @@ void VANTAGE::Reactions::ReactionController::apply_parent_transforms_impl(
   }
 }
 
-VANTAGE_REACTIONS_INLINE
 void VANTAGE::Reactions::ReactionController::apply_impl(
     ParticleSubGroupSharedPtr target, ParticleGroupSharedPtr particle_group,
     double dt, ParticleGroupSharedPtr product_group,

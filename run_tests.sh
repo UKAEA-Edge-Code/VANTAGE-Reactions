@@ -16,7 +16,7 @@ if [ -f "${VANTAGE_PREFIX}/lib/libVANTAGE-Reactions.so" ]; then
   DEPS="${VANTAGE_PREFIX};$(spack location -i neso-particles);$(spack location -i adaptivecpp)"
   rm -rf build-consumer
   cmake -S test/external_consumer -B build-consumer \
-      -DCMAKE_PREFIX_PATH="${DEPS}" >/dev/null
+      -DCMAKE_PREFIX_PATH="${DEPS}" -DCMAKE_BUILD_TYPE=RelWithDebInfo >/dev/null
   cmake --build build-consumer >/dev/null
   ./build-consumer/consumer_smoke
 fi

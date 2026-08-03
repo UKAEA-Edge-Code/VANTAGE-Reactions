@@ -345,8 +345,4 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
 };
 }; // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "reaction_kernels_impl.hpp"
-#endif
-
 #endif

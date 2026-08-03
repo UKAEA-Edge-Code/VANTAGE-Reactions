@@ -662,8 +662,4 @@ uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
 
 } // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "common_transformations_impl.hpp"
-#endif
-
 #endif

@@ -2,11 +2,9 @@
 #define VANTAGE_REACTIONS_PARTICLE_PROPERTIES_MAP_IMPL_H
 
 #include "particle_properties_map.hpp"
-#include "vantage_inline.hpp"
 
 namespace VANTAGE::Reactions {
 
-VANTAGE_REACTIONS_INLINE
 PropertiesMap::PropertiesMap(std::map<int, std::string> custom_map)
     : private_map(custom_map) {
   // replace default_properties.fluid_flow_speed with the last enum in
@@ -19,12 +17,11 @@ PropertiesMap::PropertiesMap(std::map<int, std::string> custom_map)
   }
 }
 
-VANTAGE_REACTIONS_INLINE std::map<int, std::string> get_default_map() {
+std::map<int, std::string> get_default_map() {
   return PropertiesMap().get_map();
 }
 
-VANTAGE_REACTIONS_INLINE bool
-map_subset_check(std::map<int, std::string> custom_map) {
+bool map_subset_check(std::map<int, std::string> custom_map) {
   auto default_map = get_default_map();
   auto default_map_size = default_map.size();
   auto custom_map_size = custom_map.size();

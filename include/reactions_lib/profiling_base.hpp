@@ -47,8 +47,4 @@ struct ProfilingBase {
 };
 } // namespace VANTAGE::Reactions
 
-#ifdef VANTAGE_REACTIONS_HEADER_ONLY
-#include "profiling_base_impl.hpp"
-#endif
-
 #endif

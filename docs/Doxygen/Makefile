@@ -1,5 +1,5 @@
 export DOXYGEN_OUTPUT_DIR:=../build/doxygen
-export DOXYGEN_INPUT_DIR:=../../src
+export DOXYGEN_INPUT_DIR:=../../src ../../include
 
 docs_doxygen:
 	mkdir -p ${DOXYGEN_OUTPUT_DIR}

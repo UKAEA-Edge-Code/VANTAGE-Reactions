@@ -2,16 +2,13 @@
 #define VANTAGE_REACTIONS_COMMON_MARKERS_IMPL_H
 
 #include "common_markers.hpp"
-#include "vantage_inline.hpp"
 
 namespace VANTAGE::Reactions {
 
-VANTAGE_REACTIONS_INLINE
 MinimumNPartInCellMarker::MinimumNPartInCellMarker(INT min_npart)
     : min_npart(min_npart) {}
 
-VANTAGE_REACTIONS_INLINE ParticleSubGroupSharedPtr
-MinimumNPartInCellMarker::make_marker_subgroup_v(
+ParticleSubGroupSharedPtr MinimumNPartInCellMarker::make_marker_subgroup_v(
     ParticleSubGroupSharedPtr particle_group) {
 
   auto min_npart = this->min_npart;
@@ -22,7 +19,7 @@ MinimumNPartInCellMarker::make_marker_subgroup_v(
   return marker_subgroup;
 }
 
-VANTAGE_REACTIONS_INLINE PanickedParticleMarker::PanickedParticleMarker(
+PanickedParticleMarker::PanickedParticleMarker(
     const std::map<int, std::string> &properties_map) {
   NESOWARN(map_subset_check(properties_map),
            "The provided properties_map does not include all the keys from the \
@@ -32,8 +29,7 @@ VANTAGE_REACTIONS_INLINE PanickedParticleMarker::PanickedParticleMarker(
   this->panic_sym = Sym<INT>(properties_map.at(default_properties.panic));
 }
 
-VANTAGE_REACTIONS_INLINE ParticleSubGroupSharedPtr
-PanickedParticleMarker::make_marker_subgroup_v(
+ParticleSubGroupSharedPtr PanickedParticleMarker::make_marker_subgroup_v(
     ParticleSubGroupSharedPtr particle_group) {
 
   auto marker_subgroup = std::make_shared<ParticleSubGroup>(
@@ -42,9 +38,8 @@ PanickedParticleMarker::make_marker_subgroup_v(
   return marker_subgroup;
 }
 
-VANTAGE_REACTIONS_INLINE bool
-panicked(ParticleSubGroupSharedPtr particle_group,
-         const std::map<int, std::string> &properties_map) {
+bool panicked(ParticleSubGroupSharedPtr particle_group,
+              const std::map<int, std::string> &properties_map) {
 
   auto marker = PanickedParticleMarker(properties_map);
 
