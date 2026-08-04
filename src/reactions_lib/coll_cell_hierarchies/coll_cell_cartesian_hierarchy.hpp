@@ -9,14 +9,30 @@
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
+/**
+ * @brief Cartesian collision cell hierarchy, subdividing existing Cartesian
+ * mesh cells.
+ *
+ */
 struct CartesianCollCellH : AbstractCollCellHierarchy {
 
+  /**
+   * @brief Constructor for the Cartesian cell hierarchy
+   *
+   * @param sycl_target Compute device used by this hierarchy. Should coincide
+   * with the device used by particle groups this is used on.
+   * @param mesh CartesianHMesh that is to be subdivided
+   * @param subcell_divisions The number of divisions per mesh cell. The
+   * divisions refer to the individual dimensions, so the total number of
+   * collision cells per mesh cell will be the number of divisions to the power
+   * of the mesh dimension.
+   */
   CartesianCollCellH(SYCLTargetSharedPtr sycl_target,
                      CartesianHMeshSharedPtr mesh,
-                     std::vector<int> &subcell_division_order)
+                     std::vector<int> &subcell_divisions)
       : subdivision(
-            SubdivideCartesianCells(sycl_target, mesh, subcell_division_order)),
-        division_order(subcell_division_order) {
+            SubdivideCartesianCells(sycl_target, mesh, subcell_divisions)),
+        division_order(subcell_divisions) {
 
     this->mesh_ndim = mesh->ndim;
     this->update();
