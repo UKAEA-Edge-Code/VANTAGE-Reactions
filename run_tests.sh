@@ -13,10 +13,9 @@ OMP_NUM_THREADS=1 mpirun -n 1 --allow-run-as-root unit_tests
 # without any source-tree access. Skipped in header-only mode (no .so to link).
 VANTAGE_PREFIX=$(spack location -i vantagereactions)
 if [ -f "${VANTAGE_PREFIX}/lib/libVANTAGE-Reactions.so" ]; then
-  DEPS="${VANTAGE_PREFIX};$(spack location -i neso-particles);$(spack location -i adaptivecpp)"
   rm -rf build-consumer
-  cmake -S test/external_consumer -B build-consumer \
-      -DCMAKE_PREFIX_PATH="${DEPS}" -DCMAKE_BUILD_TYPE=RelWithDebInfo >/dev/null
+  spack build-env --dirty vantagereactions cmake -S test/external_consumer -B build-consumer \
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo >/dev/null
   cmake --build build-consumer >/dev/null
   ./build-consumer/consumer_smoke
 fi

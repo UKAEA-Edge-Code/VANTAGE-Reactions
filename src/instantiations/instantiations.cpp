@@ -6,6 +6,7 @@
 // not a closed enumeration of every Data x Kernels x DataCalc combination.
 
 #include "../../include/reactions/reactions.hpp"
+#include "reactions_lib/reaction_kernel_pre_reqs.hpp"
 
 namespace VANTAGE::Reactions {
 

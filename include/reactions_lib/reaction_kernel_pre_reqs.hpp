@@ -28,8 +28,7 @@ struct Species {
    * @param charge REAL value of the charge of the species (in atomic units).
    * @param id INT value that corresponds to the ID of the species.
    */
-  Species(std::string name, REAL mass, REAL charge, INT id)
-      : name(name), mass(mass), charge(charge), id(id) {};
+  Species(std::string name, REAL mass, REAL charge, INT id);
 
   /**
    * \overload
@@ -37,7 +36,7 @@ struct Species {
    *
    * @param name String defining the name of the species.
    */
-  Species(std::string name) : name(name) {};
+  Species(std::string name);
 
   /**
    * \overload
@@ -46,7 +45,7 @@ struct Species {
    * @param name String defining the name of the species.
    * @param mass REAL value of the mass of the species (in atomic units).
    */
-  Species(std::string name, REAL mass) : name(name), mass(mass) {};
+  Species(std::string name, REAL mass);
 
   /**
    * \overload
@@ -56,51 +55,34 @@ struct Species {
    * @param mass REAL value of the mass of the species (in atomic units).
    * @param charge REAL value of the charge of the species (in atomic units).
    */
-  Species(std::string name, REAL mass, REAL charge)
-      : name(name), mass(mass), charge(charge) {};
+  Species(std::string name, REAL mass, REAL charge);
 
 public:
   /**
    * @brief Getters and setters for name, mass, charge and id of the species.
    */
-  std::string get_name() const {
-    NESOASSERT(this->name.has_value(),
-               "The member variable: Species.name has not been assigned");
-    return (this->name.value());
-  }
+  std::string get_name() const;
 
-  INT get_id() const {
-    NESOASSERT(this->id.has_value(),
-               "The member variable: Species.id has not been assigned");
-    return (this->id.value());
-  }
+  INT get_id() const;
 
-  REAL get_mass() const {
-    NESOASSERT(this->mass.has_value(),
-               "The member variable: Species.mass has not been assigned");
-    return (this->mass.value());
-  }
+  REAL get_mass() const;
 
-  REAL get_charge() const {
-    NESOASSERT(this->charge.has_value(),
-               "The member variable: Species.charge has not been assigned");
-    return (this->charge.value());
-  }
+  REAL get_charge() const;
 
-  void set_name(const std::string &name) { this->name = name; }
+  void set_name(const std::string &name);
 
-  void set_id(const INT &id) { this->id = id; }
+  void set_id(const INT &id);
 
-  void set_mass(const REAL &mass) { this->mass = mass; }
+  void set_mass(const REAL &mass);
 
-  void set_charge(const REAL &charge) { this->charge = charge; }
+  void set_charge(const REAL &charge);
 
   /**
    * @brief Return true if this species has an id associated with it
    *
    * @return True if this species has an id associated with it
    */
-  bool has_id() const { return this->id.has_value(); }
+  bool has_id() const;
 
 private:
   std::optional<std::string> name;
@@ -110,15 +92,7 @@ private:
 };
 
 // TODO: Make this more robust
-inline bool operator==(const Species &lhs, const Species &rhs) {
-
-  if (lhs.has_id() && rhs.has_id()) {
-
-    return lhs.get_name() == rhs.get_name() && lhs.get_id() == rhs.get_id();
-  }
-
-  return lhs.get_name() == rhs.get_name() && lhs.has_id() == rhs.has_id();
-}
+bool operator==(const Species &lhs, const Species &rhs);
 
 /**
  * @brief Generate a species property name from the species and a property name
@@ -128,10 +102,8 @@ inline bool operator==(const Species &lhs, const Species &rhs) {
  * @param property Property name to use
  * @return Species-specific property name
  */
-inline std::string species_property(const Species &species,
-                                    const std::string &property) {
-  return species.get_name() + "_" + property;
-};
+std::string species_property(const Species &species,
+                             const std::string &property);
 
 /**
  * @brief Struct for defining the Properties that a ReactionData or

@@ -119,10 +119,7 @@ inline void append(REAL *ptr, size_t &offset, const Container &data) {
  * @param n Number of elements to copy. MUST be less than or equal to the size
  * of data.
  */
-inline void append(REAL *ptr, size_t &offset, const REAL *data, size_t n) {
-  std::copy(data, data + n, ptr + offset);
-  offset += n;
-}
+void append(REAL *ptr, size_t &offset, const REAL *data, size_t n);
 } // namespace grid_utils
 
 /**

@@ -17,6 +17,18 @@ PropertiesMap::PropertiesMap(std::map<int, std::string> custom_map)
   }
 }
 
+std::map<int, std::string> PropertiesMap::get_map() {
+  return this->private_map;
+}
+
+std::string &PropertiesMap::at(const int &key) {
+  return this->private_map.at(key);
+};
+
+std::string &PropertiesMap::operator[](const int &key) {
+  return this->private_map[key];
+};
+
 std::map<int, std::string> get_default_map() {
   return PropertiesMap().get_map();
 }

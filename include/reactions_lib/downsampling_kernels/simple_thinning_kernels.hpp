@@ -95,26 +95,7 @@ struct SimpleThinningKernels
   SimpleThinningKernels(
       REAL thinning_ratio,
       std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map = get_default_map())
-      : DownsamplingKernelBase<DownsamplingMode::thinning,
-                               DownsamplingReductionKernelOnDeviceBase<0, 0, 0>,
-                               SimpleThinningOnDevice>(
-            Properties<INT>(required_simple_int_props),
-            Properties<REAL>(required_simple_real_props), properties_map) {
-
-    this->set_rng_kernel(rng_kernel);
-    this->downsampling_on_device_obj = SimpleThinningOnDevice(thinning_ratio);
-    this->reduction_on_device_obj =
-        DownsamplingReductionKernelOnDeviceBase<0, 0, 0>();
-
-    this->downsampling_on_device_obj->weight_ind =
-        this->required_real_props.find_index(
-            this->properties_map.at(props.weight));
-
-    this->downsampling_on_device_obj->panic_ind =
-        this->required_int_props.find_index(
-            this->properties_map.at(props.panic));
-  }
+      std::map<int, std::string> properties_map = get_default_map());
 };
 
 /**
@@ -129,16 +110,9 @@ struct SimpleThinningKernels
  * @param properties_map (Optional) A std::map<int, std::string> object to be
  * used when remapping property names
  */
-inline std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
+std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
     ParticleGroupSharedPtr template_group, REAL thinning_ratio,
     std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel,
-    const std::map<int, std::string> &properties_map = get_default_map()) {
-
-  auto r = std::make_shared<DownsamplingStrategy<SimpleThinningKernels>>(
-      template_group,
-      SimpleThinningKernels(thinning_ratio, rng_kernel, properties_map), 1,
-      properties_map);
-  return std::dynamic_pointer_cast<TransformationStrategy>(r);
-};
+    const std::map<int, std::string> &properties_map = get_default_map());
 }; // namespace VANTAGE::Reactions
 #endif

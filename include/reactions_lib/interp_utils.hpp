@@ -139,16 +139,7 @@ inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
  * @return std::vector<INT> That contains the points denoting the vertices of
  * the hypercube.
  */
-inline std::vector<size_t> construct_initial_hypercube(const size_t &ndim) {
-  size_t total_num = 1 << ndim;
-  std::vector<size_t> points(total_num);
-
-  for (size_t i = 0; i < total_num; i++) {
-    points[i] = (i ^ (i >> 1));
-  }
-
-  return points;
-}
+std::vector<size_t> construct_initial_hypercube(const size_t &ndim);
 
 /**
  * @brief Function to bin REAL-valued (between 0.0 and 1.0) elements of an

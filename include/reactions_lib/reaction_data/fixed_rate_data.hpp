@@ -60,14 +60,12 @@ struct FixedRateData : public ReactionDataBase<FixedRateDataOnDevice> {
    *
    * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedRateData(const REAL &rate) {
-    this->on_device_obj = FixedRateDataOnDevice(rate);
-  };
+  FixedRateData(const REAL &rate);
 
   /**
    * @brief No-op since there are no required properties to index
    */
-  void index_on_device_object() {};
+  void index_on_device_object();
 };
 }; // namespace VANTAGE::Reactions
 #endif

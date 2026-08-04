@@ -78,23 +78,12 @@ struct FixedCoefficientData
    */
   FixedCoefficientData(
       REAL rate_coefficient,
-      std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<FixedCoefficientDataOnDevice>(
-            Properties<REAL>(required_simple_real_props), properties_map) {
-
-    this->on_device_obj = FixedCoefficientDataOnDevice(rate_coefficient);
-
-    this->index_on_device_object();
-  }
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * @brief Index the particle weight on the on-device object
    */
-  void index_on_device_object() {
-
-    this->on_device_obj->weight_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.weight));
-  };
+  void index_on_device_object();
 };
 }; // namespace VANTAGE::Reactions
 #endif

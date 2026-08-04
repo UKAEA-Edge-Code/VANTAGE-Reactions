@@ -21,6 +21,7 @@
 // unresolved symbol at the point of ODR-use; the extern-template decl keeps
 // that ODR-use from emitting the symbol here.
 
+#include "../unit/include/test_extern_templates.hpp"
 #include <reactions/reactions.hpp>
 
 #include <iostream>
@@ -47,7 +48,7 @@ int main() {
 
   using R3 =
       LinearReactionBase<1, FixedRateData, LinearScatteringKernels<2, true>,
-                         ScatteringDataCalculator>;
+                         ScatteringDataCalculator2D>;
   R3 *p3 = nullptr;
   (void)p3;
 
@@ -89,7 +90,7 @@ int main() {
 
   using R11 =
       LinearReactionBase<1, FixedRateData, LinearScatteringKernels<2, false>,
-                         ScatteringDataCalculator>;
+                         ScatteringDataCalculator2D>;
   R11 *p11 = nullptr;
   (void)p11;
 
@@ -196,7 +197,7 @@ int main() {
   D2 *d2 = nullptr;
   (void)d2;
 
-  using D3 = DataCalculator<VelocityReflectionPipeline>;
+  using D3 = DataCalculator<VelocityReflectionPipeline3D>;
   D3 *d3 = nullptr;
   (void)d3;
 
@@ -292,7 +293,7 @@ int main() {
   H0 *h0 = nullptr;
   (void)h0;
 
-  using H1 = CellwiseReactionDataAccumulator<KinEnergyData>;
+  using H1 = CellwiseReactionDataAccumulator<KinEnergyData2D>;
   H1 *h1 = nullptr;
   (void)h1;
 
