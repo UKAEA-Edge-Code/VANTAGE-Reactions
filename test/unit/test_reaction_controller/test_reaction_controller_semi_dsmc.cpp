@@ -10,11 +10,6 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
-// Was in reaction_controller_template_instantiations.hpp; kept here because
-// semi_dsmc_test spells its reaction type with it.
-using SquaredWeightData =
-    decltype(std::declval<FixedCoefficientData>() * extract<1>("WEIGHT"));
-
 TEST(ReactionController, semi_dsmc_test) {
   const int N_total = 1600;
 

@@ -12,6 +12,9 @@ namespace VANTAGE::Reactions {
 using VelocityExtractor2D = decltype(extract<2>("VELOCITY"));
 using WeightExtractor = decltype(extract<1>("WEIGHT"));
 
+using SquaredWeightData =
+    decltype(std::declval<FixedCoefficientData>() * extract<1>("WEIGHT"));
+
 using VelocityReflectionPipeline2D =
     decltype(pipe(VelocityExtractor2D(NESO::Particles::Sym<REAL>("VELOCITY")),
                   SpecularReflectionData<2>()));
