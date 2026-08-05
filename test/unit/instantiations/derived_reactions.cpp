@@ -15,12 +15,5 @@ namespace VANTAGE::Reactions {
 template class ElectronImpactIonisation<FixedRateData, FixedRateData, 2>;
 template class ElectronImpactIonisation<FixedRateData, FixedRateData, 3>;
 template class ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData, 2>;
-template class Recombination<
-    FixedRateData, DataCalculator<FixedRateData, FixedRateData, FixedRateData>,
-    2>;
-template class Recombination<
-    FixedRateData,
-    DataCalculator<FixedRateData, FixedRateData, FixedRateData, FixedRateData>,
-    3>;
 
 } // namespace VANTAGE::Reactions

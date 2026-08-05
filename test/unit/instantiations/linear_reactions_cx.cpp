@@ -16,14 +16,5 @@ template class LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
                                   DataCalculator<FixedRateData, FixedRateData>>;
 template class LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
                                   DataCalculator<FixedRateData>>;
-template class LinearReactionBase<
-    1, FixedRateData, RecombReactionKernels<2, 2>,
-    DataCalculator<FixedRateData, FixedRateData, FixedRateData>>;
-template class LinearReactionBase<
-    1, FixedRateData, CXReactionKernels<3>,
-    DataCalculator<FixedRateData, FixedRateData, FixedRateData>>;
-// Default 4th arg (DataCalc = DataCalculator<>)
-template class LinearReactionBase<0, FixedRateData,
-                                  GeneralAbsorptionKernels<2>>;
 
 } // namespace VANTAGE::Reactions

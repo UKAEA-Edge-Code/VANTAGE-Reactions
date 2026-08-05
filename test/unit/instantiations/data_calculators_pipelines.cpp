@@ -12,10 +12,11 @@ namespace VANTAGE::Reactions {
 // ---------------------------------------------------------------------------
 // DataCalculator specialisations
 // ---------------------------------------------------------------------------
-template class DataCalculator<FixedRateData>;
-template class DataCalculator<FixedRateData, FixedRateData>;
-template class DataCalculator<FixedRateData, FixedRateData, FixedRateData>;
-template class DataCalculator<FixedRateData, FixedRateData, FixedRateData,
-                              FixedRateData>;
+template class DataCalculator<VelocityReflectionPipeline2D>;
+template class DataCalculator<FilteredMaxwellianSampler<2>>;
+template class DataCalculator<FilteredMaxwellianSampler<3>>;
+template class DataCalculator<SphericalReflectionPipeline>;
+template class DataCalculator<CartesianReflectionPipeline>;
+template class DataCalculator<VelocityReflectionPipeline3D>;
 
 } // namespace VANTAGE::Reactions

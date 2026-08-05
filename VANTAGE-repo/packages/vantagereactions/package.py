@@ -5,7 +5,7 @@ import shutil
 # import Package API
 from spack.package import *
 from spack_repo.builtin.build_systems.cmake import CMakePackage
-
+from spack_repo.builtin.build_systems.cmake import CMakePackage, generator
 
 class Vantagereactions(CMakePackage):
     """Vantagereactions"""
@@ -14,6 +14,8 @@ class Vantagereactions(CMakePackage):
 
     version("main", branch="main")
     version("working", branch="reactions-base", preferred=True)
+
+    generator("ninja", "make", default="make")
 
     variant("enable_tests", default=False, description="Enable tests")    
 

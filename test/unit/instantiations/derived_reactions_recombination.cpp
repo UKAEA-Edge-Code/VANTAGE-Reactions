@@ -10,12 +10,14 @@
 namespace VANTAGE::Reactions {
 
 // ---------------------------------------------------------------------------
-// DataCalculator specialisations
+// Derived reactions
 // ---------------------------------------------------------------------------
-template class DataCalculator<FixedRateData>;
-template class DataCalculator<FixedRateData, FixedRateData>;
-template class DataCalculator<FixedRateData, FixedRateData, FixedRateData>;
-template class DataCalculator<FixedRateData, FixedRateData, FixedRateData,
-                              FixedRateData>;
+template class Recombination<
+    FixedRateData, DataCalculator<FixedRateData, FixedRateData, FixedRateData>,
+    2>;
+template class Recombination<
+    FixedRateData,
+    DataCalculator<FixedRateData, FixedRateData, FixedRateData, FixedRateData>,
+    3>;
 
 } // namespace VANTAGE::Reactions

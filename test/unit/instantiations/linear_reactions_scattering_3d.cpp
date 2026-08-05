@@ -13,10 +13,13 @@ namespace VANTAGE::Reactions {
 // Linear reactions: LinearScatteringKernels + ScatteringDataCalculator aliases
 // ---------------------------------------------------------------------------
 template class LinearReactionBase<1, FixedRateData,
-                                  LinearScatteringKernels<2, true>,
-                                  ScatteringDataCalculator2D>;
+                                  LinearScatteringKernels<3, true>,
+                                  ScatteringDataCalculator3D>;
 template class LinearReactionBase<1, FixedRateData,
-                                  LinearScatteringKernels<2, false>,
-                                  ScatteringDataCalculator2D>;
+                                  LinearScatteringKernels<3, true>,
+                                  ScatteringDataCalculatorSpherical>;
+template class LinearReactionBase<1, FixedRateData,
+                                  LinearScatteringKernels<3, true>,
+                                  ScatteringDataCalculatorCartesian>;
 
 } // namespace VANTAGE::Reactions
