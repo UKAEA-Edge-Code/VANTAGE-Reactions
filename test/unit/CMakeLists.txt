@@ -18,9 +18,11 @@ set(REACTIONS_TEST_FILTER "" CACHE STRING
     "Build only these test_*.cpp stems (empty = all + the unit_tests monolith)")
 
 
+file(GLOB instantiation_sources
+    "${CMAKE_CURRENT_SOURCE_DIR}/instantiations/*.cpp")
 set(common_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/instantiations/instantiations.cpp)
+    ${instantiation_sources})
 add_library(unit_test_common OBJECT ${common_sources})
 target_link_libraries(unit_test_common PRIVATE
     VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
