@@ -2,9 +2,8 @@
 Runtime instantiantion details
 ******************************
 
-All shipped instantiations are compiled into a **single translation unit**
-(``src/instantiations/instantiations.cpp``). The non-template definitions live in a second, 
-lightweight TU (``src/compiled/definitions.cpp``) — see the guide for
+All shipped instantiations are compiled into translation units listed  in the 
+``src/instantiations`` directory. The non-template definitions live in a second directory (``src/compiled``) — see the guide for
 the header/impl split behind it: :ref:`header_impl_split`.
 
 Baseline, not a closed surface
@@ -23,7 +22,9 @@ Instantiating unsupported combinations
 ======================================
 
 The library only ships with a few combinations but every other combination is still
-**open**, if they're needed then: include the public headers, and rely on implicit
+**open**. 
+
+If they're needed then: include the public headers, and rely on implicit
 instantiation in the consumer TU.
 
 Alternatively, add your own ``template class …``
@@ -32,7 +33,7 @@ an ``extern template class …`` declaration in the consumer's own header
 (the library does the same thing in ``extern_templates.hpp``). 
 
 An example of this is in the ``test/unit`` directory, where there's and ``test_extern_templates.hpp`` in the ``test/unit/include`` directory 
-and a ``test_instantiations.cpp`` in the ``test/unit/instantiations`` directory. These include the instantiations needed for the unit tests.
+and a ``test/unit/instantiations`` directory containing ``.cpp`` files with instantiations that are referenced in ``test_extern_templates.hpp``. These include the instantiations needed for the unit tests.
 
 Adding to this framework is really only feasible if at least a few of the template instantiations of the templated objects are known. 
 For example, this would not be fully applicable if using template parameter packs, where only a subset of
@@ -51,4 +52,11 @@ above. Each ODR-use forces the consumer TU to respect the matching
 definition, so a missing instantiation surfaces as an unresolved symbol
 at link time. It is intended to be run as a post-install smoke test to confirm the runtime library is genuinely
 linkable without the source tree.. 
-To test it, install VANTAGE-Reactions via :code:`spack install && spack load vantagereactions`, then from within :code:`test/external_consumer` configure and build it via :code:`cmake . && make`. Run it with :code:`./consumer_smoke`.
+To test it, install and load VANTAGE-Reactions via :code:`spack install && spack load vantagereactions`, 
+then from the repo directory configure and build it via 
+
+::
+
+  cmake -S test/external_consumer -B build-consumer -DCMAKE_BUILD_TYPE=RelWithDebInfo
+  cmake --build build-consumer
+  ./build-consumer/consumer_smoke

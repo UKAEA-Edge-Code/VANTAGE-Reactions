@@ -59,8 +59,8 @@ When adding new non-template code to the library:
 
 #. put the declaration in ``X.hpp`` and the definition in ``X_impl.hpp``
    (create the pair if adding a new component)
-#. add the ``#include`` of the new ``X_impl.hpp`` to
-   ``src/compiled/definitions.cpp``.
+#. add the ``#include`` of the new ``X_impl.hpp`` into either a new header or an appropriate existing header in the 
+   ``src/compiled`` directory.
 
 Template code still lives entirely in headers, as before — this split only
 concerns non-template definitions. 

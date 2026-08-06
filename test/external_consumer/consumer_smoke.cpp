@@ -5,21 +5,21 @@
 // library. It proves: (a) find_package(VANTAGE-Reactions) succeeds against the
 // install tree, (b) the installed CMake config resolves the imported target and
 // its transitive deps (MPI, NESO-Particles, SYCL), (c) the consumer TU compiles
-// against the extern-template declarations in extern_templates.hpp without
-// demanding implicit instantiation, and (d) the link resolves against
-// libVANTAGE-Reactions.so. It is intentionally a link/build smoke test, not a
-// physics test: constructing a reaction would require a SYCL device and MPI
-// setup, which is out of scope for proving the runtime library is consumable.
+// against the extern-template declarations in
+// include/reactions_lib/extern_templates.hpp and
+// test/unit/include/test_extern_templates.hpp without demanding implicit
+// instantiation, and (d) the link resolves against libVANTAGE-Reactions.so.
 //
 // Every instantiation the library ships (see
-// src/instantiations/instantiations.cpp and the matching
-// `extern template` declarations in include/reactions_lib/extern_templates.hpp)
-// is named below. ODR-using the type (even via a pointer) requires the class
-// template to be complete, which forces the consumer TU to respect the
-// extern-template declaration and let the library provide the definition. If
-// the library did not ship a given instantiation the link would fail with an
-// unresolved symbol at the point of ODR-use; the extern-template decl keeps
-// that ODR-use from emitting the symbol here.
+// src/instantiations and test/unit/instantiations and the matching
+// `extern template` declarations in include/reactions_lib/extern_templates.hpp
+// and test/unit/include/test_extern_templates.hpp) is named below. ODR-using
+// the type (even via a pointer) requires the class template to be complete,
+// which forces the consumer TU to respect the extern-template declaration and
+// let the library provide the definition. If the library did not ship a given
+// instantiation the link would fail with an unresolved symbol at the point of
+// ODR-use; the extern-template decl keeps that ODR-use from emitting the symbol
+// here.
 
 #include "../unit/include/test_extern_templates.hpp"
 #include <reactions/reactions.hpp>
@@ -197,7 +197,7 @@ int main() {
   D2 *d2 = nullptr;
   (void)d2;
 
-  using D3 = DataCalculator<VelocityReflectionPipeline3D>;
+  using D3 = DataCalculator<VelocityReflectionPipeline2D>;
   D3 *d3 = nullptr;
   (void)d3;
 

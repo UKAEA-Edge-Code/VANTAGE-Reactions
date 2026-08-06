@@ -6,14 +6,14 @@
 // re-instantiate what the library already provides.
 //
 // The matching explicit instantiations live in
-// src/instantiations/instantiations.cpp.
+// the src/instantiations directory.
 
 #include <utility>
 
 namespace VANTAGE::Reactions {
 
 // The declarations below are grouped to mirror
-// src/instantiations/instantiations.cpp
+// the ones in src/instantiations
 
 // ---------------------------------------------------------------------------
 // Kernel classes
