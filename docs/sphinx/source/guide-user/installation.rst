@@ -170,18 +170,17 @@ Similarly, to enable testing of failure states on GPU:
 Compile and run an individual unit test
 =======================================
 
-By default the unit tests are built as both a single ``unit_tests`` executable that
-contains every ``test_*.cpp`` under ``test/unit/`` and one executable
-per ``test_*.cpp``, with both being linked against the shared object library.
+By default the unit tests are built as a single ``unit_tests`` executable that
+contains every ``test_*.cpp`` under ``test/unit/``.
 
 Compile individual tests by configuring the source tree with CMake directly 
-(useful for fast iteration without re-running a Spack install that would compile all of the tests).
+(useful for fast iteration without re-running a Spack install that would compile all of the tests) or just using ``make`` inside the spack build directory.
 
 Via a direct CMake configure of the source tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are working in a clone of the repository, you can configure the source tree with 
-CMake directly and pass the same options as CMake variables:
+CMake directly and pass the same options as CMake variables (assumes that all of the dependencies for ``vantagereactions`` are installed):
 
 ::
 
@@ -190,26 +189,22 @@ CMake directly and pass the same options as CMake variables:
         -DREACTIONS_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
     cmake --build build -j4
 
-With no further options this produces a monolithic ``unit_tests`` executable combining all unit tests and additionally
-one executable per ``test_*.cpp``, named after the source stem (e.g. ``test_reaction_controller``, ``test_species``).
-Run the one you want with MPI as before:
+With no further options this produces a monolithic ``unit_tests`` executable combining all unit tests 
+Run using:
 ::
 
-    OMP_NUM_THREADS=1 mpirun -n 1 build/test/unit/test_reaction_controller
+    OMP_NUM_THREADS=1 spack build-env vantagereactions -- mpirun -n 1 build/test/unit/unit_tests
 
-To build only a single test, pass its source stem via
-``REACTIONS_TEST_FILTER``:
+To build only a single test, pass its source stem to ``make`` via:
+
 ::
 
     spack env activate -p -d environments/spack_default
-    spack build-env vantagereactions -- cmake -S . -B build \
-        -DREACTIONS_ENABLE_TESTS=ON \
-        -DREACTIONS_TEST_FILTER=test_reaction_controller \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo
-    cmake --build build -j4
-    OMP_NUM_THREADS=1 mpirun -n 1 build/test/unit/test_reaction_controller
+    spack build-env vantagereactions -- cmake -S . -B build_test \
+        -DREACTIONS_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    cmake --build build_test -j4 --target test_cross_sections
+    OMP_NUM_THREADS=1 spack build-env vantagereactions -- mpirun -n 1 build_test/test/unit/test_cross_sections
 
-``REACTIONS_TEST_FILTER`` accepts a single stem or a semicolon-separated list,
-e.g. ``-DREACTIONS_TEST_FILTER="test_properties;test_species"``. An empty
-value (the default) builds every ``test_*.cpp`` and the monolithic ``unit_tests`` as well. 
-A stem that does not match any ``test_*.cpp`` is a hard configure error, so typos are caught early.
+it's possible to pass a single stem or a space-separated list,
+e.g. ``cmake --build build_test -j4 --target test_cross_sections test_species``.
+Running ``cmake --build build_test -j4 --target tests`` builds all of the individual executables.
