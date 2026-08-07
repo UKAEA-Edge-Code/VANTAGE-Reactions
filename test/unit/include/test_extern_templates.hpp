@@ -65,9 +65,6 @@ extern template class LinearReactionBase<
 extern template class LinearReactionBase<1, FixedRateData,
                                          LinearScatteringKernels<2, true>,
                                          ScatteringDataCalculator2D>;
-extern template class LinearReactionBase<
-    1, FixedRateData, CXReactionKernels<3>,
-    DataCalculator<FixedRateData, FixedRateData, FixedRateData>>;
 extern template class LinearReactionBase<1, FixedRateData,
                                          LinearScatteringKernels<3, true>,
                                          ScatteringDataCalculator3D>;
@@ -96,7 +93,6 @@ extern template class LinearReactionBase<1, FixedRateData,
 // Derived reactions
 // ---------------------------------------------------------------------------
 extern template class ElectronImpactIonisation<FixedRateData, FixedRateData, 2>;
-extern template class ElectronImpactIonisation<FixedRateData, FixedRateData, 3>;
 extern template class ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData,
                                                2>;
 extern template class Recombination<
@@ -121,7 +117,6 @@ extern template class DataCalculator<FixedRateData, FixedRateData,
                                      FixedRateData, FixedRateData>;
 extern template class DataCalculator<SphericalReflectionPipeline>;
 extern template class DataCalculator<CartesianReflectionPipeline>;
-extern template class DataCalculator<VelocityReflectionPipeline3D>;
 
 // ---------------------------------------------------------------------------
 // Reaction data types
@@ -130,22 +125,6 @@ extern template class AMJUELFitCrossSection<2, 0, 0>;
 extern template class AMJUELFitCrossSection<2, 2, 0>;
 extern template class AMJUELFitCrossSection<2, 2, 2>;
 extern template class AMJUELFitCrossSection<3, 3, 3>;
-extern template class FilteredMaxwellianSampler<2,
-                                                AMJUELFitCrossSection<2, 0, 0>>;
-extern template class FilteredMaxwellianSampler<2,
-                                                AMJUELFitCrossSection<2, 2, 0>>;
-extern template class FilteredMaxwellianSampler<2,
-                                                AMJUELFitCrossSection<2, 2, 2>>;
-extern template class FilteredMaxwellianSampler<2,
-                                                AMJUELFitCrossSection<3, 3, 3>>;
-extern template class FilteredMaxwellianSampler<3,
-                                                AMJUELFitCrossSection<2, 0, 0>>;
-extern template class FilteredMaxwellianSampler<3,
-                                                AMJUELFitCrossSection<2, 2, 0>>;
-extern template class FilteredMaxwellianSampler<3,
-                                                AMJUELFitCrossSection<2, 2, 2>>;
-extern template class FilteredMaxwellianSampler<3,
-                                                AMJUELFitCrossSection<3, 3, 3>>;
 extern template class CellwiseReactionDataAccumulator<KinEnergyData2D>;
 extern template class AMJUEL1DData<3>;
 extern template class AMJUEL1DData<9>;
@@ -156,16 +135,11 @@ extern template class ArrayLookupData<1, false>;
 extern template class ArrayLookupData<1, true>;
 extern template class ExtractorData<1>;
 extern template class ExtractorData<2>;
-extern template class ExtractorData<3>;
 
 // ---------------------------------------------------------------------------
 // Interpolation / grid family (int-parametrized only)
 // ---------------------------------------------------------------------------
-extern template class CartesianGridData<1>;
-extern template class CartesianGridData<2>;
 extern template class CartesianGridData<3>;
-extern template class CartesianGridData<4>;
-extern template class CartesianGridData<5>;
 extern template class TrimEvalData<5>;
 extern template class TrimEvalData<7>;
 

@@ -16,14 +16,6 @@ template class AMJUELFitCrossSection<2, 0, 0>;
 template class AMJUELFitCrossSection<2, 2, 0>;
 template class AMJUELFitCrossSection<2, 2, 2>;
 template class AMJUELFitCrossSection<3, 3, 3>;
-template class FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 0, 0>>;
-template class FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 2, 0>>;
-template class FilteredMaxwellianSampler<2, AMJUELFitCrossSection<2, 2, 2>>;
-template class FilteredMaxwellianSampler<2, AMJUELFitCrossSection<3, 3, 3>>;
-template class FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 0, 0>>;
-template class FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 2, 0>>;
-template class FilteredMaxwellianSampler<3, AMJUELFitCrossSection<2, 2, 2>>;
-template class FilteredMaxwellianSampler<3, AMJUELFitCrossSection<3, 3, 3>>;
 template class CellwiseReactionDataAccumulator<KinEnergyData2D>;
 template class AMJUEL1DData<3>;
 template class AMJUEL1DData<9>;
@@ -34,6 +26,5 @@ template class ArrayLookupData<1, false>;
 template class ArrayLookupData<1, true>;
 template class ExtractorData<1>;
 template class ExtractorData<2>;
-template class ExtractorData<3>;
 
 } // namespace VANTAGE::Reactions

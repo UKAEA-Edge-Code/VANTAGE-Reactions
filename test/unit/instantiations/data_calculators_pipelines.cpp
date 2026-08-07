@@ -17,6 +17,5 @@ template class DataCalculator<FilteredMaxwellianSampler<2>>;
 template class DataCalculator<FilteredMaxwellianSampler<3>>;
 template class DataCalculator<SphericalReflectionPipeline>;
 template class DataCalculator<CartesianReflectionPipeline>;
-template class DataCalculator<VelocityReflectionPipeline3D>;
 
 } // namespace VANTAGE::Reactions

@@ -14,9 +14,6 @@ namespace VANTAGE::Reactions {
 // ---------------------------------------------------------------------------
 template class LinearReactionBase<1, FixedRateData,
                                   LinearScatteringKernels<3, true>,
-                                  ScatteringDataCalculator3D>;
-template class LinearReactionBase<1, FixedRateData,
-                                  LinearScatteringKernels<3, true>,
                                   ScatteringDataCalculatorSpherical>;
 template class LinearReactionBase<1, FixedRateData,
                                   LinearScatteringKernels<3, true>,

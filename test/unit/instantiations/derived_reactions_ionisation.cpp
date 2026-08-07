@@ -13,7 +13,6 @@ namespace VANTAGE::Reactions {
 // Derived reactions
 // ---------------------------------------------------------------------------
 template class ElectronImpactIonisation<FixedRateData, FixedRateData, 2>;
-template class ElectronImpactIonisation<FixedRateData, FixedRateData, 3>;
 template class ElectronImpactIonisation<AMJUEL1DData<9>, FixedRateData, 2>;
 
 } // namespace VANTAGE::Reactions

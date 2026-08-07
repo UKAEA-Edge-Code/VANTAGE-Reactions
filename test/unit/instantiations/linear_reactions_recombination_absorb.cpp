@@ -10,14 +10,13 @@
 namespace VANTAGE::Reactions {
 
 // ---------------------------------------------------------------------------
-// Interpolation / grid family (int-parametrized only)
+// Linear reactions: CX / Ionise / Recomb / GeneralAbsorption kernels
 // ---------------------------------------------------------------------------
-template class CartesianGridData<1>;
-template class CartesianGridData<2>;
-template class CartesianGridData<3>;
-template class CartesianGridData<4>;
-template class CartesianGridData<5>;
-template class TrimEvalData<5>;
-template class TrimEvalData<7>;
+template class LinearReactionBase<
+    1, FixedRateData, RecombReactionKernels<2, 2>,
+    DataCalculator<FixedRateData, FixedRateData, FixedRateData>>;
+// Default 4th arg (DataCalc = DataCalculator<>)
+template class LinearReactionBase<0, FixedRateData,
+                                  GeneralAbsorptionKernels<2>>;
 
 } // namespace VANTAGE::Reactions
