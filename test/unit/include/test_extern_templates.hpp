@@ -139,7 +139,11 @@ extern template class ExtractorData<2>;
 // ---------------------------------------------------------------------------
 // Interpolation / grid family (int-parametrized only)
 // ---------------------------------------------------------------------------
+extern template class CartesianGridData<1>;
+extern template class CartesianGridData<2>;
 extern template class CartesianGridData<3>;
+extern template class CartesianGridData<4>;
+extern template class CartesianGridData<5>;
 extern template class TrimEvalData<5>;
 extern template class TrimEvalData<7>;
 

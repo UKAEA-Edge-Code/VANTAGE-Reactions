@@ -12,7 +12,11 @@ namespace VANTAGE::Reactions {
 // ---------------------------------------------------------------------------
 // Interpolation / grid family (int-parametrized only)
 // ---------------------------------------------------------------------------
+template class CartesianGridData<1>;
+template class CartesianGridData<2>;
 template class CartesianGridData<3>;
+template class CartesianGridData<4>;
+template class CartesianGridData<5>;
 template class TrimEvalData<5>;
 template class TrimEvalData<7>;
 

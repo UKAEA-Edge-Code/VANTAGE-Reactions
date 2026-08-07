@@ -207,4 +207,3 @@ To build only a single test, pass its source stem to ``make`` via:
 
 it's possible to pass a single stem or a space-separated list,
 e.g. ``cmake --build build_test -j4 --target test_cross_sections test_species``.
-Running ``cmake --build build_test -j4 --target tests`` builds all of the individual executables.
