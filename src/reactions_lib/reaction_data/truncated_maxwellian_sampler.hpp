@@ -11,7 +11,7 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 /**
  * @brief On device: Reaction data class for calculating velocity samples from a
- * truncated Maxwellian distribution given a fluid temperature, flow speed and density.
+ * truncated Maxwellian distribution given a fluid temperature and flow speed.
  * The truncated distribution is generated using a rejection sampling method outlined 
  * in https://doi.org/10.1088/0031-8949/90/1/015204.
  *
@@ -103,13 +103,7 @@ struct TruncatedMaxwellianOnDevice
       }
 
       REAL t = candidate;
-      if (t <= REAL(0.0)) {
-        t = REAL(1.0e-12);
-      }
-      if (t >= REAL(1.0)) {
-        t = REAL(1.0) - REAL(1.0e-12);
-      }
-
+      
       if (compare <= rejection_function(d, t)) {
         return (t / (1.0 - t)) * thermal_sigma;
       }
@@ -146,12 +140,25 @@ struct TruncatedMaxwellianOnDevice
       drift_pi += fluid_flow_speed[i] * basis_pi[i];
     }
 
-    const REAL thermal_sigma = Kernel::sqrt(fluid_temperature_dat);
+    const REAL thermal_sigma = Kernel::sqrt(fluid_temperature_dat* this->norm_ratio);
 
     bool is_kernel_valid = true;
     int sample_counter = 0;
 
-    const REAL sample_e1 = sample_drifting_maxwellian(
+    REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
+    REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
+
+    if (!is_kernel_valid) {
+      req_int_props.at(this->panic_ind, index, 0) += 1;
+      return std::array<REAL, ndim>{};
+    }
+
+    auto normal_samples = utils::box_muller_transform(rand1, rand2);
+    const REAL sample_e1 = drift_e1 + thermal_sigma * normal_samples[0];
+    const REAL sample_e2 = drift_e2 + thermal_sigma * normal_samples[1];
+
+
+    /*const REAL sample_e1 = sample_drifting_maxwellian(
         drift_e1, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
@@ -163,7 +170,7 @@ struct TruncatedMaxwellianOnDevice
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
       return std::array<REAL, ndim>{};
-    }
+    }*/
 
     const REAL sample_pi = sample_positive_maxwellian(
         drift_pi, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
@@ -183,7 +190,7 @@ struct TruncatedMaxwellianOnDevice
 
 
   public:
-  int fluid_flow_speed_ind, fluid_density_ind, fluid_temperature_ind,
+  int fluid_flow_speed_ind, fluid_temperature_ind,
       basis_e1_ind, basis_e2_ind, basis_pi_ind, panic_ind;
   REAL norm_ratio;
   };
@@ -202,7 +209,7 @@ struct TruncatedMaxwellianSampler
 
   constexpr static auto props = default_properties;
 
-  constexpr static auto required_simple_real_props = std::array<int, 6>{
+  constexpr static auto required_simple_real_props = std::array<int, 5>{
       props.fluid_flow_speed, props.fluid_temperature,
       props.surface_basis_e1, props.surface_basis_e2, props.surface_basis_pi};
 
@@ -210,13 +217,14 @@ struct TruncatedMaxwellianSampler
       std::array<int, 1>{props.panic};
 
   TruncatedMaxwellianSampler(
+      const REAL &norm_ratio,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<TruncatedMaxwellianOnDevice<ndim>, ndim,
                          HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
-    this->on_device_obj = TruncatedMaxwellianOnDevice<ndim>();
+    this->on_device_obj = TruncatedMaxwellianOnDevice<ndim>(norm_ratio);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }
@@ -225,9 +233,6 @@ struct TruncatedMaxwellianSampler
     this->on_device_obj->fluid_flow_speed_ind =
         this->required_real_props.find_index(
             this->properties_map.at(props.fluid_flow_speed));
-
-    this->on_device_obj->fluid_density_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.fluid_density));
 
     this->on_device_obj->fluid_temperature_ind =
         this->required_real_props.find_index(
