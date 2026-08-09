@@ -71,7 +71,7 @@ TEST(TruncatedMaxwellianSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   auto rng_lambda = [&]() -> REAL { return 0.75; };
   auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
-  TruncatedMaxwellianSampler<3> sampler(norm_ratio, rng_kernel, get_default_map());
+  TruncatedMaxwellianSampler sampler(norm_ratio, rng_kernel, get_default_map());
   auto sampler_on_device = sampler.get_on_device_obj();
 
   auto req_int_props_ = sampler.get_required_int_sym_vector();
@@ -103,7 +103,6 @@ TEST(TruncatedMaxwellianSampler, SamplesExpectedVelocityWithDeterministicRNG) {
       EXPECT_NEAR(sampled_cell->at(row, 0), expected_vals[0], 1e-14);
       EXPECT_NEAR(sampled_cell->at(row, 1), expected_vals[1], 1e-14);
       EXPECT_NEAR(sampled_cell->at(row, 2), expected_vals[2], 1e-14);
-      std::cout<< row <<"\n";
     }
   }
 

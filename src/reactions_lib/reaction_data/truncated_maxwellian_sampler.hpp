@@ -15,13 +15,9 @@ namespace VANTAGE::Reactions {
  * The truncated distribution is generated using a rejection sampling method outlined 
  * in https://doi.org/10.1088/0031-8949/90/1/015204.
  *
- * @tparam ndim The velocity space dimensionality for both the particles and the
- * fields
- 
  */
-template <size_t ndim>
 struct TruncatedMaxwellianOnDevice
-    : public ReactionDataBaseOnDevice<ndim, HostAtomicBlockKernelRNG<REAL>> {
+    : public ReactionDataBaseOnDevice<3, HostAtomicBlockKernelRNG<REAL>> {
 
   TruncatedMaxwellianOnDevice() = default;
 
@@ -111,7 +107,7 @@ struct TruncatedMaxwellianOnDevice
   }
 
 
-  std::array<REAL, ndim>
+  std::array<REAL, 3>
   calc_data(const Access::LoopIndex::Read &index,
             const Access::SymVector::Write<INT> &req_int_props,
             const Access::SymVector::Read<REAL> &req_real_props,
@@ -119,12 +115,12 @@ struct TruncatedMaxwellianOnDevice
     const REAL fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
 
-    std::array<REAL, ndim> fluid_flow_speed{};
-    std::array<REAL, ndim> basis_e1{};
-    std::array<REAL, ndim> basis_e2{};
-    std::array<REAL, ndim> basis_pi{};
+    std::array<REAL, 3> fluid_flow_speed{};
+    std::array<REAL, 3> basis_e1{};
+    std::array<REAL, 3> basis_e2{};
+    std::array<REAL, 3> basis_pi{};
 
-    for (int i = 0; i < ndim; i++) {
+    for (int i = 0; i < 3; i++) {
       fluid_flow_speed[i] = req_real_props.at(this->fluid_flow_speed_ind, index, i);
       basis_e1[i] = req_real_props.at(this->basis_e1_ind, index, i);
       basis_e2[i] = req_real_props.at(this->basis_e2_ind, index, i);
@@ -134,7 +130,7 @@ struct TruncatedMaxwellianOnDevice
     REAL drift_e1 = 0.0;
     REAL drift_e2 = 0.0;
     REAL drift_pi = 0.0;
-    for (int i = 0; i < ndim; i++) {
+    for (int i = 0; i < 3; i++) {
       drift_e1 += fluid_flow_speed[i] * basis_e1[i];
       drift_e2 += fluid_flow_speed[i] * basis_e2[i];
       drift_pi += fluid_flow_speed[i] * basis_pi[i];
@@ -150,7 +146,7 @@ struct TruncatedMaxwellianOnDevice
 
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, ndim>{};
+      return std::array<REAL, 3>{};
     }
 
     auto normal_samples = utils::box_muller_transform(rand1, rand2);
@@ -162,25 +158,25 @@ struct TruncatedMaxwellianOnDevice
         drift_e1, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, ndim>{};
+      return std::array<REAL, 3>{};
     }
 
     const REAL sample_e2 = sample_drifting_maxwellian(
         drift_e2, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, ndim>{};
+      return std::array<REAL, 3>{};
     }*/
 
     const REAL sample_pi = sample_positive_maxwellian(
         drift_pi, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, ndim>{};
+      return std::array<REAL, 3>{};
     }
 
-    std::array<REAL, ndim> sampled_vels{};
-    for (int i = 0; i < ndim; i++) {
+    std::array<REAL, 3> sampled_vels{};
+    for (int i = 0; i < 3; i++) {
       sampled_vels[i] = sample_e1 * basis_e1[i] + sample_e2 * basis_e2[i] +
                         sample_pi * basis_pi[i];
     }
@@ -200,11 +196,9 @@ struct TruncatedMaxwellianOnDevice
  * Maxwellian in the tangential directions and a positive/truncated Maxwellian
  * along the surface-normal direction.
  *
- * @tparam ndim The velocity-space dimensionality.
  */
-template <size_t ndim>
 struct TruncatedMaxwellianSampler
-    : public ReactionDataBase<TruncatedMaxwellianOnDevice<ndim>, ndim,
+    : public ReactionDataBase<TruncatedMaxwellianOnDevice, 3,
                               HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
@@ -220,11 +214,11 @@ struct TruncatedMaxwellianSampler
       const REAL &norm_ratio,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<TruncatedMaxwellianOnDevice<ndim>, ndim,
+      : ReactionDataBase<TruncatedMaxwellianOnDevice, 3,
                          HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
-    this->on_device_obj = TruncatedMaxwellianOnDevice<ndim>(norm_ratio);
+    this->on_device_obj = TruncatedMaxwellianOnDevice(norm_ratio);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }
