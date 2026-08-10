@@ -58,8 +58,6 @@ public:
     fluid_temperature,
     fluid_flow_speed
   };
-
-  
 };
 
 const auto default_properties = StandardPropertiesEnum();
