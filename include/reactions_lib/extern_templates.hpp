@@ -48,13 +48,10 @@ extern template class CellwiseDistributor<REAL>;
 extern template class CellwiseDistributor<INT>;
 
 // ---------------------------------------------------------------------------
-// Downsampling strategies
+// Vranic merging kernels
 // ---------------------------------------------------------------------------
 extern template class VranicMergingKernels<2>;
 extern template class VranicMergingKernels<3>;
-extern template class DownsamplingStrategy<SimpleThinningKernels>;
-extern template class DownsamplingStrategy<VranicMergingKernels<2>>;
-extern template class DownsamplingStrategy<VranicMergingKernels<3>>;
 
 // ---------------------------------------------------------------------------
 // Reaction data types

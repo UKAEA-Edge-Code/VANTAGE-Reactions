@@ -1,6 +1,7 @@
 #ifndef REACTIONS_SPHERICAL_BASIS_REFLECTION_DATA_H
 #define REACTIONS_SPHERICAL_BASIS_REFLECTION_DATA_H
 #include "../particle_properties_map.hpp"
+#include "../reaction_data.hpp"
 #include "../utils.hpp"
 #include <neso_particles.hpp>
 
