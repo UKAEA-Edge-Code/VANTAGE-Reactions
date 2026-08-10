@@ -60,24 +60,6 @@ struct TruncatedMaxwellianOnDevice
     return t * Kernel::exp(-((t / s - d) * (t / s - d)) / 2.0) / (s * s * s);
   }
 
-  REAL sample_drifting_maxwellian(
-      REAL drift, REAL thermal_sigma, const Access::LoopIndex::Read &index,
-      typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
-      int &sample_counter, bool &is_kernel_valid) const {
-    if (!is_kernel_valid) {
-      return 0.0;
-    }
-
-    REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
-    REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
-    if (!is_kernel_valid) {
-      return 0.0;
-    }
-
-    auto normal_samples = utils::box_muller_transform(rand1, rand2);
-    return drift + thermal_sigma * normal_samples[0];
-  }
-
   REAL sample_positive_maxwellian(
       REAL drift, REAL thermal_sigma, const Access::LoopIndex::Read &index,
       typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
@@ -153,20 +135,6 @@ struct TruncatedMaxwellianOnDevice
     const REAL sample_e1 = drift_e1 + thermal_sigma * normal_samples[0];
     const REAL sample_e2 = drift_e2 + thermal_sigma * normal_samples[1];
 
-
-    /*const REAL sample_e1 = sample_drifting_maxwellian(
-        drift_e1, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
-    if (!is_kernel_valid) {
-      req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, 3>{};
-    }
-
-    const REAL sample_e2 = sample_drifting_maxwellian(
-        drift_e2, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
-    if (!is_kernel_valid) {
-      req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, 3>{};
-    }*/
 
     const REAL sample_pi = sample_positive_maxwellian(
         drift_pi, thermal_sigma, index, kernel, sample_counter, is_kernel_valid);
