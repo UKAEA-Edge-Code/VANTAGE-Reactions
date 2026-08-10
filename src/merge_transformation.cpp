@@ -2,9 +2,6 @@
 
 namespace VANTAGE::Reactions {
 
-// ---------------------------------------------------------------------------
-// Merging strategy
-// ---------------------------------------------------------------------------
 template class MergeTransformationStrategy<2>;
 template class MergeTransformationStrategy<3>;
 

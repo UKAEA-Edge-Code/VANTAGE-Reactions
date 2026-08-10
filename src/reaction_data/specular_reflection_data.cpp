@@ -2,9 +2,6 @@
 
 namespace VANTAGE::Reactions {
 
-// ---------------------------------------------------------------------------
-// Reaction data types
-// ---------------------------------------------------------------------------
 template class SpecularReflectionData<2>;
 template class SpecularReflectionData<3>;
 

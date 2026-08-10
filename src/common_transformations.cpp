@@ -25,23 +25,15 @@ void CompositeTransform::add_transformation(
   this->components.push_back(strat);
 }
 
-// ---------------------------------------------------------------------------
-// Cellwise accumulators
-// ---------------------------------------------------------------------------
+// Template instantiations
 template class CellwiseAccumulator<REAL>;
 template class CellwiseAccumulator<INT>;
 template class WeightedCellwiseAccumulator<REAL>;
 template class WeightedCellwiseAccumulator<INT>;
 
-// ---------------------------------------------------------------------------
-// ParticleDatZeroer
-// ---------------------------------------------------------------------------
 template class ParticleDatZeroer<REAL>;
 template class ParticleDatZeroer<INT>;
 
-// ---------------------------------------------------------------------------
-// Cellwise distributor
-// ---------------------------------------------------------------------------
 template class CellwiseDistributor<REAL>;
 template class CellwiseDistributor<INT>;
 

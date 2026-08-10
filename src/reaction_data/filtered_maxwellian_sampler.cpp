@@ -2,9 +2,6 @@
 
 namespace VANTAGE::Reactions {
 
-// ---------------------------------------------------------------------------
-// Reaction data types
-// ---------------------------------------------------------------------------
 template class FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
 template class FilteredMaxwellianSampler<3, ConstantRateCrossSection>;
 

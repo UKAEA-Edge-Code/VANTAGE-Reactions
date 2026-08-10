@@ -61,14 +61,14 @@ Note the paths listed for the ``gcc`` command (for convenience the path can be s
 Defining external packages (optional)
 =====================================
 
-If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18:20) are pre-installed, then they can be designated as external packages that spack will try and use them when installing Reactions.
+If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18:20) are pre-installed, then they can be designated as external packages that spack will try and use them when installing VANTAGE-Reactions.
 This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly.
 To designate a package as an external one, the path of the root directory of the package must be known, then the following command sets the package as external:
 ::
 
     spack external find --path {path_to_package} {name_of_package}
 
-Note, this must be done outside the Reactions spack environment (for example in the $HOME directory).
+Note, this must be done outside the VANTAGE-Reactions spack environment (for example in the $HOME directory).
 This will modify a file in ``$SPACK_ROOT`` called ``packages.yaml`` or create one if it doesn't exist. It is recommended to assign the listed packages as external if possible to smooth the experience of the first time install.
 NOTE: For ``llvm``, if it's pre-installed then it's best to let spack find it using ``spack compiler find ${llvm_install_path}`` instead.
 
@@ -120,18 +120,11 @@ The ``spack.yaml`` files do have some limited guidance on things like specifying
 Using VANTAGE-Reactions with your application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default ``VANTAGE-Reactions`` is built as a **compiled runtime library** and 
+``VANTAGE-Reactions`` is built as a **compiled runtime library** and 
 ships a curated set of pre-compiled template instantiations and SYCL device code in
 ``libVANTAGE-Reactions.so``. Include the installed library via
 ``find_package(VANTAGE-Reactions)`` when compiling your application with ``CMake``.
-
-Two names refer to the same exported target:
-
-* the in-source build alias ``VANTAGE::Reactions``,
-* the installed EXPORT target ``VANTAGE-Reactions::VANTAGE-Reactions``.
-
-Link either one to your application; consumers are recommended to put them
-in ``target_link_libraries(<consumer> PRIVATE <name>)``.
+Link to your application via ``target_link_libraries(<consumer> PRIVATE VANTAGE-Reactions::VANTAGE-Reactions)``.
 
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
@@ -180,7 +173,7 @@ Via a direct CMake configure of the source tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are working in a clone of the repository, you can configure the source tree with 
-CMake directly and pass the same options as CMake variables (assumes that all of the dependencies for ``vantagereactions`` are installed):
+CMake directly and pass the same options that spack has as CMake variables (assumes that all of the dependencies for ``vantagereactions`` are installed):
 
 ::
 
@@ -189,13 +182,13 @@ CMake directly and pass the same options as CMake variables (assumes that all of
         -DREACTIONS_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
     cmake --build build -j4
 
-With no further options this produces a monolithic ``unit_tests`` executable combining all unit tests 
+With no further options this produces a monolithic ``unit_tests`` executable combining all unit tests.
 Run using:
 ::
 
     OMP_NUM_THREADS=1 spack build-env vantagereactions -- mpirun -n 1 build/test/unit/unit_tests
 
-To build only a single test, pass its source stem to ``make`` via:
+To build only a single test, pass its source stem to ``cmake --build`` via:
 
 ::
 

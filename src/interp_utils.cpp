@@ -2,6 +2,8 @@
 
 namespace VANTAGE::Reactions::interp_utils {
 
+// Only function in interp_utils.hpp that is called host-side, so can be defined
+// here.
 std::vector<size_t> construct_initial_hypercube(const size_t &ndim) {
   size_t total_num = 1 << ndim;
   std::vector<size_t> points(total_num);

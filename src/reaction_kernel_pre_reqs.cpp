@@ -58,4 +58,11 @@ std::string species_property(const Species &species,
   return species.get_name() + "_" + property;
 }
 
+// Template instantiations
+template class Properties<INT>;
+template class Properties<REAL>;
+
+template class ArgumentNameSet<INT>;
+template class ArgumentNameSet<REAL>;
+
 } // namespace VANTAGE::Reactions

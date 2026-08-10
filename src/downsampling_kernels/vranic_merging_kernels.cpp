@@ -2,9 +2,6 @@
 
 namespace VANTAGE::Reactions {
 
-// ---------------------------------------------------------------------------
-// Vranic merging kernels
-// ---------------------------------------------------------------------------
 template class VranicMergingKernels<2>;
 template class VranicMergingKernels<3>;
 

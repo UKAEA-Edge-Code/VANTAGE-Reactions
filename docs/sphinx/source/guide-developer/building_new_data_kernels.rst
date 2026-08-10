@@ -48,20 +48,17 @@ Below is a version of the charge exchange kernels with comments explaining the a
 
 .. _header_impl_split:
    
-Header/impl split (compiled build)
-==================================
+Declaration/Definition split (compiled build)
+=============================================
 
-To keep consumer compile times low in the default compiled build, some headers
-(containing non-template code) under ``include/reactions_lib/`` are split into 
-declarations (``X.hpp``) and definitions (``X_impl.hpp``). 
+Some headers under ``include/reactions_lib/`` are split into 
+declarations (``X.hpp``) and definitions (``X.cpp`` which live in the ``src`` directory). 
 
-When adding new non-template code to the library:
+When adding new non-templated objects or non-inline functions to the library:
 
-#. put the declaration in ``X.hpp`` and the definition in ``X_impl.hpp``
+#. put the declaration in ``X.hpp`` and the definition in ``X.cpp`` (in the ``src`` directory)
    (create the pair if adding a new component)
-#. add the ``#include`` of the new ``X_impl.hpp`` into either a new header or an appropriate existing header in the 
-   ``src/compiled`` directory.
+#. add the ``#include`` of the new ``X.hpp`` into ``include/reactions/reactions.hpp``.
 
-Template code still lives entirely in headers, as before — this split only
-concerns non-template definitions. 
+This is the pattern for non-templated objects and non-inline functions. 
 See :ref:`instantiating_unsupported_combos` for more details on instantiating new templated objects.

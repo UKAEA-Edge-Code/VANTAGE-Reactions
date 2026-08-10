@@ -6,14 +6,14 @@
 // re-instantiate what the library already provides.
 //
 // The matching explicit instantiations live in
-// the src/instantiations directory.
+// the src directory.
 
 #include <utility>
 
 namespace VANTAGE::Reactions {
 
 // The declarations below are grouped to mirror
-// the ones in src/instantiations
+// the ones in src
 
 // ---------------------------------------------------------------------------
 // Kernel classes
@@ -60,6 +60,14 @@ extern template class FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
 extern template class FilteredMaxwellianSampler<3, ConstantRateCrossSection>;
 extern template class SpecularReflectionData<2>;
 extern template class SpecularReflectionData<3>;
+
+// ---------------------------------------------------------------------------
+// Reaction kernel pre-requisites
+// ---------------------------------------------------------------------------
+extern template class Properties<INT>;
+extern template class Properties<REAL>;
+extern template class ArgumentNameSet<INT>;
+extern template class ArgumentNameSet<REAL>;
 
 } // namespace VANTAGE::Reactions
 
