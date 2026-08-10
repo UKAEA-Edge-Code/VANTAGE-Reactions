@@ -5,7 +5,7 @@
 using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
-TEST(TruncatedMaxwellianSampler, SamplesExpectedVelocityWithDeterministicRNG) {
+TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
 
   const int N_total = 100;
   auto particle_group = create_test_particle_group<3>(N_total);
@@ -33,7 +33,7 @@ TEST(TruncatedMaxwellianSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   basis_pi[2] = 7.0 / std::sqrt(83.0);
 
   particle_loop(
-      "truncated_maxwellian_init_loop", particle_group,
+      "one_way_maxwellian_flux_init_loop", particle_group,
       [=](auto particle_index, auto flow_speed_dat, auto basis_e1_dat,
           auto basis_e2_dat, auto basis_pi_dat) {
         for (int i = 0; i < 3; ++i) {
@@ -58,11 +58,7 @@ TEST(TruncatedMaxwellianSampler, SamplesExpectedVelocityWithDeterministicRNG) {
       (-5.0 * std::sqrt(2.0) + 7.0 * std::sqrt(3.0) + 11.0 * std::sqrt(5.0)) /
           std::sqrt(195.0) -
       std::sqrt(2.0 * norm_ratio) * std::sqrt(-2 * std::log(0.75));
-  const REAL sampled_pi =
-      3.0 *
-      std::sqrt(
-          2.0 *
-          norm_ratio); //(-3.0*std::sqrt(2.0)+5.0*std::sqrt(3.0)+7.0*std::sqrt(5.0))/std::sqrt(83.0)+
+  const REAL sampled_pi = 3.0 * std::sqrt(2.0 * norm_ratio);
 
   std::array<REAL, 3> expected_vals;
 
@@ -74,14 +70,15 @@ TEST(TruncatedMaxwellianSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   auto rng_lambda = [&]() -> REAL { return 0.75; };
   auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
-  TruncatedMaxwellianSampler sampler(norm_ratio, rng_kernel, get_default_map());
+  OneWayMaxwellianFluxSampler sampler(norm_ratio, rng_kernel,
+                                      get_default_map());
   auto sampler_on_device = sampler.get_on_device_obj();
 
   auto req_int_props_ = sampler.get_required_int_sym_vector();
   auto req_real_props_ = sampler.get_required_real_sym_vector();
 
   particle_loop(
-      "truncated_maxwellian_sample_loop", particle_group,
+      "one_way_maxwellian_flux_sample_loop", particle_group,
       [=](auto particle_index, auto req_int_props, auto req_real_props,
           auto sampled_velocity, auto kernel) {
         auto sampled = sampler_on_device.calc_data(

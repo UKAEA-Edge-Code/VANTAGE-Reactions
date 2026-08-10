@@ -1,5 +1,5 @@
-#ifndef REACTIONS_TRUNCATED_MAXWELLIAN_SAMPLER_H
-#define REACTIONS_TRUNCATED_MAXWELLIAN_SAMPLER_H
+#ifndef REACTIONS_ONE_WAY_MAXWELLIAN_FLUX_SAMPLER_H
+#define REACTIONS_ONE_WAY_MAXWELLIAN_FLUX_SAMPLER_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
@@ -11,48 +11,53 @@ using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 /**
  * @brief On device: Reaction data class for calculating velocity samples from a
- * truncated Maxwellian distribution given a fluid temperature and flow speed.
- * The truncated distribution is generated using a rejection sampling method
- * outlined in https://doi.org/10.1088/0031-8949/90/1/015204.
+ * one way / truncated Maxwellian distribution given a fluid temperature and
+ * flow speed. The one way / truncated distribution is generated using a
+ * rejection sampling method outlined in
+ * https://doi.org/10.1088/0031-8949/90/1/015204.
  *
  */
-struct TruncatedMaxwellianOnDevice
+struct OneWayMaxwellianFluxOnDevice
     : public ReactionDataBaseOnDevice<3, HostAtomicBlockKernelRNG<REAL>> {
 
-  TruncatedMaxwellianOnDevice() = default;
+  OneWayMaxwellianFluxOnDevice() = default;
 
-  TruncatedMaxwellianOnDevice(const REAL &norm_ratio)
+  OneWayMaxwellianFluxOnDevice(const REAL &norm_ratio)
       : norm_ratio(norm_ratio) {};
 
   /**
    * @brief solves the cubic equation used to find the maximum of
-   * the rejection sampling function for the truncated maxwellian distribution
+   * the rejection sampling function for the one way / truncated maxwellian
+   * distribution
    *
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
    * @return maximum of the rejection sampling function
    */
-  inline static REAL solve_cubic(REAL d) {
-    const REAL ca = 2.0;
-    const REAL cb = -4.0 - d;
-    const REAL cc = d;
-    const REAL cd = 1.0;
+  inline static REAL cardano_cubic_solver(REAL d) {
+    const REAL coef_a = 2.0;
+    const REAL coef_b = -4.0 - d;
+    const REAL coef_c = d;
+    const REAL coef_d = 1.0;
+    const REAL coef_a_sq = coef_a * coef_a;
 
-    const REAL p = (3.0 * ca * cc - cb * cb) / (3.0 * ca * ca);
+    const REAL p =
+        (3.0 * coef_a * coef_c - coef_b * coef_b) / (3.0 * coef_a_sq);
     const REAL q =
-        (2.0 * cb * cb * cb - 9.0 * ca * cb * cc + 27.0 * ca * ca * cd) /
-        (27.0 * ca * ca * ca);
+        (2.0 * coef_b * coef_b * coef_b - 9.0 * coef_a * coef_b * coef_c +
+         27.0 * coef_a_sq * coef_d) /
+        (27.0 * coef_a_sq * coef_a);
 
     const REAL sqrt_term = Kernel::sqrt(-p / 3.0);
     const REAL root =
         2.0 * sqrt_term *
         Kernel::cos(sycl::acos((3.0 * q) / (2.0 * p * sqrt_term)) / 3.0 -
                     2.0 * REAL(M_PI) / 3.0);
-    return root - cb / (3.0 * ca);
+    return root - coef_b / (3.0 * coef_a);
   }
 
   /**
-   * @brief Gives the unnormalized function used in the truncated maxwellian
-   * rejection sampling algorithm
+   * @brief Gives the unnormalized function used in the one way / truncated
+   * maxwellian rejection sampling algorithm
    *
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
    * @return maximum of the rejection sampling function
@@ -71,7 +76,7 @@ struct TruncatedMaxwellianOnDevice
     }
 
     const REAL d = drift / thermal_sigma;
-    const REAL maxval = rejection_function(d, solve_cubic(d));
+    const REAL maxval = rejection_function(d, cardano_cubic_solver(d));
     REAL candidate = 0.0;
     REAL compare = 0.0;
 
@@ -82,10 +87,8 @@ struct TruncatedMaxwellianOnDevice
         return 0.0;
       }
 
-      REAL t = candidate;
-
-      if (compare <= rejection_function(d, t)) {
-        return (t / (1.0 - t)) * thermal_sigma;
+      if (compare <= rejection_function(d, candidate)) {
+        return (candidate / (1.0 - candidate)) * thermal_sigma;
       }
     } while (true);
   }
@@ -163,12 +166,22 @@ public:
 
 /**
  * @brief Reaction data class for sampling a velocity vector from a drifting
- * Maxwellian in the tangential directions and a positive/truncated Maxwellian
+ * Maxwellian in the tangential directions and a one way / truncated Maxwellian
  * along the surface-normal direction.
- *
+ * surface_basis_e1, surface_basis_e2, surface_basis_pi: The three basis
+ * vectors that define the surface tangential and normal directions.
+ * These are assumed to be orthonormal. See EIRENE docs section 1.5 Recycling
+ * surface sources for more details.
+ * @param norm_ratio The ratio of the temperature and kinetic energy
+ * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+ * and v are the temperature and velocity normalisation constants
+ * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
+ * be set as the rng_kernel in ReactionDataBase.
+ * @param properties_map (Optional) A std::map<int, std::string> object to be
+ * used when remapping property names.
  */
-struct TruncatedMaxwellianSampler
-    : public ReactionDataBase<TruncatedMaxwellianOnDevice, 3,
+struct OneWayMaxwellianFluxSampler
+    : public ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
                               HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
@@ -180,15 +193,15 @@ struct TruncatedMaxwellianSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
-  TruncatedMaxwellianSampler(
+  OneWayMaxwellianFluxSampler(
       const REAL &norm_ratio,
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<TruncatedMaxwellianOnDevice, 3,
+      : ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
                          HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
-    this->on_device_obj = TruncatedMaxwellianOnDevice(norm_ratio);
+    this->on_device_obj = OneWayMaxwellianFluxOnDevice(norm_ratio);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }
