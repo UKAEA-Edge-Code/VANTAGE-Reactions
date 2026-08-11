@@ -1,7 +1,6 @@
 #ifndef REACTIONS_TEST_UTILS_H
 #define REACTIONS_TEST_UTILS_H
 
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <random>
 #include <reactions/reactions.hpp>
 

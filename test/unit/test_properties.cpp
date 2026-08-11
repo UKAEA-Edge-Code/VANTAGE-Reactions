@@ -1,10 +1,6 @@
-
 #include "include/mock_particle_group.hpp"
 #include "include/mock_particle_properties.hpp"
 #include "include/mock_reactions.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/particle_properties_map.hpp"
-#include "reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include <gtest/gtest.h>
 
 using namespace VANTAGE::Reactions;

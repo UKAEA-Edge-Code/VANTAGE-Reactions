@@ -1,8 +1,5 @@
-
 #include "include/test_extern_templates.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
-#include <reactions/reactions.hpp>
 
 using namespace VANTAGE::Reactions;
 

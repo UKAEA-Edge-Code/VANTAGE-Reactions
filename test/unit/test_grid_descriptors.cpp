@@ -1,9 +1,6 @@
-
 #include "include/mock_interpolation_data.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <cstdlib>
 #include <gtest/gtest.h>
-#include <neso_particles/typedefs.hpp>
 #include <random>
 
 using namespace VANTAGE::Reactions;

@@ -1,8 +1,5 @@
-
 #include "include/mock_particle_group.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
-#include <neso_particles/typedefs.hpp>
 #include <random>
 
 using namespace VANTAGE::Reactions;

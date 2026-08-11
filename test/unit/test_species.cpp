@@ -1,5 +1,3 @@
-
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
 #include <reactions/reactions.hpp>
 

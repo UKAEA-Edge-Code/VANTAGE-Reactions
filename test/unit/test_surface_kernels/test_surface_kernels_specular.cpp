@@ -1,14 +1,7 @@
-
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/reaction_data/fixed_rate_data.hpp"
-#include "reactions_lib/reaction_data/specular_reflection_data.hpp"
-#include "reactions_lib/reaction_kernels/general_linear_scattering_kernels.hpp"
-#include "reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
-#include <neso_particles/boundary/boundary_interaction_specification.hpp>
 
 using namespace VANTAGE::Reactions;
 

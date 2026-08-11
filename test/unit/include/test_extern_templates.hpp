@@ -1,7 +1,6 @@
 #ifndef VANTAGE_REACTIONS_TYPE_ALIASES_HPP
 #define VANTAGE_REACTIONS_TYPE_ALIASES_HPP
 
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <reactions/reactions.hpp>
 
 namespace VANTAGE::Reactions {

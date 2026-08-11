@@ -1,9 +1,6 @@
 #ifndef REACTIONS_MOCK_PARTICLE_GROUP_H
 #define REACTIONS_MOCK_PARTICLE_GROUP_H
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include "test_extern_templates.hpp"
-
-#include <reactions/reactions.hpp>
 
 using namespace VANTAGE::Reactions;
 
