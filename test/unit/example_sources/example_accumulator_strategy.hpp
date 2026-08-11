@@ -1,4 +1,4 @@
-void accumulator_strategy_example(ParticleGroupSharedPtr particle_group) {
+void accumulator_strategy_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = particle_sub_group(particle_group);
 
@@ -9,7 +9,7 @@ void accumulator_strategy_example(ParticleGroupSharedPtr particle_group) {
   // that they should accumulate values for cellwise. Here we use make_shared
   // instead of make_transformation_strategy in order to be able to call
   // accumulator-specific methods
-  auto accumulator = std::make_shared<CellwiseAccumulator<REAL>>(
+  auto accumulator = std::make_shared<CellwiseAccumulator<NP::REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY",
                                                "ION_SOURCE_DENSITY"});
 
@@ -18,7 +18,7 @@ void accumulator_strategy_example(ParticleGroupSharedPtr particle_group) {
   accumulator->transform(input_subgroup);
 
   // Upon accumulation, the accumulated data is stored in NESO-Particle
-  // CellDatConst objects and can be retrieved easily
+  // NP::CellDatConst objects and can be retrieved easily
   auto accumulated_electron_source =
       accumulator->get_cell_data("ELECTRON_SOURCE_DENSITY");
 
@@ -28,11 +28,11 @@ void accumulator_strategy_example(ParticleGroupSharedPtr particle_group) {
   // Or all buffers can be zeroed
   accumulator->zero_all_buffers();
 
-  // A weighted accumulator transform is also available, taking in the REAL
+  // A weighted accumulator transform is also available, taking in the NP::REAL
   // particle dat to be used as the weight (should be a PartilceDat with 1
   // component) in the constructor
   auto weighted_accumulator =
-      std::make_shared<WeightedCellwiseAccumulator<REAL>>(
+      std::make_shared<WeightedCellwiseAccumulator<NP::REAL>>(
           particle_group, std::vector<std::string>{"VELOCITY", "POSITION"},
           "WEIGHT");
 

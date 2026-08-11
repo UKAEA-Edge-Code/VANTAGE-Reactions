@@ -1,22 +1,21 @@
 #ifndef REACTIONS_GRID_DESCRIPTOR_H
 #define REACTIONS_GRID_DESCRIPTOR_H
 
+#include "../../reactions/neso_particles_namespace_alias.hpp"
 #include "../../reactions/neso_test_assert.hpp"
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <neso_particles.hpp>
+
 #include <type_traits>
 #include <vector>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
 namespace grid_utils {
 
 /**
- * @brief Type trait to check if a type is a std::array of REAL.
+ * @brief Type trait to check if a type is a std::array of NP::REAL.
  *
  * Primary template: yields std::false_type for all other types.
  *
@@ -25,14 +24,15 @@ namespace grid_utils {
 template <typename T> struct is_std_array_of_real : std::false_type {};
 
 /**
- * @brief Partial specialization for std::array<REAL, N>.
+ * @brief Partial specialization for std::array<NP::REAL, N>.
  *
- * Yields std::true_type when std::array of REAL values is inferred implicitly.
+ * Yields std::true_type when std::array of NP::REAL values is inferred
+ * implicitly.
  *
  * @tparam N Number of elements in the array.
  */
 template <std::size_t N>
-struct is_std_array_of_real<std::array<REAL, N>> : std::true_type {};
+struct is_std_array_of_real<std::array<NP::REAL, N>> : std::true_type {};
 
 /**
  * @brief Helper variable template for is_std_array_of_real.
@@ -48,14 +48,15 @@ inline constexpr bool is_std_array_of_real_v = is_std_array_of_real<T>::value;
  * grid point.
  *
  * @tparam ndim Number of dimensions.
- * @tparam FUNC Type of callable taking const std::array<REAL, ndim> &
+ * @tparam FUNC Type of callable taking const std::array<NP::REAL, ndim> &
  * (coordinate values).
  * @param coords Per-dimension coordinate vectors defining the grid.
  * @param func Callable invoked once per grid point with the coordinate array.
  */
 template <int ndim, typename FUNC>
-inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
-                           const FUNC &func) {
+inline void
+iterate_points(const std::array<std::vector<NP::REAL>, ndim> &coords,
+               const FUNC &func) {
   std::array<size_t, ndim> num_points;
   for (int i = 0; i < ndim; i++) {
     num_points[i] = coords[i].size();
@@ -69,7 +70,7 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
   std::array<size_t, ndim> idx;
   idx.fill(0);
   for (size_t flat_idx = 0; flat_idx < total; flat_idx++) {
-    std::array<REAL, ndim> point_coords;
+    std::array<NP::REAL, ndim> point_coords;
     for (int i = 0; i < ndim; i++) {
       point_coords[i] = coords[i][idx[i]];
     }
@@ -90,37 +91,39 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
  * @brief Append elements from a container into the flat grid buffer at the
  * current offset.
  *
- * @tparam Container Valid types: std::array<REAL, N>, std::vector<REAL>.
+ * @tparam Container Valid types: std::array<NP::REAL, N>,
+ * std::vector<NP::REAL>.
  * @param ptr Pointer to the first value of the data that is to be copied to.
  * @param offset Location to specify where in ptr to copy data to. This is
  * updated post-copy so subsequent calls have the right offset.
- * @param data Container of REAL values to copy.
+ * @param data Container of NP::REAL values to copy.
  */
 template <typename Container>
-inline void append(REAL *ptr, size_t &offset, const Container &data) {
+inline void append(NP::REAL *ptr, size_t &offset, const Container &data) {
   // Changed from std::enable_if_t for a nicer/more useful error message.
-  static_assert(std::is_same_v<Container, std::vector<REAL>> ||
-                    grid_utils::is_std_array_of_real_v<Container>,
-                "If passing a container to append, it must be a "
-                "std::vector<REAL> or a std::array<REAL, N>. Alternatively "
-                "pass a pointer to the start of a container and the size of "
-                "the data to append.");
+  static_assert(
+      std::is_same_v<Container, std::vector<NP::REAL>> ||
+          grid_utils::is_std_array_of_real_v<Container>,
+      "If passing a container to append, it must be a "
+      "std::vector<NP::REAL> or a std::array<NP::REAL, N>. Alternatively "
+      "pass a pointer to the start of a container and the size of "
+      "the data to append.");
   std::copy(data.begin(), data.end(), ptr + offset);
   offset += data.size();
 }
 
 /**
- * @brief Append n REAL values from a raw pointer into the flat grid buffer
+ * @brief Append n NP::REAL values from a raw pointer into the flat grid buffer
  * at the current offset.
  *
  * @param ptr Pointer to the first value of the data that is to be copied to.
  * @param offset Location to specify where in ptr to copy data to. This is
  * updated post-copy so subsequent calls have the right offset.
- * @param data Pointer to the first REAL value to copy.
+ * @param data Pointer to the first NP::REAL value to copy.
  * @param n Number of elements to copy. MUST be less than or equal to the size
  * of data.
  */
-void append(REAL *ptr, size_t &offset, const REAL *data, size_t n);
+void append(NP::REAL *ptr, size_t &offset, const NP::REAL *data, size_t n);
 } // namespace grid_utils
 
 /**
@@ -132,12 +135,12 @@ void append(REAL *ptr, size_t &offset, const REAL *data, size_t n);
  *
  * When output_ndim = 0, the struct operates in "CartesianGridData" mode where
  * the func that is passed to the constructor is expected to provide a single
- * REAL value and the grid that is calculated has a single value at each
+ * NP::REAL value and the grid that is calculated has a single value at each
  * grid point.
  *
  * When output_ndim = 3, the struct operates in "TrimEvalData" mode where the
- * func that is passed is expected to provide a std::array<REAL, (trim_dim0 +
- * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)> where
+ * func that is passed is expected to provide a std::array<NP::REAL, (trim_dim0
+ * + (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)> where
  * trim_dim0, trim_dim1, trim_dim2 are the 3 trim dimensions (eg. 5, 5, 5 for
  * EIRENE TRIM data so the size of the function result array would be 155) as an
  * output and subsequently the grid that is calculated will have multiple values
@@ -152,16 +155,16 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * generator function (with optional additional context).
    *
    * The generator function is called once per interpolation point in row-major
-   * order. It must return a REAL value. Each value is appended to the internal
-   * flat grid buffer.
+   * order. It must return a NP::REAL value. Each value is appended to the
+   * internal flat grid buffer.
    *
    * @tparam FUNC Generator callable type.
    * @tparam Context Type names of any additional context data needed for the
    * generator.
    * @param coords_in Per-dimension interpolation coordinate vectors.
    * @param func Generator callable with signature
-   *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
-   * returning a REAL value.
+   *   auto(const std::array<NP::REAL, interp_ndim> &coords, Context... context)
+   * returning a NP::REAL value.
    */
   // The extra std::is_same_v condition is due to Clang limitation not allowing
   // deactivation using enable_if_t when the condition only uses the template
@@ -169,14 +172,15 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 0) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &coords_in,
-                 const FUNC &func, const Context &...context)
+  GridDescriptor(
+      const std::array<std::vector<NP::REAL>, interp_ndim> &coords_in,
+      const FUNC &func, const Context &...context)
       : coords(coords_in) {
     using FUNC_RETURN_TYPE =
-        std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
+        std::invoke_result_t<decltype(func), std::array<NP::REAL, interp_ndim>,
                              decltype(context)...>;
-    static_assert(std::is_same_v<FUNC_RETURN_TYPE, REAL>,
-                  "Return type of func must be REAL.");
+    static_assert(std::is_same_v<FUNC_RETURN_TYPE, NP::REAL>,
+                  "Return type of func must be NP::REAL.");
 
     // Compute total number of interpolation points and allocate the grid vector
     size_t num_points = 1;
@@ -189,10 +193,10 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
     // append the func results to the flat grid buffer.
     size_t point_idx = 0;
     grid_utils::iterate_points<interp_ndim>(
-        this->coords, [&](const std::array<REAL, interp_ndim> &coords) {
+        this->coords, [&](const std::array<NP::REAL, interp_ndim> &coords) {
           size_t offset = 0;
           grid_utils::append(&(this->grid[point_idx]), offset,
-                             std::array<REAL, 1>{func(coords, context...)});
+                             std::array<NP::REAL, 1>{func(coords, context...)});
           ++point_idx;
         });
 
@@ -205,8 +209,8 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * generator function (with optional additional context).
    *
    * The generator function is called once per interpolation point in row-major
-   * order. It must return a REAL std::array/std::vector of size (trim_dim0 +
-   * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
+   * order. It must return a NP::REAL std::array/std::vector of size (trim_dim0
+   * + (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
    * array/vector is appended to the flat grid buffer.
    *
    * @tparam FUNC Generator callable type.
@@ -215,8 +219,8 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * @param coords Per-dimension interpolation coordinate vectors.
    * @param trim_dims_arr TRIM grid dimensions per output axis.
    * @param func Generator callable with signature
-   *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
-   * returning a REAL std::array
+   *   auto(const std::array<NP::REAL, interp_ndim> &coords, Context... context)
+   * returning a NP::REAL std::array
    */
   // The extra std::is_same_v condition is due to Clang limitation not allowing
   // deactivation using enable_if_t when the condition only uses the template
@@ -224,15 +228,15 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 3) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
-  GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &coords,
+  GridDescriptor(const std::array<std::vector<NP::REAL>, interp_ndim> &coords,
                  const std::array<size_t, output_ndim> &trim_dims_arr,
                  const FUNC &func, const Context &...context)
       : coords(coords), output_dims(trim_dims_arr) {
     using FUNC_RETURN_TYPE =
-        std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
+        std::invoke_result_t<decltype(func), std::array<NP::REAL, interp_ndim>,
                              decltype(context)...>;
     static_assert(grid_utils::is_std_array_of_real_v<FUNC_RETURN_TYPE>,
-                  "Return type of func must be std::array<REAL>.");
+                  "Return type of func must be std::array<NP::REAL>.");
 
     // Compute grid_stride exactly as TrimEval does
     int agg = 1;
@@ -256,7 +260,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
     size_t grid_access_index = 0;
 
     grid_utils::iterate_points<interp_ndim>(
-        this->coords, [&](const std::array<REAL, interp_ndim> &coords) {
+        this->coords, [&](const std::array<NP::REAL, interp_ndim> &coords) {
           grid_access_index = point_idx * grid_stride;
           size_t offset = 0;
           grid_utils::append(&(this->grid[grid_access_index]), offset,
@@ -277,7 +281,9 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * @brief Return the flattened vector of all of the coordinates for each
    * dimension of the grid.
    */
-  const std::vector<REAL> &get_flat_coords() const { return this->flat_coords; }
+  const std::vector<NP::REAL> &get_flat_coords() const {
+    return this->flat_coords;
+  }
 
   /**
    * @brief Return the vector containing the sizes of each dimension of the
@@ -302,7 +308,7 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
   /**
    * @brief Return the flat grid data vector.
    */
-  const std::vector<REAL> &get_flat_grid() const { return this->grid; }
+  const std::vector<NP::REAL> &get_flat_grid() const { return this->grid; }
 
 private:
   /**
@@ -341,11 +347,11 @@ private:
         std::vector<size_t>(this->output_dims.begin(), this->output_dims.end());
   }
 
-  std::array<std::vector<REAL>, interp_ndim>
+  std::array<std::vector<NP::REAL>, interp_ndim>
       coords; //!< Array containing vectors that define coordinates for each
               //!< dimension of the grid.
-  std::vector<REAL> flat_coords; //!< Vector containing the contiguous
-                                 //!< per-dimension coordinates
+  std::vector<NP::REAL> flat_coords; //!< Vector containing the contiguous
+                                     //!< per-dimension coordinates
   std::vector<size_t>
       interp_dims_vec; //!< Vector containing the size of each interpolation
                        //!< dimension for the grid.
@@ -354,7 +360,7 @@ private:
                    //!< tables at each interpolation point (eg. {5, 5, 5} for
                    //!< EIRENE-style TRIM tables).
   std::vector<size_t> output_dims_vec; // Vector version of output_dims.
-  std::vector<REAL> grid;              //!< Vector containing the flat grid.
+  std::vector<NP::REAL> grid;          //!< Vector containing the flat grid.
 };
 
 } // namespace VANTAGE::Reactions

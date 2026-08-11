@@ -8,19 +8,20 @@ struct ExampleCXReactionKernelsOnDevice
 
   // All kernels have the same signature
   void scattering_kernel(
-      REAL &modified_weight, // This is the weight involved in the reaction
-                             // (this is calculated by the base reaction class)
-      Access::LoopIndex::Read &index, // Indexing object used to access
-      Access::DescendantProducts::Write &
+      NP::REAL
+          &modified_weight, // This is the weight involved in the reaction
+                            // (this is calculated by the base reaction class)
+      NP::Access::LoopIndex::Read &index, // Indexing object used to access
+      NP::Access::DescendantProducts::Write &
           descendant_products, // The accessor for descendant product properties
-      Access::SymVector::Write<INT>
+      NP::Access::SymVector::Write<NP::INT>
           &req_int_props, // Accessor for parent particle required integer
                           // properties
-      Access::SymVector::Write<REAL>
+      NP::Access::SymVector::Write<NP::REAL>
           &req_real_props, // Accessor for parent particle required real
                            // properties
       const std::array<int, 1> &out_states, // The outgoing state indices
-      Access::NDLocalArray::Read<REAL, 2>
+      NP::Access::NDLocalArray::Read<NP::REAL, 2>
           &pre_req_data, // Pre-calculated data from the DataCalculators
       double dt          // The timestep taken
   ) const {
@@ -38,12 +39,13 @@ struct ExampleCXReactionKernelsOnDevice
     }
   }
 
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Write<INT> &req_int_props,
-                     Access::SymVector::Write<REAL> &req_real_props,
+  void weight_kernel(NP::REAL &modified_weight,
+                     NP::Access::LoopIndex::Read &index,
+                     NP::Access::DescendantProducts::Write &descendant_products,
+                     NP::Access::SymVector::Write<NP::INT> &req_int_props,
+                     NP::Access::SymVector::Write<NP::REAL> &req_real_props,
                      const std::array<int, 1> &out_states,
-                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
                      double dt) const {
     // Setting the weight of the produced particle to the entired of the reacted
     // parent weight
@@ -51,31 +53,32 @@ struct ExampleCXReactionKernelsOnDevice
         modified_weight;
   }
 
-  void
-  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                        Access::DescendantProducts::Write &descendant_products,
-                        Access::SymVector::Write<INT> &req_int_props,
-                        Access::SymVector::Write<REAL> &req_real_props,
-                        const std::array<int, 1> &out_states,
-                        Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                        double dt) const {
+  void transformation_kernel(
+      NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      NP::Access::DescendantProducts::Write &descendant_products,
+      NP::Access::SymVector::Write<NP::INT> &req_int_props,
+      NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+      const std::array<int, 1> &out_states,
+      NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+      double dt) const {
     // Setting the internal state to the passed
     descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
         out_states[0];
   }
 
-  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                       Access::DescendantProducts::Write &descendant_products,
-                       Access::SymVector::Write<INT> &req_int_props,
-                       Access::SymVector::Write<REAL> &req_real_props,
-                       const std::array<int, 1> &out_states,
-                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                       double dt) const {
+  void
+  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                  NP::Access::DescendantProducts::Write &descendant_products,
+                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
+                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                  const std::array<int, 1> &out_states,
+                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                  double dt) const {
 
-    std::array<REAL, ndim_velocity> k_V,
+    std::array<NP::REAL, ndim_velocity> k_V,
         k_Vi; // The parent particle and ion velocities
-    REAL vsquared = 0.0;
-    REAL visquared = 0.0;
+    NP::REAL vsquared = 0.0;
+    NP::REAL visquared = 0.0;
 
     // Getting the velocities off the particles and the pre_req_data
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
@@ -118,12 +121,13 @@ struct ExampleCXReactionKernelsOnDevice
 
 public:
   // Public data and indices set in the host constructor (see below)
-  INT velocity_ind, projectile_source_density_ind, projectile_source_energy_ind,
-      projectile_source_momentum_ind, target_source_density_ind,
-      target_source_momentum_ind, target_source_energy_ind, weight_ind;
-  INT descendant_internal_state_ind, descendant_velocity_ind,
+  NP::INT velocity_ind, projectile_source_density_ind,
+      projectile_source_energy_ind, projectile_source_momentum_ind,
+      target_source_density_ind, target_source_momentum_ind,
+      target_source_energy_ind, weight_ind;
+  NP::INT descendant_internal_state_ind, descendant_velocity_ind,
       descendant_weight_ind;
-  REAL target_mass, projectile_mass;
+  NP::REAL target_mass, projectile_mass;
 };
 
 template <int ndim_velocity = 2>
@@ -156,8 +160,8 @@ struct ExampleCXReactionKernels : public ReactionKernelsBase {
           get_default_map() // We allow for remaping
       )
       : ReactionKernelsBase(
-            Properties<REAL>( // The Properties container object for the
-                              // required properties on the parent
+            Properties<NP::REAL>( // The Properties container object for the
+                                  // required properties on the parent
                 required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
                 required_species_real_props),
@@ -209,10 +213,10 @@ struct ExampleCXReactionKernels : public ReactionKernelsBase {
 
     // These set the descendant particle properties
     this->set_required_descendant_int_props(
-        Properties<INT>(required_descendant_simple_int_props));
+        Properties<NP::INT>(required_descendant_simple_int_props));
 
     this->set_required_descendant_real_props(
-        Properties<REAL>(required_descendant_simple_real_props));
+        Properties<NP::REAL>(required_descendant_simple_real_props));
 
     // Here we set the descendant particle indices based on the above properties
     this->cx_reaction_kernels_on_device.descendant_internal_state_ind =

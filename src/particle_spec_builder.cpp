@@ -1,8 +1,10 @@
+
 #include "../include/reactions_lib/particle_spec_builder.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
-ParticleSpecBuilder::ParticleSpecBuilder(ParticleSpec particle_spec) {
+ParticleSpecBuilder::ParticleSpecBuilder(NP::ParticleSpec particle_spec) {
   this->add_particle_spec(particle_spec);
 }
 
@@ -14,20 +16,22 @@ ParticleSpecBuilder::ParticleSpecBuilder(
       default_map (and therefore is not an extension of that map). There \
       may be inconsitencies with indexing of properties.");
 
-  this->add_particle_spec(ParticleSpec(
-      ParticleProp(Sym<REAL>(properties_map.at(default_properties.position)),
-                   ndim, true),
-      ParticleProp(Sym<INT>(properties_map.at(default_properties.cell_id)), 1,
-                   true)));
+  this->add_particle_spec(NP::ParticleSpec(
+      NP::ParticleProp(
+          NP::Sym<NP::REAL>(properties_map.at(default_properties.position)),
+          ndim, true),
+      NP::ParticleProp(
+          NP::Sym<NP::INT>(properties_map.at(default_properties.cell_id)), 1,
+          true)));
 
-  auto int_props = Properties<INT>(std::vector<int>{
+  auto int_props = Properties<NP::INT>(std::vector<int>{
       default_properties.panic, default_properties.id,
       default_properties.internal_state, default_properties.reacted_flag,
       default_properties.grouping_index, default_properties.linear_index});
-  auto real_props_scalar = Properties<REAL>(std::vector<int>{
+  auto real_props_scalar = Properties<NP::REAL>(std::vector<int>{
       default_properties.weight, default_properties.tot_reaction_rate});
   auto real_props_vector =
-      Properties<REAL>(std::vector<int>{default_properties.velocity});
+      Properties<NP::REAL>(std::vector<int>{default_properties.velocity});
 
   this->add_particle_prop(int_props, 1, false, properties_map);
   this->add_particle_prop(real_props_scalar, 1, false, properties_map);
@@ -35,12 +39,13 @@ ParticleSpecBuilder::ParticleSpecBuilder(
                           properties_map);
 }
 
-void ParticleSpecBuilder::add_particle_spec(ParticleSpec new_particle_spec) {
+void ParticleSpecBuilder::add_particle_spec(
+    NP::ParticleSpec new_particle_spec) {
   auto existing_properties_real = this->particle_spec.properties_real;
   auto existing_properties_int = this->particle_spec.properties_int;
 
-  std::vector<ParticleProp<REAL>> new_real_props;
-  std::vector<ParticleProp<INT>> new_int_props;
+  std::vector<NP::ParticleProp<NP::REAL>> new_real_props;
+  std::vector<NP::ParticleProp<NP::INT>> new_int_props;
 
   for (auto prop : new_particle_spec.properties_real) {
     if (this->particle_spec.contains(prop)) {
@@ -65,10 +70,10 @@ void ParticleSpecBuilder::add_particle_spec(ParticleSpec new_particle_spec) {
                                  new_int_props.begin(), new_int_props.end());
 
   this->particle_spec =
-      ParticleSpec(existing_properties_real, existing_properties_int);
+      NP::ParticleSpec(existing_properties_real, existing_properties_int);
 }
 
-const ParticleSpec &ParticleSpecBuilder::get_particle_spec() {
+const NP::ParticleSpec &ParticleSpecBuilder::get_particle_spec() {
   return this->particle_spec;
 }
 

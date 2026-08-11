@@ -1,13 +1,14 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 #include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, ionisation_reaction_amjuel) {
@@ -22,20 +23,20 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   // b3 0.704669200000e+00 b4 -0.743148620000e-01 b5 0.415374900000e-02
   // b6 -0.948696700000e-04 b7 0.000000000000e-00 b8 0.000000000000e+00
 
-  std::array<REAL, 9> b_coeffs = {
+  std::array<NP::REAL, 9> b_coeffs = {
       -0.317385000000e+02, 0.114381800000e+02,  -0.383399800000e+01,
       0.704669200000e+00,  -0.743148620000e-01, 0.415374900000e-02,
       -0.948696700000e-04, 0.000000000000e-00,  0.000000000000e+00};
 
   auto particle_spec_builder = ParticleSpecBuilder(2);
 
-  auto int_1d_props = Properties<INT>(std::vector<int>{
+  auto int_1d_props = Properties<NP::INT>(std::vector<int>{
       default_properties.id, default_properties.internal_state});
 
   auto int_1d_positional_props =
-      Properties<INT>(std::vector<int>{default_properties.cell_id});
+      Properties<NP::INT>(std::vector<int>{default_properties.cell_id});
 
-  auto real_1d_props = Properties<REAL>(
+  auto real_1d_props = Properties<NP::REAL>(
       std::vector<int>{default_properties.tot_reaction_rate,
                        default_properties.weight,
                        default_properties.fluid_density,
@@ -45,21 +46,21 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
           default_properties.temperature, default_properties.density,
           default_properties.source_energy, default_properties.source_density});
 
-  auto real_2d_props = Properties<REAL>(
+  auto real_2d_props = Properties<NP::REAL>(
       std::vector<int>{default_properties.velocity},
       std::vector<Species>{Species("ELECTRON"), Species("ION")},
       std::vector<int>{default_properties.source_momentum});
 
   auto real_2d_positional_props =
-      Properties<REAL>(std::vector<int>{default_properties.position});
+      Properties<NP::REAL>(std::vector<int>{default_properties.position});
 
-  particle_spec_builder.add_particle_prop<INT>(int_1d_props);
-  particle_spec_builder.add_particle_prop<INT>(int_1d_positional_props, 1,
-                                               true);
-  particle_spec_builder.add_particle_prop<REAL>(real_1d_props);
-  particle_spec_builder.add_particle_prop<REAL>(real_2d_props, 2);
-  particle_spec_builder.add_particle_prop<REAL>(real_2d_positional_props, 2,
-                                                true);
+  particle_spec_builder.add_particle_prop<NP::INT>(int_1d_props);
+  particle_spec_builder.add_particle_prop<NP::INT>(int_1d_positional_props, 1,
+                                                   true);
+  particle_spec_builder.add_particle_prop<NP::REAL>(real_1d_props);
+  particle_spec_builder.add_particle_prop<NP::REAL>(real_2d_props, 2);
+  particle_spec_builder.add_particle_prop<NP::REAL>(real_2d_positional_props, 2,
+                                                    true);
 
   auto fixed_rate = FixedRateData(1.0);
   auto electron_species = Species("ELECTRON");
@@ -77,7 +78,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   reaction_controller.apply(particle_group, 0.1);
 
-  auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+  auto accessor = NP::Access::read(NP::Sym<NP::REAL>("WEIGHT"));
 
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -93,8 +94,9 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto expected_rate = 26.993377387251336;
 
   for (int icell = 0; icell < num_cells; icell++) {
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), icell);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), icell);
+    auto W = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), icell);
+    auto rate =
+        particle_group->get_cell(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), icell);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

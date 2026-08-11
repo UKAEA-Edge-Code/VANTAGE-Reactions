@@ -4,7 +4,7 @@ void cartesian_basis_reflection_example() {
   auto used_map = get_default_map();
 
   // Reflect in the direction normal to the surface, and back into the domain
-  std::array<REAL, 3> coords{0, 0, 1};
+  std::array<NP::REAL, 3> coords{0, 0, 1};
   // Here we just use a fixed reflection value, but this can
   // be calculated using any other reaction data object
   auto coord_data = FixedArrayData<3>(coords);

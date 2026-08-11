@@ -3,9 +3,8 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -30,8 +29,8 @@ struct CartesianBasisReflectionDataOnDevice
    *
    * @param input The v_x, v_y, v_z components of the reflected vector (see
    * class docstring)
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -41,26 +40,26 @@ struct CartesianBasisReflectionDataOnDevice
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size e that contains the calculated
+   * @return A NP::REAL-valued array of size e that contains the calculated
    * reflected velocities.
    */
-  std::array<REAL, 3>
-  calc_data(const std::array<REAL, 3> input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, 3>
+  calc_data(const std::array<NP::REAL, 3> input,
+            const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
-    std::array<REAL, 3> surface_n;
-    std::array<REAL, 3> vel;
+    std::array<NP::REAL, 3> surface_n;
+    std::array<NP::REAL, 3> vel;
 
     for (int vdim = 0; vdim < 3; vdim++) {
       surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
       vel[vdim] = req_real_props.at(vel_ind, index, vdim);
     }
 
-    std::array<REAL, 9> basis = utils::get_normal_basis(vel, surface_n);
-    std::array<REAL, 3> result;
+    std::array<NP::REAL, 9> basis = utils::get_normal_basis(vel, surface_n);
+    std::array<NP::REAL, 3> result;
 
     for (auto i = 0; i < 3; i++) {
 

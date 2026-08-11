@@ -1,16 +1,18 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionData, ArrheniusData) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto test_reaction =
       LinearReactionBase<0, ArrheniusData, TestReactionKernels<0>>(
@@ -18,7 +20,7 @@ TEST(ReactionData, ArrheniusData) {
           ArrheniusData(2.0, 1.5), TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
   for (int i = 0; i < cell_count; i++) {
@@ -26,7 +28,7 @@ TEST(ReactionData, ArrheniusData) {
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
 
     // The FLUID_TEMPERATURE is 2 for the mock group, so the rate coefficient

@@ -3,9 +3,8 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -23,8 +22,8 @@ struct SpecularReflectionDataOnDevice
   /**
    * @brief Function to calculate the specularly reflected velocities
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -34,18 +33,18 @@ struct SpecularReflectionDataOnDevice
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size ndim that contains the calculated
+   * @return A NP::REAL-valued array of size ndim that contains the calculated
    * reflected velocities.
    */
-  std::array<REAL, ndim>
-  calc_data(const std::array<REAL, ndim> input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, ndim>
+  calc_data(const std::array<NP::REAL, ndim> input,
+            const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
             typename ReactionDataBaseOnDevice<ndim>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
-    std::array<REAL, ndim> surface_n;
+    std::array<NP::REAL, ndim> surface_n;
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim; vdim++) {
@@ -84,7 +83,7 @@ struct SpecularReflectionData
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim,
                          DEFAULT_RNG_KERNEL, ndim>(
-            Properties<REAL>(required_simple_real_props), properties_map) {
+            Properties<NP::REAL>(required_simple_real_props), properties_map) {
 
     this->on_device_obj = SpecularReflectionDataOnDevice<ndim>();
     this->index_on_device_object();

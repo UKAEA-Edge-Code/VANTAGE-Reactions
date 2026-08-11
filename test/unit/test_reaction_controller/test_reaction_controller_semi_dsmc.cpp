@@ -1,13 +1,14 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 #include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, semi_dsmc_test) {
@@ -15,7 +16,7 @@ TEST(ReactionController, semi_dsmc_test) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+  auto accessor = NP::Access::read(NP::Sym<NP::REAL>("WEIGHT"));
 
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -28,13 +29,14 @@ TEST(ReactionController, semi_dsmc_test) {
   auto loop = particle_loop(
       "set_weights", particle_group,
       [=](auto id, auto weight) { weight[0] = id[0] % 2 ? 1.0 : 0.5; },
-      Access::read(Sym<INT>("ID")), Access::write(Sym<REAL>("WEIGHT")));
+      NP::Access::read(NP::Sym<NP::INT>("ID")),
+      NP::Access::write(NP::Sym<NP::REAL>("WEIGHT")));
   loop->execute();
 
-  auto rng_lambda = [&]() -> REAL {
+  auto rng_lambda = [&]() -> NP::REAL {
     return 0.90;
   }; // should only react particles with weight 1
-  auto rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto rng_kernel = NP::host_per_particle_block_rng<NP::REAL>(rng_lambda, 1);
   reaction_controller.set_rng_kernel(rng_kernel);
 
   auto squared_reaction_data = FixedCoefficientData(1.0) * extract<1>("WEIGHT");
@@ -62,8 +64,8 @@ TEST(ReactionController, semi_dsmc_test) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
 
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto id = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+    auto weight = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
+    auto id = particle_group->get_cell(NP::Sym<NP::INT>("INTERNAL_STATE"), i);
 
     const int nrow = weight->nrow;
 

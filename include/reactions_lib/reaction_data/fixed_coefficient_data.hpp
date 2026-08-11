@@ -1,10 +1,10 @@
 #ifndef REACTIONS_FIXED_COEFFICIENT_DATA_H
 #define REACTIONS_FIXED_COEFFICIENT_DATA_H
 #include "../reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
+
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -18,16 +18,16 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   /**
    * @brief Constructor for FixedCoefficientDataOnDevice.
    *
-   * @param rate REAL-valued rate to be used in reaction rate calculation.
+   * @param rate NP::REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedCoefficientDataOnDevice(REAL rate) : rate(rate) {};
+  FixedCoefficientDataOnDevice(NP::REAL rate) : rate(rate) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate
    * coefficient reaction
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -37,23 +37,23 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size 1 containing the calculated reaction
-   * rate.
+   * @return A NP::REAL-valued array of size 1 containing the calculated
+   * reaction rate.
    */
-  std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, 1>
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
-    return std::array<REAL, 1>{weight * this->rate};
+    return std::array<NP::REAL, 1>{weight * this->rate};
   }
 
 public:
   int weight_ind;
-  REAL rate;
+  NP::REAL rate;
 };
 
 /**
@@ -77,7 +77,7 @@ struct FixedCoefficientData
    * used when remapping property names
    */
   FixedCoefficientData(
-      REAL rate_coefficient,
+      NP::REAL rate_coefficient,
       std::map<int, std::string> properties_map = get_default_map());
 
   /**

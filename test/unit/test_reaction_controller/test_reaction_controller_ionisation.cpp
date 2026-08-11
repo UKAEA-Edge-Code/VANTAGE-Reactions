@@ -1,13 +1,14 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 #include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, ionisation_reaction) {
@@ -34,7 +35,7 @@ TEST(ReactionController, ionisation_reaction) {
 
   reaction_controller.apply(particle_group, 1.5);
 
-  auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+  auto accessor = NP::Access::read(NP::Sym<NP::REAL>("WEIGHT"));
 
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -44,7 +45,7 @@ TEST(ReactionController, ionisation_reaction) {
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
   for (int icell = 0; icell < num_cells; icell++) {
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), icell);
+    auto W = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), icell);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -74,7 +75,7 @@ TEST(ReactionController, ionisation_reaction_accumulator) {
       particle_group->sycl_target, test_data, test_data, target_species,
       electron_species);
 
-  auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
+  auto accumulator_transform = std::make_shared<CellwiseAccumulator<NP::REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY"});
 
   auto accumulator_transform_wrapper = std::make_shared<TransformationWrapper>(

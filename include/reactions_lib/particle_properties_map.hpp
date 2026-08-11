@@ -1,11 +1,10 @@
 #ifndef REACTIONS_PARTICLE_PROPERTIES_MAP_H
 #define REACTIONS_PARTICLE_PROPERTIES_MAP_H
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <map>
-#include <neso_particles.hpp>
+
 #include <string>
 #include <utility>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -61,7 +60,7 @@ const auto default_properties = StandardPropertiesEnum();
 
 /**
  * @brief Used to define mappings between integer indices defined in an
- * enumerator from a StandardPropertiesEnum to Sym names.
+ * enumerator from a StandardPropertiesEnum to NP::Sym names.
  */
 struct PropertiesMap {
 
@@ -97,11 +96,11 @@ private:
       {default_properties.weight, "WEIGHT"},
       {default_properties.internal_state, "INTERNAL_STATE"},
       {default_properties.boundary_intersection_point,
-       BoundaryInteractionSpecification::intersection_point.name},
+       NP::BoundaryInteractionSpecification::intersection_point.name},
       {default_properties.boundary_intersection_normal,
-       BoundaryInteractionSpecification::intersection_normal.name},
+       NP::BoundaryInteractionSpecification::intersection_normal.name},
       {default_properties.boundary_intersection_metadata,
-       BoundaryInteractionSpecification::intersection_metadata.name},
+       NP::BoundaryInteractionSpecification::intersection_metadata.name},
       {default_properties.temperature, "TEMPERATURE"},
       {default_properties.density, "DENSITY"},
       {default_properties.flow_speed, "FLOW_SPEED"},

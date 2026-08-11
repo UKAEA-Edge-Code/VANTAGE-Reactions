@@ -1,9 +1,8 @@
 #ifndef REACTIONS_AMJUEL_FIT_CS_H
 #define REACTIONS_AMJUEL_FIT_CS_H
 #include "../reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -44,11 +43,11 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * is where the maximum value of the rate is assumed to be. After this value,
    * the cross section is of the form max_val/v_r.
    */
-  AMJUELFitCrossSection(REAL vel_norm, REAL cs_norm, REAL mass_amu,
-                        std::array<REAL, num_coeffs> coeffs,
-                        std::array<REAL, num_l_coeffs> l_coeffs,
-                        std::array<REAL, num_r_coeffs> r_coeffs, REAL lab_E_min,
-                        REAL lab_E_max, REAL max_E)
+  AMJUELFitCrossSection(NP::REAL vel_norm, NP::REAL cs_norm, NP::REAL mass_amu,
+                        std::array<NP::REAL, num_coeffs> coeffs,
+                        std::array<NP::REAL, num_l_coeffs> l_coeffs,
+                        std::array<NP::REAL, num_r_coeffs> r_coeffs,
+                        NP::REAL lab_E_min, NP::REAL lab_E_max, NP::REAL max_E)
       : cs_norm(cs_norm), scaled_inverse_cs_norm(1e-4 / cs_norm),
         mult_const(vel_norm * vel_norm * mass_amu * 1.66053904e-27 /
                    (2 * 1.60217663e-19)),
@@ -72,11 +71,11 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * @return Value of the cross section (in normalised units) at the given
    * velocity value, obeying the fit asymptotic rules
    */
-  REAL get_value_at(const REAL &relative_vel) const {
+  NP::REAL get_value_at(const NP::REAL &relative_vel) const {
 
-    REAL E = this->mult_const * relative_vel * relative_vel;
+    NP::REAL E = this->mult_const * relative_vel * relative_vel;
 
-    REAL logE = Kernel::log(E);
+    NP::REAL logE = NP::Kernel::log(E);
     if (E >= this->max_E) {
       return this->max_val / relative_vel;
     };
@@ -84,7 +83,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
     bool left_asymptote = E <= this->lab_E_min && num_l_coeffs > 0;
     bool right_asymptote = E >= this->lab_E_max && num_r_coeffs > 0;
 
-    REAL sum_E = 0;
+    NP::REAL sum_E = 0;
     if (left_asymptote) {
       /*
        * Code before optimisation for futher info search horner's
@@ -114,27 +113,27 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
       }
     }
 
-    return Kernel::exp(sum_E) * this->scaled_inverse_cs_norm;
+    return NP::Kernel::exp(sum_E) * this->scaled_inverse_cs_norm;
   };
 
   /**
    * @brief Returns maximum value of the rate sigma*v of for this cross-section.
    *
-   * @return REAL-valued maximum value.
+   * @return NP::REAL-valued maximum value.
    */
-  REAL get_max_rate_val() const { return this->max_val; };
+  NP::REAL get_max_rate_val() const { return this->max_val; };
 
 private:
-  REAL max_val;
-  REAL mult_const;
-  REAL cs_norm;
-  REAL max_E;
-  REAL lab_E_min;
-  REAL lab_E_max;
-  REAL scaled_inverse_cs_norm;
-  std::array<REAL, num_coeffs> coeffs;
-  std::array<REAL, num_l_coeffs> l_coeffs;
-  std::array<REAL, num_r_coeffs> r_coeffs;
+  NP::REAL max_val;
+  NP::REAL mult_const;
+  NP::REAL cs_norm;
+  NP::REAL max_E;
+  NP::REAL lab_E_min;
+  NP::REAL lab_E_max;
+  NP::REAL scaled_inverse_cs_norm;
+  std::array<NP::REAL, num_coeffs> coeffs;
+  std::array<NP::REAL, num_l_coeffs> l_coeffs;
+  std::array<NP::REAL, num_r_coeffs> r_coeffs;
 };
 }; // namespace VANTAGE::Reactions
 #endif

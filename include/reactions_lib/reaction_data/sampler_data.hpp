@@ -2,11 +2,11 @@
 #define REACTIONS_SAMPLER_DATA_H
 #include "../particle_properties_map.hpp"
 #include "../utils.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <iostream>
-#include <neso_particles.hpp>
+
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -23,8 +23,8 @@ struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL> {
   /**
    * @brief Sample one number from the rng_kernel
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -35,17 +35,17 @@ struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL> {
    *
    * @return Sampled random number
    */
-  std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, 1>
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
             typename RNG_KERNEL::KernelType &rng_kernel) const {
     bool is_kernel_valid = true;
     auto rand = rng_kernel.at(index, 0, &is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
     }
-    return std::array<REAL, 1>{rand};
+    return std::array<NP::REAL, 1>{rand};
   }
 
 public:
@@ -77,7 +77,7 @@ struct SamplerData
   SamplerData(std::shared_ptr<RNG_KERNEL> rng_kernel,
               std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL>(
-            Properties<INT>(required_simple_int_props), properties_map) {
+            Properties<NP::INT>(required_simple_int_props), properties_map) {
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
 
     this->set_rng_kernel(rng_kernel);

@@ -8,6 +8,7 @@
 // The matching explicit instantiations live in
 // the src directory.
 
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <utility>
 
 namespace VANTAGE::Reactions {
@@ -16,7 +17,7 @@ namespace VANTAGE::Reactions {
 // the ones in src
 
 // ---------------------------------------------------------------------------
-// Kernel classes
+// NP::Kernel classes
 // ---------------------------------------------------------------------------
 extern template class CXReactionKernels<2>;
 extern template class CXReactionKernels<3>;
@@ -36,16 +37,16 @@ extern template class SpecularReflectionKernels<3>;
 // ---------------------------------------------------------------------------
 // Common transformation strategies
 // ---------------------------------------------------------------------------
-extern template class CellwiseAccumulator<REAL>;
-extern template class CellwiseAccumulator<INT>;
-extern template class WeightedCellwiseAccumulator<REAL>;
-extern template class WeightedCellwiseAccumulator<INT>;
-extern template class ParticleDatZeroer<REAL>;
-extern template class ParticleDatZeroer<INT>;
+extern template class CellwiseAccumulator<NP::REAL>;
+extern template class CellwiseAccumulator<NP::INT>;
+extern template class WeightedCellwiseAccumulator<NP::REAL>;
+extern template class WeightedCellwiseAccumulator<NP::INT>;
+extern template class ParticleDatZeroer<NP::REAL>;
+extern template class ParticleDatZeroer<NP::INT>;
 extern template class MergeTransformationStrategy<2>;
 extern template class MergeTransformationStrategy<3>;
-extern template class CellwiseDistributor<REAL>;
-extern template class CellwiseDistributor<INT>;
+extern template class CellwiseDistributor<NP::REAL>;
+extern template class CellwiseDistributor<NP::INT>;
 
 // ---------------------------------------------------------------------------
 // Vranic merging kernels
@@ -64,10 +65,10 @@ extern template class SpecularReflectionData<3>;
 // ---------------------------------------------------------------------------
 // Reaction kernel pre-requisites
 // ---------------------------------------------------------------------------
-extern template class Properties<INT>;
-extern template class Properties<REAL>;
-extern template class ArgumentNameSet<INT>;
-extern template class ArgumentNameSet<REAL>;
+extern template class Properties<NP::INT>;
+extern template class Properties<NP::REAL>;
+extern template class ArgumentNameSet<NP::INT>;
+extern template class ArgumentNameSet<NP::REAL>;
 
 } // namespace VANTAGE::Reactions
 

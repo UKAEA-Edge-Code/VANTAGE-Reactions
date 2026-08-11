@@ -1,11 +1,13 @@
+
 #include "../include/reactions_lib/reaction_data/arrhenius_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
-ArrheniusData::ArrheniusData(REAL a_coeff, REAL b_coeff,
+ArrheniusData::ArrheniusData(NP::REAL a_coeff, NP::REAL b_coeff,
                              std::map<int, std::string> properties_map)
     : ReactionDataBase<ArrheniusDataOnDevice>(
-          Properties<REAL>(required_simple_real_props), properties_map) {
+          Properties<NP::REAL>(required_simple_real_props), properties_map) {
 
   this->on_device_obj = ArrheniusDataOnDevice(a_coeff, b_coeff);
 

@@ -1,19 +1,21 @@
+
 #include "include/mock_particle_group.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(VelocitySampling, FilteredMaxwellianFailure) {
   struct AlwaysFailCrossSection : public AbstractCrossSection {
     AlwaysFailCrossSection() = default;
 
-    REAL get_value_at(const REAL &relative_vel) const { return 0.0; }
+    NP::REAL get_value_at(const NP::REAL &relative_vel) const { return 0.0; }
 
-    REAL get_max_rate_val() const { return 0.0; }
+    NP::REAL get_max_rate_val() const { return 0.0; }
 
-    bool accept_reject(REAL relative_vel = 0.0, REAL uniform_rand = 0.0,
-                       REAL value_at = 0.0, REAL max_rate_val = 0.0) const {
+    bool accept_reject(NP::REAL relative_vel = 0.0, NP::REAL uniform_rand = 0.0,
+                       NP::REAL value_at = 0.0,
+                       NP::REAL max_rate_val = 0.0) const {
       return false;
     }
   };
@@ -21,16 +23,16 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
   auto cs = AlwaysFailCrossSection();
 
   std::mt19937 rng = std::mt19937(52234126);
-  std::uniform_real_distribution<REAL> uniform_dist(0.0, 1.0);
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample;
+  std::uniform_real_distribution<NP::REAL> uniform_dist(0.0, 1.0);
+  auto rng_lambda = [&]() -> NP::REAL {
+    NP::REAL rng_sample;
     do {
       rng_sample = uniform_dist(rng);
     } while (rng_sample == 0.0);
     return rng_sample;
   };
 
-  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 4);
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, 4);
 
   const int ndim = 2;
   auto sampler =
@@ -51,10 +53,12 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
         auto test = sampler_on_device.calc_data(particle_index, req_int_props,
                                                 req_real_props, kernel);
       },
-      Access::read(ParticleLoopIndex{}),
-      Access::write(sym_vector<INT>(particle_group, req_int_props_)),
-      Access::read(sym_vector<REAL>(particle_group, req_real_props_)),
-      Access::read(sampler.get_rng_kernel()))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(
+          NP::sym_vector<NP::INT>(particle_group, req_int_props_)),
+      NP::Access::read(
+          NP::sym_vector<NP::REAL>(particle_group, req_real_props_)),
+      NP::Access::read(sampler.get_rng_kernel()))
       ->execute();
 
   EXPECT_TRUE(panicked(particle_sub_group(particle_group)));

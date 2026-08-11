@@ -1,11 +1,13 @@
+
 #include "../include/reactions_lib/reaction_data/fixed_coefficient_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
 FixedCoefficientData::FixedCoefficientData(
-    REAL rate_coefficient, std::map<int, std::string> properties_map)
+    NP::REAL rate_coefficient, std::map<int, std::string> properties_map)
     : ReactionDataBase<FixedCoefficientDataOnDevice>(
-          Properties<REAL>(required_simple_real_props), properties_map) {
+          Properties<NP::REAL>(required_simple_real_props), properties_map) {
 
   this->on_device_obj = FixedCoefficientDataOnDevice(rate_coefficient);
 

@@ -1,13 +1,14 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/reaction_controller.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 #include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 #include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, single_reaction_multi_apply) {
@@ -22,9 +23,9 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller = ReactionController(test_wrapper);
-  REAL test_rate = 5.0;
+  NP::REAL test_rate = 5.0;
 
-  const INT num_products_per_parent = 1;
+  const NP::INT num_products_per_parent = 1;
 
   auto test_reaction = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0,
@@ -35,22 +36,24 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto merged_group =
       particle_sub_group(particle_group, InternalStateEquals(1),
-                         Access::read(Sym<INT>("INTERNAL_STATE")));
+                         NP::Access::read(NP::Sym<NP::INT>("INTERNAL_STATE")));
 
-  auto reduction = std::make_shared<CellDatConst<REAL>>(
+  auto reduction = std::make_shared<NP::CellDatConst<NP::REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(particle_group, WeightReducer{},
-                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction))
+                NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")),
+                NP::Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_group, 0.01);
 
-  auto reduction_after = std::make_shared<CellDatConst<REAL>>(
+  auto reduction_after = std::make_shared<NP::CellDatConst<NP::REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(particle_group, WeightReducer{},
-                Access::read(Sym<REAL>("WEIGHT")), Access::add(reduction_after))
+                NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")),
+                NP::Access::add(reduction_after))
       ->execute();
 
   for (int icell = 0; icell < cell_count; icell++) {
@@ -77,9 +80,9 @@ TEST(ReactionController, single_reaction_multi_apply) {
   // applications
   auto parent_subgroup =
       particle_sub_group(particle_group, InternalStateEquals(0),
-                         Access::read(Sym<INT>("INTERNAL_STATE")));
+                         NP::Access::read(NP::Sym<NP::INT>("INTERNAL_STATE")));
 
-  auto test_la = std::make_shared<LocalArray<REAL>>(
+  auto test_la = std::make_shared<NP::LocalArray<NP::REAL>>(
       particle_group->sycl_target, parent_subgroup->get_npart_local(), 0);
   auto loop = particle_loop(
       "check_rate", parent_subgroup,
@@ -87,8 +90,8 @@ TEST(ReactionController, single_reaction_multi_apply) {
         auto idx = index.get_loop_linear_index();
         la.at(idx) = tot_reaction_rate[0];
       },
-      Access::read(Sym<REAL>("TOT_REACTION_RATE")), Access::write(test_la),
-      Access::read(ParticleLoopIndex()));
+      NP::Access::read(NP::Sym<NP::REAL>("TOT_REACTION_RATE")),
+      NP::Access::write(test_la), NP::Access::read(NP::ParticleLoopIndex()));
   loop->execute();
   auto test_vec = test_la->get();
   for (auto rate : test_vec) {

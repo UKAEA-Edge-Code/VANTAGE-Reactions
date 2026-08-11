@@ -1,6 +1,7 @@
 #ifndef TEST_REACTION_CONTROLLER_FUNCTORS_HPP
 #define TEST_REACTION_CONTROLLER_FUNCTORS_HPP
 
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <neso_particles/typedefs.hpp>
 
 /**
@@ -16,8 +17,8 @@ struct WeightReducer {
  * @brief Functor for matching internal state values.
  */
 struct InternalStateEquals {
-  INT value;
-  InternalStateEquals(INT value) : value(value) {}
+  NP::INT value;
+  InternalStateEquals(NP::INT value) : value(value) {}
   template <typename T> bool operator()(const T &x) const {
     return x[0] == value;
   }

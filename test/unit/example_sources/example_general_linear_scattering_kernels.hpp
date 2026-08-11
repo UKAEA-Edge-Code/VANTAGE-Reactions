@@ -1,5 +1,5 @@
 void general_linear_scattering_kernels_example(
-    ParticleGroupSharedPtr particle_group) {
+    NP::ParticleGroupSharedPtr particle_group) {
 
   // For this kernel, we do need to remap the sources in general
   // For example we might want to use these kernels to represent absorption at a
@@ -18,7 +18,7 @@ void general_linear_scattering_kernels_example(
                                     -1); // This is the projectile species
 
   // Implementing specular reflection on ingoing particle velocities
-  auto velocity_data = ExtractorData<2>(Sym<REAL>("VELOCITY"));
+  auto velocity_data = ExtractorData<2>(NP::Sym<NP::REAL>("VELOCITY"));
 
   auto specular_reflection = SpecularReflectionData<2>();
 

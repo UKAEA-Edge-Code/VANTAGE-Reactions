@@ -1,10 +1,10 @@
 #ifndef REACTIONS_EXTRACTOR_DATA_H
 #define REACTIONS_EXTRACTOR_DATA_H
 #include "../reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
+
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -21,8 +21,8 @@ struct ExtractorDataOnDevice : public ReactionDataBaseOnDevice<ncomp> {
   /**
    * @brief Function to extract particle dat values into an array
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -32,16 +32,16 @@ struct ExtractorDataOnDevice : public ReactionDataBaseOnDevice<ncomp> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size ncomp containing the extracted data
+   * @return A NP::REAL-valued array of size ncomp containing the extracted data
    */
-  std::array<REAL, ncomp> calc_data(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, ncomp> calc_data(
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
       typename ReactionDataBaseOnDevice<ncomp>::RNG_KERNEL_TYPE::KernelType
           &kernel) const {
 
-    std::array<REAL, ncomp> result;
+    std::array<NP::REAL, ncomp> result;
 
     for (int i = 0; i < ncomp; i++) {
 
@@ -56,7 +56,7 @@ public:
 };
 
 /**
- * @brief Reaction data used to extract real valued ParticleDat
+ * @brief Reaction data used to extract real valued NP::ParticleDat
  *
  * @tparam ncomp Number of components of the dat to be extracted
  */
@@ -67,10 +67,10 @@ struct ExtractorData
   /**
    * @brief Constructor for ExtractorData.
    *
-   * @param extracted_sym The Sym<REAL> corresponding to the ParticleDat whose
-   * components should be extracted
+   * @param extracted_sym The NP::Sym<NP::REAL> corresponding to the
+   * NP::ParticleDat whose components should be extracted
    */
-  ExtractorData(const Sym<REAL> &extracted_sym)
+  ExtractorData(const NP::Sym<NP::REAL> &extracted_sym)
       : ReactionDataBase<ExtractorDataOnDevice<ncomp>, ncomp>(),
         extracted_sym(extracted_sym) {
 
@@ -90,12 +90,12 @@ struct ExtractorData
   };
 
 private:
-  Sym<REAL> extracted_sym;
+  NP::Sym<NP::REAL> extracted_sym;
 };
 
 template <size_t n_comp> auto inline extract(const std::string &name) {
 
-  return ExtractorData<n_comp>(Sym<REAL>(name));
+  return ExtractorData<n_comp>(NP::Sym<NP::REAL>(name));
 }
 }; // namespace VANTAGE::Reactions
 #endif

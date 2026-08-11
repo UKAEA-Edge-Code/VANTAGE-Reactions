@@ -2,9 +2,8 @@
 #define REACTIONS_PIPELINE_DATA_H
 #include "composite_data.hpp"
 #include "reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 template <typename T> constexpr size_t last_dim() { return T::DIM; };
@@ -35,13 +34,13 @@ constexpr bool check_consistency() {
  */
 template <typename... DATATYPE>
 struct PipelineDataOnDevice
-    : public CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
-                                   DATATYPE...> {
+    : public CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, NP::REAL,
+                                   NP::REAL, DATATYPE...> {
 
   PipelineDataOnDevice() = default;
 
   PipelineDataOnDevice(DATATYPE... data)
-      : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
+      : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, NP::REAL, NP::REAL,
                               DATATYPE...>(data...) {
 
     static_assert(first_in_dim<DATATYPE...>() == 0 &&
@@ -54,8 +53,8 @@ struct PipelineDataOnDevice
   /**
    * @brief Function to calculate the composed data
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties
@@ -63,34 +62,34 @@ struct PipelineDataOnDevice
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernels used in the
-   * calculation, a TupleRNG accessor
+   * calculation, a NP::TupleRNG accessor
    *
    * @return Concatenated return arrays of all the contained device types
    */
-  std::array<REAL, DIM> calc_data(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
-      typename TupleRNG<
+  std::array<NP::REAL, DIM> calc_data(
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
-    return calc_data_recurse<0, DATATYPE...>(std::array<REAL, 0>{}, index,
+    return calc_data_recurse<0, DATATYPE...>(std::array<NP::REAL, 0>{}, index,
                                              req_int_props, req_real_props,
                                              rng_kernel);
   }
 
   template <size_t I, typename T, typename... ARGS>
-  std::array<REAL, DIM> calc_data_recurse(
+  std::array<NP::REAL, DIM> calc_data_recurse(
       const std::array<typename T::INPUT_TYPE, T::INPUT_DIM> input,
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
-      typename TupleRNG<
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
-    const auto arg = Tuple::get<I>(this->data);
+    const auto arg = NP::Tuple::get<I>(this->data);
     if constexpr (I < (sizeof...(DATATYPE)) - 1) {
       if constexpr (T::INPUT_DIM > 0) {
         return this->calc_data_recurse<I + 1, ARGS...>(

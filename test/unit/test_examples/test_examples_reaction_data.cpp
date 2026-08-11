@@ -1,7 +1,6 @@
 #include "../include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 #include "../example_sources/example_amjuel1d.hpp"

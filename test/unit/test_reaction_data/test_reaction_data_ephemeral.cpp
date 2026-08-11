@@ -1,9 +1,10 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionData, EphemeralPropertiesReactionData) {
@@ -11,7 +12,8 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto test_data = TestEphemeralVarData();
 
@@ -40,12 +42,12 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
 
   // Add data to subgroup
   particle_sub_group->add_ephemeral_dat(
-      BoundaryInteractionSpecification::intersection_normal, 2);
+      NP::BoundaryInteractionSpecification::intersection_normal, 2);
   particle_sub_group->add_ephemeral_dat(
-      BoundaryInteractionSpecification::intersection_point, 2);
+      NP::BoundaryInteractionSpecification::intersection_point, 2);
   particle_sub_group->add_ephemeral_dat(
-      BoundaryInteractionSpecification::intersection_metadata,
-      BoundaryInteractionSpecification::intersection_metadata_ncomp);
+      NP::BoundaryInteractionSpecification::intersection_metadata,
+      NP::BoundaryInteractionSpecification::intersection_metadata_ncomp);
 
   ASSERT_TRUE(contains_boundary_interaction_data(particle_sub_group));
   ASSERT_TRUE(contains_boundary_interaction_data(particle_sub_group, 2));
@@ -55,14 +57,17 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
         point.at_ephemeral(0) = 2.0;
         normal.at_ephemeral(0) = 0.25;
       },
-      Access::write(BoundaryInteractionSpecification::intersection_point),
-      Access::write(BoundaryInteractionSpecification::intersection_normal))
+      NP::Access::write(
+          NP::BoundaryInteractionSpecification::intersection_point),
+      NP::Access::write(
+          NP::BoundaryInteractionSpecification::intersection_normal))
       ->execute();
 
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto rate =
+        particle_group->get_cell(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

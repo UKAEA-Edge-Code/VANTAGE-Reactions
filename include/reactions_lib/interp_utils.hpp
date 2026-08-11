@@ -1,15 +1,15 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
-#include <neso_particles.hpp>
+
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <vector>
 
-using namespace NESO::Particles;
 // Type discipline for indices:
 //   size_t  — API boundaries, container sizes, stride values
-//   INT     — internal device computation (subtraction, decrement, clamp)
+//   NP::INT     — internal device computation (subtraction, decrement, clamp)
 static_assert(
-    sizeof(INT) >= sizeof(size_t) || sizeof(size_t) <= 8,
-    "INT must be able to represent all size_t values on this platform");
+    sizeof(NESO::Particles::INT) >= sizeof(size_t) || sizeof(size_t) <= 8,
+    "NP::INT must be able to represent all size_t values on this platform");
 namespace VANTAGE::Reactions::interp_utils {
 /**
  * Helper function that extracts the value of the binary representation of i at
@@ -30,9 +30,9 @@ template <typename T> inline T binary_extract(const T &i, const size_t &j) {
  *
  * @return std::size_t that specifies the index on a contiguous grid array
  */
-inline INT coeff_index_on_device(INT const *indices, size_t const *dims_vec,
-                                 const int &ndim) {
-  INT index = indices[ndim - 1];
+inline NP::INT coeff_index_on_device(NP::INT const *indices,
+                                     size_t const *dims_vec, const int &ndim) {
+  NP::INT index = indices[ndim - 1];
 
   for (int dimx = ndim - 2; dimx >= 0; dimx--) {
     index *= dims_vec[dimx];
@@ -80,8 +80,8 @@ inline size_t coord_index_on_device(const size_t &sub_index,
  * @return std::size_t The index on a given dimension that is the closest to
  * x_interp.
  */
-inline size_t calc_floor_point_index(const REAL &x_interp,
-                                     REAL const *dim_coords,
+inline size_t calc_floor_point_index(const NP::REAL &x_interp,
+                                     NP::REAL const *dim_coords,
                                      const size_t &last_index) {
   size_t L = 0;
   size_t R = last_index;
@@ -112,17 +112,19 @@ inline size_t calc_floor_point_index(const REAL &x_interp,
  * @param f0 The function value at x0.
  * @param f1 The function value at x1.
  *
- * @return REAL value of the linearly interpolated function value at x_interp.
+ * @return NP::REAL value of the linearly interpolated function value at
+ * x_interp.
  */
-inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
-                          const REAL &f0, const REAL &f1) {
+inline NP::REAL linear_interp(const NP::REAL &x_interp, const NP::REAL &x0,
+                              const NP::REAL &x1, const NP::REAL &f0,
+                              const NP::REAL &f1) {
   // The excessive splitting of operations is due to a failed unit tests on
   // cudallvm compilationflow when using variables whose definitions combine
   // multiple operations.
-  REAL df = f1 - f0;
-  REAL dx = x1 - x0;
-  REAL dfdx = dx != 0.0f ? (df / dx) : 0.0;
-  REAL c = f0 - (dfdx * x0);
+  NP::REAL df = f1 - f0;
+  NP::REAL dx = x1 - x0;
+  NP::REAL dfdx = dx != 0.0f ? (df / dx) : 0.0;
+  NP::REAL c = f0 - (dfdx * x0);
 
   return (dfdx * x_interp) + c;
 }
@@ -136,35 +138,35 @@ inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
  *
  * @param ndim The number of dimensions.
  *
- * @return std::vector<INT> That contains the points denoting the vertices of
- * the hypercube.
+ * @return std::vector<NP::INT> That contains the points denoting the vertices
+ * of the hypercube.
  */
 std::vector<size_t> construct_initial_hypercube(const size_t &ndim);
 
 /**
- * @brief Function to bin REAL-valued (between 0.0 and 1.0) elements of an
- * input array, u, into INT-valued indices that lie between 0 and an upper limit
- * defined by the elements of dims. For example with u = {0.1, 0.7, 0.3} and
- * dims = {4, 6, 9} the output coords would be: {0, 4, 2}
+ * @brief Function to bin NP::REAL-valued (between 0.0 and 1.0) elements of an
+ * input array, u, into NP::INT-valued indices that lie between 0 and an upper
+ * limit defined by the elements of dims. For example with u = {0.1, 0.7, 0.3}
+ * and dims = {4, 6, 9} the output coords would be: {0, 4, 2}
  *
  * @tparam index_ndim The size of the u array, the dims array and the output
  * from the function.
- * @param u REAL-valued array of size index_ndim that contains the values
+ * @param u NP::REAL-valued array of size index_ndim that contains the values
  * (between 0.0 and 1.0) that are to be converted to indices.
- * @param dims INT-valued array of size index_ndim that contains values that
+ * @param dims NP::INT-valued array of size index_ndim that contains values that
  * define the upper limits for the results.
- * @return An INT-valued array of size index_ndim that contains required
+ * @return An NP::INT-valued array of size index_ndim that contains required
  * indices.
  */
 template <size_t index_ndim>
-inline std::array<INT, index_ndim>
-bin_uniform_indices(const std::array<REAL, index_ndim> &u,
-                    const std::array<INT, index_ndim> &dims) {
-  std::array<INT, index_ndim> coords;
+inline std::array<NP::INT, index_ndim>
+bin_uniform_indices(const std::array<NP::REAL, index_ndim> &u,
+                    const std::array<NP::INT, index_ndim> &dims) {
+  std::array<NP::INT, index_ndim> coords;
 
-  INT x = 0;
+  NP::INT x = 0;
   for (size_t i = 0; i < index_ndim; i++) {
-    x = static_cast<INT>(sycl::floor(u[i] * dims[i]));
+    x = static_cast<NP::INT>(sycl::floor(u[i] * dims[i]));
     coords[i] = (x < dims[i]) ? x : (dims[i] - 1);
   }
 
@@ -206,8 +208,8 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * @param non_interpolation_indices Array of indices that correspond to the
  * dimensions that will not be interpolated.
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
- * @param index Read-only accessor to a loop index for a ParticleLoop
- * inside which calc_data is called. Access using either
+ * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+ * inside which calc_data is called. NP::Access using either
  * index.get_loop_linear_index(), index.get_local_linear_index(),
  * index.get_sub_linear_index() as required.
  * @param req_int_props Vector of symbols for integer-valued properties that
@@ -221,30 +223,30 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
 template <typename DATATYPE, int output_ndim, int interp_ndim,
           int non_interp_ndim>
 inline void initial_func_eval_on_device(
-    REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
-    INT const *origin_indices, size_t const *hypercube_vertices,
-    REAL const *coords_vec,
-    const std::array<REAL, non_interp_ndim> &non_interpolation_points,
+    NP::REAL *vertex_func_evals, NP::INT *vertex_coord,
+    const DATATYPE &grid_func_data, NP::INT const *origin_indices,
+    size_t const *hypercube_vertices, NP::REAL const *coords_vec,
+    const std::array<NP::REAL, non_interp_ndim> &non_interpolation_points,
     const std::array<size_t, interp_ndim> &interpolation_indices,
     const std::array<size_t, non_interp_ndim> &non_interpolation_indices,
-    size_t const *dims_vec, const Access::LoopIndex::Read &index,
-    const Access::SymVector::Write<INT> &req_int_props,
-    const Access::SymVector::Read<REAL> &req_real_props,
-    typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
+    size_t const *dims_vec, const NP::Access::LoopIndex::Read &index,
+    const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+    const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+    typename NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
         KernelType &rng_kernel) {
 
-  std::array<REAL, output_ndim> grid_func_output;
+  std::array<NP::REAL, output_ndim> grid_func_output;
   for (size_t idim = 0; idim < output_ndim; idim++)
     grid_func_output[idim] = 0.0;
 
-  std::array<REAL, interp_ndim> vertex_val;
+  std::array<NP::REAL, interp_ndim> vertex_val;
   for (size_t i = 0; i < interp_ndim; i++) {
     vertex_val[i] = 0.0;
   }
 
   static constexpr int total_ndim = interp_ndim + non_interp_ndim;
 
-  std::array<REAL, total_ndim> grid_func_input;
+  std::array<NP::REAL, total_ndim> grid_func_input;
   for (size_t i = 0; i < total_ndim; i++)
     grid_func_input[i] = 0.0;
 
@@ -311,11 +313,11 @@ inline void initial_func_eval_on_device(
  */
 template <int output_ndim>
 inline void contract_hypercube_on_device(
-    const REAL *interp_points, const size_t &dim_index,
-    size_t const *hypercube_vertices, const INT *origin_indices,
-    const REAL *vertex_func_evals, REAL const *coords_vec,
-    size_t const *dims_vec, REAL *output_evals, INT *varying_dim,
-    INT *vertex_coord) {
+    const NP::REAL *interp_points, const size_t &dim_index,
+    size_t const *hypercube_vertices, const NP::INT *origin_indices,
+    const NP::REAL *vertex_func_evals, NP::REAL const *coords_vec,
+    size_t const *dims_vec, NP::REAL *output_evals, NP::INT *varying_dim,
+    NP::INT *vertex_coord) {
   size_t ndim = dim_index + 1;
   size_t num_points = (1 << ndim);
   size_t num_out_points = (1 << dim_index);
@@ -329,12 +331,12 @@ inline void contract_hypercube_on_device(
     varying_dim[point_index] = vertex_coord[dim_index];
   }
 
-  INT vertex_0, vertex_1;
-  REAL coord_val_0, coord_val_1, eval_point_0, eval_point_1;
+  NP::INT vertex_0, vertex_1;
+  NP::REAL coord_val_0, coord_val_1, eval_point_0, eval_point_1;
 
   for (size_t i = 0; i < num_out_points; i++) {
-    INT index_0 = i;
-    INT index_1 = num_points - (i + 1);
+    NP::INT index_0 = i;
+    NP::INT index_1 = num_points - (i + 1);
 
     vertex_0 = varying_dim[index_0];
     vertex_1 = varying_dim[index_1];

@@ -3,12 +3,12 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
 #include <cmath>
-#include <neso_particles.hpp>
+
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -40,12 +40,14 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
    */
-  AMJUEL2DDataH3OnDevice(
-      const REAL &evolved_quantity_normalisation,
-      const REAL &density_normalisation, const REAL &temperature_normalisation,
-      const REAL &time_normalisation, const REAL &velocity_normalisation,
-      const REAL &mass_amu,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs)
+  AMJUEL2DDataH3OnDevice(const NP::REAL &evolved_quantity_normalisation,
+                         const NP::REAL &density_normalisation,
+                         const NP::REAL &temperature_normalisation,
+                         const NP::REAL &time_normalisation,
+                         const NP::REAL &velocity_normalisation,
+                         const NP::REAL &mass_amu,
+                         const std::array<std::array<NP::REAL, num_coeffs_E>,
+                                          num_coeffs_T> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
         temperature_normalisation(temperature_normalisation),
@@ -57,8 +59,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * @brief Function to calculate the reaction rate for a 2D H.3 AMJUEL-based
    * reaction.
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -68,26 +70,26 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size 1 containing the calculated reaction
-   * rate.
+   * @return A NP::REAL-valued array of size 1 containing the calculated
+   * reaction rate.
    */
-  std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, 1>
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
-    REAL log_temp =
-        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
+    NP::REAL log_temp = NP::Kernel::log(fluid_temperature_dat *
+                                        this->temperature_normalisation);
 
-    REAL E = 0;
+    NP::REAL E = 0;
     for (int i = 0; i < dim; i++) {
-      REAL rel_v = req_real_props.at(this->fluid_flow_speed_ind, index, i) -
-                   req_real_props.at(this->velocity_ind, index, i);
+      NP::REAL rel_v = req_real_props.at(this->fluid_flow_speed_ind, index, i) -
+                       req_real_props.at(this->velocity_ind, index, i);
       E += rel_v * rel_v;
     }
     E *= en_mult_const;
@@ -95,42 +97,42 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
       E = 0.1;
     }
 
-    REAL log_E = Kernel::log(E);
+    NP::REAL log_E = NP::Kernel::log(E);
 
-    std::array<REAL, num_coeffs_E> log_E_m_arr;
+    std::array<NP::REAL, num_coeffs_E> log_E_m_arr;
     log_E_m_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs_E; i++) {
       log_E_m_arr[i] = log_E_m_arr[i - 1] * log_E;
     }
 
-    std::array<REAL, num_coeffs_T> log_temp_arr;
+    std::array<NP::REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs_T; i++) {
       log_temp_arr[i] = log_temp_arr[i - 1] * log_temp;
     }
 
-    REAL log_rate = 0.0;
+    NP::REAL log_rate = 0.0;
     for (int j = 0; j < num_coeffs_E; j++) {
       for (int i = 0; i < num_coeffs_T; i++) {
         log_rate += this->coeffs[i][j] * log_E_m_arr[j] * log_temp_arr[i];
       }
     }
 
-    REAL rate = Kernel::exp(log_rate) * 1.0e-6;
+    NP::REAL rate = NP::Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;
 
-    return std::array<REAL, 1>{rate};
+    return std::array<NP::REAL, 1>{rate};
   }
 
 public:
   int fluid_density_ind, fluid_temperature_ind, fluid_flow_speed_ind,
       velocity_ind, weight_ind;
-  REAL temperature_normalisation;
-  REAL en_mult_const;
-  REAL mult_const;
-  std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> coeffs;
+  NP::REAL temperature_normalisation;
+  NP::REAL en_mult_const;
+  NP::REAL mult_const;
+  std::array<std::array<NP::REAL, num_coeffs_E>, num_coeffs_T> coeffs;
 };
 
 /**
@@ -171,16 +173,18 @@ struct AMJUEL2DDataH3
    * used when remapping property names.
    */
 
-  AMJUEL2DDataH3(
-      const REAL &evolved_quantity_normalisation,
-      const REAL &density_normalisation, const REAL &temperature_normalisation,
-      const REAL &time_normalisation, const REAL &velocity_normalisation,
-      const REAL &mass_amu,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs,
-      std::map<int, std::string> properties_map = get_default_map())
+  AMJUEL2DDataH3(const NP::REAL &evolved_quantity_normalisation,
+                 const NP::REAL &density_normalisation,
+                 const NP::REAL &temperature_normalisation,
+                 const NP::REAL &time_normalisation,
+                 const NP::REAL &velocity_normalisation,
+                 const NP::REAL &mass_amu,
+                 const std::array<std::array<NP::REAL, num_coeffs_E>,
+                                  num_coeffs_T> &coeffs,
+                 std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>>(
-            Properties<REAL>(required_simple_real_props), properties_map) {
+            Properties<NP::REAL>(required_simple_real_props), properties_map) {
 
     this->on_device_obj =
         AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(

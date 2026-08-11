@@ -1,10 +1,11 @@
+
 #include "include/mock_interpolation_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <cstdlib>
 #include <gtest/gtest.h>
 #include <neso_particles/typedefs.hpp>
 #include <random>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
@@ -17,19 +18,19 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
   const int subdivision_order = 1;
   const int stencil_width = 1;
 
-  auto mesh =
-      std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
-                                       subdivision_order, stencil_width);
+  auto mesh = std::make_shared<NP::CartesianHMesh>(
+      MPI_COMM_WORLD, ndim, dims, cell_extent, subdivision_order,
+      stencil_width);
 
   auto sycl_target =
-      std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
+      std::make_shared<NP::SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
 
   const int rank = sycl_target->comm_pair.rank_parent;
 
   auto rng = std::mt19937(52234126 + rank);
 
-  std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
-  std::array<REAL, trim_ndim> random_grid_nums;
+  std::uniform_real_distribution<NP::REAL> uniform_dist_m1(0.0, 10.0);
+  std::array<NP::REAL, trim_ndim> random_grid_nums;
   for (int i = 0; i < trim_ndim; i++) {
     random_grid_nums[i] = uniform_dist_m1(rng);
   }
@@ -40,7 +41,7 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
   auto trim_grid_func = coeffs_data.get_grid_func_concat();
 
-  std::array<std::vector<REAL>, ndim> coords;
+  std::array<std::vector<NP::REAL>, ndim> coords;
 
   for (int idim = 0; idim < dims_vec[0]; idim++) {
     coords[0].push_back(coords_flat_vec[idim]);

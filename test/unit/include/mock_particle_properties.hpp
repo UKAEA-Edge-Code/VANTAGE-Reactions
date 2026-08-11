@@ -1,17 +1,17 @@
 #ifndef REACTIONS_MOCK_PARTICLE_PROPERTIES_H
 #define REACTIONS_MOCK_PARTICLE_PROPERTIES_H
-#include <neso_particles.hpp>
+
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <reactions/reactions.hpp>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 namespace PropertiesTest {
-inline auto int_props = Properties<INT>(
+inline auto int_props = Properties<NP::INT>(
     std::vector<int>{default_properties.id, default_properties.internal_state,
                      default_properties.cell_id});
 
-inline auto real_props = Properties<REAL>(
+inline auto real_props = Properties<NP::REAL>(
     std::vector<int>{
         default_properties.position, default_properties.velocity,
         default_properties.tot_reaction_rate, default_properties.weight,

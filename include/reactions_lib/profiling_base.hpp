@@ -1,7 +1,7 @@
 #ifndef REACTIONS_PROFILING_BASE_H
 #define REACTIONS_PROFILING_BASE_H
 
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <optional>
 #include <string>
 #include <typeinfo>
@@ -27,7 +27,7 @@ struct ProfilingBase {
    * Start a region to be profiled. The object returned from this call should be
    * passed to `end_profiling_region`.
    *
-   * @param subgroup ParticleSubGroup to extract SYCLTarget from.
+   * @param subgroup NP::ParticleSubGroup to extract NP::SYCLTarget from.
    * @param key1 Name of region that is being profiled.
    * @returns Region object to pass to `end_profiling_region`.
    */
@@ -38,7 +38,7 @@ struct ProfilingBase {
   /**
    * End a region to be profiled.
    *
-   * @param subgroup ParticleSubGroup to extract SYCLTarget from.
+   * @param subgroup NP::ParticleSubGroup to extract NP::SYCLTarget from.
    * @param region Region that is being profiled.
    */
   void

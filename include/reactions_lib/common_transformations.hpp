@@ -1,12 +1,10 @@
 #ifndef REACTIONS_COMMON_TRANSFORMATIONS_H
 #define REACTIONS_COMMON_TRANSFORMATIONS_H
+#include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "transformation_wrapper.hpp"
 #include "utils.hpp"
 #include <memory>
-#include <neso_particles.hpp>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 /**
@@ -17,7 +15,7 @@ struct NoOpTransformationStrategy : TransformationStrategy {
 };
 /**
  * @brief Simple transformation strategy that will remove all particles in the
- * passed ParticleSubGroup
+ * passed NP::ParticleSubGroup
  *
  */
 struct SimpleRemovalTransformationStrategy : TransformationStrategy {
@@ -29,7 +27,7 @@ struct SimpleRemovalTransformationStrategy : TransformationStrategy {
    *
    * @param target_subgroup ParticleSubgroup to remove
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override;
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override;
 };
 
 /**
@@ -59,7 +57,7 @@ struct CompositeTransform : TransformationStrategy {
    *
    * @param target_subgroup Particle subgroup to apply the transform to
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override;
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override;
 
   /**
    * @brief Add a transformation to the composite
@@ -75,7 +73,7 @@ private:
 /**
  * @brief Transformation strategy that zeroes out a set of particle dats
  *
- * @tparam T REAL or INT
+ * @tparam T NP::REAL or NP::INT
  */
 template <typename T> struct ParticleDatZeroer : TransformationStrategy {
 
@@ -90,7 +88,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
   ParticleDatZeroer(std::vector<std::string> dat_names) {
 
     for (auto name : dat_names) {
-      this->dats.push_back(Sym<T>(name));
+      this->dats.push_back(NP::Sym<T>(name));
     }
   }
   /**
@@ -98,9 +96,9 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
    *
    * @param target_subgroup Particle subgroup to apply the transform to
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
 
-    std::vector<INT> num_comps_vec;
+    std::vector<NP::INT> num_comps_vec;
     auto particle_group = target_subgroup->get_particle_group();
     for (auto &dat : dats) {
       auto particle_dat = particle_group->get_dat(dat);
@@ -108,7 +106,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
       num_comps_vec.push_back(particle_dat->ncomp);
     }
 
-    auto comp_nums = std::make_shared<LocalArray<INT>>(
+    auto comp_nums = std::make_shared<NP::LocalArray<NP::INT>>(
         target_subgroup->get_particle_group()->sycl_target, num_comps_vec);
 
     auto k_len = std::size(this->dats);
@@ -121,24 +119,24 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
             }
           }
         },
-        // The ->get_particle_group() is temporary until sym_vector accepts
-        // ParticleSubGroup as an argument
-        Access::write(
-            sym_vector<T>(target_subgroup->get_particle_group(), this->dats)),
-        Access::read(comp_nums));
+        // The ->get_particle_group() is temporary until NP::sym_vector accepts
+        // NP::ParticleSubGroup as an argument
+        NP::Access::write(NP::sym_vector<T>(
+            target_subgroup->get_particle_group(), this->dats)),
+        NP::Access::read(comp_nums));
 
     loop->execute();
   }
 
 private:
-  std::vector<Sym<T>> dats;
+  std::vector<NP::Sym<T>> dats;
 };
 
 /**
  * @brief Transfomation strategy that accumulates values of certain particle
  * dats and provides access to the cell-wise accumulated data
  *
- * @tparam T REAL or INT
+ * @tparam T NP::REAL or NP::INT
  */
 template <typename T> struct CellwiseAccumulator : TransformationStrategy {
 
@@ -152,21 +150,21 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * @param dat_names A vector of strings specifying the names of the dats
    * to be accumulated cell-wise.
    */
-  CellwiseAccumulator(ParticleGroupSharedPtr template_group,
+  CellwiseAccumulator(NP::ParticleGroupSharedPtr template_group,
                       std::vector<std::string> dat_names) {
 
     for (auto name : dat_names) {
       NESOASSERT(
-          template_group->contains_dat(Sym<T>(name)),
+          template_group->contains_dat(NP::Sym<T>(name)),
           "Particle dat " + name +
               " not in passed template particle group in CellwiseAccumulator");
-      this->dats.push_back(Sym<T>(name));
+      this->dats.push_back(NP::Sym<T>(name));
     }
 
     for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
           this->dats[i],
-          std::make_shared<CellDatConst<T>>(
+          std::make_shared<NP::CellDatConst<T>>(
               template_group->sycl_target,
               template_group->domain->mesh->get_cell_count(),
               template_group->get_dat(this->dats[i])->ncomp, 1)));
@@ -179,9 +177,9 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
     for (auto i = 0; i < std::size(this->dats); i++) {
-      Kernel::plus<T> op{};
+      NP::Kernel::plus<T> op{};
       reduce_dat_components_cellwise(target_subgroup, this->dats.at(i),
                                      this->values.at(this->dats.at(i)), op);
     }
@@ -189,55 +187,55 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
 
   /**
    * @brief Extract the cell-wise accumulated data as a standard vector of
-   * CellData objects
+   * NP::CellData objects
    *
    * @param data_name Name of the particle dat to be extracted
    */
-  std::vector<CellData<T>> get_cell_data(std::string data_name) {
+  std::vector<NP::CellData<T>> get_cell_data(std::string data_name) {
 
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
                "Attempted to retrieve values for " + data_name +
                    " which is not registered in the CellwiseAccumulator");
-    return this->values[Sym<T>(data_name)]->get_all_cells();
+    return this->values[NP::Sym<T>(data_name)]->get_all_cells();
   }
 
   /**
-   * @brief Get the pointer to underlying CellDatConst for given named data
+   * @brief Get the pointer to underlying NP::CellDatConst for given named data
    *
    * @param data_name Name of the particle dat to be extracted
    */
 
-  CellDatConstSharedPtr<T> get_value_pointer(std::string data_name) {
+  NP::CellDatConstSharedPtr<T> get_value_pointer(std::string data_name) {
 
-    return this->values[Sym<T>(data_name)];
+    return this->values[NP::Sym<T>(data_name)];
   }
 
   /**
-   * @brief Set the underlying CellDatConst pointer for given named data
+   * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_dat_const_ptr Shared pointer to CellDatConst<T>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<T>
    */
   void set_cell_data(std::string data_name,
-                     CellDatConstSharedPtr<T> cell_dat_const_ptr) {
+                     NP::CellDatConstSharedPtr<T> cell_dat_const_ptr) {
 
-    this->values[Sym<T>(data_name)] = cell_dat_const_ptr;
+    this->values[NP::Sym<T>(data_name)] = cell_dat_const_ptr;
   }
   /**
-   * @brief Sets cell-wise accumulated data from a standard vector of CellData
-   * objects
+   * @brief Sets cell-wise accumulated data from a standard vector of
+   * NP::CellData objects
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_data Standard vector of CellData objects with data to be
+   * @param cell_data Standard vector of NP::CellData objects with data to be
    * assigned
    */
   void set_cell_data(std::string data_name,
-                     std::vector<CellData<T>> &cell_data) {
+                     std::vector<NP::CellData<T>> &cell_data) {
 
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
                "Attempted to retrieve values for " + data_name +
                    " which is not registered in the CellwiseAccumulator");
-    this->values[Sym<T>(data_name)]->set_all_cells(cell_data);
+    this->values[NP::Sym<T>(data_name)]->set_all_cells(cell_data);
   }
 
   /**
@@ -247,10 +245,10 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
    * out
    */
   void zero_buffer(std::string data_name) {
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
                "Attempted to zero out buffer for " + data_name +
                    " which is not registered in the CellwiseAccumulator");
-    this->values[Sym<T>(data_name)]->fill(0);
+    this->values[NP::Sym<T>(data_name)]->fill(0);
   }
 
   /**
@@ -264,15 +262,15 @@ template <typename T> struct CellwiseAccumulator : TransformationStrategy {
   }
 
 private:
-  std::vector<Sym<T>> dats;
-  std::map<Sym<T>, std::shared_ptr<CellDatConst<T>>> values;
+  std::vector<NP::Sym<T>> dats;
+  std::map<NP::Sym<T>, std::shared_ptr<NP::CellDatConst<T>>> values;
 };
 
 /**
  * @brief Transfomation strategy that accumulates distributes values of certain
  * particle dats from provided cell-wise data
  *
- * @tparam T REAL or INT
+ * @tparam T NP::REAL or NP::INT
  */
 template <typename T> struct CellwiseDistributor : TransformationStrategy {
 
@@ -286,29 +284,29 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
    * @param dat_names A vector of strings specifying the names of the dats
    * to be distributed cell-wise.
    */
-  CellwiseDistributor(ParticleGroupSharedPtr template_group,
+  CellwiseDistributor(NP::ParticleGroupSharedPtr template_group,
                       std::vector<std::string> dat_names) {
 
     for (auto name : dat_names) {
       NESOASSERT(
-          template_group->contains_dat(Sym<T>(name)),
+          template_group->contains_dat(NP::Sym<T>(name)),
           "Particle dat " + name +
               " not in passed template particle group in CellwiseDistributor");
-      this->dats.push_back(Sym<T>(name));
+      this->dats.push_back(NP::Sym<T>(name));
     }
 
-    std::vector<INT> num_comps_vec;
+    std::vector<NP::INT> num_comps_vec;
     for (auto &dat : dats) {
       auto particle_dat = template_group->get_dat(dat);
 
       num_comps_vec.push_back(particle_dat->ncomp);
     }
-    this->comp_nums = std::make_shared<LocalArray<INT>>(
+    this->comp_nums = std::make_shared<NP::LocalArray<NP::INT>>(
         template_group->sycl_target, num_comps_vec);
 
     for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
-          this->dats[i], std::make_shared<CellDatConst<T>>(
+          this->dats[i], std::make_shared<NP::CellDatConst<T>>(
                              template_group->sycl_target,
                              template_group->domain->mesh->get_cell_count(),
                              num_comps_vec[i], 1)));
@@ -320,7 +318,7 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
    * @param target_subgroup Subgroup containing particles among which the dats
    * will be distributed.
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
 
     for (auto i = 0; i < this->dats.size(); i++) {
       auto loop = particle_loop(
@@ -330,65 +328,65 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
               var[j] = buffer.at(j, 0);
             }
           },
-          Access::write(this->dats[i]), Access::read(this->comp_nums),
-          Access::read(this->values[this->dats[i]]));
+          NP::Access::write(this->dats[i]), NP::Access::read(this->comp_nums),
+          NP::Access::read(this->values[this->dats[i]]));
 
       loop->execute();
     }
   }
 
   /**
-   * @brief Get the pointer to underlying CellDatConst for given named data
+   * @brief Get the pointer to underlying NP::CellDatConst for given named data
    *
    * @param data_name Name of the particle dat to be extracted
    */
 
-  CellDatConstSharedPtr<T> get_value_pointer(std::string data_name) {
+  NP::CellDatConstSharedPtr<T> get_value_pointer(std::string data_name) {
 
-    return this->values[Sym<T>(data_name)];
+    return this->values[NP::Sym<T>(data_name)];
   }
 
   /**
-   * @brief Set the underlying CellDatConst pointer for given named data
+   * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_dat_const_ptr Shared pointer to CellDatConst<T>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<T>
    */
   void set_value_pointer(std::string data_name,
-                         CellDatConstSharedPtr<T> cell_dat_const_ptr) {
+                         NP::CellDatConstSharedPtr<T> cell_dat_const_ptr) {
 
-    this->values[Sym<T>(data_name)] = cell_dat_const_ptr;
+    this->values[NP::Sym<T>(data_name)] = cell_dat_const_ptr;
   }
 
   /**
    * @brief Extract the cell-wise data as a standard vector of
-   * CellData objects
+   * NP::CellData objects
    *
    * @param data_name Name of the particle dat to be extracted
    */
-  std::vector<CellData<T>> get_cell_data(std::string data_name) {
+  std::vector<NP::CellData<T>> get_cell_data(std::string data_name) {
 
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
                "Attempted to retrieve values for " + data_name +
                    " which is not registered in the CellwiseDistributor");
-    return this->values[Sym<T>(data_name)]->get_all_cells();
+    return this->values[NP::Sym<T>(data_name)]->get_all_cells();
   }
 
   /**
-   * @brief Sets cell-wise data from a standard vector of CellData
+   * @brief Sets cell-wise data from a standard vector of NP::CellData
    * objects
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_data Standard vector of CellData objects with data to be
+   * @param cell_data Standard vector of NP::CellData objects with data to be
    * assigned
    */
   void set_cell_data(std::string data_name,
-                     std::vector<CellData<T>> &cell_data) {
+                     std::vector<NP::CellData<T>> &cell_data) {
 
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
                "Attempted to retrieve values for " + data_name +
                    " which is not registered in the CellwiseDistributor");
-    this->values[Sym<T>(data_name)]->set_all_cells(cell_data);
+    this->values[NP::Sym<T>(data_name)]->set_all_cells(cell_data);
   }
 
   /**
@@ -398,10 +396,10 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
    * out
    */
   void zero_buffer(std::string data_name) {
-    NESOASSERT(this->values.find(Sym<T>(data_name)) != this->values.end(),
+    NESOASSERT(this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
                "Attempted to zero out buffer for " + data_name +
                    " which is not registered in the CellwiseDistributor");
-    this->values[Sym<T>(data_name)]->fill(0);
+    this->values[NP::Sym<T>(data_name)]->fill(0);
   }
 
   /**
@@ -415,16 +413,16 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
   }
 
 private:
-  std::vector<Sym<T>> dats;
-  std::map<Sym<T>, std::shared_ptr<CellDatConst<T>>> values;
-  std::shared_ptr<LocalArray<INT>> comp_nums;
+  std::vector<NP::Sym<T>> dats;
+  std::map<NP::Sym<T>, std::shared_ptr<NP::CellDatConst<T>>> values;
+  std::shared_ptr<NP::LocalArray<NP::INT>> comp_nums;
 };
 
 /**
  * @brief Accumulates a set of particle dats cell-wise, while weighing them with
  * a particle dat (should be dim 1). Also accumulates the weight separately.
  *
- * @tparam T REAL or INT
+ * @tparam T NP::REAL or NP::INT
  */
 template <typename T>
 struct WeightedCellwiseAccumulator : TransformationStrategy {
@@ -440,37 +438,37 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    * to be accumulated cell-wise.
    * @param weight_sym_name Name of the sym associated with the weight property.
    */
-  WeightedCellwiseAccumulator(ParticleGroupSharedPtr template_group,
+  WeightedCellwiseAccumulator(NP::ParticleGroupSharedPtr template_group,
                               std::vector<std::string> dat_names,
                               std::string weight_sym_name)
       : weight_sym_name(weight_sym_name) {
 
     for (auto name : dat_names) {
-      NESOASSERT(template_group->contains_dat(Sym<T>(name)),
+      NESOASSERT(template_group->contains_dat(NP::Sym<T>(name)),
                  "Particle dat " + name +
                      " not in passed template particle group in "
                      "WeightedCellwiseAccumulator");
-      this->dats.push_back(Sym<T>(name));
+      this->dats.push_back(NP::Sym<T>(name));
     }
-    std::vector<INT> num_comps_vec;
+    std::vector<NP::INT> num_comps_vec;
     for (auto &dat : dats) {
       auto particle_dat = template_group->get_dat(dat);
 
       num_comps_vec.push_back(particle_dat->ncomp);
     }
 
-    this->comp_nums = std::make_shared<LocalArray<INT>>(
+    this->comp_nums = std::make_shared<NP::LocalArray<NP::INT>>(
         template_group->sycl_target, num_comps_vec);
 
     for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
-          this->dats[i], std::make_shared<CellDatConst<REAL>>(
+          this->dats[i], std::make_shared<NP::CellDatConst<NP::REAL>>(
                              template_group->sycl_target,
                              template_group->domain->mesh->get_cell_count(),
                              num_comps_vec[i], 1)));
     }
 
-    this->weight_buffer = std::make_shared<CellDatConst<REAL>>(
+    this->weight_buffer = std::make_shared<NP::CellDatConst<NP::REAL>>(
         template_group->sycl_target,
         template_group->domain->mesh->get_cell_count(), 1, 1);
   }
@@ -482,7 +480,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
 
     for (auto i = 0; i < std::size(this->dats); i++) {
 
@@ -495,80 +493,85 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
             }
             weight_buffer.combine(0, 0, weight[0]);
           },
-          Access::read(this->dats[i]), Access::read(this->comp_nums),
-          Access::reduce(this->values[this->dats[i]], Kernel::plus<REAL>()),
-          Access::read(Sym<REAL>(this->weight_sym_name)),
-          Access::reduce(this->weight_buffer, Kernel::plus<REAL>()));
+          NP::Access::read(this->dats[i]), NP::Access::read(this->comp_nums),
+          NP::Access::reduce(this->values[this->dats[i]],
+                             NP::Kernel::plus<NP::REAL>()),
+          NP::Access::read(NP::Sym<NP::REAL>(this->weight_sym_name)),
+          NP::Access::reduce(this->weight_buffer,
+                             NP::Kernel::plus<NP::REAL>()));
 
       loop->execute();
     }
   }
 
   /**
-   * @brief Get the pointer to underlying CellDatConst for given named data
+   * @brief Get the pointer to underlying NP::CellDatConst for given named data
    *
    * @param data_name Name of the particle dat to be extracted
    */
 
-  CellDatConstSharedPtr<REAL> get_value_pointer(std::string data_name) {
+  NP::CellDatConstSharedPtr<NP::REAL> get_value_pointer(std::string data_name) {
 
-    return this->values[Sym<T>(data_name)];
+    return this->values[NP::Sym<T>(data_name)];
   }
 
   /**
-   * @brief Set the underlying CellDatConst pointer for given named data
+   * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_dat_const_ptr Shared pointer to CellDatConst<REAL>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<NP::REAL>
    */
 
-  void set_value_pointer(std::string data_name,
-                         CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
+  void
+  set_value_pointer(std::string data_name,
+                    NP::CellDatConstSharedPtr<NP::REAL> cell_dat_const_ptr) {
 
-    this->values[Sym<T>(data_name)] = cell_dat_const_ptr;
+    this->values[NP::Sym<T>(data_name)] = cell_dat_const_ptr;
   }
   /**
    * @brief Extract the cell-wise accumulated data as a standard vector of
-   * CellData objects
+   * NP::CellData objects
    *
    * @param data_name Name of the particle dat to be extracted
    */
-  std::vector<CellData<REAL>> get_cell_data(std::string data_name) {
+  std::vector<NP::CellData<NP::REAL>> get_cell_data(std::string data_name) {
 
     NESOASSERT(
-        this->values.find(Sym<T>(data_name)) != this->values.end(),
+        this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
         "Attempted to retrieve values for " + data_name +
             " which is not registered in the WeightedCellwiseAccumulator");
 
-    return this->values[Sym<T>(data_name)]->get_all_cells();
+    return this->values[NP::Sym<T>(data_name)]->get_all_cells();
   }
 
   /**
-   * @brief Get the pointer to underlying CellDatConst for accumulated weight
+   * @brief Get the pointer to underlying NP::CellDatConst for accumulated
+   * weight
    *
    */
 
-  CellDatConstSharedPtr<REAL> get_weight_pointer() {
+  NP::CellDatConstSharedPtr<NP::REAL> get_weight_pointer() {
 
     return this->weight_buffer;
   }
 
   /**
-   * @brief Set the underlying CellDatConst pointer for given named data
+   * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
-   * @param cell_dat_const_ptr Shared pointer to CellDatConst<REAL>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<NP::REAL>
    */
 
-  void set_weight_pointer(CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
+  void
+  set_weight_pointer(NP::CellDatConstSharedPtr<NP::REAL> cell_dat_const_ptr) {
 
     this->weight_buffer = cell_dat_const_ptr;
   }
 
   /**
-   * @brief Extract accumulated weight data in a vector of CellData objects
+   * @brief Extract accumulated weight data in a vector of NP::CellData objects
    *
    */
-  std::vector<CellData<REAL>> get_weight_cell_data() {
+  std::vector<NP::CellData<NP::REAL>> get_weight_cell_data() {
     return this->weight_buffer->get_all_cells();
   }
 
@@ -585,10 +588,10 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
     } else {
 
       NESOASSERT(
-          this->values.find(Sym<T>(data_name)) != this->values.end(),
+          this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
           "Attempted to zero out buffer for " + data_name +
               " which is not registered in the WeightedCellwiseAccumulator");
-      this->values[Sym<T>(data_name)]->fill(0);
+      this->values[NP::Sym<T>(data_name)]->fill(0);
     }
   }
 
@@ -605,11 +608,11 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
   }
 
 private:
-  std::vector<Sym<T>> dats;
-  std::map<Sym<T>, std::shared_ptr<CellDatConst<REAL>>> values;
-  std::shared_ptr<LocalArray<INT>> comp_nums;
+  std::vector<NP::Sym<T>> dats;
+  std::map<NP::Sym<T>, std::shared_ptr<NP::CellDatConst<NP::REAL>>> values;
+  std::shared_ptr<NP::LocalArray<NP::INT>> comp_nums;
   std::string weight_sym_name;
-  std::shared_ptr<CellDatConst<REAL>> weight_buffer;
+  std::shared_ptr<NP::CellDatConst<NP::REAL>> weight_buffer;
 };
 
 /**
@@ -624,20 +627,21 @@ private:
  * into the region (-L/2,L/2]
  * @param n_cells The number of core binning cells in each direction, the total
  * in each direction including the guard cells being 2 greater than this
- * @param bin_sym The Sym representing the linear bin index - binning is done in
- * the x,y,z order
+ * @param bin_sym The NP::Sym representing the linear bin index - binning is
+ * done in the x,y,z order
  * @param velocity_sym The velocity sym
  */
 template <size_t ndim>
 inline auto
-uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
-                               std::array<INT, ndim> n_cells, Sym<INT> bin_sym,
-                               Sym<REAL> velocity_sym) {
+uniform_velocity_bin_transform(std::array<NP::REAL, ndim> global_extents,
+                               std::array<NP::INT, ndim> n_cells,
+                               NP::Sym<NP::INT> bin_sym,
+                               NP::Sym<NP::REAL> velocity_sym) {
 
-  std::array<REAL, ndim> k_inverse_extents;
-  std::array<INT, ndim> k_offsets;
+  std::array<NP::REAL, ndim> k_inverse_extents;
+  std::array<NP::INT, ndim> k_offsets;
 
-  INT prod = 1;
+  NP::INT prod = 1;
   for (auto i = 0; i < ndim; i++) {
 
     k_offsets[i] = prod;
@@ -658,7 +662,7 @@ uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
               k_offsets[dim];
         }
       },
-      Access::read(velocity_sym), Access::write(bin_sym));
+      NP::Access::read(velocity_sym), NP::Access::write(bin_sym));
 }
 
 } // namespace VANTAGE::Reactions

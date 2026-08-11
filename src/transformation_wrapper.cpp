@@ -1,9 +1,11 @@
+
 #include "../include/reactions_lib/transformation_wrapper.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
-ParticleSubGroupSharedPtr MarkingStrategy::make_marker_subgroup_v(
-    ParticleSubGroupSharedPtr particle_group) {
+NP::ParticleSubGroupSharedPtr MarkingStrategy::make_marker_subgroup_v(
+    NP::ParticleSubGroupSharedPtr particle_group) {
   // This function should never actually be called. If it is called and we do
   // not have a return value then the calling function will receive an
   // undefined value. By setting a value we at least know what the returned
@@ -12,8 +14,8 @@ ParticleSubGroupSharedPtr MarkingStrategy::make_marker_subgroup_v(
   return nullptr;
 }
 
-ParticleSubGroupSharedPtr MarkingStrategy::make_marker_subgroup(
-    ParticleSubGroupSharedPtr particle_group) {
+NP::ParticleSubGroupSharedPtr MarkingStrategy::make_marker_subgroup(
+    NP::ParticleSubGroupSharedPtr particle_group) {
   auto r0 =
       this->start_profiling_region(particle_group, "make_marker_subgroup");
   auto sub_group = this->make_marker_subgroup_v(particle_group);
@@ -22,10 +24,10 @@ ParticleSubGroupSharedPtr MarkingStrategy::make_marker_subgroup(
 }
 
 void TransformationStrategy::transform_v(
-    ParticleSubGroupSharedPtr target_subgroup) {}
+    NP::ParticleSubGroupSharedPtr target_subgroup) {}
 
 void TransformationStrategy::transform(
-    ParticleSubGroupSharedPtr target_subgroup) {
+    NP::ParticleSubGroupSharedPtr target_subgroup) {
   auto r0 = this->start_profiling_region(target_subgroup, "transform");
   this->transform_v(target_subgroup);
   this->end_profiling_region(target_subgroup, r0);

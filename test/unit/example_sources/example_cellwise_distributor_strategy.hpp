@@ -1,4 +1,4 @@
-void distributor_strategy_example(ParticleGroupSharedPtr particle_group) {
+void distributor_strategy_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = particle_sub_group(particle_group);
 
@@ -9,7 +9,7 @@ void distributor_strategy_example(ParticleGroupSharedPtr particle_group) {
   // that they should distribute values for cellwise. Here we use make_shared
   // instead of make_transformation_strategy in order to be able to call
   // distributor-specific methods
-  auto distributor = std::make_shared<CellwiseAccumulator<REAL>>(
+  auto distributor = std::make_shared<CellwiseAccumulator<NP::REAL>>(
       particle_group, std::vector<std::string>{"ELECTRON_SOURCE_DENSITY",
                                                "ION_SOURCE_DENSITY"});
 

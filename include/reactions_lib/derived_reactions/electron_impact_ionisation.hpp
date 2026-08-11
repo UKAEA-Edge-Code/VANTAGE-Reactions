@@ -4,9 +4,8 @@
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels/base_ionisation_kernels.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -40,7 +39,7 @@ struct ElectronImpactIonisation
    * used when remapping property names.
    */
   ElectronImpactIonisation(
-      SYCLTargetSharedPtr sycl_target, RateData rate_data,
+      NP::SYCLTargetSharedPtr sycl_target, RateData rate_data,
       EnergyRateData energy_rate_data, Species target_species,
       Species electron_species,
       const std::map<int, std::string> &properties_map = get_default_map())

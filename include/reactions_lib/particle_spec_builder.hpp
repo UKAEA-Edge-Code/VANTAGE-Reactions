@@ -3,9 +3,7 @@
 
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include <neso_particles.hpp>
-
-using namespace NESO::Particles;
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 /**
@@ -19,10 +17,10 @@ struct ParticleSpecBuilder {
   /**
    * @brief Constructor for ParticleSpecBuilder.
    *
-   * @param particle_spec ParticleSpec that is to be extended (optional pass via
-   * a non-recommended constructor for ParticleSpecBuilder).
+   * @param particle_spec NP::ParticleSpec that is to be extended (optional pass
+   * via a non-recommended constructor for ParticleSpecBuilder).
    */
-  ParticleSpecBuilder(ParticleSpec particle_spec);
+  ParticleSpecBuilder(NP::ParticleSpec particle_spec);
 
   /**
    * \overload
@@ -40,7 +38,7 @@ struct ParticleSpecBuilder {
   /**
    * @brief Method to add particle properties to member particle_spec.
    *
-   * @tparam PROP_TYPE Specifier for type of property (INT or REAL)
+   * @tparam PROP_TYPE Specifier for type of property (NP::INT or NP::REAL)
    * @param properties Properties object containing names of the particle
    * properties to be added.
    * @param ndim Number of dimensions for the properties to be added (note this
@@ -67,7 +65,7 @@ struct ParticleSpecBuilder {
 
     for (auto prop_name : simple_prop_names) {
       auto particle_prop =
-          ParticleProp(Sym<PROP_TYPE>(prop_name), ndim, positions);
+          NP::ParticleProp(NP::Sym<PROP_TYPE>(prop_name), ndim, positions);
       auto particle_spec_contains = this->particle_spec.contains(particle_prop);
       if (particle_spec_contains) {
         continue;
@@ -78,7 +76,7 @@ struct ParticleSpecBuilder {
 
     for (auto prop_name : species_prop_names) {
       auto particle_prop =
-          ParticleProp(Sym<PROP_TYPE>(prop_name), ndim, positions);
+          NP::ParticleProp(NP::Sym<PROP_TYPE>(prop_name), ndim, positions);
       auto particle_spec_contains = this->particle_spec.contains(particle_prop);
       if (particle_spec_contains) {
         continue;
@@ -89,18 +87,18 @@ struct ParticleSpecBuilder {
   }
 
   /**
-   * @brief Method to merge an existing ParticleSpec into the particle_spec
+   * @brief Method to merge an existing NP::ParticleSpec into the particle_spec
    * member inside the struct.
    *
-   * @param new_particle_spec ParticleSpec to merge into internal particle_spec
-   * member.
+   * @param new_particle_spec NP::ParticleSpec to merge into internal
+   * particle_spec member.
    */
-  void add_particle_spec(ParticleSpec new_particle_spec);
+  void add_particle_spec(NP::ParticleSpec new_particle_spec);
 
-  const ParticleSpec &get_particle_spec();
+  const NP::ParticleSpec &get_particle_spec();
 
 private:
-  ParticleSpec particle_spec;
+  NP::ParticleSpec particle_spec;
 };
 } // namespace VANTAGE::Reactions
 

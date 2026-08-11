@@ -3,9 +3,8 @@
 #include "../reaction_base.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels/base_recombination_kernels.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -50,10 +49,10 @@ struct Recombination
    * used when remapping property names.
    */
   Recombination(
-      SYCLTargetSharedPtr sycl_target, RateData rate_data,
+      NP::SYCLTargetSharedPtr sycl_target, RateData rate_data,
       DataCalcType data_calc_obj, Species marker_species,
       Species electron_species, Species neutral_species,
-      const REAL &normalised_potential_energy,
+      const NP::REAL &normalised_potential_energy,
       const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<1, RateData, RecombReactionKernels<ndim, ndim>,
                            DataCalcType>(

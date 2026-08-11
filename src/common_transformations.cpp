@@ -1,9 +1,11 @@
+
 #include "../include/reactions_lib/common_transformations.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
 void SimpleRemovalTransformationStrategy::transform_v(
-    ParticleSubGroupSharedPtr target_subgroup) {
+    NP::ParticleSubGroupSharedPtr target_subgroup) {
   auto particle_group = target_subgroup->get_particle_group();
 
   particle_group->remove_particles(target_subgroup);
@@ -14,7 +16,7 @@ CompositeTransform::CompositeTransform(
     : components(components) {}
 
 void CompositeTransform::transform_v(
-    ParticleSubGroupSharedPtr target_subgroup) {
+    NP::ParticleSubGroupSharedPtr target_subgroup) {
   for (auto &comp : this->components) {
     comp->transform(target_subgroup);
   }
@@ -26,15 +28,15 @@ void CompositeTransform::add_transformation(
 }
 
 // Template instantiations
-template class CellwiseAccumulator<REAL>;
-template class CellwiseAccumulator<INT>;
-template class WeightedCellwiseAccumulator<REAL>;
-template class WeightedCellwiseAccumulator<INT>;
+template class CellwiseAccumulator<NP::REAL>;
+template class CellwiseAccumulator<NP::INT>;
+template class WeightedCellwiseAccumulator<NP::REAL>;
+template class WeightedCellwiseAccumulator<NP::INT>;
 
-template class ParticleDatZeroer<REAL>;
-template class ParticleDatZeroer<INT>;
+template class ParticleDatZeroer<NP::REAL>;
+template class ParticleDatZeroer<NP::INT>;
 
-template class CellwiseDistributor<REAL>;
-template class CellwiseDistributor<INT>;
+template class CellwiseDistributor<NP::REAL>;
+template class CellwiseDistributor<NP::INT>;
 
 } // namespace VANTAGE::Reactions

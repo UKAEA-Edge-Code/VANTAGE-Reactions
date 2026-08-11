@@ -1,15 +1,17 @@
+
 #include "../include/reactions_lib/reaction_kernel_pre_reqs.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
-Species::Species(std::string name, REAL mass, REAL charge, INT id)
+Species::Species(std::string name, NP::REAL mass, NP::REAL charge, NP::INT id)
     : name(name), mass(mass), charge(charge), id(id) {}
 
 Species::Species(std::string name) : name(name) {}
 
-Species::Species(std::string name, REAL mass) : name(name), mass(mass) {}
+Species::Species(std::string name, NP::REAL mass) : name(name), mass(mass) {}
 
-Species::Species(std::string name, REAL mass, REAL charge)
+Species::Species(std::string name, NP::REAL mass, NP::REAL charge)
     : name(name), mass(mass), charge(charge) {}
 
 std::string Species::get_name() const {
@@ -18,19 +20,19 @@ std::string Species::get_name() const {
   return (this->name.value());
 }
 
-INT Species::get_id() const {
+NP::INT Species::get_id() const {
   NESOASSERT(this->id.has_value(),
              "The member variable: Species.id has not been assigned");
   return (this->id.value());
 }
 
-REAL Species::get_mass() const {
+NP::REAL Species::get_mass() const {
   NESOASSERT(this->mass.has_value(),
              "The member variable: Species.mass has not been assigned");
   return (this->mass.value());
 }
 
-REAL Species::get_charge() const {
+NP::REAL Species::get_charge() const {
   NESOASSERT(this->charge.has_value(),
              "The member variable: Species.charge has not been assigned");
   return (this->charge.value());
@@ -38,11 +40,11 @@ REAL Species::get_charge() const {
 
 void Species::set_name(const std::string &name) { this->name = name; }
 
-void Species::set_id(const INT &id) { this->id = id; }
+void Species::set_id(const NP::INT &id) { this->id = id; }
 
-void Species::set_mass(const REAL &mass) { this->mass = mass; }
+void Species::set_mass(const NP::REAL &mass) { this->mass = mass; }
 
-void Species::set_charge(const REAL &charge) { this->charge = charge; }
+void Species::set_charge(const NP::REAL &charge) { this->charge = charge; }
 
 bool Species::has_id() const { return this->id.has_value(); }
 
@@ -59,10 +61,10 @@ std::string species_property(const Species &species,
 }
 
 // Template instantiations
-template class Properties<INT>;
-template class Properties<REAL>;
+template class Properties<NP::INT>;
+template class Properties<NP::REAL>;
 
-template class ArgumentNameSet<INT>;
-template class ArgumentNameSet<REAL>;
+template class ArgumentNameSet<NP::INT>;
+template class ArgumentNameSet<NP::REAL>;
 
 } // namespace VANTAGE::Reactions

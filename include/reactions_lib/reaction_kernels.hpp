@@ -2,9 +2,8 @@
 #define REACTIONS_REACTION_KERNELS_H
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -15,16 +14,17 @@ struct ReactionKernelsBase {
   /**
    * @brief Constructor for ReactionKernelsBase.
    *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction kernel.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction kernel.
-   * @param required_int_props_ephemeral Properties<INT> object containing
-   * information regarding the required INT-based ephemeral properties for the
+   * @param required_int_props Properties<NP::INT> object containing information
+   * regarding the required NP::INT-based properties for the reaction kernel.
+   * @param required_real_props Properties<NP::REAL> object containing
+   * information regarding the required NP::REAL-based properties for the
    * reaction kernel.
-   * @param required_real_props_ephemeral Properties<REAL> object containing
-   * information regarding the required REAL-based properties for the reaction
-   * kernel.
+   * @param required_int_props_ephemeral Properties<NP::INT> object containing
+   * information regarding the required NP::INT-based ephemeral properties for
+   * the reaction kernel.
+   * @param required_real_props_ephemeral Properties<NP::REAL> object containing
+   * information regarding the required NP::REAL-based properties for the
+   * reaction kernel.
    * @param pre_req_ndims (Optional) Integer defining the number of dimensions
    * required by a reaction kernel (this in turn matches the number of
    * ReactionData-derived objects that must be passed to the constructor of a
@@ -35,9 +35,11 @@ struct ReactionKernelsBase {
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      Properties<INT> required_int_props_ephemeral,
-      Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims = 0,
+      Properties<NP::INT> required_int_props,
+      Properties<NP::REAL> required_real_props,
+      Properties<NP::INT> required_int_props_ephemeral,
+      Properties<NP::REAL> required_real_props_ephemeral,
+      NP::INT pre_req_ndims = 0,
       std::map<int, std::string> properties_map = get_default_map());
 
   /**
@@ -57,8 +59,8 @@ struct ReactionKernelsBase {
    * @brief Constructor for ReactionKernelsBase that by default only sets
    * required_int_props.
    *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction kernel.
+   * @param required_int_props Properties<NP::INT> object containing information
+   * regarding the required NP::INT-based properties for the reaction kernel.
    * @param pre_req_ndims (Optional) Integer defining the number of dimensions
    * required by a reaction kernel (this in turn matches the number of
    * ReactionData-derived objects that must be passed to the constructor of a
@@ -69,7 +71,7 @@ struct ReactionKernelsBase {
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(
-      Properties<INT> required_int_props, INT pre_req_ndims = 0,
+      Properties<NP::INT> required_int_props, NP::INT pre_req_ndims = 0,
       std::map<int, std::string> properties_map = get_default_map());
 
   /**
@@ -77,8 +79,9 @@ struct ReactionKernelsBase {
    * @brief Constructor for ReactionKernelsBase that by default only sets
    * required_real_props.
    *
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction kernel.
+   * @param required_real_props Properties<NP::REAL> object containing
+   * information regarding the required NP::REAL-based properties for the
+   * reaction kernel.
    * @param pre_req_ndims (Optional) Integer defining the number of dimensions
    * required by a reaction kernel (this in turn matches the number of
    * ReactionData-derived objects that must be passed to the constructor of a
@@ -89,7 +92,7 @@ struct ReactionKernelsBase {
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(
-      Properties<REAL> required_real_props, INT pre_req_ndims = 0,
+      Properties<NP::REAL> required_real_props, NP::INT pre_req_ndims = 0,
       std::map<int, std::string> properties_map = get_default_map());
 
   /**
@@ -97,10 +100,11 @@ struct ReactionKernelsBase {
    * @brief Constructor for ReactionKernelsBase that by default only sets
    * required_int_props and required_real_props.
    *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction kernel.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction kernel.
+   * @param required_int_props Properties<NP::INT> object containing information
+   * regarding the required NP::INT-based properties for the reaction kernel.
+   * @param required_real_props Properties<NP::REAL> object containing
+   * information regarding the required NP::REAL-based properties for the
+   * reaction kernel.
    * @param pre_req_ndims (Optional) Integer defining the number of dimensions
    * required by a reaction kernel (this in turn matches the number of
    * ReactionData-derived objects that must be passed to the constructor of a
@@ -111,8 +115,8 @@ struct ReactionKernelsBase {
    * get_required_int_props(...)).
    */
   ReactionKernelsBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      INT pre_req_ndims = 0,
+      Properties<NP::INT> required_int_props,
+      Properties<NP::REAL> required_real_props, NP::INT pre_req_ndims = 0,
       std::map<int, std::string> properties_map = get_default_map());
 
   virtual ~ReactionKernelsBase() = default;
@@ -143,20 +147,20 @@ struct ReactionKernelsBase {
    */
   std::vector<std::string> get_required_real_props_ephemeral();
 
-  const Properties<INT> &get_required_descendant_int_props();
+  const Properties<NP::INT> &get_required_descendant_int_props();
 
-  const Properties<REAL> &get_required_descendant_real_props();
+  const Properties<NP::REAL> &get_required_descendant_real_props();
 
-  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec();
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec();
 
-  const INT &get_pre_ndims() const;
+  const NP::INT &get_pre_ndims() const;
 
 protected:
   void set_required_descendant_int_props(
-      const Properties<INT> &required_descendant_int_props);
+      const Properties<NP::INT> &required_descendant_int_props);
 
   void set_required_descendant_real_props(
-      const Properties<REAL> &required_descendant_real_props);
+      const Properties<NP::REAL> &required_descendant_real_props);
 
   template <int ndim_velocity = 2, int num_products_per_parent = 0>
   void set_descendant_matrix_spec() {
@@ -169,22 +173,22 @@ protected:
                "descendant properties are set. This will result in an empty "
                "descendant_matrix_spec.")
 
-      auto descendant_particles_spec = ParticleSpec();
+      auto descendant_particles_spec = NP::ParticleSpec();
 
       for (auto prop : this->required_descendant_int_props.get_props()) {
-        auto descendant_prop =
-            ParticleProp<INT>(Sym<INT>(this->properties_map.at(prop)), 1);
+        auto descendant_prop = NP::ParticleProp<NP::INT>(
+            NP::Sym<NP::INT>(this->properties_map.at(prop)), 1);
         descendant_particles_spec.push(descendant_prop);
       }
 
       for (auto prop : this->required_descendant_real_props.get_props()) {
         if (prop == default_properties.velocity) {
-          auto descendant_prop = ParticleProp<REAL>(
-              Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
+          auto descendant_prop = NP::ParticleProp<NP::REAL>(
+              NP::Sym<NP::REAL>(this->properties_map.at(prop)), ndim_velocity);
           descendant_particles_spec.push(descendant_prop);
         } else {
-          auto descendant_prop =
-              ParticleProp<REAL>(Sym<REAL>(this->properties_map.at(prop)), 1);
+          auto descendant_prop = NP::ParticleProp<NP::REAL>(
+              NP::Sym<NP::REAL>(this->properties_map.at(prop)), 1);
           descendant_particles_spec.push(descendant_prop);
         }
       }
@@ -194,19 +198,19 @@ protected:
     }
   }
 
-  Properties<INT> required_int_props;
-  Properties<REAL> required_real_props;
+  Properties<NP::INT> required_int_props;
+  Properties<NP::REAL> required_real_props;
 
-  Properties<INT> required_int_props_ephemeral;
-  Properties<REAL> required_real_props_ephemeral;
+  Properties<NP::INT> required_int_props_ephemeral;
+  Properties<NP::REAL> required_real_props_ephemeral;
 
-  Properties<INT> required_descendant_int_props;
-  Properties<REAL> required_descendant_real_props;
+  Properties<NP::INT> required_descendant_int_props;
+  Properties<NP::REAL> required_descendant_real_props;
 
-  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec =
-      std::make_shared<ProductMatrixSpec>();
+  std::shared_ptr<NP::ProductMatrixSpec> descendant_matrix_spec =
+      std::make_shared<NP::ProductMatrixSpec>();
 
-  INT pre_req_ndims;
+  NP::INT pre_req_ndims;
 
   std::map<int, std::string> properties_map;
 };
@@ -226,8 +230,8 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -242,12 +246,13 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param dt The current time step size.
    */
   void
-  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                    Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Write<INT> &req_int_props,
-                    Access::SymVector::Write<REAL> &req_real_props,
+  scattering_kernel(NP::REAL &modified_weight,
+                    NP::Access::LoopIndex::Read &index,
+                    NP::Access::DescendantProducts::Write &descendant_products,
+                    NP::Access::SymVector::Write<NP::INT> &req_int_props,
+                    NP::Access::SymVector::Write<NP::REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
-                    Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                    NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
                     double dt) const {
     return;
   }
@@ -257,8 +262,8 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -273,12 +278,12 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param dt The current time step size.
    */
   void
-  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                  Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Write<INT> &req_int_props,
-                  Access::SymVector::Write<REAL> &req_real_props,
+  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                  NP::Access::DescendantProducts::Write &descendant_products,
+                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
+                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
-                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
                   double dt) const {
     return;
   }
@@ -288,8 +293,8 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -304,12 +309,13 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * @param dt The current time step size.
    */
   void transformation_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
+      NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      NP::Access::DescendantProducts::Write &descendant_products,
+      NP::Access::SymVector::Write<NP::INT> &req_int_props,
+      NP::Access::SymVector::Write<NP::REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+      NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+      double dt) const {
     return;
   }
   /**
@@ -318,8 +324,8 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -333,12 +339,13 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Write<INT> &req_int_props,
-                     Access::SymVector::Write<REAL> &req_real_props,
+  void weight_kernel(NP::REAL &modified_weight,
+                     NP::Access::LoopIndex::Read &index,
+                     NP::Access::DescendantProducts::Write &descendant_products,
+                     NP::Access::SymVector::Write<NP::INT> &req_int_props,
+                     NP::Access::SymVector::Write<NP::REAL> &req_real_props,
                      const std::array<int, num_products_per_parent> &out_states,
-                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
                      double dt) const {
     return;
   }

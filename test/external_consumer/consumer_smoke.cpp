@@ -19,6 +19,7 @@
 // ODR-use; the extern-template decl keeps that ODR-use from emitting the symbol
 // here.
 
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <reactions/reactions.hpp>
 
 #include <iostream>
@@ -26,7 +27,8 @@
 int main() {
   using namespace VANTAGE::Reactions;
 
-  // --- Kernel classes ------------------------------------------------------
+  // --- NP::Kernel classes
+  // ------------------------------------------------------
   using K0 = CXReactionKernels<2>;
   K0 *k0 = nullptr;
   (void)k0;
@@ -84,27 +86,27 @@ int main() {
   (void)k13;
 
   // --- Common transformation strategies ------------------------------------
-  using T0 = CellwiseAccumulator<REAL>;
+  using T0 = CellwiseAccumulator<NP::REAL>;
   T0 *t0 = nullptr;
   (void)t0;
 
-  using T1 = CellwiseAccumulator<INT>;
+  using T1 = CellwiseAccumulator<NP::INT>;
   T1 *t1 = nullptr;
   (void)t1;
 
-  using T2 = WeightedCellwiseAccumulator<REAL>;
+  using T2 = WeightedCellwiseAccumulator<NP::REAL>;
   T2 *t2 = nullptr;
   (void)t2;
 
-  using T3 = WeightedCellwiseAccumulator<INT>;
+  using T3 = WeightedCellwiseAccumulator<NP::INT>;
   T3 *t3 = nullptr;
   (void)t3;
 
-  using T4 = ParticleDatZeroer<REAL>;
+  using T4 = ParticleDatZeroer<NP::REAL>;
   T4 *t4 = nullptr;
   (void)t4;
 
-  using T5 = ParticleDatZeroer<INT>;
+  using T5 = ParticleDatZeroer<NP::INT>;
   T5 *t5 = nullptr;
   (void)t5;
 
@@ -116,11 +118,11 @@ int main() {
   T7 *t7 = nullptr;
   (void)t7;
 
-  using T8 = CellwiseDistributor<REAL>;
+  using T8 = CellwiseDistributor<NP::REAL>;
   T8 *t8 = nullptr;
   (void)t8;
 
-  using T9 = CellwiseDistributor<INT>;
+  using T9 = CellwiseDistributor<NP::INT>;
   T9 *t9 = nullptr;
   (void)t9;
 
@@ -153,19 +155,19 @@ int main() {
 
   // --- Reaction kernel pre-requisites --------------------------------------
 
-  using P0 = Properties<INT>;
+  using P0 = Properties<NP::INT>;
   P0 *p0 = nullptr;
   (void)p0;
 
-  using P1 = Properties<REAL>;
+  using P1 = Properties<NP::REAL>;
   P1 *p1 = nullptr;
   (void)p1;
 
-  using P2 = ArgumentNameSet<INT>;
+  using P2 = ArgumentNameSet<NP::INT>;
   P2 *p2 = nullptr;
   (void)p2;
 
-  using P3 = ArgumentNameSet<REAL>;
+  using P3 = ArgumentNameSet<NP::REAL>;
   P3 *p3 = nullptr;
   (void)p3;
 

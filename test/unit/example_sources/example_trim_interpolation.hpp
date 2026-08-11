@@ -1,6 +1,9 @@
+
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <random>
 #include <tuple>
-inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
+inline void
+trim_interpolation_example(NP::ParticleGroupSharedPtr particle_group) {
   // Number of dimensions of the pre-calculated grid
   static constexpr int interp_ndim = 2;
 
@@ -15,30 +18,30 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
       std::array<size_t, trim_ndim>{trim_dim0, trim_dim1, trim_dim2};
 
   // Example coordinates for dimension 0.
-  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  std::vector<NP::REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
+                                      5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
 
   // Example coordinates for dimension 1.
-  std::vector<REAL> dim1_range = {
+  std::vector<NP::REAL> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
 
   // Example lambda for the TRIM tables.
   static constexpr auto trim_grid_func_lambda =
-      [](const std::array<REAL, interp_ndim> &vals) {
+      [](const std::array<NP::REAL, interp_ndim> &vals) {
         // This calculates the correct length for the output.
         // \sum_{i = 0}^{n}(\prod_{j=0}^{i} trim_dims_arr[j])
         static constexpr size_t trim_table_length = [&] {
-          INT s = 0;
-          INT p = 1;
-          for (INT x : trim_dims_arr) {
+          NP::INT s = 0;
+          NP::INT p = 1;
+          for (NP::INT x : trim_dims_arr) {
             p *= x;
             s += p;
           }
           return s;
         }();
-        std::array<REAL, trim_table_length> result;
+        std::array<NP::REAL, trim_table_length> result;
         for (size_t i = 0; i < trim_table_length; i++) {
           result[i] = std::pow((i + 50), 3.0);
         }
@@ -87,17 +90,18 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
 
   const int rank = particle_group->sycl_target->comm_pair.rank_parent;
   auto rng = std::mt19937(52234126 + rank);
-  std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
+  std::uniform_real_distribution<NP::REAL> uniform_dist_2(0.0, 1.0);
 
-  auto rng_lambda = [&]() -> REAL {
-    REAL rng_sample = 0.0;
+  auto rng_lambda = [&]() -> NP::REAL {
+    NP::REAL rng_sample = 0.0;
     do {
       rng_sample = uniform_dist_2(rng);
     } while (rng_sample == 0.0);
     return rng_sample;
   };
 
-  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto trim_rng_kernel =
+      NP::host_per_particle_block_rng<NP::REAL>(rng_lambda, 1);
 
   auto trim_sampler = SamplerData(trim_rng_kernel);
   // This is hard-coded here to avoid bloated general implementation for
@@ -111,7 +115,7 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
   auto pipeline = pipe(concatenator, interpolate_data);
 
   // Wrapping in a DataCalculator allows the extraction of values from
-  // interpolate_data via a NDLocalArray buffer.
+  // interpolate_data via a NP::NDLocalArray buffer.
   auto data_calc = DataCalculator(pipeline);
 
   return;

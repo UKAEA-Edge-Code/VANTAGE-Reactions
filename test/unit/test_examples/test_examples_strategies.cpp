@@ -1,7 +1,8 @@
+
 #include "../include/mock_particle_group.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 #include "../example_sources/example_accumulator_strategy.hpp"
@@ -33,8 +34,10 @@ TEST(Examples, strategies) {
   direct_marking_example(particle_group);
   direct_transformation_example(particle_group);
 
-  particle_group->add_particle_dat(Sym<INT>("REACTIONS_GROUPING_INDEX"), 1);
-  particle_group->add_particle_dat(Sym<INT>("REACTIONS_LINEAR_INDEX"), 1);
+  particle_group->add_particle_dat(NP::Sym<NP::INT>("REACTIONS_GROUPING_INDEX"),
+                                   1);
+  particle_group->add_particle_dat(NP::Sym<NP::INT>("REACTIONS_LINEAR_INDEX"),
+                                   1);
   vranic_merging_strategy_example(particle_group);
   simple_thinning_strategy_example(particle_group);
   uniform_velocity_binning_example(particle_group);

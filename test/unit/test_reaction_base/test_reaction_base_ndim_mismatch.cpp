@@ -1,8 +1,9 @@
+
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
@@ -12,7 +13,7 @@ TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
 
   struct TestDataCalcNdimReaction
       : public LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>> {
-    TestDataCalcNdimReaction(ParticleGroupSharedPtr particle_group)
+    TestDataCalcNdimReaction(NP::ParticleGroupSharedPtr particle_group)
         : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>>(
               particle_group->sycl_target, 0, std::array<int, 0>{},
               FixedRateData(1),

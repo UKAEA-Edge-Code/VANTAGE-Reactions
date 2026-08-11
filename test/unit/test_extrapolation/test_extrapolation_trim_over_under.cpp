@@ -1,9 +1,10 @@
+
 #include "../include/mock_interpolation_data.hpp"
 #include "../include/mock_particle_group.hpp"
 #include "../include/test_vantage_reactions_utils.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
@@ -21,19 +22,21 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
-  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_ndim);
-
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
+  particle_group->add_particle_dat(NP::Sym<NP::REAL>("PROPS"), ndim);
+  particle_group->add_particle_dat(NP::Sym<NP::REAL>("TRIM_INDICES"),
                                    trim_ndim);
 
+  particle_group->add_particle_dat(
+      NP::Sym<NP::REAL>("EXPECTED_INTERPOLATION_VALUE"), trim_ndim);
+
   // PANIC flag for TrimEval
-  particle_group->remove_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"));
-  particle_group->add_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"), trim_ndim);
+  particle_group->remove_particle_dat(NP::Sym<NP::INT>("REACTIONS_PANIC_FLAG"));
+  particle_group->add_particle_dat(NP::Sym<NP::INT>("REACTIONS_PANIC_FLAG"),
+                                   trim_ndim);
 
   // Setup the mock data.
-  std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
-  std::array<REAL, trim_ndim> random_grid_nums;
+  std::uniform_real_distribution<NP::REAL> uniform_dist_m1(0.0, 10.0);
+  std::array<NP::REAL, trim_ndim> random_grid_nums;
   for (int i = 0; i < trim_ndim; i++) {
     random_grid_nums[i] = uniform_dist_m1(rng);
   }
@@ -48,20 +51,20 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
   auto grid_func = coeffs_data.get_grid_func();
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
 
-  std::array<INT, trim_ndim> trim_dims_arr;
+  std::array<NP::INT, trim_ndim> trim_dims_arr;
   for (int i = 0; i < trim_ndim; i++) {
     trim_dims_arr[i] = trim_dims_vec[i];
   }
 
   // Random number generator kernel
-  std::uniform_real_distribution<REAL> uniform_dist_0(lower_bounds[0],
-                                                      upper_bounds[0]);
-  std::uniform_real_distribution<REAL> uniform_dist_1(lower_bounds[1],
-                                                      upper_bounds[1]);
+  std::uniform_real_distribution<NP::REAL> uniform_dist_0(lower_bounds[0],
+                                                          upper_bounds[0]);
+  std::uniform_real_distribution<NP::REAL> uniform_dist_1(lower_bounds[1],
+                                                          upper_bounds[1]);
 
-  auto rng_kernel0 = host_per_particle_block_rng<REAL>(
+  auto rng_kernel0 = NP::host_per_particle_block_rng<NP::REAL>(
       rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
-  auto rng_kernel1 = host_per_particle_block_rng<REAL>(
+  auto rng_kernel1 = NP::host_per_particle_block_rng<NP::REAL>(
       rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
 
   particle_loop(
@@ -72,7 +75,7 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
         props.at(1) = prop1_kernel.at(index, 0);
 
         // Intentionally out-of-bound trim numbers.
-        std::array<REAL, trim_ndim> real_trim_indices = {1.0, -0.15, 2.7};
+        std::array<NP::REAL, trim_ndim> real_trim_indices = {1.0, -0.15, 2.7};
 
         trim_indices.at(0) = real_trim_indices[0];
         trim_indices.at(1) = real_trim_indices[1];
@@ -82,13 +85,15 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
         panic_flags.at(1) = 0;
         panic_flags.at(2) = 0;
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
-      Access::read(rng_kernel0), Access::read(rng_kernel1),
-      Access::write(Sym<REAL>("TRIM_INDICES")),
-      Access::write(Sym<INT>("REACTIONS_PANIC_FLAG")))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<NP::REAL>("PROPS")),
+      NP::Access::read(rng_kernel0), NP::Access::read(rng_kernel1),
+      NP::Access::write(NP::Sym<NP::REAL>("TRIM_INDICES")),
+      NP::Access::write(NP::Sym<NP::INT>("REACTIONS_PANIC_FLAG")))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
@@ -113,15 +118,15 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
                                  i + 1);
 
-    INT expected_panic_value;
-    std::vector<INT> cells;
-    std::vector<INT> layers;
+    NP::INT expected_panic_value;
+    std::vector<NP::INT> cells;
+    std::vector<NP::INT> layers;
     for (int ipart = 0; ipart < n_part_cell; ipart++) {
       cells.push_back(i);
       layers.push_back(ipart);
@@ -133,7 +138,7 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
       layers[0] = ipart;
       for (int icomp = 0; icomp < trim_ndim; icomp++) {
         expected_panic_value =
-            particles->at(Sym<INT>("REACTIONS_PANIC_FLAG"), 0, icomp);
+            particles->at(NP::Sym<NP::INT>("REACTIONS_PANIC_FLAG"), 0, icomp);
 
         EXPECT_GT(expected_panic_value, 0);
       }

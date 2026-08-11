@@ -1,10 +1,9 @@
 #ifndef REACTIONS_CONSTANT_RATE_CS_H
 #define REACTIONS_CONSTANT_RATE_CS_H
 #include "../reaction_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <limits>
-#include <neso_particles.hpp>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -20,16 +19,16 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    *
    * @param constant_sigma_v Constant collision rate
    */
-  ConstantRateCrossSection(REAL constant_sigma_v)
+  ConstantRateCrossSection(NP::REAL constant_sigma_v)
       : constant_sigma_v(constant_sigma_v) {};
 
   /**
    * @brief Returns the cross-section value at given relative velocity
    *
    * @param relative_vel Relative velocity of projectile and target
-   * @return REAL-valued cross-section = K/v_r
+   * @return NP::REAL-valued cross-section = K/v_r
    */
-  REAL get_value_at(const REAL &relative_vel) const {
+  NP::REAL get_value_at(const NP::REAL &relative_vel) const {
     return this->constant_sigma_v / relative_vel;
   };
 
@@ -37,14 +36,15 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @brief Returns maximum value of the rate sigma*v of for this cross-section.
    * This is constant in this class.
    *
-   * @return REAL-valued constant (plus floating point error to account for
+   * @return NP::REAL-valued constant (plus floating point error to account for
    * potential use in explicit rejection methods).
    */
-  REAL get_max_rate_val() const {
+  NP::REAL get_max_rate_val() const {
     // Avoid potential comparison issues with
     // sigma*v by raising the max rate slightly - might cause the occasional
     // spurious rejection in explicit rejection methods
-    return this->constant_sigma_v + 10 * std::numeric_limits<REAL>::epsilon();
+    return this->constant_sigma_v +
+           10 * std::numeric_limits<NP::REAL>::epsilon();
   };
 
   /**
@@ -55,13 +55,13 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @param uniform_rand Uniformly distributed random number
    * @return true
    */
-  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at,
-                     REAL max_rate_val) const {
+  bool accept_reject(NP::REAL relative_vel, NP::REAL uniform_rand,
+                     NP::REAL value_at, NP::REAL max_rate_val) const {
     return true;
   }
 
 private:
-  REAL constant_sigma_v;
+  NP::REAL constant_sigma_v;
 };
 }; // namespace VANTAGE::Reactions
 #endif

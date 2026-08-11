@@ -1,9 +1,8 @@
 #ifndef REACTIONS_UNARY_ARRAY_TRANSFORM_DATA_H
 #define REACTIONS_UNARY_ARRAY_TRANSFORM_DATA_H
 #include "reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -16,7 +15,8 @@ struct AbstractUnaryArrayTransform {
   static const size_t IN_DIM = INPUT_DIM;
   static const size_t OUT_DIM = OUTPUT_DIM;
 
-  std::array<REAL, OUT_DIM> apply(const std::array<REAL, IN_DIM> &input) const {
+  std::array<NP::REAL, OUT_DIM>
+  apply(const std::array<NP::REAL, IN_DIM> &input) const {
     return {};
   };
 };
@@ -45,8 +45,8 @@ struct UnaryArrayTransformDataOnDevice
    * @brief Return the result of applying the contained transform on the input
    *
    * @param input Input array
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -58,11 +58,11 @@ struct UnaryArrayTransformDataOnDevice
    *
    * @return Result of applying the contained transform
    */
-  std::array<REAL, TRANSFORM::OUT_DIM>
-  calc_data(const std::array<REAL, TRANSFORM::IN_DIM> &input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  std::array<NP::REAL, TRANSFORM::OUT_DIM>
+  calc_data(const std::array<NP::REAL, TRANSFORM::IN_DIM> &input,
+            const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
+            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     return this->transform.apply(input);

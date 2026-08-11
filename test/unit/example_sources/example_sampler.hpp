@@ -7,8 +7,9 @@ void sampler_example() {
   // The sampler needs a NESO-Particles rng_kernel
   //
   // Here we use an arbitrary lambda, but this can be anything
-  auto rng_lambda = [&]() -> REAL { return 0.5; };
-  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
+  auto rng_lambda = [&]() -> NP::REAL { return 0.5; };
+  auto rng_kernel =
+      NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, 1000);
 
   // The following will just sample from the above kernel
   auto sampler_data = SamplerData(rng_kernel,
