@@ -68,11 +68,11 @@ struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
     REAL mom_tot[ndim];
     REAL mom_a[ndim];
     REAL mom_b[ndim];
-    const REAL wt = reduction.at(0, reduction_idx);
+    const REAL wt = reduction.at(reduction_idx, 0);
     const REAL one_over_wt = 1.0 / wt;
-    const REAL et = reduction.at(1, reduction_idx);
+    const REAL et = reduction.at(reduction_idx, 1);
     for (int dimx = 0; dimx < ndim; dimx++) {
-      mom_tot[dimx] = reduction.at(2 + dimx, reduction_idx);
+      mom_tot[dimx] = reduction.at(reduction_idx, 2 + dimx);
       mom_a[dimx] = mom_tot[dimx] * one_over_wt;
       mom_b[dimx] = mom_tot[dimx] * one_over_wt;
     }
@@ -109,12 +109,12 @@ struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
           Kernel::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
       const REAL p_perp = Kernel::sqrt(p_perp2);
 
-      REAL mom_cell_diag[3] = {reduction_max.at(0, reduction_idx) -
-                                   reduction_min.at(0, reduction_idx),
-                               reduction_max.at(1, reduction_idx) -
-                                   reduction_min.at(1, reduction_idx),
-                               reduction_max.at(2, reduction_idx) -
-                                   reduction_min.at(2, reduction_idx)};
+      REAL mom_cell_diag[3] = {reduction_max.at(reduction_idx, 0) -
+                                   reduction_min.at(reduction_idx, 0),
+                               reduction_max.at(reduction_idx, 1) -
+                                   reduction_min.at(reduction_idx, 1),
+                               reduction_max.at(reduction_idx, 2) -
+                                   reduction_min.at(reduction_idx, 2)};
 
       REAL rotation_axis[3] = {0, 0, 0};
       Kernel::cross_product(mom_tot[0], mom_tot[1], mom_tot[2],
@@ -213,15 +213,15 @@ struct VranicReductionOnDevice
 
     auto weight = req_real_props.at(this->weight_ind, 0);
     REAL vel;
-    reduction.fetch_add(0, reduction_idx, weight);
+    reduction.fetch_add(reduction_idx, 0, weight);
     for (int i = 0; i < ndim; i++) {
       vel = req_real_props.at(this->velocity_ind, i);
-      reduction.fetch_add(1, reduction_idx, weight * vel * vel);
-      reduction.fetch_add(2 + i, reduction_idx, weight * vel);
+      reduction.fetch_add(reduction_idx, 1, weight * vel * vel);
+      reduction.fetch_add(reduction_idx, 2 + i, weight * vel);
 
       if constexpr (ndim > 2) {
-        reduction_min.fetch_min(i, reduction_idx, vel);
-        reduction_max.fetch_max(i, reduction_idx, vel);
+        reduction_min.fetch_min(reduction_idx, i, vel);
+        reduction_max.fetch_max(reduction_idx, i, vel);
       }
     }
     return;
