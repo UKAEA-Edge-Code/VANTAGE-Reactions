@@ -299,6 +299,32 @@ Filtered Maxwellian sampler
    :language: cpp
    :caption: Constructing a Maxwellian sampler in two velocity space dimensions
 
+One-way Maxwellian flux sampler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#. Dimensionality: 3
+#. Required properties: Simple props: fluid_temperature, fluid_flow_speed,
+   surface_basis_e1, surface_basis_e2, surface_basis_pi; Species props:
+   none
+#. Details: Generate particle velocities sampled from a one-way Maxwellian 
+   distribution defined with respect to a surface. The two components tangential 
+   to the surface are sampled from a drifting Maxwellian, while the component along
+   ``surface_basis_pi`` is sampled from the one way Maxwellian, referred to as truncated 
+   drifting Maxwellian in section "1.5 Recycling surface sources" of the EIRENE 
+   documentation. Thus, with :math:`v_\pi \geq 0`, the normal component is sampled from
+
+    .. math::
+
+        f(v_\pi) \propto v_\pi
+        \exp\left[-\frac{(v_\pi-v_{d,\pi})^2}{2\sigma^2}\right], v_\pi \gt 0
+
+   where :math:`v_{d,\pi}` is the drift/fluid flow velocity component along
+   ``surface_basis_pi`` and :math:`\sigma^2 = T\,\mathtt{norm\_ratio}`.
+   The three surface-basis vectors are assumed to be orthonormal. Sampling of
+   the normal component uses rejection sampling following
+   Makkonen, Airila, and Kurki-Suonio (2015),
+   `doi:10.1088/0031-8949/90/1/015204 <https://doi.org/10.1088/0031-8949/90/1/015204>`_.
+
 Cross-section objects
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -576,4 +602,3 @@ Like electron-impact ionisation, a recombination reaction can be constructed dir
    :caption: Example of contructing the built-in electron-impact ionisation reaction
 
 **NOTE**: To properly use recombination, especially with built-in AMJUEAL reaction data, care must be taken that the marker weights are updated in a way consistent with the background ion densities.
-
