@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_CONTROLLER_H
 #define REACTIONS_REACTION_CONTROLLER_H
+#include "../reactions/neso_test_assert.hpp"
 #include "common_markers.hpp"
 #include "common_transformations.hpp"
 #include "particle_properties_map.hpp"

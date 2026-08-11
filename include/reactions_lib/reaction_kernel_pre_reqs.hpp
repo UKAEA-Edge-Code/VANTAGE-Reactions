@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_KERNEL_PRE_REQS_H
 #define REACTIONS_REACTION_KERNEL_PRE_REQS_H
+#include "../reactions/neso_test_assert.hpp"
 #include "particle_properties_map.hpp"
 #include "utils.hpp"
 #include <iterator>

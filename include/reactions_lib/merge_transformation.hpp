@@ -1,6 +1,7 @@
 #ifndef REACTIONS_MERGE_TRANSFORMATION_H
 #define REACTIONS_MERGE_TRANSFORMATION_H
 
+#include "../reactions/neso_test_assert.hpp"
 #include "common_markers.hpp"
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"

@@ -1,6 +1,7 @@
 #ifndef REACTIONS_GRID_DESCRIPTOR_H
 #define REACTIONS_GRID_DESCRIPTOR_H
 
+#include "../../reactions/neso_test_assert.hpp"
 #include <algorithm>
 #include <array>
 #include <cstddef>

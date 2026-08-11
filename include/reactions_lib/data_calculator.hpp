@@ -1,5 +1,6 @@
 #ifndef REACTIONS_DATA_CALCULATOR_H
 #define REACTIONS_DATA_CALCULATOR_H
+#include "../reactions/neso_test_assert.hpp"
 #include "reaction_data.hpp"
 #include "utils.hpp"
 #include <neso_particles.hpp>

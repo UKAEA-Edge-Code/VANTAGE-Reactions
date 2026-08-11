@@ -1,6 +1,7 @@
 #ifndef REACTIONS_DOWNSAMPLING_BASE_H
 #define REACTIONS_DOWNSAMPLING_BASE_H
 
+#include "../reactions/neso_test_assert.hpp"
 #include "common_markers.hpp"
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"

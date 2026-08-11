@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_DATA_H
 #define REACTIONS_REACTION_DATA_H
+#include "../reactions/neso_test_assert.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
 #include <neso_particles.hpp>

@@ -4,6 +4,7 @@
 #include <neso_particles.hpp>
 #include <vector>
 
+#include "../reactions/neso_test_assert.hpp"
 #include "profiling_base.hpp"
 
 using namespace NESO::Particles;

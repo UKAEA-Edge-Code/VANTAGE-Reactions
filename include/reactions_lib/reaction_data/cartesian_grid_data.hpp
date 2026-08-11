@@ -1,6 +1,7 @@
 #ifndef REACTIONS_GRID_EVAL_DATA_H
 #define REACTIONS_GRID_EVAL_DATA_H
 
+#include "../../reactions/neso_test_assert.hpp"
 #include "../interp_utils.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"

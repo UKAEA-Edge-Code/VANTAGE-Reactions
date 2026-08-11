@@ -1,5 +1,6 @@
 #ifndef REACTIONS_COMMON_TRANSFORMATIONS_H
 #define REACTIONS_COMMON_TRANSFORMATIONS_H
+#include "../reactions/neso_test_assert.hpp"
 #include "transformation_wrapper.hpp"
 #include "utils.hpp"
 #include <memory>

@@ -1,6 +1,7 @@
 #ifndef REACTIONS_TRIM_EVAL_DATA_H
 #define REACTIONS_TRIM_EVAL_DATA_H
 
+#include "../../reactions/neso_test_assert.hpp"
 #include "../interp_utils.hpp"
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"

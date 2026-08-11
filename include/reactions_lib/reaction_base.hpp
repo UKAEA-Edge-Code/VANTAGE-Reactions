@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_BASE_H
 #define REACTIONS_REACTION_BASE_H
+#include "../reactions/neso_test_assert.hpp"
 #include "data_calculator.hpp"
 #include "particle_properties_map.hpp"
 #include "profiling_base.hpp"
