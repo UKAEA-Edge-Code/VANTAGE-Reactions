@@ -32,7 +32,7 @@ struct OneWayMaxwellianFluxOnDevice
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
    * @return maximum of the rejection sampling function
    */
-  inline static REAL cardano_cubic_solver(REAL d) {
+  static REAL cardano_cubic_solver(REAL d) {
     const REAL coef_a = 2.0;
     const REAL coef_b = -4.0 - d;
     const REAL coef_c = d;
@@ -61,7 +61,7 @@ struct OneWayMaxwellianFluxOnDevice
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
    * @return maximum of the rejection sampling function
    */
-  inline static REAL rejection_function(REAL d, REAL t) {
+  static REAL rejection_function(REAL d, REAL t) {
     const REAL s = 1.0 - t;
     return t * Kernel::exp(-((t / s - d) * (t / s - d)) / 2.0) / (s * s * s);
   }
@@ -133,7 +133,7 @@ struct OneWayMaxwellianFluxOnDevice
 
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, 3>{};
+      return std::array<REAL, 3>{0.0, 0.0, 0.0};
     }
 
     auto normal_samples = utils::box_muller_transform(rand1, rand2);
@@ -145,7 +145,7 @@ struct OneWayMaxwellianFluxOnDevice
                                    sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<REAL, 3>{};
+      return std::array<REAL, 3>{0.0, 0.0, 0.0};
     }
 
     std::array<REAL, 3> sampled_vels{};
