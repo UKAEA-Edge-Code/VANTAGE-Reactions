@@ -26,14 +26,11 @@ The library only ships with a few combinations but every other combination is st
 If they're needed then: include the public headers (via ``#include <reactions/reactions.hpp>``), and rely on implicit
 instantiation in the consumer TU.
 
-Alternatively, add your own ``template class …``
-explicit instantiation in a dedicated ``.cpp`` and pair it with
-an ``extern template class …`` declaration in the consumer's own header
-(the library does the same thing in ``extern_templates.hpp``). 
+Alternatively, after defining a template struct/class in a ``.hpp`` file, add an ``extern template class …`` declaration to it, add the corresponding ``template class …``
+explicit instantiation in a dedicated ``.cpp``.
 
-An example of this is in the ``test/unit`` directory, where there's and ``test_extern_templates.hpp`` in the ``test/unit/include`` directory 
-and a ``test/unit/instantiations`` directory containing ``.cpp`` files with instantiations that are referenced in ``test/unit/include/test_extern_templates.hpp``. 
-These are for the instantiations needed for the unit tests specifically.
+In the public headers, an example would be, ``vranic_merging_kernels.hpp`` which includes a template struct definition and ``extern template class`` declarations. 
+The corresponding explicit template instantiations live in ``vranic_merging_kernels.cpp``.
 
 Adding to this framework is really only feasible if at least a few of the template instantiations of the templated objects are known. 
 For example, this would not be fully applicable if using template parameter packs, where only a subset of
@@ -46,8 +43,8 @@ Verifying the installed library
 A standalone CMake project lives at ``test/external_consumer/`` that
 configures against only the installed tree via
 ``find_package(VANTAGE-Reactions)``, links the installed library, and
-ODR-uses (via a null pointer) **every** shipped instantiation listed
-in ``include/reactions_lib/extern_templates.hpp``. Therefore if any new instantiations are added to the shipped set then be sure to add their usage to ``test/external_consumer/consumer_smoke.cpp``.
+ODR-uses (via a null pointer) **every** shipped template instantiation. 
+Therefore if any new instantiations are added to the shipped set then be sure to add their usage to ``test/external_consumer/consumer_smoke.cpp``.
 
 Each ODR-use forces the consumer TU to respect the matching
 ``extern template`` declaration and let the library provide the

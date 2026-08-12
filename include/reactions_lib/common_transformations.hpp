@@ -661,6 +661,25 @@ uniform_velocity_bin_transform(std::array<REAL, ndim> global_extents,
       Access::read(velocity_sym), Access::write(bin_sym));
 }
 
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class CellwiseAccumulator<REAL>;
+
+extern template class CellwiseAccumulator<INT>;
+
+extern template class WeightedCellwiseAccumulator<REAL>;
+
+extern template class WeightedCellwiseAccumulator<INT>;
+
+extern template class ParticleDatZeroer<REAL>;
+
+extern template class ParticleDatZeroer<INT>;
+
+extern template class CellwiseDistributor<REAL>;
+
+extern template class CellwiseDistributor<INT>;
+
 } // namespace VANTAGE::Reactions
 
 #endif

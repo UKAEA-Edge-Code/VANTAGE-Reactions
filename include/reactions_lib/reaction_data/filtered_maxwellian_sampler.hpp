@@ -250,5 +250,13 @@ struct FilteredMaxwellianSampler
         this->properties_map.at(props.velocity));
   };
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class FilteredMaxwellianSampler<2, ConstantRateCrossSection>;
+
+extern template class FilteredMaxwellianSampler<3, ConstantRateCrossSection>;
+
 }; // namespace VANTAGE::Reactions
 #endif

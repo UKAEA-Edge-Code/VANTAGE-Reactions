@@ -312,5 +312,13 @@ public:
     return this->recomb_reaction_kernels_on_device;
   }
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class RecombReactionKernels<2>;
+
+extern template class RecombReactionKernels<3>;
+
 }; // namespace VANTAGE::Reactions
 #endif

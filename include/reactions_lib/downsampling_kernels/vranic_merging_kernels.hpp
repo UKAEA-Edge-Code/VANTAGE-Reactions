@@ -306,5 +306,13 @@ inline std::shared_ptr<TransformationStrategy> make_vranic_merging_strategy(
       num_merging_groups, properties_map);
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class VranicMergingKernels<2>;
+
+extern template class VranicMergingKernels<3>;
+
 }; // namespace VANTAGE::Reactions
 #endif

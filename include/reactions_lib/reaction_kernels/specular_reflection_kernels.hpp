@@ -123,5 +123,13 @@ public:
     return this->specular_reflection_kernels_on_device;
   }
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class SpecularReflectionKernels<2>;
+
+extern template class SpecularReflectionKernels<3>;
+
 }; // namespace VANTAGE::Reactions
 #endif

@@ -100,5 +100,13 @@ struct SpecularReflectionData
         this->properties_map.at(props.boundary_intersection_normal));
   };
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides
+
+extern template class SpecularReflectionData<2>;
+
+extern template class SpecularReflectionData<3>;
+
 }; // namespace VANTAGE::Reactions
 #endif

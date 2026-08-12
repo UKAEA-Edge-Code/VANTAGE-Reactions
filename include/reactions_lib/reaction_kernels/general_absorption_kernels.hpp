@@ -143,5 +143,13 @@ public:
     return this->absorption_kernels_on_device;
   }
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class GeneralAbsorptionKernels<2>;
+
+extern template class GeneralAbsorptionKernels<3>;
+
 }; // namespace VANTAGE::Reactions
 #endif
