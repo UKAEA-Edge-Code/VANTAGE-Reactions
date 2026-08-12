@@ -51,6 +51,9 @@ public:
     source_energy,
     source_momentum,
     source_density,
+    surface_basis_e1,
+    surface_basis_e2,
+    surface_basis_pi,
     fluid_density,
     fluid_temperature,
     fluid_flow_speed
@@ -108,6 +111,9 @@ private:
       {default_properties.source_energy, "SOURCE_ENERGY"},
       {default_properties.source_momentum, "SOURCE_MOMENTUM"},
       {default_properties.source_density, "SOURCE_DENSITY"},
+      {default_properties.surface_basis_e1, "SURFACE_BASIS_E1"},
+      {default_properties.surface_basis_e2, "SURFACE_BASIS_E2"},
+      {default_properties.surface_basis_pi, "SURFACE_BASIS_PI"},
       {default_properties.fluid_density, "FLUID_DENSITY"},
       {default_properties.fluid_temperature, "FLUID_TEMPERATURE"},
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
