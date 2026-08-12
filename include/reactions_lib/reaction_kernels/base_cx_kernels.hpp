@@ -324,5 +324,13 @@ public:
     return this->cx_reaction_kernels_on_device;
   }
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class CXReactionKernels<2>;
+
+extern template class CXReactionKernels<3>;
+
 }; // namespace VANTAGE::Reactions
 #endif

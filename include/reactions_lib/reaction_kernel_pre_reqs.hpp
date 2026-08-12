@@ -584,5 +584,16 @@ private:
   std::set<std::string> name_set;
 };
 
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides
+
+extern template class Properties<NP::INT>;
+
+extern template class Properties<NP::REAL>;
+
+extern template class ArgumentNameSet<NP::INT>;
+
+extern template class ArgumentNameSet<NP::REAL>;
+
 }; // namespace VANTAGE::Reactions
 #endif

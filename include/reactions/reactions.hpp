@@ -43,6 +43,7 @@
 #include "../reactions_lib/reaction_data/fixed_rate_data.hpp"
 #include "../reactions_lib/reaction_data/grid_descriptors.hpp"
 #include "../reactions_lib/reaction_data/interpolate_data.hpp"
+#include "../reactions_lib/reaction_data/one_way_maxwellian_flux_sampler.hpp"
 #include "../reactions_lib/reaction_data/sampler_data.hpp"
 #include "../reactions_lib/reaction_data/specular_reflection_data.hpp"
 #include "../reactions_lib/reaction_data/spherical_basis_reflection_data.hpp"
@@ -60,7 +61,5 @@
 
 #include "../reactions_lib/downsampling_kernels/simple_thinning_kernels.hpp"
 #include "../reactions_lib/downsampling_kernels/vranic_merging_kernels.hpp"
-
-#include "../reactions_lib/extern_templates.hpp"
 
 #endif

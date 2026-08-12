@@ -665,6 +665,25 @@ uniform_velocity_bin_transform(std::array<NP::REAL, ndim> global_extents,
       NP::Access::read(velocity_sym), NP::Access::write(bin_sym));
 }
 
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class CellwiseAccumulator<NP::REAL>;
+
+extern template class CellwiseAccumulator<NP::INT>;
+
+extern template class WeightedCellwiseAccumulator<NP::REAL>;
+
+extern template class WeightedCellwiseAccumulator<NP::INT>;
+
+extern template class ParticleDatZeroer<NP::REAL>;
+
+extern template class ParticleDatZeroer<NP::INT>;
+
+extern template class CellwiseDistributor<NP::REAL>;
+
+extern template class CellwiseDistributor<NP::INT>;
+
 } // namespace VANTAGE::Reactions
 
 #endif

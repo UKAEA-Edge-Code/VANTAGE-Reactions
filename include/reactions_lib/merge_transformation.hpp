@@ -351,5 +351,13 @@ private:
   NP::Sym<NP::REAL> weight;
   NP::Sym<NP::REAL> momentum;
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class MergeTransformationStrategy<2>;
+
+extern template class MergeTransformationStrategy<3>;
+
 } // namespace VANTAGE::Reactions
 #endif

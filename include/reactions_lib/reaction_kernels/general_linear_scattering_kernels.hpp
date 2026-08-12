@@ -278,5 +278,17 @@ public:
     return this->linear_scattering_kernels_on_device;
   }
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+
+extern template class LinearScatteringKernels<2, true>;
+
+extern template class LinearScatteringKernels<2, false>;
+
+extern template class LinearScatteringKernels<3, true>;
+
+extern template class LinearScatteringKernels<3, false>;
+
 }; // namespace VANTAGE::Reactions
 #endif

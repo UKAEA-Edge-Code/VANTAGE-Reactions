@@ -24,7 +24,7 @@ foreach(src ${test_sources})
   target_compile_options(${name} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
 
   set_target_properties(${name} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-  add_sycl_to_target(TARGET ${name})
+  add_sycl_to_target(TARGET ${name} SOURCES ${src} ${common_sources})
 endforeach()
 
 ############################################################
@@ -34,6 +34,6 @@ add_executable(${EXECUTABLE} ${test_sources} ${common_sources})
 target_link_libraries(${EXECUTABLE} PRIVATE VANTAGE::Reactions NESO-Particles::NESO-Particles GTest::gtest)
 target_compile_definitions(${EXECUTABLE} PRIVATE GPU_SELECTOR=0)
 target_compile_options(${EXECUTABLE} PRIVATE ${BUILD_TYPE_COMPILE_FLAGS})
-add_sycl_to_target(TARGET ${EXECUTABLE})
+add_sycl_to_target(TARGET ${EXECUTABLE} SOURCES ${test_sources} ${common_sources})
 
 install(TARGETS ${EXECUTABLE} DESTINATION bin)

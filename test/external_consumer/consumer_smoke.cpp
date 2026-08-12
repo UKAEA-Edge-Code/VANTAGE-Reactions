@@ -5,13 +5,12 @@
 // library. It proves: (a) find_package(VANTAGE-Reactions) succeeds against the
 // install tree, (b) the installed CMake config resolves the imported target and
 // its transitive deps (MPI, NESO-Particles, SYCL), (c) the consumer TU compiles
-// against the extern-template declarations in
-// include/reactions_lib/extern_templates.hpp without demanding implicit
+// against the extern-template declarations without demanding implicit
 // instantiation, and (d) the link resolves against libVANTAGE-Reactions.so.
 //
 // Every instantiation the library ships (see
 // src/ and the matching `extern template` declarations in
-// include/reactions_lib/extern_templates.hpp) is named below. ODR-using the
+// the corresponding header files) is named below. ODR-using the
 // type (even via a pointer) requires the class template to be complete, which
 // forces the consumer TU to respect the extern-template declaration and let the
 // library provide the definition. If the library did not ship a given
