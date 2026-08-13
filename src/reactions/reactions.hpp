@@ -26,7 +26,9 @@
 #include "../reactions_lib/reaction_data_accumulator.hpp"
 #include "../reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include "../reactions_lib/reaction_kernels.hpp"
+#include "../reactions_lib/swpm_coll_specification_abstract.hpp"
 #include "../reactions_lib/swpm_reaction.hpp"
+#include "../reactions_lib/swpm_reaction_controller.hpp"
 #include "../reactions_lib/transformation_wrapper.hpp"
 #include "../reactions_lib/unary_array_transform_data.hpp"
 #include "../reactions_lib/utils.hpp"
@@ -73,4 +75,6 @@
 #include "../reactions_lib/downsampling_kernels/vranic_merging_kernels.hpp"
 
 #include "../reactions_lib/coll_cell_hierarchies/coll_cell_cartesian_hierarchy.hpp"
+
+#include "../reactions_lib/swpm_specifications/swpm_dsmc_specification.hpp"
 #endif

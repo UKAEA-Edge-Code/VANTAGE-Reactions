@@ -84,17 +84,8 @@ TEST(SWPMReactions, simple_hs_scattering) {
           A->sycl_target, std::array<int, 2>{0, 0}, std::array<int, 2>{1, 2},
           cs_data, scattering_kernels, pair_data_calculator);
 
-  auto bounds = swpm_reaction.get_sigma_v_bounds(0, cell_count);
-  for (auto it = bounds[0].begin(); it != bounds[0].end(); it++) {
-    EXPECT_DOUBLE_EQ(*it, 0.05);
-  }
   for (int i = 0; i < cell_count; i++) {
     swpm_reaction.calculate_rates(pair_list, i, i + 1);
-    auto bounds = swpm_reaction.get_sigma_v_bounds(i, i + 1);
-    EXPECT_DOUBLE_EQ(bounds[0][0], 0.1);
-    for (auto it = bounds[0].begin() + 1; it != bounds[0].end(); it++) {
-      EXPECT_DOUBLE_EQ(*it, 0.05);
-    }
   }
   particle_loop(
       "copy_weight_change_test", A,
@@ -149,4 +140,123 @@ TEST(SWPMReactions, simple_hs_scattering) {
   }
   A->sycl_target->free();
   A->domain->mesh->free();
+}
+
+TEST(SWPMSpecification, SWPMDSMCSpecification) {
+
+  const int N_total = 800;
+
+  auto A = create_test_particle_group(N_total);
+
+  auto particle_subgroup = particle_sub_group(A);
+  int cell_count = A->domain->mesh->get_cell_count();
+
+  std::vector<int> subdivision_order(cell_count, 1);
+
+  auto coll_cell_h = make_coll_cell_hierarchy<CartesianCollCellH>(
+      A->sycl_target,
+      std::dynamic_pointer_cast<CartesianHMesh>(A->domain->mesh),
+      subdivision_order);
+
+  auto cc_manager = std::make_shared<CollisionCellManager>(
+      A->sycl_target, coll_cell_h, std::vector<INT>{0});
+
+  cc_manager->bin_particles(particle_subgroup);
+  cc_manager->construct_cell_partition(particle_subgroup);
+  auto rng_lambda = [&]() -> REAL { return 0.6; };
+
+  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
+  auto spec = SWPMDSMCSpecification(rng_kernel);
+
+  auto result_buffer =
+      cc_manager->get_empty_coll_cellwise_data<REAL>(A->sycl_target);
+  auto timestep_buffer =
+      cc_manager->get_empty_coll_cellwise_data<REAL>(A->sycl_target);
+  auto sigma_v_bound =
+      cc_manager->get_empty_coll_cellwise_data<REAL>(A->sycl_target);
+  sigma_v_bound->fill(2.0);
+
+  spec.calculate_exponential_parameter(particle_subgroup, cc_manager, 0, 0,
+                                       sigma_v_bound, result_buffer,
+                                       timestep_buffer);
+
+  auto npart_cell = N_total / cell_count;
+  REAL expected = 2 * npart_cell * (npart_cell - 1) * 2 * M_PI / 0.25;
+
+  NDHostArraySharedPtr<REAL, 2> host_result;
+  result_buffer->get(host_result);
+  for (int i = 0; i < cell_count; i++) {
+    EXPECT_DOUBLE_EQ(host_result->at(i, 0), expected);
+  }
+
+  timestep_buffer->get(host_result);
+  for (int i = 0; i < cell_count; i++) {
+    EXPECT_DOUBLE_EQ(host_result->at(i, 0), npart_cell / expected);
+  }
+
+  auto cellwise_pair_listA =
+      std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+
+  std::vector<int> c;
+  std::vector<int> i;
+  std::vector<int> j;
+
+  c.reserve(cell_count * npart_cell / 2);
+  i.reserve(cell_count * npart_cell / 2);
+  j.reserve(cell_count * npart_cell / 2);
+
+  std::mt19937 rng(9124234 + A->sycl_target->comm_pair.rank_parent);
+
+  for (int cellx = 0; cellx < cell_count; cellx++) {
+    npart_cell = A->get_npart_cell(cellx);
+    std::vector<int> pairs(npart_cell);
+    std::iota(pairs.begin(), pairs.end(), 0);
+    std::shuffle(pairs.begin(), pairs.end(), rng);
+    for (int px = 0; px < (npart_cell / 2); px++) {
+      c.push_back(cellx);
+      i.push_back(pairs.at(2 * px));
+      j.push_back(pairs.at(2 * px + 1));
+    }
+  }
+
+  cellwise_pair_listA->push_back(c, i, j);
+  auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
+      A, A, cellwise_pair_listA);
+
+  particle_pair_loop(
+      "set_tot_reaction_rate", pair_list,
+      [](auto a, auto b, auto id, auto id_b, auto w) {
+        a[0] = 1.0 + id[0] % 2;
+        b[0] = a[0];
+        id_b[0] = id[0];
+        w[0] = id[0] % 2 ? 0.5 : 1.0;
+      },
+      Access::A(Access::write(Sym<REAL>("TOT_REACTION_RATE"))),
+      Access::B(Access::write(Sym<REAL>("TOT_REACTION_RATE"))),
+      Access::A(Access::read(Sym<INT>("ID"))),
+      Access::B(Access::write(Sym<INT>("ID"))),
+      Access::A(Access::write(Sym<REAL>("WEIGHT"))))
+      ->execute(0, cell_count);
+
+  spec.calculate_exponential_parameter(particle_subgroup, cc_manager, 0, 0,
+                                       sigma_v_bound, result_buffer,
+                                       timestep_buffer);
+
+  spec.calculate_weight_transfer(pair_list, 0, cell_count);
+
+  for (int i = 0; i < cell_count; i++) {
+    auto weight_change = A->get_cell(Sym<REAL>("WEIGHT_CHANGE"), i);
+    auto tot_reaction_rate = A->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto id = A->get_cell(Sym<INT>("ID"), i);
+
+    const int nrow = weight_change->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      if (id->at(rowx, 0) % 2) {
+        EXPECT_DOUBLE_EQ(weight_change->at(rowx, 0), 0.5);
+      } else {
+        EXPECT_DOUBLE_EQ(weight_change->at(rowx, 0), 0.0);
+      }
+    }
+  }
 }

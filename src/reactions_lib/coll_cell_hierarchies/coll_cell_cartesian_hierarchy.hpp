@@ -38,17 +38,20 @@ struct CartesianCollCellH : AbstractCollCellHierarchy {
     this->update();
   };
 
-  void bin_particles(ParticleSubGroupSharedPtr target, Sym<INT> coll_cell_sym) {
+  void bin_particles(ParticleSubGroupSharedPtr target,
+                     Sym<INT> coll_cell_sym) override {
     this->subdivision.map(target, coll_cell_sym, 0);
   }
 
-  std::vector<int> get_num_coll_cells() { return this->num_coll_cells; }
+  std::vector<int> get_num_coll_cells() override {
+    return this->num_coll_cells;
+  }
 
-  NDHostArraySharedPtr<REAL, 2> get_coll_cell_volumes() {
+  NDHostArraySharedPtr<REAL, 2> get_coll_cell_volumes() override {
     return this->coll_cell_volumes;
   }
 
-  void set_coll_cell_linear_resolution(std::vector<REAL> resolutions) {
+  void set_coll_cell_linear_resolution(std::vector<REAL> resolutions) override {
 
     NESOASSERT(resolutions.size() == this->division_order.size(),
                "resolutions passed to set_coll_cell_linear_resolution on "
@@ -66,6 +69,10 @@ struct CartesianCollCellH : AbstractCollCellHierarchy {
     this->update();
   }
 
+  std::tuple<int, int> get_current_mesh_dims() override {
+    return this->current_shape;
+  };
+
 private:
   void update() {
 
@@ -75,6 +82,8 @@ private:
     this->coll_cell_volumes = std::make_shared<NDHostArray<REAL, 2>>(
         this->subdivision.sycl_target, this->num_coll_cells.size(),
         max_num_coll_cells);
+    this->current_shape =
+        std::make_tuple(this->num_coll_cells.size(), max_num_coll_cells);
     this->coll_cell_volumes->fill(1.0);
     this->cell_width = this->subdivision.mesh->cell_width_fine;
     REAL volume;
@@ -92,6 +101,8 @@ private:
 
   REAL cell_width;
   int mesh_ndim;
+
+  std::tuple<int, int> current_shape;
 
   std::vector<int> num_coll_cells;
   std::vector<int> division_order;

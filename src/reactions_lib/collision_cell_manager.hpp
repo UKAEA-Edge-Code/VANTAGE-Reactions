@@ -1,8 +1,11 @@
 #ifndef REACTIONS_COLLISION_CELL_MANAGER_H
 #define REACTIONS_COLLISION_CELL_MANAGER_H
 #include "particle_properties_map.hpp"
+#include <algorithm>
+#include <limits>
 #include <memory>
 #include <neso_particles.hpp>
+#include <tuple>
 #include <vector>
 
 using namespace NESO::Particles;
@@ -43,6 +46,11 @@ struct AbstractCollCellHierarchy {
    */
   virtual void
   set_coll_cell_linear_resolution(std::vector<REAL> resolutions) = 0;
+
+  /**
+   * @brief Return the current shape, i.e. n_cell,max_num_coll_cells
+   */
+  virtual std::tuple<int, int> get_current_mesh_dims() = 0;
 };
 
 /**
@@ -79,8 +87,8 @@ struct CollisionCellManager {
    * @param species_ids Vector of integer ids for species managed by this
    * manager
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used when remapping property names (here collision cell and species id
-   * syms)
+   * used when remapping property names (here mesh, collision cell, and species
+   * id syms)
    */
   CollisionCellManager(
       SYCLTargetSharedPtr sycl_target,
@@ -92,10 +100,20 @@ struct CollisionCellManager {
     this->coll_cell_partition = std::make_shared<DSMC::CollisionCellPartition>(
         sycl_target, coll_cell_hierarchy->get_num_coll_cells().size(),
         species_ids);
+
+    this->reduction_obj = std::make_shared<DSMC::CollisionCellRateReduction>(
+        this->coll_cell_partition);
+
+    this->num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
+    // This makes sure that the first construct call marks all cells as having
+    // been resized for reduction purposes
+    std::fill(this->num_coll_cells.begin(), this->num_coll_cells.end(), 0);
+    this->cell_change_mask = std::vector<int>(this->num_coll_cells.size(), 1);
     this->species_id_sym =
         Sym<INT>(properties_map.at(default_properties.internal_state));
     this->coll_cell_sym =
         Sym<INT>(properties_map.at(default_properties.collision_cell_id));
+    this->cell_id_sym = Sym<INT>(properties_map.at(default_properties.cell_id));
   };
 
   /**
@@ -104,10 +122,8 @@ struct CollisionCellManager {
    *
    * @param target Particle subgroup for which the partition is constructed
    */
-  std::shared_ptr<DSMC::CollisionCellPartition>
-  get_cell_partition(ParticleSubGroupSharedPtr target) {
+  std::shared_ptr<DSMC::CollisionCellPartition> get_cell_partition() {
 
-    this->construct_cell_partition(target);
     return this->coll_cell_partition;
   };
 
@@ -119,7 +135,6 @@ struct CollisionCellManager {
    */
   NDHostArraySharedPtr<int, 2>
   get_npart_coll_cell(ParticleSubGroupSharedPtr target, INT species_id) {
-    this->construct_cell_partition(target);
 
     this->coll_cell_partition->get_num_unmasked_particles(species_id,
                                                           this->num_particles);
@@ -133,17 +148,16 @@ struct CollisionCellManager {
    */
   void bin_particles(ParticleSubGroupSharedPtr target) {
 
-    this->coll_cell_hierarchy->bin_particles(target, this->coll_cell_sym);
+    if (!this->partition_valid) {
+      this->coll_cell_hierarchy->bin_particles(target, this->coll_cell_sym);
+    }
   }
 
   /**
    * @brief Get the number of collision cells per mesh cell
    *
    */
-  std::vector<int> get_num_coll_cells() {
-
-    return this->coll_cell_hierarchy->get_num_coll_cells();
-  }
+  std::vector<int> get_num_coll_cells() { return this->num_coll_cells; }
 
   /**
    * @brief Get cell volumes per mesh and collision cell
@@ -170,7 +184,87 @@ struct CollisionCellManager {
    */
   void invalidate_partition() { this->partition_valid = false; }
 
-private:
+  template <typename T>
+  void coll_cellwise_max(ParticleSubGroupSharedPtr target, Sym<T> sym,
+                         int component, NDLocalArraySharedPtr<T, 2> &buffer) {
+
+    this->resize_coll_cellwise_data(target->get_particle_group()->sycl_target,
+                                    buffer);
+    buffer->fill(-std::numeric_limits<REAL>::max());
+
+    int k_component = component;
+
+    particle_loop(
+        "coll_cellwise_max", target,
+        [=](auto reduction_sym, auto reduction_buffer, auto cell,
+            auto coll_cell) {
+          reduction_buffer.fetch_max(cell[0], coll_cell[0],
+                                     reduction_sym[k_component]);
+        },
+        Access::read(sym), Access::max(buffer), Access::read(this->cell_id_sym),
+        Access::read(this->coll_cell_sym))
+        ->execute();
+  };
+
+  /**
+   * @brief Return a new NDLocalArraySharedPtr conforming to the expected mesh
+   * cell,collision cell size
+   *
+   * @param sycl_target Device to use when constructing
+   */
+  template <typename T>
+  NDLocalArraySharedPtr<T, 2>
+  get_empty_coll_cellwise_data(SYCLTargetSharedPtr sycl_target) {
+
+    auto expected_shape = this->coll_cell_hierarchy->get_current_mesh_dims();
+    return std::make_shared<NDLocalArray<T, 2>>(
+        sycl_target, std::get<0>(expected_shape), std::get<1>(expected_shape));
+  }
+
+  /**
+   * @brief Resize and existing (if nullptr) or construct a new
+   * NDLocalArraySharedPtr conforming to the expected mesh cell,collision cell
+   * size
+   *
+   * @param sycl_target Device to use when constructing
+   */
+  template <typename T>
+  void resize_coll_cellwise_data(SYCLTargetSharedPtr sycl_target,
+                                 NDLocalArraySharedPtr<T, 2> &data) {
+    if (data == nullptr) {
+      data = this->get_empty_coll_cellwise_data<T>(sycl_target);
+    }
+
+    auto expected_shape = this->coll_cell_hierarchy->get_current_mesh_dims();
+    auto shape = data->index.shape;
+    if (shape[0] != std::get<0>(expected_shape) ||
+        shape[1] != std::get<1>(expected_shape)) {
+
+      data = this->get_empty_coll_cellwise_data<T>(sycl_target);
+    }
+  }
+
+  void update_rate_reduction(int reaction_index, REAL default_value) {
+    this->reduction_obj->update(reaction_index, this->cell_change_mask,
+                                default_value);
+  };
+
+  void update_rate_reduction(
+      CellwisePairListAbsolute<ParticleGroup, CellwisePairList> &pair_list,
+      int cell_start, int cell_end,
+      LocalArraySharedPtr<REAL> &device_rate_buffer, int reaction_index) {
+    this->reduction_obj->update(reaction_index, pair_list, cell_start, cell_end,
+                                this->coll_cell_sym, 0, device_rate_buffer);
+  };
+
+  void setup_rate_reduction(int n_reactions) {
+    this->reduction_obj->setup(n_reactions);
+  };
+
+  void get_rate_reduction(NDLocalArraySharedPtr<REAL, 2> &accumulated_rates) {
+    this->reduction_obj->get(accumulated_rates);
+  }
+
   /**
    * @brief Construct the collision cell partition for a given group if the
    * current is not valid
@@ -178,25 +272,41 @@ private:
    * @param target Particle subgroup for which to construct the partition
    */
   void construct_cell_partition(ParticleSubGroupSharedPtr target) {
+    auto new_num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
 
+    std::transform(new_num_coll_cells.begin(), new_num_coll_cells.end(),
+                   this->num_coll_cells.begin(), this->cell_change_mask.begin(),
+                   [](int x, int y) { return x != y; });
+
+    if (std::any_of(this->cell_change_mask.begin(),
+                    this->cell_change_mask.end(),
+                    [](int x) { return x > 0; })) {
+      this->partition_valid = false;
+    }
+    this->num_coll_cells = new_num_coll_cells;
     if (!this->partition_valid) {
 
       this->partition_valid = true;
-      this->coll_cell_partition->construct(
-          target, this->coll_cell_hierarchy->get_num_coll_cells(),
-          this->species_id_sym, 0, this->coll_cell_sym, 0);
+      this->coll_cell_partition->construct(target, this->num_coll_cells,
+                                           this->species_id_sym, 0,
+                                           this->coll_cell_sym, 0);
+      this->reduction_obj->resize();
     }
   };
 
-  bool partition_valid = false;
-
-protected:
+private:
   std::shared_ptr<DSMC::CollisionCellPartition> coll_cell_partition;
   std::shared_ptr<AbstractCollCellHierarchy> coll_cell_hierarchy;
   Sym<INT> species_id_sym;
   Sym<INT> coll_cell_sym;
+  Sym<INT> cell_id_sym;
   std::vector<INT> species_ids;
+  std::vector<int> num_coll_cells;
+  std::vector<int> cell_change_mask;
 
+  std::shared_ptr<DSMC::CollisionCellRateReduction> reduction_obj;
+
+  bool partition_valid = false;
   NDHostArraySharedPtr<int, 2> num_particles;
 };
 }; // namespace VANTAGE::Reactions
