@@ -1,5 +1,5 @@
 #include "include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 #include <random>
 
 using namespace VANTAGE::Reactions;

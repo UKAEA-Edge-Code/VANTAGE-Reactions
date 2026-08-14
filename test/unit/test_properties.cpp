@@ -1,7 +1,7 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_particle_properties.hpp"
 #include "include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 
 using namespace VANTAGE::Reactions;
 

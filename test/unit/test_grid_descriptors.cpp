@@ -1,6 +1,6 @@
 #include "include/mock_interpolation_data.hpp"
+#include "include/test_common.hpp"
 #include <cstdlib>
-#include <gtest/gtest.h>
 #include <random>
 
 using namespace VANTAGE::Reactions;

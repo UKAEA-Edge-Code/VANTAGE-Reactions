@@ -1,8 +1,8 @@
 #ifndef REACTIONS_TEST_UTILS_H
 #define REACTIONS_TEST_UTILS_H
 
+#include "test_common.hpp"
 #include <random>
-#include <reactions/reactions.hpp>
 
 namespace VANTAGE::Reactions {
 inline NP::REAL relative_error(const NP::REAL correct, const NP::REAL to_test) {

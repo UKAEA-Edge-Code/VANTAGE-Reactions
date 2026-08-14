@@ -1,5 +1,5 @@
 #include "include/mock_particle_group_merging.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 
 using namespace VANTAGE::Reactions;
 

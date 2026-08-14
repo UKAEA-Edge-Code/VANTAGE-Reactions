@@ -1,5 +1,5 @@
+#include "include/test_common.hpp"
 #include "include/test_extern_templates.hpp"
-#include <gtest/gtest.h>
 
 using namespace VANTAGE::Reactions;
 

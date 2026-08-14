@@ -1,5 +1,4 @@
-#include <gtest/gtest.h>
-#include <reactions/reactions.hpp>
+#include "include/test_common.hpp"
 
 using namespace VANTAGE::Reactions;
 

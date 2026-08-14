@@ -1,7 +1,7 @@
 #ifndef VANTAGE_REACTIONS_TYPE_ALIASES_HPP
 #define VANTAGE_REACTIONS_TYPE_ALIASES_HPP
 
-#include <reactions/reactions.hpp>
+#include "test_common.hpp"
 
 namespace VANTAGE::Reactions {
 

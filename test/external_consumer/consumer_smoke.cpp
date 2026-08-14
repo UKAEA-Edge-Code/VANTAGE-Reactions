@@ -18,7 +18,6 @@
 // ODR-use; the extern-template decl keeps that ODR-use from emitting the symbol
 // here.
 
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <reactions/reactions.hpp>
 
 #include <iostream>

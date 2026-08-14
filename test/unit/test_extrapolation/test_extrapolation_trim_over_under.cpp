@@ -1,7 +1,7 @@
 #include "../include/mock_interpolation_data.hpp"
 #include "../include/mock_particle_group.hpp"
+#include "../include/test_common.hpp"
 #include "../include/test_vantage_reactions_utils.hpp"
-#include <gtest/gtest.h>
 
 using namespace VANTAGE::Reactions;
 

@@ -1,7 +1,7 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "../include/test_common.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
-#include <gtest/gtest.h>
 #include <memory>
 #include <utility>
 

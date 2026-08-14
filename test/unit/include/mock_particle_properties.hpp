@@ -1,7 +1,7 @@
 #ifndef REACTIONS_MOCK_PARTICLE_PROPERTIES_H
 #define REACTIONS_MOCK_PARTICLE_PROPERTIES_H
 
-#include <reactions/reactions.hpp>
+#include "test_common.hpp"
 
 using namespace VANTAGE::Reactions;
 

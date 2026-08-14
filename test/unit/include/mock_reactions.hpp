@@ -1,7 +1,7 @@
 #ifndef REACTIONS_MOCK_REACTIONS_H
 #define REACTIONS_MOCK_REACTIONS_H
 
-#include <reactions/reactions.hpp>
+#include "test_common.hpp"
 
 using namespace VANTAGE::Reactions;
 

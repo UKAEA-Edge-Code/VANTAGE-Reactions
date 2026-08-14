@@ -1,5 +1,6 @@
 #ifndef REACTIONS_MOCK_PARTICLE_GROUP_H
 #define REACTIONS_MOCK_PARTICLE_GROUP_H
+#include "test_common.hpp"
 #include "test_extern_templates.hpp"
 
 using namespace VANTAGE::Reactions;

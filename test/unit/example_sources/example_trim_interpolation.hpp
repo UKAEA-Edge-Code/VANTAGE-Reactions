@@ -1,5 +1,4 @@
 
-#include "reactions/neso_particles_namespace_alias.hpp"
 #include <random>
 #include <tuple>
 inline void
