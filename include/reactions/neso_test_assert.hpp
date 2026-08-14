@@ -1,6 +1,6 @@
 #ifndef REACTIONS_NESO_TEST_ASSERT_H
 #define REACTIONS_NESO_TEST_ASSERT_H
-#include "neso_particles_namespace_alias.hpp"
+#include "neso_particles/typedefs.hpp"
 #include <cstdlib>
 #include <stdexcept>
 
@@ -15,7 +15,7 @@ inline void neso_particles_test_assert(const char *expr_str, bool expr,
       throw std::logic_error("");
     }
   } else {
-    NP::neso_particles_assert(expr_str, expr, file, line, msg);
+    NESO::Particles::neso_particles_assert(expr_str, expr, file, line, msg);
   }
 }
 #include <neso_particles.hpp>
