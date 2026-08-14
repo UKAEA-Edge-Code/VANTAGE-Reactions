@@ -29,8 +29,8 @@ struct HSScatteringDataOnDevice
       typename HostAtomicBlockKernelRNG<REAL>::KernelType &rng_kernel) const {
 
     REAL rel_speed = 0;
-    REAL random_norm_inv = 0;
-    std::array<REAL, vel_ndim> random_nums;
+    std::array<REAL, vel_ndim> random_dir;
+    std::array<REAL, vel_ndim - 1> random_nums;
     std::array<REAL, vel_ndim> com_vel;
     std::array<REAL, vel_ndim> vel_a;
     std::array<REAL, vel_ndim> vel_b;
@@ -41,16 +41,37 @@ struct HSScatteringDataOnDevice
       vel_a[i] = accessor_pack.req_real_props_a.at(this->velocity_ind_a, i);
       vel_b[i] = accessor_pack.req_real_props_b.at(this->velocity_ind_b, i);
     }
+
+    constexpr REAL two_pi = 2 * M_PI;
+    if constexpr (vel_ndim == 2) {
+
+      random_nums[0] = rng_kernel.at(accessor_pack.index, 0, &is_kernel_valid);
+
+      REAL valuecos;
+      const REAL valuesin = Kernel::sincos(two_pi * random_nums[0], &valuecos);
+      random_dir[0] = valuecos;
+      random_dir[1] = valuesin;
+
+    } else {
+      random_nums[0] = rng_kernel.at(accessor_pack.index, 0, &is_kernel_valid);
+      random_nums[1] = rng_kernel.at(accessor_pack.index, 1, &is_kernel_valid);
+
+      REAL valuecos;
+      const REAL valuesin = Kernel::sincos(two_pi * random_nums[0], &valuecos);
+      REAL valuecos_theta;
+      const REAL valuesin_theta =
+          Kernel::sincos(M_PI * random_nums[1], &valuecos_theta);
+      random_dir[0] = valuecos * valuesin_theta;
+      random_dir[1] = valuesin * valuesin_theta;
+      random_dir[2] = valuecos_theta;
+    }
     for (int i = 0; i < vel_ndim; i++) {
       rel_vel = vel_a[i] - vel_b[i];
       rel_speed += rel_vel * rel_vel;
 
-      random_nums[i] = rng_kernel.at(accessor_pack.index, i, &is_kernel_valid);
-      random_norm_inv += random_nums[i] * random_nums[i];
       com_vel[i] = vel_a[i] * this->mass_a + vel_b[i] * this->mass_b;
     }
     rel_speed = Kernel::sqrt(rel_speed);
-    random_norm_inv = 1 / Kernel::sqrt(random_norm_inv);
     if (!is_kernel_valid) {
       accessor_pack.req_int_props_a.at(this->panic_ind_a, 0) += 1;
       accessor_pack.req_int_props_b.at(this->panic_ind_b, 0) += 1;
@@ -58,9 +79,10 @@ struct HSScatteringDataOnDevice
 
     for (int i = 0; i < vel_ndim; i++) {
       output[i] = com_vel[i] * this->tot_mass_inv +
-                  rel_speed * random_nums[i] * random_norm_inv;
-      output[vel_ndim + i] = com_vel[i] * this->tot_mass_inv -
-                             rel_speed * random_nums[i] * random_norm_inv;
+                  this->mass_b * this->tot_mass_inv * rel_speed * random_dir[i];
+      output[vel_ndim + i] =
+          com_vel[i] * this->tot_mass_inv -
+          this->mass_a * this->tot_mass_inv * rel_speed * random_dir[i];
     }
     return output;
   }
@@ -107,6 +129,10 @@ struct HSScatteringData
                              HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
+
+    static_assert(vel_ndim == 2 || vel_ndim == 3,
+                  "Only 2 or 3 dimensional velocity allowed for hard sphere "
+                  "scattering data.");
     this->on_device_obj = HSScatteringDataOnDevice<vel_ndim>();
 
     this->on_device_obj->mass_a = species_a.get_mass();

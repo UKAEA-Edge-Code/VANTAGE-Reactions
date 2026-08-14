@@ -219,12 +219,6 @@ struct SWPMReactionController {
     auto reactant_subgroup = this->reactant_selector->make_marker_subgroup(
         particle_sub_group(target));
 
-    // Ensure that the total rate buffer is flushed before the reactions are
-    // applied
-    if (this->auto_clean_tot_rate_buffer) {
-      this->rate_buffer_zeroer->transform(reactant_subgroup);
-    }
-
     this->coll_cell_manager->bin_particles(reactant_subgroup);
     this->coll_cell_manager->construct_cell_partition(reactant_subgroup);
 
@@ -273,6 +267,11 @@ struct SWPMReactionController {
 
     while (current_time < dt) {
 
+      // Ensure that the total rate buffer is flushed before the reactions are
+      // applied
+      if (this->auto_clean_tot_rate_buffer) {
+        this->rate_buffer_zeroer->transform(reactant_subgroup);
+      }
       if (current_time > 0) {
         // TODO: add resolution control features
         this->coll_cell_manager->bin_particles(reactant_subgroup);
@@ -291,6 +290,12 @@ struct SWPMReactionController {
             this->timestep_bounds);
       }
 
+      this->timestep_bounds->get(h_timestep_bounds);
+      h_timestep_bounds->get(timestep_bounds_vec);
+      dt_max = std::min(dt - current_time,
+                        max_fraction_pairs *
+                            *std::min_element(timestep_bounds_vec.begin(),
+                                              timestep_bounds_vec.end()));
       used_dt = std::min(dt_max, dt - current_time);
 
       if (this->add_noise_to_partial_collisions) {
@@ -330,8 +335,8 @@ struct SWPMReactionController {
         for (int r = 0; r < this->reactions.size(); r++) {
 
           this->reactions[r]->apply(
-              pair_list, i, std::min(i + this->cell_block_size, cell_count), dt,
-              child_group);
+              pair_list, i, std::min(i + this->cell_block_size, cell_count),
+              used_dt, child_group);
         }
 
         for (auto it = this->child_ids.begin(); it != this->child_ids.end();
