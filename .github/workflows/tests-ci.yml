@@ -24,6 +24,9 @@ jobs:
         run: |
           docker build -t ci_image -f .devcontainer/Dockerfile .
       - name: unit-tests
+        # run_tests.sh builds + runs the unit tests, then runs the
+        # external-consumer smoke test against the installed
+        # libVANTAGE-Reactions.so (see the script's consumer block).
         run: |
           docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
 

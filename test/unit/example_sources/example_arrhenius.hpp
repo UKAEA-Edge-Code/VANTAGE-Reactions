@@ -1,4 +1,4 @@
-inline void arrhenius_example() {
+void arrhenius_example() {
 
   // In case we wish to remap the default weight, fluid_temperature
   auto used_map = get_default_map();

@@ -1,4 +1,4 @@
-inline void electron_impact_ion_example(ParticleGroupSharedPtr particle_group) {
+void electron_impact_ion_example(ParticleGroupSharedPtr particle_group) {
 
   auto used_map = get_default_map();
 

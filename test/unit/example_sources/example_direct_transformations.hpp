@@ -1,5 +1,4 @@
-inline void
-direct_transformation_example(ParticleGroupSharedPtr particle_group) {
+void direct_transformation_example(ParticleGroupSharedPtr particle_group) {
 
   auto subgroup_low_weight = particle_sub_group(
       particle_group, [](auto w) { return w[0] < 1e-6; },

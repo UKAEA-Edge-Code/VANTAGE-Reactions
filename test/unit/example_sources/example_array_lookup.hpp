@@ -1,4 +1,4 @@
-inline void array_lookup_example(ParticleGroupSharedPtr particle_group) {
+void array_lookup_example(ParticleGroupSharedPtr particle_group) {
 
   // The arrays can be any size
   // The default array is what is returned if the key value isn't

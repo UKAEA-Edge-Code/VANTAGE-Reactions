@@ -1,5 +1,4 @@
-inline void
-transformation_wrapper_example(ParticleGroupSharedPtr particle_group) {
+void transformation_wrapper_example(ParticleGroupSharedPtr particle_group) {
 
   // A transformation wrapper can be constructed with a vector of marking
   // strategies or they can be added later.

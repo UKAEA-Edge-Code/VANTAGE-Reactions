@@ -1,5 +1,6 @@
 #ifndef REACTIONS_MOCK_PARTICLE_GROUP_H
 #define REACTIONS_MOCK_PARTICLE_GROUP_H
+#include "test_extern_templates.hpp"
 #include <neso_particles.hpp>
 #include <reactions/reactions.hpp>
 

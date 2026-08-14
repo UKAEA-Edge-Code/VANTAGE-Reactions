@@ -1,4 +1,4 @@
-inline void general_linear_scattering_kernels_example(
+void general_linear_scattering_kernels_example(
     ParticleGroupSharedPtr particle_group) {
 
   // For this kernel, we do need to remap the sources in general

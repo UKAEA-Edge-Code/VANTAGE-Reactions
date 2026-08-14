@@ -1,4 +1,4 @@
-inline void composite_strategy_example(ParticleGroupSharedPtr particle_group) {
+void composite_strategy_example(ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 

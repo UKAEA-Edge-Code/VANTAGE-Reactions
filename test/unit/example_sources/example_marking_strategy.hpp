@@ -1,4 +1,4 @@
-inline void direct_marking_example(ParticleGroupSharedPtr particle_group) {
+void direct_marking_example(ParticleGroupSharedPtr particle_group) {
 
   // Here we create a marking strategy marking low weight particles
   auto marking_strategy = make_direct_marking_strategy(

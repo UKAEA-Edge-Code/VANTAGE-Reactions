@@ -1,4 +1,4 @@
-inline void spec_builder_example() {
+void spec_builder_example() {
 
   // The recommended way of initialising a ParticleSpecBuilder
   // is by using the following constructor, which will

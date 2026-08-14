@@ -1,6 +1,7 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
 #include "reactions_lib/utils.hpp"
+#include "test_extern_templates.hpp"
 #include <neso_particles.hpp>
 #include <reactions/reactions.hpp>
 #include <utility>

@@ -1,4 +1,4 @@
-inline void sampler_example() {
+void sampler_example() {
 
   // In case we wish to remap the default panic flag - used in case the sampling
   // fails

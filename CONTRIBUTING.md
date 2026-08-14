@@ -8,3 +8,5 @@
 7. NOTE: When creating a pull request to the original repo be mindful of the source-destination for the pull request (ie. double check the `base_repository`(the original repo) and the `head_repository`(forked repo) are set correctly).
 8. The options on the pull request will need to be decided on a per-case basis in terms of whether to delete the source branch and/or squash the commits upon merging.
 9. Assign a reviewer (someone other than yourself) to review and merge the pull request. Note that merging will be disabled by default if any tests fail.
+
+> **Build-configuration coverage:** `VANTAGE-Reactions` is built as a compiled runtime library (it ships pre-compiled function definitions, template instantiations and SYCL device code in `libVANTAGE-Reactions.so`). For any change that touches the public headers, the public symbol surface, the explicit instantiations under `src/`, or the `extern template` declarations in the public headers, the local `unit_tests` run must pass.

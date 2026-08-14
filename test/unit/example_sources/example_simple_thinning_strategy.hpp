@@ -1,5 +1,4 @@
-inline void
-simple_thinning_strategy_example(ParticleGroupSharedPtr particle_group) {
+void simple_thinning_strategy_example(ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
 

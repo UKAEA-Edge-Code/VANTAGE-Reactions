@@ -1,4 +1,4 @@
-inline void maxwellian_sampler_example() {
+void maxwellian_sampler_example() {
 
   // In case we wish to remap the fluid_temperature, fluid_flow_speed, or
   // velocity
