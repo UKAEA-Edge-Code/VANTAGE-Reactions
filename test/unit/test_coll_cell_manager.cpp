@@ -55,7 +55,8 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
   auto npart_coll_cell = cc_manager.get_npart_coll_cell(particle_subgroup, 0);
 
   for (int i = 0; i < cell_count; i++) {
-    EXPECT_EQ(npart_coll_cell->at(i, 0), N_total / cell_count);
+    EXPECT_EQ(npart_coll_cell->at(i, 0),
+              particle_subgroup->get_npart_local() / cell_count);
   }
 
   resolutions[0] = 0.4;

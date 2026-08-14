@@ -182,7 +182,7 @@ TEST(SWPMSpecification, SWPMDSMCSpecification) {
                                        sigma_v_bound, result_buffer,
                                        timestep_buffer);
 
-  auto npart_cell = N_total / cell_count;
+  auto npart_cell = A->get_npart_local() / cell_count;
   REAL expected = 2 * npart_cell * (npart_cell - 1) * 2 * M_PI / 0.25;
 
   NDHostArraySharedPtr<REAL, 2> host_result;
