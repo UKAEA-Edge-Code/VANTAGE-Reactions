@@ -106,36 +106,38 @@ TEST(SWPMReactions, simple_hs_scattering) {
   // Expected velocities:
   // Centre-of-mass velocity: (1.2*2+2*4)/3.2 = 3.25
   // Relative velocity: 2
-  // Random components: sample 0.6 in both directions, normalized to
-  // 0.6/*sqrt(2*0.6^2) = a
-  // Final velocities: [2.75 + 2*a, 2*a], and with -a for particle B
+  // Random components: sample 0.125 leads to an angle of 45 degrees so
+  // sqrt(2)/2 = a Final velocities:  [3.25 + 2 (rel_vel) * a * 2/3.2, 2 * a *
+  // 2/3.2] (mass_b/tot_mass) for A and replacing a with -a and mass_b with
+  // mass_a for
+  // B
 
   REAL vel_com = 3.25;
-  REAL expected_vel_random = 2 * 0.6 / std::sqrt(2 * 0.6 * 0.6);
+  REAL expected_vel_random_a_y = 2 * std::sqrt(2) / 2 * 2 / 3.2;
+  REAL expected_vel_random_b_y = 2 * std::sqrt(2) / 2 * 1.2 / 3.2;
+
   for (int i = 0; i < cell_count; i++) {
 
-    auto weight = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto weight_parent_a = A->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto weight_parent_b = B->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto velocity = descendant_particles->get_cell(Sym<REAL>("VELOCITY"), i);
-    auto species_id =
-        descendant_particles->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+    auto weight = A->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto velocity = A->get_cell(Sym<REAL>("VELOCITY"), i);
+    auto species_id = A->get_cell(Sym<INT>("INTERNAL_STATE"), i);
 
     const int nrow = weight->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.1);
-      if (species_id->at(rowx, 0) == 1) {
-        EXPECT_DOUBLE_EQ(velocity->at(rowx, 0), vel_com + expected_vel_random);
-        EXPECT_DOUBLE_EQ(velocity->at(rowx, 1), expected_vel_random);
+      if (species_id->at(rowx, 0) == 2) {
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.1);
+        EXPECT_DOUBLE_EQ(velocity->at(rowx, 0),
+                         vel_com + expected_vel_random_a_y);
+        EXPECT_DOUBLE_EQ(velocity->at(rowx, 1), expected_vel_random_a_y);
+      } else if (species_id->at(rowx, 0) == 3) {
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.1);
+        EXPECT_DOUBLE_EQ(velocity->at(rowx, 0),
+                         vel_com - expected_vel_random_b_y);
+        EXPECT_DOUBLE_EQ(velocity->at(rowx, 1), -expected_vel_random_b_y);
       } else {
-        EXPECT_DOUBLE_EQ(velocity->at(rowx, 0), vel_com - expected_vel_random);
-        EXPECT_DOUBLE_EQ(velocity->at(rowx, 1), -expected_vel_random);
+        EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.9);
       }
-    }
-    for (int rowx = 0; rowx < weight_parent_a->nrow; rowx++) {
-      EXPECT_DOUBLE_EQ(weight_parent_a->at(rowx, 0), 0.9);
-      EXPECT_DOUBLE_EQ(weight_parent_b->at(rowx, 0), 0.9);
     }
   }
   A->sycl_target->free();
@@ -191,7 +193,7 @@ TEST(SWPMSpecification, SWPMDSMCSpecification) {
 
   timestep_buffer->get(host_result);
   for (int i = 0; i < cell_count; i++) {
-    EXPECT_DOUBLE_EQ(host_result->at(i, 0), npart_cell / expected);
+    EXPECT_DOUBLE_EQ(host_result->at(i, 0), 0.5 * npart_cell / expected);
   }
 
   auto cellwise_pair_listA =

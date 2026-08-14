@@ -18,9 +18,9 @@ template <typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL>
 struct AbstractSWPMSpecification {
 
   AbstractSWPMSpecification(
-      std::shared_ptr<RNG_KERNEL_T> rng_kernel,
+      std::shared_ptr<RNG_KERNEL_T> rng_kernel, REAL rate_norm_const = 1.0,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : rng_kernel(rng_kernel) {
+      : rng_kernel(rng_kernel), norm_const(rate_norm_const) {
 
     this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
     this->total_reaction_rate_sym =
@@ -110,7 +110,8 @@ struct AbstractSWPMSpecification {
     this->calculate_q_hat(target, ccm, species_id_a, species_id_b,
                           sigma_v_bound, this->q_hat);
 
-    REAL prefactor = (species_id_a == species_id_b ? 2.0 : 4.0) * M_PI;
+    REAL prefactor =
+        (species_id_a == species_id_b ? 2.0 : 4.0) * M_PI * this->norm_const;
 
     nd_local_array_loop_element_wise(
         result_buffer,
@@ -127,8 +128,10 @@ struct AbstractSWPMSpecification {
         timestep_bounds,
         [=](int Na, int Nb, REAL rate_bound) {
           REAL prefactor = (species_id_a == species_id_b ? 0.5 : 1.0);
+          INT offset = (species_id_a == species_id_b ? Na % 2 : 0);
           return rate_bound > 0
-                     ? prefactor * Kernel::min(Na / rate_bound, Nb / rate_bound)
+                     ? prefactor * Kernel::min((Na - offset) / rate_bound,
+                                               Nb / rate_bound)
                      : limit;
         },
         N_a, N_b, result_buffer);
@@ -148,6 +151,8 @@ protected:
   Sym<INT> coll_cell_sym;
   Sym<INT> cell_id_sym;
   Sym<INT> panic_sym;
+
+  REAL norm_const;
 };
 }; // namespace VANTAGE::Reactions
 #endif

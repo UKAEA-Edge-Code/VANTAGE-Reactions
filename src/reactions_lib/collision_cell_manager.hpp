@@ -103,6 +103,7 @@ struct CollisionCellManager {
 
     this->reduction_obj = std::make_shared<DSMC::CollisionCellRateReduction>(
         this->coll_cell_partition);
+    this->reduction_obj->setup(0);
 
     this->num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
     // This makes sure that the first construct call marks all cells as having

@@ -25,8 +25,10 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
   auto cc_manager =
       CollisionCellManager(A->sycl_target, coll_cell_h, std::vector<INT>{0});
 
+  std::vector<REAL> resolutions(cell_count, 1.0);
+  cc_manager.set_coll_cell_linear_resolution(resolutions);
   cc_manager.bin_particles(particle_subgroup);
-
+  cc_manager.construct_cell_partition(particle_subgroup);
   for (int i = 0; i < cell_count; i++) {
 
     auto collision_cell = A->get_cell(Sym<INT>("COLLISION_CELL"), i);
@@ -55,13 +57,12 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
   for (int i = 0; i < cell_count; i++) {
     EXPECT_EQ(npart_coll_cell->at(i, 0), N_total / cell_count);
   }
-  std::vector<REAL> resolutions(cell_count, 1.0);
 
   resolutions[0] = 0.4;
   resolutions[1] = 0.2;
 
   cc_manager.set_coll_cell_linear_resolution(resolutions);
-
+  cc_manager.construct_cell_partition(particle_subgroup);
   num_coll_cells = cc_manager.get_num_coll_cells();
   volumes = cc_manager.get_coll_cell_volumes();
   EXPECT_EQ(num_coll_cells[0], 4);

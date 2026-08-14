@@ -24,12 +24,10 @@ struct SWPMReactionController {
       std::shared_ptr<CollisionCellManager> coll_cell_manager,
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
-      bool auto_clean_tot_rate_buffer = true,
       bool add_noise_to_partial_collisions = true,
       const std::map<int, std::string> &properties_map = get_default_map())
       : cell_block_size(get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
         parent_transform(parent_transform), child_transform(child_transform),
-        auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer),
         add_noise_to_partial_collisions(add_noise_to_partial_collisions),
         rng_generation_fun(rng_generation_fun),
         swpm_specification(swpm_specification),
@@ -131,15 +129,14 @@ struct SWPMReactionController {
   void set_cell_block_size(size_t cell_block_size) {
     this->cell_block_size = cell_block_size;
   }
-  void set_auto_clean_tot_rate_buffer(const bool &auto_clean_setting) {
-    this->auto_clean_tot_rate_buffer = auto_clean_setting;
-  }
-
-  const bool &get_auto_clean_tot_rate_buffer() {
-    return this->auto_clean_tot_rate_buffer;
-  }
 
   void set_default_rel_vel(REAL rel_vel) { this->default_rel_vel = rel_vel; }
+  void set_max_pair_fraction(REAL fraction) {
+    NESOASSERT(
+        fraction <= 1.0 && fraction > 0,
+        "The maximum number of pairs must be a positive number less than 1");
+    this->max_pair_fraction_per_cycle = fraction;
+  }
 
   /**
    * @brief Apply parent transform on the target group or subgroup
@@ -241,13 +238,10 @@ struct SWPMReactionController {
     std::vector<REAL> timestep_bounds_vec;
     h_timestep_bounds->get(timestep_bounds_vec);
 
-    // TODO - change from hardcoded:
-    // Set here to prevent cases where all particles are consumed in pairs
-    REAL max_fraction_pairs = 0.8;
-
-    REAL dt_max = std::min(
-        dt, max_fraction_pairs * *std::min_element(timestep_bounds_vec.begin(),
-                                                   timestep_bounds_vec.end()));
+    REAL dt_max =
+        std::min(dt, this->max_pair_fraction_per_cycle *
+                         *std::min_element(timestep_bounds_vec.begin(),
+                                           timestep_bounds_vec.end()));
 
     REAL current_time = 0;
     auto num_pairs = this->coll_cell_manager->get_empty_coll_cellwise_data<int>(
@@ -269,9 +263,7 @@ struct SWPMReactionController {
 
       // Ensure that the total rate buffer is flushed before the reactions are
       // applied
-      if (this->auto_clean_tot_rate_buffer) {
-        this->rate_buffer_zeroer->transform(reactant_subgroup);
-      }
+      this->rate_buffer_zeroer->transform(reactant_subgroup);
       if (current_time > 0) {
         // TODO: add resolution control features
         this->coll_cell_manager->bin_particles(reactant_subgroup);
@@ -293,7 +285,7 @@ struct SWPMReactionController {
       this->timestep_bounds->get(h_timestep_bounds);
       h_timestep_bounds->get(timestep_bounds_vec);
       dt_max = std::min(dt - current_time,
-                        max_fraction_pairs *
+                        this->max_pair_fraction_per_cycle *
                             *std::min_element(timestep_bounds_vec.begin(),
                                               timestep_bounds_vec.end()));
       used_dt = std::min(dt_max, dt - current_time);
@@ -416,7 +408,6 @@ private:
   Sym<REAL> tot_rate_buffer;
   Sym<REAL> weight_sym;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
-  bool auto_clean_tot_rate_buffer;
   size_t cell_block_size = 256;
   size_t max_pairs_per_cell = 16384;
   std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;
@@ -426,6 +417,7 @@ private:
   NDLocalArraySharedPtr<REAL, 2> timestep_bounds;
 
   REAL default_rel_vel = 1.0;
+  REAL max_pair_fraction_per_cycle = 0.8;
 
   bool add_noise_to_partial_collisions;
 

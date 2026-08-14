@@ -17,8 +17,10 @@ struct SWPMDSMCSpecification
 
   SWPMDSMCSpecification(
       std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
+      REAL rate_norm_const = 1.0,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : AbstractSWPMSpecification(rng_kernel, properties_map) {};
+      : AbstractSWPMSpecification(rng_kernel, rate_norm_const, properties_map) {
+        };
 
   template <typename TARGET, typename PAIR_LIST>
   void calculate_weight_transfer(
