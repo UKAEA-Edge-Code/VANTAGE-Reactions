@@ -31,8 +31,8 @@ struct ProfilingBase {
    * @param key1 Name of region that is being profiled.
    * @returns Region object to pass to `end_profiling_region`.
    */
-  [[nodiscard]] std::optional<NESO::Particles::ProfileRegion>
-  start_profiling_region(NESO::Particles::ParticleSubGroupSharedPtr &subgroup,
+  [[nodiscard]] std::optional<NP::ProfileRegion>
+  start_profiling_region(NP::ParticleSubGroupSharedPtr &subgroup,
                          const std::string key1);
 
   /**
@@ -41,9 +41,8 @@ struct ProfilingBase {
    * @param subgroup NP::ParticleSubGroup to extract NP::SYCLTarget from.
    * @param region Region that is being profiled.
    */
-  void
-  end_profiling_region(NESO::Particles::ParticleSubGroupSharedPtr &subgroup,
-                       std::optional<NESO::Particles::ProfileRegion> &region);
+  void end_profiling_region(NP::ParticleSubGroupSharedPtr &subgroup,
+                            std::optional<NP::ProfileRegion> &region);
 };
 } // namespace VANTAGE::Reactions
 

@@ -14,9 +14,9 @@ using WeightExtractor = decltype(extract<1>("WEIGHT"));
 using SquaredWeightData =
     decltype(std::declval<FixedCoefficientData>() * extract<1>("WEIGHT"));
 
-using VelocityReflectionPipeline2D = decltype(pipe(
-    VelocityExtractor2D(NESO::Particles::Sym<NP::REAL>("VELOCITY")),
-    SpecularReflectionData<2>()));
+using VelocityReflectionPipeline2D =
+    decltype(pipe(VelocityExtractor2D(NP::Sym<NP::REAL>("VELOCITY")),
+                  SpecularReflectionData<2>()));
 
 using ScatteringDataCalculator2D =
     decltype(DataCalculator<VelocityReflectionPipeline2D>(
@@ -24,9 +24,9 @@ using ScatteringDataCalculator2D =
 
 using VelocityExtractor3D = decltype(extract<3>("VELOCITY"));
 
-using VelocityReflectionPipeline3D = decltype(pipe(
-    VelocityExtractor3D(NESO::Particles::Sym<NP::REAL>("VELOCITY")),
-    SpecularReflectionData<3>()));
+using VelocityReflectionPipeline3D =
+    decltype(pipe(VelocityExtractor3D(NP::Sym<NP::REAL>("VELOCITY")),
+                  SpecularReflectionData<3>()));
 
 using ScatteringDataCalculator3D =
     decltype(DataCalculator<VelocityReflectionPipeline3D>(

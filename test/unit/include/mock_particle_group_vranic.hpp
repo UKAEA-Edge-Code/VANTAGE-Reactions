@@ -55,8 +55,7 @@ auto create_vranic_test_particle_group(int N_total, int ndim)
   std::vector<int> cells;
   uniform_within_cartesian_cells(mesh, npart_per_cell, positions, cells,
                                  rng_pos);
-  auto velocities =
-      NESO::Particles::normal_distribution(N, ndim, 0.0, 1.0, rng_vel);
+  auto velocities = NP::normal_distribution(N, ndim, 0.0, 1.0, rng_vel);
   NP::ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {

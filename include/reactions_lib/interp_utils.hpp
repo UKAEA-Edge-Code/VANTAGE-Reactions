@@ -8,7 +8,7 @@
 //   size_t  — API boundaries, container sizes, stride values
 //   NP::INT     — internal device computation (subtraction, decrement, clamp)
 static_assert(
-    sizeof(NESO::Particles::INT) >= sizeof(size_t) || sizeof(size_t) <= 8,
+    sizeof(NP::INT) >= sizeof(size_t) || sizeof(size_t) <= 8,
     "NP::INT must be able to represent all size_t values on this platform");
 namespace VANTAGE::Reactions::interp_utils {
 /**

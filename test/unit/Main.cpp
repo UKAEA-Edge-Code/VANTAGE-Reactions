@@ -11,7 +11,7 @@ void TerminateHandler() {
 
 int main(int argc, char **argv) {
 
-  NESO::Particles::initialise_mpi(&argc, &argv);
+  NP::initialise_mpi(&argc, &argv);
 
 #if GTEST_HAS_EXCEPTIONS
   std::set_terminate(&TerminateHandler);

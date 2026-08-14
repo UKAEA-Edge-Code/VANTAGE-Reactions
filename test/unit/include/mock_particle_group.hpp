@@ -94,8 +94,7 @@ inline auto create_test_particle_group(int N_total)
   uniform_within_cartesian_cells(mesh, npart_per_cell, positions, cells,
                                  rng_pos);
 
-  auto velocities =
-      NESO::Particles::normal_distribution(N, ndim, 0.0, 0.5, rng_vel);
+  auto velocities = NP::normal_distribution(N, ndim, 0.0, 0.5, rng_vel);
   // std::uniform_int_distribution<int> uniform_dist(
   //     0, size - 1);
   NP::ParticleSet initial_distribution(N, particle_group->get_particle_spec());
