@@ -31,7 +31,7 @@ struct SWPMDSMCSpecification
         "DSMC_weight_transfer", pair_list,
         [](auto index, auto weight_change_a, auto weight_change_b,
            auto max_sigma_v, auto sigma_v, auto weight_a, auto weight_b,
-           auto cell, auto coll_cell, auto w_max, auto rng, auto panic_a,
+           auto coll_cell, auto cell, auto w_max, auto rng, auto panic_a,
            auto panic_b) {
           REAL min_weight = Kernel::min(weight_a[0], weight_b[0]);
           REAL max_weight = Kernel::max(weight_a[0], weight_b[0]);
