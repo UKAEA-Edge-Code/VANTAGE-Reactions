@@ -32,12 +32,12 @@ auto create_vranic_test_particle_group(int N_total, int ndim)
   auto domain = std::make_shared<NP::Domain>(mesh, cart_local_mapper);
 
   NP::ParticleSpec particle_spec{
-      NP::ParticleProp(NP::Sym<NP::REAL>("POSITION"), ndim, true),
-      NP::ParticleProp(NP::Sym<NP::INT>("CELL_ID"), 1, true),
-      NP::ParticleProp(NP::Sym<NP::REAL>("WEIGHT"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("VELOCITY"), ndim),
-      NP::ParticleProp(NP::Sym<NP::INT>("REACTIONS_GROUPING_INDEX"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("REACTIONS_LINEAR_INDEX"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("POSITION"), ndim, true),
+      NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true),
+      NP::ParticleProp(NP::Sym<REAL>("WEIGHT"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("VELOCITY"), ndim),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_GROUPING_INDEX"), 1),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_LINEAR_INDEX"), 1),
   };
 
   auto particle_group =
@@ -59,13 +59,13 @@ auto create_vranic_test_particle_group(int N_total, int ndim)
   NP::ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[NP::Sym<NP::REAL>("POSITION")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
-      initial_distribution[NP::Sym<NP::REAL>("VELOCITY")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("VELOCITY")][px][dimx] =
           velocities.at(dimx).at(px);
     }
-    initial_distribution[NP::Sym<NP::INT>("CELL_ID")][px][0] = cells.at(px);
-    initial_distribution[NP::Sym<NP::REAL>("WEIGHT")][px][0] = 1.0;
+    initial_distribution[NP::Sym<INT>("CELL_ID")][px][0] = cells.at(px);
+    initial_distribution[NP::Sym<REAL>("WEIGHT")][px][0] = 1.0;
   }
   particle_group->add_particles_local(initial_distribution);
 

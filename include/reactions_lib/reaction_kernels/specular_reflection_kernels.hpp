@@ -42,16 +42,16 @@ struct SpecularReflectionKernelsOnDevice
    * @param dt The current time step size.
    */
   void
-  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                   NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, 0> &out_states,
-                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
-    std::array<NP::REAL, ndim_velocity> k_V;
-    std::array<NP::REAL, ndim_velocity> surface_n;
-    NP::REAL proj_factor = 0.0;
+    std::array<REAL, ndim_velocity> k_V;
+    std::array<REAL, ndim_velocity> surface_n;
+    REAL proj_factor = 0.0;
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
@@ -59,7 +59,7 @@ struct SpecularReflectionKernelsOnDevice
       surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
     }
 
-    std::array<NP::REAL, ndim_velocity> reflected =
+    std::array<REAL, ndim_velocity> reflected =
         utils::reflect_vector(k_V, surface_n);
     // reflect across surface normal
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
@@ -69,7 +69,7 @@ struct SpecularReflectionKernelsOnDevice
   }
 
 public:
-  NP::INT velocity_ind, normal_ind, weight_ind;
+  INT velocity_ind, normal_ind, weight_ind;
 };
 
 /**
@@ -94,9 +94,9 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
    */
   SpecularReflectionKernels(
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(Properties<NP::INT>(),
-                            Properties<NP::REAL>(required_simple_real_props),
-                            Properties<NP::INT>(), Properties<NP::REAL>()) {
+      : ReactionKernelsBase(Properties<INT>(),
+                            Properties<REAL>(required_simple_real_props),
+                            Properties<INT>(), Properties<REAL>()) {
 
     this->specular_reflection_kernels_on_device.velocity_ind =
         this->required_real_props.simple_prop_index(props.velocity,

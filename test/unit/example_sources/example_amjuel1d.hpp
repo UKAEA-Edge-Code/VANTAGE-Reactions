@@ -4,7 +4,7 @@ void amjuel_1d_example() {
   // fluid_density
   auto used_map = get_default_map();
 
-  auto coeffs = std::array<NP::REAL, 3>{1.0, 1.0, 1.0}; // b_n coefficients
+  auto coeffs = std::array<REAL, 3>{1.0, 1.0, 1.0}; // b_n coefficients
 
   // We pass the number of fit coefficients to the constructor as a template
   // parameter

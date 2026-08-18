@@ -11,7 +11,7 @@ TEST(ArrayTransformData, binary_mult) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = position_data * position_data;
 
@@ -34,13 +34,13 @@ TEST(ArrayTransformData, binary_mult) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0),
                        position->at(rowx, 0) * position->at(rowx, 0));
@@ -59,8 +59,8 @@ TEST(ArrayTransformData, binary_mult_right_scalar) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
-  auto position_data_1 = ExtractorData<1>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
+  auto position_data_1 = ExtractorData<1>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = position_data * position_data_1;
 
@@ -83,13 +83,13 @@ TEST(ArrayTransformData, binary_mult_right_scalar) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0),
                        position->at(rowx, 0) * position->at(rowx, 0));
@@ -108,8 +108,8 @@ TEST(ArrayTransformData, binary_mult_left_scalar) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
-  auto position_data_1 = ExtractorData<1>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
+  auto position_data_1 = ExtractorData<1>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = position_data_1 * position_data;
 
@@ -132,13 +132,13 @@ TEST(ArrayTransformData, binary_mult_left_scalar) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0),
                        position->at(rowx, 0) * position->at(rowx, 0));

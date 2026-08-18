@@ -12,7 +12,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
   const int rank = sycl_target->comm_pair.rank_parent;
   std::mt19937 rng = std::mt19937(52234126 + rank);
   std::uniform_int_distribution<size_t> uniform_dist_0(1, 5);
-  std::uniform_real_distribution<NP::REAL> uniform_dist_1(0.0, 10.0);
+  std::uniform_real_distribution<REAL> uniform_dist_1(0.0, 10.0);
   std::vector<size_t> invalid_dims_vec;
 
   // Deliberately over allocating
@@ -20,7 +20,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
     invalid_dims_vec.push_back(uniform_dist_0(rng));
   }
 
-  std::vector<NP::REAL> invalid_coords_vec;
+  std::vector<REAL> invalid_coords_vec;
   for (int i = 0; i < ndim; i++) {
     // Deliberately over-allocating
     for (int j = 0; j < invalid_dims_vec[i] + 2; j++) {
@@ -34,7 +34,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
     num_grid_elems += invalid_coords_vec[i] - 2;
   }
 
-  std::vector<NP::REAL> invalid_grid_vec;
+  std::vector<REAL> invalid_grid_vec;
   for (int i = 0; i < num_grid_elems; i++) {
     invalid_grid_vec.push_back(uniform_dist_1(rng));
   }
@@ -57,7 +57,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
                  std::logic_error);
 
   // Test grid_size error
-  std::vector<NP::REAL> coords_vec;
+  std::vector<REAL> coords_vec;
   int ranges_size = 0;
   for (auto &idim : dims_vec) {
     ranges_size += idim;

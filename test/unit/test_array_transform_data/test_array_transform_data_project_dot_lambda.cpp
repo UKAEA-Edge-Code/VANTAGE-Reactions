@@ -11,10 +11,10 @@ TEST(ArrayTransformData, unary_project) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto unary_transform_data = UnaryArrayTransformData(
-      UnaryProjectArrayTransform(std::array<NP::REAL, 2>{1.0, 0.5}));
+      UnaryProjectArrayTransform(std::array<REAL, 2>{1.0, 0.5}));
 
   auto pipeline = PipelineData(position_data, unary_transform_data);
   auto test_reaction =
@@ -36,13 +36,13 @@ TEST(ArrayTransformData, unary_project) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0),
                        position->at(rowx, 0) + 0.5 * position->at(rowx, 1));
@@ -62,7 +62,7 @@ TEST(ArrayTransformData, binary_project) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = BinaryArrayTransformData(
       BinaryProjectArrayTransform<2>(), position_data, position_data);
@@ -86,13 +86,13 @@ TEST(ArrayTransformData, binary_project) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       auto norm2 = position->at(rowx, 0) * position->at(rowx, 0) +
                    position->at(rowx, 1) * position->at(rowx, 1);
@@ -113,7 +113,7 @@ TEST(ArrayTransformData, binary_dot) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = dot_product(position_data, position_data);
 
@@ -138,13 +138,13 @@ TEST(ArrayTransformData, binary_dot) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       auto norm2 = position->at(rowx, 0) * position->at(rowx, 0) +
                    position->at(rowx, 1) * position->at(rowx, 1);

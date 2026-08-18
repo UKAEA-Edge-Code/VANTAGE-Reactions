@@ -19,16 +19,16 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    *
    * @param constant_sigma_v Constant collision rate
    */
-  ConstantRateCrossSection(NP::REAL constant_sigma_v)
+  ConstantRateCrossSection(REAL constant_sigma_v)
       : constant_sigma_v(constant_sigma_v) {};
 
   /**
    * @brief Returns the cross-section value at given relative velocity
    *
    * @param relative_vel Relative velocity of projectile and target
-   * @return NP::REAL-valued cross-section = K/v_r
+   * @return REAL-valued cross-section = K/v_r
    */
-  NP::REAL get_value_at(const NP::REAL &relative_vel) const {
+  REAL get_value_at(const REAL &relative_vel) const {
     return this->constant_sigma_v / relative_vel;
   };
 
@@ -36,15 +36,14 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @brief Returns maximum value of the rate sigma*v of for this cross-section.
    * This is constant in this class.
    *
-   * @return NP::REAL-valued constant (plus floating point error to account for
+   * @return REAL-valued constant (plus floating point error to account for
    * potential use in explicit rejection methods).
    */
-  NP::REAL get_max_rate_val() const {
+  REAL get_max_rate_val() const {
     // Avoid potential comparison issues with
     // sigma*v by raising the max rate slightly - might cause the occasional
     // spurious rejection in explicit rejection methods
-    return this->constant_sigma_v +
-           10 * std::numeric_limits<NP::REAL>::epsilon();
+    return this->constant_sigma_v + 10 * std::numeric_limits<REAL>::epsilon();
   };
 
   /**
@@ -55,13 +54,13 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @param uniform_rand Uniformly distributed random number
    * @return true
    */
-  bool accept_reject(NP::REAL relative_vel, NP::REAL uniform_rand,
-                     NP::REAL value_at, NP::REAL max_rate_val) const {
+  bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at,
+                     REAL max_rate_val) const {
     return true;
   }
 
 private:
-  NP::REAL constant_sigma_v;
+  REAL constant_sigma_v;
 };
 }; // namespace VANTAGE::Reactions
 #endif

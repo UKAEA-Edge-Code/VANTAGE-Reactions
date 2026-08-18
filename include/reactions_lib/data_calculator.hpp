@@ -76,9 +76,9 @@ struct DataCalculator : public AbstractDataCalculator {
    * @param cell_idx Cell index for which to invoke the corresponding particle
    * loops
    */
-  void fill_buffer(const NP::NDLocalArraySharedPtr<NP::REAL, 2> &buffer,
+  void fill_buffer(const NP::NDLocalArraySharedPtr<REAL, 2> &buffer,
                    NP::ParticleSubGroupSharedPtr particle_sub_group,
-                   NP::INT cell_idx_start, NP::INT cell_idx_end) {
+                   INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
                "data calculation objects.");
@@ -96,9 +96,9 @@ struct DataCalculator : public AbstractDataCalculator {
                     "data_calc_loop", particle_sub_group,
                     [=](auto particle_index, auto req_int_props,
                         auto req_real_props, auto buffer, auto kernel) {
-                      NP::INT current_count =
+                      INT current_count =
                           particle_index.get_loop_linear_index();
-                      std::array<NP::REAL, data_dim> rate =
+                      std::array<REAL, data_dim> rate =
                           reaction_data_on_device.calc_data(
                               particle_index, req_int_props, req_real_props,
                               kernel);
@@ -107,9 +107,9 @@ struct DataCalculator : public AbstractDataCalculator {
                       }
                     },
                     NP::Access::read(NP::ParticleLoopIndex{}),
-                    NP::Access::write(NP::sym_vector<NP::INT>(
+                    NP::Access::write(NP::sym_vector<INT>(
                         particle_sub_group, this->data_loop_int_syms[dat_idx])),
-                    NP::Access::read(NP::sym_vector<NP::REAL>(
+                    NP::Access::read(NP::sym_vector<REAL>(
                         particle_sub_group,
                         this->data_loop_real_syms[dat_idx])),
                     NP::Access::write(buffer),
@@ -150,8 +150,8 @@ struct DataCalculator : public AbstractDataCalculator {
 
 private:
   std::tuple<DATATYPE...> data;
-  std::vector<std::vector<NP::Sym<NP::INT>>> data_loop_int_syms;
-  std::vector<std::vector<NP::Sym<NP::REAL>>> data_loop_real_syms;
+  std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms;
+  std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms;
 };
 } // namespace VANTAGE::Reactions
 #endif

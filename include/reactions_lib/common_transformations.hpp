@@ -73,7 +73,7 @@ private:
 /**
  * @brief Transformation strategy that zeroes out a set of particle dats
  *
- * @tparam T NP::REAL or NP::INT
+ * @tparam T REAL or INT
  */
 template <typename T> struct ParticleDatZeroer : TransformationStrategy {
 
@@ -98,7 +98,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
    */
   void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
 
-    std::vector<NP::INT> num_comps_vec;
+    std::vector<INT> num_comps_vec;
     auto particle_group = target_subgroup->get_particle_group();
     for (auto &dat : dats) {
       auto particle_dat = particle_group->get_dat(dat);
@@ -106,7 +106,7 @@ template <typename T> struct ParticleDatZeroer : TransformationStrategy {
       num_comps_vec.push_back(particle_dat->ncomp);
     }
 
-    auto comp_nums = std::make_shared<NP::LocalArray<NP::INT>>(
+    auto comp_nums = std::make_shared<NP::LocalArray<INT>>(
         target_subgroup->get_particle_group()->sycl_target, num_comps_vec);
 
     auto k_len = std::size(this->dats);
@@ -136,7 +136,7 @@ private:
  * @brief Transfomation strategy that accumulates values of certain particle
  * dats and provides access to the cell-wise accumulated data
  *
- * @tparam T NP::REAL or NP::INT
+ * @tparam T REAL or INT
  */
 template <typename T> struct CellwiseAccumulator : TransformationStrategy {
 
@@ -270,7 +270,7 @@ private:
  * @brief Transfomation strategy that accumulates distributes values of certain
  * particle dats from provided cell-wise data
  *
- * @tparam T NP::REAL or NP::INT
+ * @tparam T REAL or INT
  */
 template <typename T> struct CellwiseDistributor : TransformationStrategy {
 
@@ -295,13 +295,13 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
       this->dats.push_back(NP::Sym<T>(name));
     }
 
-    std::vector<NP::INT> num_comps_vec;
+    std::vector<INT> num_comps_vec;
     for (auto &dat : dats) {
       auto particle_dat = template_group->get_dat(dat);
 
       num_comps_vec.push_back(particle_dat->ncomp);
     }
-    this->comp_nums = std::make_shared<NP::LocalArray<NP::INT>>(
+    this->comp_nums = std::make_shared<NP::LocalArray<INT>>(
         template_group->sycl_target, num_comps_vec);
 
     for (auto i = 0; i < std::size(this->dats); i++) {
@@ -415,14 +415,14 @@ template <typename T> struct CellwiseDistributor : TransformationStrategy {
 private:
   std::vector<NP::Sym<T>> dats;
   std::map<NP::Sym<T>, std::shared_ptr<NP::CellDatConst<T>>> values;
-  std::shared_ptr<NP::LocalArray<NP::INT>> comp_nums;
+  std::shared_ptr<NP::LocalArray<INT>> comp_nums;
 };
 
 /**
  * @brief Accumulates a set of particle dats cell-wise, while weighing them with
  * a particle dat (should be dim 1). Also accumulates the weight separately.
  *
- * @tparam T NP::REAL or NP::INT
+ * @tparam T REAL or INT
  */
 template <typename T>
 struct WeightedCellwiseAccumulator : TransformationStrategy {
@@ -450,25 +450,25 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
                      "WeightedCellwiseAccumulator");
       this->dats.push_back(NP::Sym<T>(name));
     }
-    std::vector<NP::INT> num_comps_vec;
+    std::vector<INT> num_comps_vec;
     for (auto &dat : dats) {
       auto particle_dat = template_group->get_dat(dat);
 
       num_comps_vec.push_back(particle_dat->ncomp);
     }
 
-    this->comp_nums = std::make_shared<NP::LocalArray<NP::INT>>(
+    this->comp_nums = std::make_shared<NP::LocalArray<INT>>(
         template_group->sycl_target, num_comps_vec);
 
     for (auto i = 0; i < std::size(this->dats); i++) {
       this->values.emplace(std::make_pair(
-          this->dats[i], std::make_shared<NP::CellDatConst<NP::REAL>>(
+          this->dats[i], std::make_shared<NP::CellDatConst<REAL>>(
                              template_group->sycl_target,
                              template_group->domain->mesh->get_cell_count(),
                              num_comps_vec[i], 1)));
     }
 
-    this->weight_buffer = std::make_shared<NP::CellDatConst<NP::REAL>>(
+    this->weight_buffer = std::make_shared<NP::CellDatConst<REAL>>(
         template_group->sycl_target,
         template_group->domain->mesh->get_cell_count(), 1, 1);
   }
@@ -495,10 +495,9 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
           },
           NP::Access::read(this->dats[i]), NP::Access::read(this->comp_nums),
           NP::Access::reduce(this->values[this->dats[i]],
-                             NP::Kernel::plus<NP::REAL>()),
-          NP::Access::read(NP::Sym<NP::REAL>(this->weight_sym_name)),
-          NP::Access::reduce(this->weight_buffer,
-                             NP::Kernel::plus<NP::REAL>()));
+                             NP::Kernel::plus<REAL>()),
+          NP::Access::read(NP::Sym<REAL>(this->weight_sym_name)),
+          NP::Access::reduce(this->weight_buffer, NP::Kernel::plus<REAL>()));
 
       loop->execute();
     }
@@ -510,7 +509,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    * @param data_name Name of the particle dat to be extracted
    */
 
-  NP::CellDatConstSharedPtr<NP::REAL> get_value_pointer(std::string data_name) {
+  NP::CellDatConstSharedPtr<REAL> get_value_pointer(std::string data_name) {
 
     return this->values[NP::Sym<T>(data_name)];
   }
@@ -519,12 +518,11 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
    * @param data_name Name of the particle dat to be set
-   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<NP::REAL>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<REAL>
    */
 
-  void
-  set_value_pointer(std::string data_name,
-                    NP::CellDatConstSharedPtr<NP::REAL> cell_dat_const_ptr) {
+  void set_value_pointer(std::string data_name,
+                         NP::CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
 
     this->values[NP::Sym<T>(data_name)] = cell_dat_const_ptr;
   }
@@ -534,7 +532,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    *
    * @param data_name Name of the particle dat to be extracted
    */
-  std::vector<NP::CellData<NP::REAL>> get_cell_data(std::string data_name) {
+  std::vector<NP::CellData<REAL>> get_cell_data(std::string data_name) {
 
     NESOASSERT(
         this->values.find(NP::Sym<T>(data_name)) != this->values.end(),
@@ -550,7 +548,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    *
    */
 
-  NP::CellDatConstSharedPtr<NP::REAL> get_weight_pointer() {
+  NP::CellDatConstSharedPtr<REAL> get_weight_pointer() {
 
     return this->weight_buffer;
   }
@@ -558,11 +556,10 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
   /**
    * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
-   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<NP::REAL>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<REAL>
    */
 
-  void
-  set_weight_pointer(NP::CellDatConstSharedPtr<NP::REAL> cell_dat_const_ptr) {
+  void set_weight_pointer(NP::CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
 
     this->weight_buffer = cell_dat_const_ptr;
   }
@@ -571,7 +568,7 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
    * @brief Extract accumulated weight data in a vector of NP::CellData objects
    *
    */
-  std::vector<NP::CellData<NP::REAL>> get_weight_cell_data() {
+  std::vector<NP::CellData<REAL>> get_weight_cell_data() {
     return this->weight_buffer->get_all_cells();
   }
 
@@ -609,10 +606,10 @@ struct WeightedCellwiseAccumulator : TransformationStrategy {
 
 private:
   std::vector<NP::Sym<T>> dats;
-  std::map<NP::Sym<T>, std::shared_ptr<NP::CellDatConst<NP::REAL>>> values;
-  std::shared_ptr<NP::LocalArray<NP::INT>> comp_nums;
+  std::map<NP::Sym<T>, std::shared_ptr<NP::CellDatConst<REAL>>> values;
+  std::shared_ptr<NP::LocalArray<INT>> comp_nums;
   std::string weight_sym_name;
-  std::shared_ptr<NP::CellDatConst<NP::REAL>> weight_buffer;
+  std::shared_ptr<NP::CellDatConst<REAL>> weight_buffer;
 };
 
 /**
@@ -632,16 +629,14 @@ private:
  * @param velocity_sym The velocity sym
  */
 template <size_t ndim>
-inline auto
-uniform_velocity_bin_transform(std::array<NP::REAL, ndim> global_extents,
-                               std::array<NP::INT, ndim> n_cells,
-                               NP::Sym<NP::INT> bin_sym,
-                               NP::Sym<NP::REAL> velocity_sym) {
+inline auto uniform_velocity_bin_transform(
+    std::array<REAL, ndim> global_extents, std::array<INT, ndim> n_cells,
+    NP::Sym<INT> bin_sym, NP::Sym<REAL> velocity_sym) {
 
-  std::array<NP::REAL, ndim> k_inverse_extents;
-  std::array<NP::INT, ndim> k_offsets;
+  std::array<REAL, ndim> k_inverse_extents;
+  std::array<INT, ndim> k_offsets;
 
-  NP::INT prod = 1;
+  INT prod = 1;
   for (auto i = 0; i < ndim; i++) {
 
     k_offsets[i] = prod;
@@ -668,21 +663,21 @@ uniform_velocity_bin_transform(std::array<NP::REAL, ndim> global_extents,
 // Extern template declarations, so consumers do not re-instantiate what the
 // library already provides.
 
-extern template class CellwiseAccumulator<NP::REAL>;
+extern template class CellwiseAccumulator<REAL>;
 
-extern template class CellwiseAccumulator<NP::INT>;
+extern template class CellwiseAccumulator<INT>;
 
-extern template class WeightedCellwiseAccumulator<NP::REAL>;
+extern template class WeightedCellwiseAccumulator<REAL>;
 
-extern template class WeightedCellwiseAccumulator<NP::INT>;
+extern template class WeightedCellwiseAccumulator<INT>;
 
-extern template class ParticleDatZeroer<NP::REAL>;
+extern template class ParticleDatZeroer<REAL>;
 
-extern template class ParticleDatZeroer<NP::INT>;
+extern template class ParticleDatZeroer<INT>;
 
-extern template class CellwiseDistributor<NP::REAL>;
+extern template class CellwiseDistributor<REAL>;
 
-extern template class CellwiseDistributor<NP::INT>;
+extern template class CellwiseDistributor<INT>;
 
 } // namespace VANTAGE::Reactions
 

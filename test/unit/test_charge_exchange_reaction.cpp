@@ -33,29 +33,27 @@ TEST(ChargeExchange, simple_beam_exchange) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto weight =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+    auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto id_child =
-        descendant_particles->get_cell(NP::Sym<NP::INT>("INTERNAL_STATE"), i);
+        descendant_particles->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     auto target_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_DENSITY"), i);
     auto projectile_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
 
     auto target_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_MOMENTUM"), i);
     auto projectile_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto target_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_ENERGY"), i);
     auto projectile_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
     const int nrow = weight->nrow;
     const int parent_nrow = vel_parent->nrow;
 
@@ -98,9 +96,8 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
 
-  auto rng_lambda = [&]() -> NP::REAL { return 0.25; };
-  auto rng_kernel =
-      NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, 1000);
+  auto rng_lambda = [&]() -> REAL { return 0.25; };
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<>,
@@ -122,37 +119,35 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto weight =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+    auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto id_child =
-        descendant_particles->get_cell(NP::Sym<NP::INT>("INTERNAL_STATE"), i);
+        descendant_particles->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     auto target_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_DENSITY"), i);
     auto projectile_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
 
     auto target_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_MOMENTUM"), i);
     auto projectile_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto target_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_ENERGY"), i);
     auto projectile_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
     const int nrow = weight->nrow;
     const int parent_nrow = vel_parent->nrow;
 
     EXPECT_EQ(nrow, parent_nrow);
 
-    NP::REAL expected_vel_x = 1.0; // u1 = 0.25 => cos(2*pi*u1) = 0, v_x = 1
-    NP::REAL expected_vel_y = 2.0 * std::sqrt(2 * std::log(4)) +
-                              3.0; // norm_ratio=2, T =2, v_y = 3, u2 = 0.25
+    REAL expected_vel_x = 1.0; // u1 = 0.25 => cos(2*pi*u1) = 0, v_x = 1
+    REAL expected_vel_y = 2.0 * std::sqrt(2 * std::log(4)) +
+                          3.0; // norm_ratio=2, T =2, v_y = 3, u2 = 0.25
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_NEAR(weight->at(rowx, 0), 0.1, 1e-14);
@@ -195,11 +190,10 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
 
-  NP::REAL kernel_return = 0.15;
+  REAL kernel_return = 0.15;
 
-  auto rng_lambda = [&]() -> NP::REAL { return kernel_return; };
-  auto rng_kernel =
-      NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, 1000);
+  auto rng_lambda = [&]() -> REAL { return kernel_return; };
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<3>,
@@ -221,38 +215,36 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto weight =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+    auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto id_child =
-        descendant_particles->get_cell(NP::Sym<NP::INT>("INTERNAL_STATE"), i);
+        descendant_particles->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     auto target_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_DENSITY"), i);
     auto projectile_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
 
     auto target_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_MOMENTUM"), i);
     auto projectile_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto target_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_ENERGY"), i);
     auto projectile_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
     const int nrow = weight->nrow;
     const int parent_nrow = vel_parent->nrow;
 
     EXPECT_EQ(nrow, parent_nrow);
 
-    NP::REAL mag = std::sqrt(-2 * std::log(kernel_return));
-    NP::REAL expected_vel_x = 2.0 * mag * cos(2 * M_PI * kernel_return) + 1.0;
-    NP::REAL expected_vel_y = 2.0 * mag * sin(2 * M_PI * kernel_return) + 3.0;
-    NP::REAL expected_vel_z = 2.0 * mag * cos(2 * M_PI * kernel_return) + 5.0;
+    REAL mag = std::sqrt(-2 * std::log(kernel_return));
+    REAL expected_vel_x = 2.0 * mag * cos(2 * M_PI * kernel_return) + 1.0;
+    REAL expected_vel_y = 2.0 * mag * sin(2 * M_PI * kernel_return) + 3.0;
+    REAL expected_vel_z = 2.0 * mag * cos(2 * M_PI * kernel_return) + 5.0;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_NEAR(weight->at(rowx, 0), 0.1, 1e-14);
@@ -301,9 +293,8 @@ TEST(ChargeExchange, sampled_beam_exchange_2D_pipeline) {
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
 
-  auto rng_lambda = [&]() -> NP::REAL { return 0.25; };
-  auto rng_kernel =
-      NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, 1000);
+  auto rng_lambda = [&]() -> REAL { return 0.25; };
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
   auto sample = SamplerData(rng_kernel);
   auto temperature = extract<1>("FLUID_TEMPERATURE");
@@ -329,36 +320,34 @@ TEST(ChargeExchange, sampled_beam_exchange_2D_pipeline) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto weight =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+    auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto id_child =
-        descendant_particles->get_cell(NP::Sym<NP::INT>("INTERNAL_STATE"), i);
+        descendant_particles->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     auto target_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_DENSITY"), i);
     auto projectile_source =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
 
     auto target_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_MOMENTUM"), i);
     auto projectile_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto target_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION2_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION2_SOURCE_ENERGY"), i);
     auto projectile_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
     const int nrow = weight->nrow;
     const int parent_nrow = vel_parent->nrow;
 
     EXPECT_EQ(nrow, parent_nrow);
 
-    NP::REAL expected_vel_x = 2.00; // 2 * T * 0.25 + v_x, v_x = 1.0
-    NP::REAL expected_vel_y = 4.00; // v_y = 3.0
+    REAL expected_vel_x = 2.00; // 2 * T * 0.25 + v_x, v_x = 1.0
+    REAL expected_vel_y = 4.00; // v_y = 3.0
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_NEAR(weight->at(rowx, 0), 0.1, 1e-14);

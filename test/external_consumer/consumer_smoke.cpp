@@ -84,27 +84,27 @@ int main() {
   (void)k13;
 
   // --- Common transformation strategies ------------------------------------
-  using T0 = CellwiseAccumulator<NP::REAL>;
+  using T0 = CellwiseAccumulator<REAL>;
   T0 *t0 = nullptr;
   (void)t0;
 
-  using T1 = CellwiseAccumulator<NP::INT>;
+  using T1 = CellwiseAccumulator<INT>;
   T1 *t1 = nullptr;
   (void)t1;
 
-  using T2 = WeightedCellwiseAccumulator<NP::REAL>;
+  using T2 = WeightedCellwiseAccumulator<REAL>;
   T2 *t2 = nullptr;
   (void)t2;
 
-  using T3 = WeightedCellwiseAccumulator<NP::INT>;
+  using T3 = WeightedCellwiseAccumulator<INT>;
   T3 *t3 = nullptr;
   (void)t3;
 
-  using T4 = ParticleDatZeroer<NP::REAL>;
+  using T4 = ParticleDatZeroer<REAL>;
   T4 *t4 = nullptr;
   (void)t4;
 
-  using T5 = ParticleDatZeroer<NP::INT>;
+  using T5 = ParticleDatZeroer<INT>;
   T5 *t5 = nullptr;
   (void)t5;
 
@@ -116,11 +116,11 @@ int main() {
   T7 *t7 = nullptr;
   (void)t7;
 
-  using T8 = CellwiseDistributor<NP::REAL>;
+  using T8 = CellwiseDistributor<REAL>;
   T8 *t8 = nullptr;
   (void)t8;
 
-  using T9 = CellwiseDistributor<NP::INT>;
+  using T9 = CellwiseDistributor<INT>;
   T9 *t9 = nullptr;
   (void)t9;
 
@@ -153,19 +153,19 @@ int main() {
 
   // --- Reaction kernel pre-requisites --------------------------------------
 
-  using P0 = Properties<NP::INT>;
+  using P0 = Properties<INT>;
   P0 *p0 = nullptr;
   (void)p0;
 
-  using P1 = Properties<NP::REAL>;
+  using P1 = Properties<REAL>;
   P1 *p1 = nullptr;
   (void)p1;
 
-  using P2 = ArgumentNameSet<NP::INT>;
+  using P2 = ArgumentNameSet<INT>;
   P2 *p2 = nullptr;
   (void)p2;
 
-  using P3 = ArgumentNameSet<NP::REAL>;
+  using P3 = ArgumentNameSet<REAL>;
   P3 *p3 = nullptr;
   (void)p3;
 

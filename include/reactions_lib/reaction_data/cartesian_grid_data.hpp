@@ -44,8 +44,8 @@ struct CartesianGridDataOnDevice
    * interpolation axes.
    */
   CartesianGridDataOnDevice(
-      const std::shared_ptr<NP::BufferDevice<NP::REAL>> &d_grid,
-      const std::shared_ptr<NP::BufferDevice<NP::REAL>> &d_coords,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_coords,
       const std::shared_ptr<NP::BufferDevice<size_t>> &d_dims) {
     this->d_grid_ptr = d_grid->ptr;
     this->d_coords_ptr = d_coords->ptr;
@@ -68,18 +68,16 @@ struct CartesianGridDataOnDevice
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation (unused for this data type).
    *
-   * @return A NP::REAL-valued array of size 1 containing the grid value at the
+   * @return A REAL-valued array of size 1 containing the grid value at the
    * computed flat index.
    */
-  std::array<NP::REAL, 1>
-  calc_data(const std::array<NP::REAL, input_ndim> &input,
-            [[maybe_unused]] const NP::Access::LoopIndex::Read &index,
-            [[maybe_unused]] const NP::Access::SymVector::Write<NP::INT>
-                &req_int_props,
-            [[maybe_unused]] const NP::Access::SymVector::Read<NP::REAL>
-                &req_real_props,
-            [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
-    std::array<NP::INT, input_ndim> grid_indices;
+  std::array<REAL, 1> calc_data(
+      const std::array<REAL, input_ndim> &input,
+      [[maybe_unused]] const NP::Access::LoopIndex::Read &index,
+      [[maybe_unused]] const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
+      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
+    std::array<INT, input_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
         input[0], this->d_coords_ptr, this->d_dims_ptr[0]);
     size_t aggregate_dims = 0;
@@ -90,16 +88,16 @@ struct CartesianGridDataOnDevice
     }
 
     auto grid_indices_ptr = grid_indices.data();
-    NP::INT grid_flat_index = interp_utils::coeff_index_on_device(
+    INT grid_flat_index = interp_utils::coeff_index_on_device(
         grid_indices_ptr, this->d_dims_ptr, input_ndim);
 
-    return std::array<NP::REAL, 1>{this->d_grid_ptr[grid_flat_index]};
+    return std::array<REAL, 1>{this->d_grid_ptr[grid_flat_index]};
   }
 
 public:
   size_t const *d_dims_ptr;
-  NP::REAL const *d_coords_ptr;
-  NP::REAL const *d_grid_ptr;
+  REAL const *d_coords_ptr;
+  REAL const *d_grid_ptr;
 };
 
 /**
@@ -115,7 +113,7 @@ public:
  * less than the input coordinate value. These per-dimension indices are then
  * flattened via row-major ordering into a single index, and the corresponding
  * value is retrieved from d_grid_ptr (a pointer to a NP::BufferDevice that is
- * constructed from std::vector<NP::REAL> grid).
+ * constructed from std::vector<REAL> grid).
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.
  */
@@ -132,8 +130,8 @@ struct CartesianGridData
    * @param sycl_target SYCL target shared pointer used for buffer
    * allocation.
    */
-  CartesianGridData(const std::vector<NP::REAL> &grid,
-                    const std::vector<NP::REAL> &coords_vec,
+  CartesianGridData(const std::vector<REAL> &grid,
+                    const std::vector<REAL> &coords_vec,
                     const std::vector<size_t> &dims_vec,
                     NP::SYCLTargetSharedPtr sycl_target) {
 
@@ -174,8 +172,8 @@ struct CartesianGridData
                           grid_descriptor.get_interp_dims(), sycl_target) {}
 
 public:
-  std::shared_ptr<NP::BufferDevice<NP::REAL>> d_grid;
-  std::shared_ptr<NP::BufferDevice<NP::REAL>> d_coords;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_grid;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords;
   std::shared_ptr<NP::BufferDevice<size_t>> d_dims;
 };
 

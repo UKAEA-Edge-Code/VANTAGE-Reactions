@@ -6,8 +6,8 @@ void amjuel_2d_example() {
 
   // alpha coefficients (the inner array size is the number of density
   // coefficients, the outer is temperature)
-  auto coeffs = std::array<std::array<NP::REAL, 2>, 2>{
-      std::array<NP::REAL, 2>{1.0, 0.02}, std::array<NP::REAL, 2>{0.01, 0.02}};
+  auto coeffs = std::array<std::array<REAL, 2>, 2>{
+      std::array<REAL, 2>{1.0, 0.02}, std::array<REAL, 2>{0.01, 0.02}};
 
   // We pass the number of fit coefficients to the constructor as a template
   // parameter

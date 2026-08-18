@@ -40,26 +40,26 @@ struct CartesianBasisReflectionDataOnDevice
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A NP::REAL-valued array of size e that contains the calculated
+   * @return A REAL-valued array of size e that contains the calculated
    * reflected velocities.
    */
-  std::array<NP::REAL, 3>
-  calc_data(const std::array<NP::REAL, 3> input,
+  std::array<REAL, 3>
+  calc_data(const std::array<REAL, 3> input,
             const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
-    std::array<NP::REAL, 3> surface_n;
-    std::array<NP::REAL, 3> vel;
+    std::array<REAL, 3> surface_n;
+    std::array<REAL, 3> vel;
 
     for (int vdim = 0; vdim < 3; vdim++) {
       surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
       vel[vdim] = req_real_props.at(vel_ind, index, vdim);
     }
 
-    std::array<NP::REAL, 9> basis = utils::get_normal_basis(vel, surface_n);
-    std::array<NP::REAL, 3> result;
+    std::array<REAL, 9> basis = utils::get_normal_basis(vel, surface_n);
+    std::array<REAL, 3> result;
 
     for (auto i = 0; i < 3; i++) {
 

@@ -108,7 +108,7 @@ std::vector<T> cross_product(const std::vector<T> &a, const std::vector<T> &b) {
  * @brief Helper function to build a std::vector of Syms from a list of names.
  *
  * @tparam PROP_TYPE The property type associated with the syms that need to
- * be stored in the resulting vector (either NP::INT or NP::REAL).
+ * be stored in the resulting vector (either INT or REAL).
  *
  * @param required_properties A vector of strings that contains the required
  * properties
@@ -137,17 +137,17 @@ build_sym_vector(std::vector<std::string> required_properties) {
  * @param u1 First uniformly distributed random number
  * @param u2 Second uniformly distributed random number
  *
- * @return A NP::REAL-valued array of size 2 containing the calculated two
+ * @return A REAL-valued array of size 2 containing the calculated two
  * normal variates.
  */
-inline std::array<NP::REAL, 2> box_muller_transform(const NP::REAL &u1,
-                                                    const NP::REAL &u2) {
-  constexpr NP::REAL two_pi = 2 * M_PI;
+inline std::array<REAL, 2> box_muller_transform(const REAL &u1,
+                                                const REAL &u2) {
+  constexpr REAL two_pi = 2 * M_PI;
 
   auto magnitude = NP::Kernel::sqrt(-2 * NP::Kernel::log(u1));
-  NP::REAL valuecos;
-  const NP::REAL valuesin = NP::Kernel::sincos(two_pi * u2, &valuecos);
-  return std::array<NP::REAL, 2>{magnitude * valuecos, magnitude * valuesin};
+  REAL valuecos;
+  const REAL valuesin = NP::Kernel::sincos(two_pi * u2, &valuecos);
+  return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
 };
 
 /**
@@ -160,12 +160,12 @@ inline std::array<NP::REAL, 2> box_muller_transform(const NP::REAL &u1,
  * @return Reflected array
  */
 template <size_t n_dim>
-inline std::array<NP::REAL, n_dim>
-reflect_vector(const std::array<NP::REAL, n_dim> &input,
-               const std::array<NP::REAL, n_dim> &ref_vector) {
+inline std::array<REAL, n_dim>
+reflect_vector(const std::array<REAL, n_dim> &input,
+               const std::array<REAL, n_dim> &ref_vector) {
 
-  NP::REAL proj_factor = 0.0;
-  std::array<NP::REAL, n_dim> output;
+  REAL proj_factor = 0.0;
+  std::array<REAL, n_dim> output;
 
   for (int dim = 0; dim < n_dim; dim++) {
 
@@ -188,12 +188,12 @@ reflect_vector(const std::array<NP::REAL, n_dim> &input,
  * @param proj_direction Direction onto which to project the input
  */
 template <size_t n_dim>
-inline std::array<NP::REAL, n_dim>
-project_vector(const std::array<NP::REAL, n_dim> &input,
-               const std::array<NP::REAL, n_dim> &proj_direction) {
+inline std::array<REAL, n_dim>
+project_vector(const std::array<REAL, n_dim> &input,
+               const std::array<REAL, n_dim> &proj_direction) {
 
-  NP::REAL proj_factor = 0.0;
-  std::array<NP::REAL, n_dim> output;
+  REAL proj_factor = 0.0;
+  std::array<REAL, n_dim> output;
 
   for (int dim = 0; dim < n_dim; dim++) {
 
@@ -226,25 +226,24 @@ project_vector(const std::array<NP::REAL, n_dim> &input,
  * @param normal Normal vector at the surface, assumed to be a unit vector, but
  * can be either into or out of the surface
  */
-inline std::array<NP::REAL, 9>
-get_normal_basis(const std::array<NP::REAL, 3> &vel,
-                 const std::array<NP::REAL, 3> &normal) {
+inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
+                                            const std::array<REAL, 3> &normal) {
 
-  NP::REAL proj_factor = 0.0;
+  REAL proj_factor = 0.0;
 
   for (int i = 0; i < 3; i++) {
 
     proj_factor += vel[i] * normal[i];
   }
 
-  std::array<NP::REAL, 9> result;
+  std::array<REAL, 9> result;
 
   for (auto i = 0; i < 3; i++) {
 
     result[i] = vel[i] - proj_factor * normal[i];
   }
 
-  NP::REAL norm = 0;
+  REAL norm = 0;
 
   for (auto i = 0; i < 3; i++) {
 
@@ -256,7 +255,7 @@ get_normal_basis(const std::array<NP::REAL, 3> &vel,
     result[i] = result[i] / NP::Kernel::sqrt(norm);
   }
 
-  NP::REAL sign = -sycl::copysign(1.0, proj_factor);
+  REAL sign = -sycl::copysign(1.0, proj_factor);
   result[6] = sign * normal[0];
   result[7] = sign * normal[1];
   result[8] = sign * normal[2];
@@ -277,19 +276,19 @@ get_normal_basis(const std::array<NP::REAL, 3> &vel,
  * @param basis Flattened rotated cartesian basis with respect to which the
  * coords are given
  */
-inline std::array<NP::REAL, 3>
-normal_basis_to_cartesian(const std::array<NP::REAL, 3> &coords,
-                          const std::array<NP::REAL, 9> &basis) {
+inline std::array<REAL, 3>
+normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
+                          const std::array<REAL, 9> &basis) {
 
-  NP::REAL costheta;
-  NP::REAL theta = coords[1];
-  const NP::REAL sintheta = NP::Kernel::sincos(theta, &costheta);
+  REAL costheta;
+  REAL theta = coords[1];
+  const REAL sintheta = NP::Kernel::sincos(theta, &costheta);
 
-  NP::REAL cosphi;
-  NP::REAL phi = coords[2];
-  const NP::REAL sinphi = NP::Kernel::sincos(phi, &cosphi);
+  REAL cosphi;
+  REAL phi = coords[2];
+  const REAL sinphi = NP::Kernel::sincos(phi, &cosphi);
 
-  std::array<NP::REAL, 3> result;
+  std::array<REAL, 3> result;
 
   for (auto i = 0; i < 3; i++) {
 
@@ -313,9 +312,9 @@ normal_basis_to_cartesian(const std::array<NP::REAL, 3> &coords,
  * @param position The position of the point to be binned
  * @return Index of the point being binned on 1D grid
  */
-inline size_t bin_uniform_symmetric_guard_1d(const NP::REAL &inverse_2L,
-                                             const NP::INT &n_cells,
-                                             const NP::REAL &position) {
+inline size_t bin_uniform_symmetric_guard_1d(const REAL &inverse_2L,
+                                             const INT &n_cells,
+                                             const REAL &position) {
 
   return NP::Kernel::max(
       NP::Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),

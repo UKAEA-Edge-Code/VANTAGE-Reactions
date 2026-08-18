@@ -33,14 +33,14 @@ auto create_test_particle_group_marking(int N_total)
   auto domain = std::make_shared<NP::Domain>(mesh, cart_local_mapper);
 
   NP::ParticleSpec particle_spec{
-      NP::ParticleProp(NP::Sym<NP::REAL>("POSITION"), ndim, true),
-      NP::ParticleProp(NP::Sym<NP::INT>("CELL_ID"), 1, true),
-      NP::ParticleProp(NP::Sym<NP::REAL>("WEIGHT"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("ID"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("MOCK_INT"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("V"), 2),
-      NP::ParticleProp(NP::Sym<NP::REAL>("MOCK_SOURCE2D"), 2),
-      NP::ParticleProp(NP::Sym<NP::REAL>("MOCK_SOURCE1D"), 1)};
+      NP::ParticleProp(NP::Sym<REAL>("POSITION"), ndim, true),
+      NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true),
+      NP::ParticleProp(NP::Sym<REAL>("WEIGHT"), 1),
+      NP::ParticleProp(NP::Sym<INT>("ID"), 1),
+      NP::ParticleProp(NP::Sym<INT>("MOCK_INT"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("V"), 2),
+      NP::ParticleProp(NP::Sym<REAL>("MOCK_SOURCE2D"), 2),
+      NP::ParticleProp(NP::Sym<REAL>("MOCK_SOURCE1D"), 1)};
 
   auto particle_group =
       std::make_shared<NP::ParticleGroup>(domain, particle_spec, sycl_target);
@@ -61,19 +61,19 @@ auto create_test_particle_group_marking(int N_total)
   NP::ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[NP::Sym<NP::REAL>("POSITION")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
-      initial_distribution[NP::Sym<NP::REAL>("V")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("V")][px][dimx] =
           positions.at(dimx).at(px);
     }
-    initial_distribution[NP::Sym<NP::INT>("CELL_ID")][px][0] = cells.at(px);
-    initial_distribution[NP::Sym<NP::REAL>("WEIGHT")][px][0] =
+    initial_distribution[NP::Sym<INT>("CELL_ID")][px][0] = cells.at(px);
+    initial_distribution[NP::Sym<REAL>("WEIGHT")][px][0] =
         (px >= N / 2) ? 0.2 : 1.0;
-    initial_distribution[NP::Sym<NP::INT>("ID")][px][0] = (px >= N / 2) ? 1 : 2;
-    initial_distribution[NP::Sym<NP::INT>("MOCK_INT")][px][0] = 1;
-    initial_distribution[NP::Sym<NP::REAL>("MOCK_SOURCE2D")][px][0] = 0.1;
-    initial_distribution[NP::Sym<NP::REAL>("MOCK_SOURCE2D")][px][1] = 0.2;
-    initial_distribution[NP::Sym<NP::REAL>("MOCK_SOURCE1D")][px][0] = 0.5;
+    initial_distribution[NP::Sym<INT>("ID")][px][0] = (px >= N / 2) ? 1 : 2;
+    initial_distribution[NP::Sym<INT>("MOCK_INT")][px][0] = 1;
+    initial_distribution[NP::Sym<REAL>("MOCK_SOURCE2D")][px][0] = 0.1;
+    initial_distribution[NP::Sym<REAL>("MOCK_SOURCE2D")][px][1] = 0.2;
+    initial_distribution[NP::Sym<REAL>("MOCK_SOURCE1D")][px][0] = 0.5;
   }
   particle_group->add_particles_local(initial_distribution);
 

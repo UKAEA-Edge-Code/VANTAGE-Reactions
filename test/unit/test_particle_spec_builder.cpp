@@ -6,16 +6,16 @@ using namespace VANTAGE::Reactions;
 TEST(ParticleSpecBuilder, add_particle_prop) {
 
   auto basic_spec =
-      NP::ParticleSpec{NP::ParticleProp(NP::Sym<NP::REAL>("POSITION"), 2, true),
-                       NP::ParticleProp(NP::Sym<NP::INT>("CELL_ID"), 1, true)};
+      NP::ParticleSpec{NP::ParticleProp(NP::Sym<REAL>("POSITION"), 2, true),
+                       NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true)};
   auto test_particle_spec_builder = ParticleSpecBuilder(basic_spec);
 
   auto props = default_properties;
 
-  auto position_prop = Properties<NP::REAL>(std::vector<int>{props.position});
+  auto position_prop = Properties<REAL>(std::vector<int>{props.position});
   test_particle_spec_builder.add_particle_prop(position_prop, 2, true);
 
-  auto cell_id_prop = Properties<NP::INT>(std::vector<int>{props.cell_id});
+  auto cell_id_prop = Properties<INT>(std::vector<int>{props.cell_id});
   test_particle_spec_builder.add_particle_prop(cell_id_prop, 1, true);
 
   int num_position_props = 0;
@@ -24,7 +24,7 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
   // "POSITION" inside test_particle_spec_builder.particle_spec
   for (auto prop :
        test_particle_spec_builder.get_particle_spec().properties_real) {
-    if (prop == NP::ParticleProp(NP::Sym<NP::REAL>("POSITION"), 2, true)) {
+    if (prop == NP::ParticleProp(NP::Sym<REAL>("POSITION"), 2, true)) {
       num_position_props++;
     }
   }
@@ -34,7 +34,7 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
   // "CELL_ID" inside test_particle_spec_builder.particle_spec
   for (auto prop :
        test_particle_spec_builder.get_particle_spec().properties_int) {
-    if (prop == NP::ParticleProp(NP::Sym<NP::INT>("CELL_ID"), 1, true)) {
+    if (prop == NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true)) {
       num_cell_id_props++;
     }
   }
@@ -42,15 +42,15 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
 
   // General add_particle_prop test
   auto internal_state_prop =
-      NP::ParticleProp(NP::Sym<NP::INT>("INTERNAL_STATE"), 1);
-  auto weight_prop = NP::ParticleProp(NP::Sym<NP::REAL>("w"), 1);
+      NP::ParticleProp(NP::Sym<INT>("INTERNAL_STATE"), 1);
+  auto weight_prop = NP::ParticleProp(NP::Sym<REAL>("w"), 1);
   auto electron_temp_prop =
-      NP::ParticleProp(NP::Sym<NP::REAL>("ELECTRON_TEMPERATURE"), 1);
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_TEMPERATURE"), 1);
 
-  auto int_props = Properties<NP::INT>(std::vector<int>{props.internal_state});
-  auto real_props = Properties<NP::REAL>(
-      std::vector<int>{props.weight}, std::vector<Species>{Species("ELECTRON")},
-      std::vector<int>{props.temperature});
+  auto int_props = Properties<INT>(std::vector<int>{props.internal_state});
+  auto real_props = Properties<REAL>(std::vector<int>{props.weight},
+                                     std::vector<Species>{Species("ELECTRON")},
+                                     std::vector<int>{props.temperature});
 
   test_particle_spec_builder.add_particle_prop(int_props);
 
@@ -78,13 +78,13 @@ TEST(ParticleSpecBuilder, add_particle_spec) {
   int num_cell_id_props = 0;
   for (auto prop :
        test_particle_spec_builder.get_particle_spec().properties_real) {
-    if (prop == NP::ParticleProp(NP::Sym<NP::REAL>("POSITION"), 2, true)) {
+    if (prop == NP::ParticleProp(NP::Sym<REAL>("POSITION"), 2, true)) {
       num_position_props++;
     }
   }
   for (auto prop :
        test_particle_spec_builder.get_particle_spec().properties_int) {
-    if (prop == NP::ParticleProp(NP::Sym<NP::INT>("CELL_ID"), 1, true)) {
+    if (prop == NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true)) {
       num_cell_id_props++;
     }
   }

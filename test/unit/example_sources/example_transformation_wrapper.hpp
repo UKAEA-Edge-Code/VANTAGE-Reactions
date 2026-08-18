@@ -11,7 +11,7 @@ void transformation_wrapper_example(NP::ParticleGroupSharedPtr particle_group) {
       std::vector<std::shared_ptr<MarkingStrategy>>{
           make_direct_marking_strategy(
               "low_weight", [](auto w) { return w[0] < 1e-6; },
-              NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")))},
+              NP::Access::read(NP::Sym<REAL>("WEIGHT")))},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
 
   // Wrappers can be copied and/or extended
@@ -29,12 +29,12 @@ void transformation_wrapper_example(NP::ParticleGroupSharedPtr particle_group) {
   wrapper_ID0->add_marking_strategy(
       VANTAGE::Reactions::make_direct_marking_strategy(
           "id0", [](auto id) { return id[0] == 0; },
-          NP::Access::read(NP::Sym<NP::INT>("ID"))));
+          NP::Access::read(NP::Sym<INT>("ID"))));
 
   wrapper_ID1->add_marking_strategy(
       VANTAGE::Reactions::make_direct_marking_strategy(
           "id1", [](auto id) { return id[0] == 1; },
-          NP::Access::read(NP::Sym<NP::INT>("ID"))));
+          NP::Access::read(NP::Sym<INT>("ID"))));
 
   // Wrappers, unlike strategies, can act on both groups or subgroups
   //

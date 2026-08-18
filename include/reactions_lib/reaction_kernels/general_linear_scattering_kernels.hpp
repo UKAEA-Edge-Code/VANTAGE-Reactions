@@ -43,13 +43,12 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param dt The current time step size.
    */
   void
-  scattering_kernel(NP::REAL &modified_weight,
-                    NP::Access::LoopIndex::Read &index,
+  scattering_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                     NP::Access::DescendantProducts::Write &descendant_products,
-                    NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                    NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                    NP::Access::SymVector::Write<INT> &req_int_props,
+                    NP::Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, 1> &out_states,
-                    NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                    NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                     double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
       descendant_products.at_real(index, 0, descendant_velocity_ind, dimx) =
@@ -78,13 +77,12 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * data
    * @param dt The current time step size.
    */
-  void weight_kernel(NP::REAL &modified_weight,
-                     NP::Access::LoopIndex::Read &index,
+  void weight_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                      NP::Access::DescendantProducts::Write &descendant_products,
-                     NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                     NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                     NP::Access::SymVector::Write<INT> &req_int_props,
+                     NP::Access::SymVector::Write<REAL> &req_real_props,
                      const std::array<int, 1> &out_states,
-                     NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     descendant_products.at_real(index, 0, descendant_weight_ind, 0) =
         modified_weight;
@@ -112,13 +110,12 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param dt The current time step size.
    */
   void transformation_kernel(
-      NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      REAL &modified_weight, NP::Access::LoopIndex::Read &index,
       NP::Access::DescendantProducts::Write &descendant_products,
-      NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+      NP::Access::SymVector::Write<INT> &req_int_props,
+      NP::Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, 1> &out_states,
-      NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
-      double dt) const {
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
         out_states[0];
   }
@@ -145,17 +142,17 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param dt The current time step size.
    */
   void
-  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                   NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, 1> &out_states,
-                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
 
     if constexpr (with_sources) {
-      std::array<NP::REAL, ndim_velocity> k_V_pre, k_V_post;
-      NP::REAL delta_vsquared = 0.0;
+      std::array<REAL, ndim_velocity> k_V_pre, k_V_post;
+      REAL delta_vsquared = 0.0;
 
       for (int vdim = 0; vdim < ndim_velocity; vdim++) {
         k_V_pre[vdim] = req_real_props.at(velocity_ind, index, vdim);
@@ -179,10 +176,10 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   }
 
 public:
-  NP::INT velocity_ind, source_momentum_ind, source_energy_ind, weight_ind;
-  NP::INT descendant_internal_state_ind, descendant_velocity_ind,
+  INT velocity_ind, source_momentum_ind, source_energy_ind, weight_ind;
+  INT descendant_internal_state_ind, descendant_velocity_ind,
       descendant_weight_ind;
-  NP::REAL mass;
+  REAL mass;
 };
 
 /**
@@ -219,10 +216,10 @@ struct LinearScatteringKernels : public ReactionKernelsBase {
       const Species &scattered_species,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
-            (with_sources) ? Properties<NP::REAL>(required_simple_real_props)
-                                 .merge_with(Properties<NP::REAL>(
+            (with_sources) ? Properties<REAL>(required_simple_real_props)
+                                 .merge_with(Properties<REAL>(
                                      required_simple_real_props_with_sources))
-                           : Properties<NP::REAL>(required_simple_real_props),
+                           : Properties<REAL>(required_simple_real_props),
             ndim_velocity, properties_map) {
     this->linear_scattering_kernels_on_device.velocity_ind =
 
@@ -246,10 +243,10 @@ struct LinearScatteringKernels : public ReactionKernelsBase {
         scattered_species.get_mass();
 
     this->set_required_descendant_int_props(
-        Properties<NP::INT>(required_descendant_simple_int_props));
+        Properties<INT>(required_descendant_simple_int_props));
 
     this->set_required_descendant_real_props(
-        Properties<NP::REAL>(required_descendant_simple_real_props));
+        Properties<REAL>(required_descendant_simple_real_props));
 
     this->linear_scattering_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(

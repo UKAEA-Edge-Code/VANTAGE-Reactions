@@ -17,12 +17,11 @@ namespace VANTAGE::Reactions {
  *
  */
 struct OneWayMaxwellianFluxOnDevice
-    : public ReactionDataBaseOnDevice<3,
-                                      NP::HostAtomicBlockKernelRNG<NP::REAL>> {
+    : public ReactionDataBaseOnDevice<3, NP::HostAtomicBlockKernelRNG<REAL>> {
 
   OneWayMaxwellianFluxOnDevice() = default;
 
-  OneWayMaxwellianFluxOnDevice(const NP::REAL &norm_ratio)
+  OneWayMaxwellianFluxOnDevice(const REAL &norm_ratio)
       : norm_ratio(norm_ratio) {};
 
   /**
@@ -33,25 +32,25 @@ struct OneWayMaxwellianFluxOnDevice
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
    * @return maximum of the rejection sampling function
    */
-  static NP::REAL cardano_cubic_solver(NP::REAL d) {
-    const NP::REAL coef_a = 2.0;
-    const NP::REAL coef_b = -4.0 - d;
-    const NP::REAL coef_c = d;
-    const NP::REAL coef_d = 1.0;
-    const NP::REAL coef_a_sq = coef_a * coef_a;
+  static REAL cardano_cubic_solver(REAL d) {
+    const REAL coef_a = 2.0;
+    const REAL coef_b = -4.0 - d;
+    const REAL coef_c = d;
+    const REAL coef_d = 1.0;
+    const REAL coef_a_sq = coef_a * coef_a;
 
-    const NP::REAL p =
+    const REAL p =
         (3.0 * coef_a * coef_c - coef_b * coef_b) / (3.0 * coef_a_sq);
-    const NP::REAL q =
+    const REAL q =
         (2.0 * coef_b * coef_b * coef_b - 9.0 * coef_a * coef_b * coef_c +
          27.0 * coef_a_sq * coef_d) /
         (27.0 * coef_a_sq * coef_a);
 
-    const NP::REAL sqrt_term = NP::Kernel::sqrt(-p / 3.0);
-    const NP::REAL root =
+    const REAL sqrt_term = NP::Kernel::sqrt(-p / 3.0);
+    const REAL root =
         2.0 * sqrt_term *
         NP::Kernel::cos(sycl::acos((3.0 * q) / (2.0 * p * sqrt_term)) / 3.0 -
-                        2.0 * NP::REAL(M_PI) / 3.0);
+                        2.0 * REAL(M_PI) / 3.0);
     return root - coef_b / (3.0 * coef_a);
   }
 
@@ -62,25 +61,24 @@ struct OneWayMaxwellianFluxOnDevice
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
    * @return maximum of the rejection sampling function
    */
-  static NP::REAL rejection_function(NP::REAL d, NP::REAL t) {
-    const NP::REAL s = 1.0 - t;
+  static REAL rejection_function(REAL d, REAL t) {
+    const REAL s = 1.0 - t;
     return t * NP::Kernel::exp(-((t / s - d) * (t / s - d)) / 2.0) /
            (s * s * s);
   }
 
-  NP::REAL sample_positive_maxwellian(
-      NP::REAL drift, NP::REAL thermal_sigma,
-      const NP::Access::LoopIndex::Read &index,
-      typename NP::HostAtomicBlockKernelRNG<NP::REAL>::KernelType &kernel,
+  REAL sample_positive_maxwellian(
+      REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
       int &sample_counter, bool &is_kernel_valid) const {
-    if (!is_kernel_valid || thermal_sigma <= NP::REAL(0.0)) {
+    if (!is_kernel_valid || thermal_sigma <= REAL(0.0)) {
       return 0.0;
     }
 
-    const NP::REAL d = drift / thermal_sigma;
-    const NP::REAL maxval = rejection_function(d, cardano_cubic_solver(d));
-    NP::REAL candidate = 0.0;
-    NP::REAL compare = 0.0;
+    const REAL d = drift / thermal_sigma;
+    const REAL maxval = rejection_function(d, cardano_cubic_solver(d));
+    REAL candidate = 0.0;
+    REAL compare = 0.0;
 
     do {
       candidate = kernel.at(index, sample_counter++, &is_kernel_valid);
@@ -95,19 +93,18 @@ struct OneWayMaxwellianFluxOnDevice
     } while (true);
   }
 
-  std::array<NP::REAL, 3>
-  calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
-            typename NP::HostAtomicBlockKernelRNG<NP::REAL>::KernelType &kernel)
-      const {
-    const NP::REAL fluid_temperature_dat =
+  std::array<REAL, 3> calc_data(
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
+    const REAL fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
 
-    std::array<NP::REAL, 3> fluid_flow_speed{};
-    std::array<NP::REAL, 3> basis_e1{};
-    std::array<NP::REAL, 3> basis_e2{};
-    std::array<NP::REAL, 3> basis_pi{};
+    std::array<REAL, 3> fluid_flow_speed{};
+    std::array<REAL, 3> basis_e1{};
+    std::array<REAL, 3> basis_e2{};
+    std::array<REAL, 3> basis_pi{};
 
     for (int i = 0; i < 3; i++) {
       fluid_flow_speed[i] =
@@ -117,42 +114,42 @@ struct OneWayMaxwellianFluxOnDevice
       basis_pi[i] = req_real_props.at(this->basis_pi_ind, index, i);
     }
 
-    NP::REAL drift_e1 = 0.0;
-    NP::REAL drift_e2 = 0.0;
-    NP::REAL drift_pi = 0.0;
+    REAL drift_e1 = 0.0;
+    REAL drift_e2 = 0.0;
+    REAL drift_pi = 0.0;
     for (int i = 0; i < 3; i++) {
       drift_e1 += fluid_flow_speed[i] * basis_e1[i];
       drift_e2 += fluid_flow_speed[i] * basis_e2[i];
       drift_pi += fluid_flow_speed[i] * basis_pi[i];
     }
 
-    const NP::REAL thermal_sigma =
+    const REAL thermal_sigma =
         NP::Kernel::sqrt(fluid_temperature_dat * this->norm_ratio);
 
     bool is_kernel_valid = true;
     int sample_counter = 0;
 
-    NP::REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
-    NP::REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
+    REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
+    REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
 
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<NP::REAL, 3>{0.0, 0.0, 0.0};
+      return std::array<REAL, 3>{0.0, 0.0, 0.0};
     }
 
     auto normal_samples = utils::box_muller_transform(rand1, rand2);
-    const NP::REAL sample_e1 = drift_e1 + thermal_sigma * normal_samples[0];
-    const NP::REAL sample_e2 = drift_e2 + thermal_sigma * normal_samples[1];
+    const REAL sample_e1 = drift_e1 + thermal_sigma * normal_samples[0];
+    const REAL sample_e2 = drift_e2 + thermal_sigma * normal_samples[1];
 
-    const NP::REAL sample_pi =
+    const REAL sample_pi =
         sample_positive_maxwellian(drift_pi, thermal_sigma, index, kernel,
                                    sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
       req_int_props.at(this->panic_ind, index, 0) += 1;
-      return std::array<NP::REAL, 3>{0.0, 0.0, 0.0};
+      return std::array<REAL, 3>{0.0, 0.0, 0.0};
     }
 
-    std::array<NP::REAL, 3> sampled_vels{};
+    std::array<REAL, 3> sampled_vels{};
     for (int i = 0; i < 3; i++) {
       sampled_vels[i] = sample_e1 * basis_e1[i] + sample_e2 * basis_e2[i] +
                         sample_pi * basis_pi[i];
@@ -164,7 +161,7 @@ struct OneWayMaxwellianFluxOnDevice
 public:
   int fluid_flow_speed_ind, fluid_temperature_ind, basis_e1_ind, basis_e2_ind,
       basis_pi_ind, panic_ind;
-  NP::REAL norm_ratio;
+  REAL norm_ratio;
 };
 
 /**
@@ -179,14 +176,14 @@ public:
  * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
  * and v are the temperature and velocity normalisation constants
  * @param rng_kernel A shared pointer of a
- * NP::HostAtomicBlockKernelRNG<NP::REAL> to be set as the rng_kernel in
+ * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
  * ReactionDataBase.
  * @param properties_map (Optional) A std::map<int, std::string> object to be
  * used when remapping property names.
  */
 struct OneWayMaxwellianFluxSampler
     : public ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
-                              NP::HostAtomicBlockKernelRNG<NP::REAL>> {
+                              NP::HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
 
@@ -198,8 +195,8 @@ struct OneWayMaxwellianFluxSampler
       std::array<int, 1>{props.panic};
 
   OneWayMaxwellianFluxSampler(
-      const NP::REAL &norm_ratio,
-      std::shared_ptr<NP::HostAtomicBlockKernelRNG<NP::REAL>> rng_kernel,
+      const REAL &norm_ratio,
+      std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map());
 
   void index_on_device_object();

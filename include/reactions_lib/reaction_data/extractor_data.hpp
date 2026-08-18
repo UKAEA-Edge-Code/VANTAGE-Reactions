@@ -32,16 +32,16 @@ struct ExtractorDataOnDevice : public ReactionDataBaseOnDevice<ncomp> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A NP::REAL-valued array of size ncomp containing the extracted data
+   * @return A REAL-valued array of size ncomp containing the extracted data
    */
-  std::array<NP::REAL, ncomp> calc_data(
+  std::array<REAL, ncomp> calc_data(
       const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
       typename ReactionDataBaseOnDevice<ncomp>::RNG_KERNEL_TYPE::KernelType
           &kernel) const {
 
-    std::array<NP::REAL, ncomp> result;
+    std::array<REAL, ncomp> result;
 
     for (int i = 0; i < ncomp; i++) {
 
@@ -67,10 +67,10 @@ struct ExtractorData
   /**
    * @brief Constructor for ExtractorData.
    *
-   * @param extracted_sym The NP::Sym<NP::REAL> corresponding to the
+   * @param extracted_sym The NP::Sym<REAL> corresponding to the
    * NP::ParticleDat whose components should be extracted
    */
-  ExtractorData(const NP::Sym<NP::REAL> &extracted_sym)
+  ExtractorData(const NP::Sym<REAL> &extracted_sym)
       : ReactionDataBase<ExtractorDataOnDevice<ncomp>, ncomp>(),
         extracted_sym(extracted_sym) {
 
@@ -90,12 +90,12 @@ struct ExtractorData
   };
 
 private:
-  NP::Sym<NP::REAL> extracted_sym;
+  NP::Sym<REAL> extracted_sym;
 };
 
 template <size_t n_comp> auto inline extract(const std::string &name) {
 
-  return ExtractorData<n_comp>(NP::Sym<NP::REAL>(name));
+  return ExtractorData<n_comp>(NP::Sym<REAL>(name));
 }
 }; // namespace VANTAGE::Reactions
 #endif

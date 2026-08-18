@@ -2,7 +2,7 @@ void direct_transformation_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto subgroup_low_weight = particle_sub_group(
       particle_group, [](auto w) { return w[0] < 1e-6; },
-      NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")));
+      NP::Access::read(NP::Sym<REAL>("WEIGHT")));
 
   // We can recreate the built-in removal strategy using a direct transformation
   // strategy
@@ -21,7 +21,7 @@ void direct_transformation_example(NP::ParticleGroupSharedPtr particle_group) {
   auto set_id_strategy = make_direct_transformation_strategy(
       "set_id_0",                    // Name of the strategy
       [](auto id) { id.at(0) = 0; }, // The particle loop kernel to be applied
-      NP::Access::write(NP::Sym<NP::INT>("ID")) // Accessors for the loop
+      NP::Access::write(NP::Sym<INT>("ID")) // Accessors for the loop
   );
 
   // Apply to the particle_group

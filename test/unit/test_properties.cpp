@@ -27,8 +27,8 @@ TEST(Properties, modify_property_map) {
 TEST(Properties, simple_prop_names) {
   // Properties object with a species property but no simple property
   auto empty_simple_props_obj =
-      Properties<NP::REAL>(std::vector<Species>{Species("ELECTRON")},
-                           std::vector<int>(default_properties.density));
+      Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
+                       std::vector<int>(default_properties.density));
 
   ASSERT_EQ(empty_simple_props_obj.simple_prop_names(),
             std::vector<std::string>());
@@ -47,7 +47,7 @@ TEST(Properties, simple_prop_names) {
     EXPECT_STREQ(int_prop_names[i].c_str(), simple_int_props[i].c_str());
   }
 
-  auto custom_simple_props_obj = Properties<NP::REAL>(std::vector<int>{
+  auto custom_simple_props_obj = Properties<REAL>(std::vector<int>{
       default_properties.weight, PropertiesTest::custom_props.test_custom_prop1,
       PropertiesTest::custom_props.test_custom_prop2});
 
@@ -94,7 +94,7 @@ TEST(Properties, simple_prop_names) {
                  std::logic_error);
   }
 
-  auto custom_full_simple_props_obj = Properties<NP::REAL>(
+  auto custom_full_simple_props_obj = Properties<REAL>(
       std::vector<int>{PropertiesTest::custom_props.test_custom_prop1,
                        PropertiesTest::custom_props.test_custom_prop2});
 
@@ -107,8 +107,8 @@ TEST(Properties, simple_prop_names) {
 TEST(Properties, simple_prop_index) {
   // Properties object with a species property but no simple property
   auto empty_simple_props_obj =
-      Properties<NP::REAL>(std::vector<Species>{Species("ELECTRON")},
-                           std::vector<int>(default_properties.density));
+      Properties<REAL>(std::vector<Species>{Species("ELECTRON")},
+                       std::vector<int>(default_properties.density));
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     EXPECT_THROW(
@@ -149,7 +149,7 @@ TEST(Properties, simple_prop_index) {
 TEST(Properties, species_prop_names) {
   // Properties object with a simple property but no species property
   auto empty_species_props_obj =
-      Properties<NP::INT>(std::vector<int>{default_properties.internal_state});
+      Properties<INT>(std::vector<int>{default_properties.internal_state});
 
   ASSERT_EQ(empty_species_props_obj.species_prop_names(),
             std::vector<std::string>());
@@ -175,7 +175,7 @@ TEST(Properties, species_prop_names) {
     EXPECT_STREQ(real_prop_names[i].c_str(), electron_species_name.c_str());
   }
 
-  auto custom_species_props_obj = Properties<NP::REAL>(
+  auto custom_species_props_obj = Properties<REAL>(
       std::vector<Species>{Species("ION")},
       std::vector<int>{default_properties.density,
                        PropertiesTest::custom_props.test_custom_prop1,
@@ -198,7 +198,7 @@ TEST(Properties, species_prop_names) {
 TEST(Properties, species_prop_index) {
   // Properties object with a species property but no simple property
   auto empty_species_props_obj =
-      Properties<NP::REAL>(std::vector<int>(default_properties.velocity));
+      Properties<REAL>(std::vector<int>(default_properties.velocity));
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     EXPECT_THROW(empty_species_props_obj.species_prop_index(
@@ -297,8 +297,7 @@ TEST(Properties, merge_with) {
   auto species_props1 = std::vector<int>{default_properties.temperature,
                                          default_properties.density};
 
-  auto properties1 =
-      Properties<NP::REAL>(simple_props1, species1, species_props1);
+  auto properties1 = Properties<REAL>(simple_props1, species1, species_props1);
 
   auto simple_props2 = std::vector<int>{default_properties.position,
                                         default_properties.fluid_density};
@@ -308,8 +307,7 @@ TEST(Properties, merge_with) {
   auto species_props2 = std::vector<int>{default_properties.density,
                                          default_properties.source_density};
 
-  auto properties2 =
-      Properties<NP::REAL>(simple_props2, species2, species_props2);
+  auto properties2 = Properties<REAL>(simple_props2, species2, species_props2);
 
   auto merge_props = properties1.merge_with(properties2);
 
@@ -392,15 +390,13 @@ TEST(Properties, full_use_properties_map) {
   auto particle_group = create_test_particle_group(N_total);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_prop1 = NP::ParticleProp(NP::Sym<NP::REAL>("TEST_PROP1"), 1);
-  auto test_prop2 = NP::ParticleProp(NP::Sym<NP::REAL>("TEST_PROP2"), 1);
+  auto test_prop1 = NP::ParticleProp(NP::Sym<REAL>("TEST_PROP1"), 1);
+  auto test_prop2 = NP::ParticleProp(NP::Sym<REAL>("TEST_PROP2"), 1);
 
-  auto test_prop1_dat =
-      NP::ParticleDat<NP::REAL>(particle_group->sycl_target,
-                                NP::Sym<NP::REAL>("TEST_PROP1"), 1, cell_count);
-  auto test_prop2_dat =
-      NP::ParticleDat<NP::REAL>(particle_group->sycl_target,
-                                NP::Sym<NP::REAL>("TEST_PROP2"), 1, cell_count);
+  auto test_prop1_dat = NP::ParticleDat<REAL>(
+      particle_group->sycl_target, NP::Sym<REAL>("TEST_PROP1"), 1, cell_count);
+  auto test_prop2_dat = NP::ParticleDat<REAL>(
+      particle_group->sycl_target, NP::Sym<REAL>("TEST_PROP2"), 1, cell_count);
 
   particle_group->add_particle_dat(test_prop1_dat);
   particle_group->add_particle_dat(test_prop2_dat);
@@ -411,12 +407,12 @@ TEST(Properties, full_use_properties_map) {
         test_prop1_write[0] = 3.0e18;
         test_prop2_write[0] = 2.0;
       },
-      NP::Access::write(NP::Sym<NP::REAL>("TEST_PROP1")),
-      NP::Access::write(NP::Sym<NP::REAL>("TEST_PROP2")))
+      NP::Access::write(NP::Sym<REAL>("TEST_PROP1")),
+      NP::Access::write(NP::Sym<REAL>("TEST_PROP2")))
       ->execute();
 
-  particle_group->remove_particle_dat(NP::Sym<NP::REAL>("FLUID_DENSITY"));
-  particle_group->remove_particle_dat(NP::Sym<NP::REAL>("FLUID_TEMPERATURE"));
+  particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_DENSITY"));
+  particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_TEMPERATURE"));
 
   auto test_prop_map = get_default_map();
   test_prop_map[default_properties.fluid_density] = "TEST_PROP1";
@@ -425,12 +421,11 @@ TEST(Properties, full_use_properties_map) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto amjuel_data =
-      AMJUEL2DData<2, 2>(3e12, 1.0, 1.0, 1.0,
-                         std::array<std::array<NP::REAL, 2>, 2>{
-                             std::array<NP::REAL, 2>{1.0, 0.02},
-                             std::array<NP::REAL, 2>{0.01, 0.02}},
-                         test_prop_map);
+  auto amjuel_data = AMJUEL2DData<2, 2>(
+      3e12, 1.0, 1.0, 1.0,
+      std::array<std::array<REAL, 2>, 2>{std::array<REAL, 2>{1.0, 0.02},
+                                         std::array<REAL, 2>{0.01, 0.02}},
+      test_prop_map);
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
@@ -447,8 +442,7 @@ TEST(Properties, full_use_properties_map) {
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate =
-        particle_group->get_cell(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

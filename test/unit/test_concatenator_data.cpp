@@ -31,13 +31,13 @@ TEST(ConcatenatorData, custom_sources) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), 3.0);
       EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 4.0);
@@ -78,13 +78,13 @@ TEST(ConcatenatorData, req_prop_test) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), position->at(rowx, 0));
       EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 1.0); // weight
@@ -107,9 +107,8 @@ TEST(ConcatenatorData, mixed_dim_rng) {
 
   // std::mt19937 rng = std::mt19937(std::random_device{}());
   // const double extents[1] = {1.0};
-  auto rng_lambda = [&]() -> NP::REAL { return 1.0; };
-  auto rng_kernel =
-      NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, N_total);
+  auto rng_lambda = [&]() -> REAL { return 1.0; };
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, N_total);
 
   // auto constant_rate_cross_section = ConstantRateCrossSection(1.0);
   auto vel_dat = FilteredMaxwellianSampler<2>(2.0, rng_kernel);
@@ -120,7 +119,7 @@ TEST(ConcatenatorData, mixed_dim_rng) {
                                       decltype(energy_dat_1)>>(
           ConcatenatorData(energy_dat_0, vel_dat, energy_dat_1));
 
-  auto pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
+  auto pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       particle_group->sycl_target, 0, data_calc_obj.get_data_size());
   pre_req_data->fill(0);
 
@@ -130,7 +129,7 @@ TEST(ConcatenatorData, mixed_dim_rng) {
     auto shape = pre_req_data->index.shape;
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
+    pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape[1]);
     pre_req_data->fill(0);
 

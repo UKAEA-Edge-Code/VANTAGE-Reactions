@@ -34,13 +34,13 @@ constexpr bool check_consistency() {
  */
 template <typename... DATATYPE>
 struct PipelineDataOnDevice
-    : public CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, NP::REAL,
-                                   NP::REAL, DATATYPE...> {
+    : public CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
+                                   DATATYPE...> {
 
   PipelineDataOnDevice() = default;
 
   PipelineDataOnDevice(DATATYPE... data)
-      : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, NP::REAL, NP::REAL,
+      : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
                               DATATYPE...>(data...) {
 
     static_assert(first_in_dim<DATATYPE...>() == 0 &&
@@ -66,25 +66,25 @@ struct PipelineDataOnDevice
    *
    * @return Concatenated return arrays of all the contained device types
    */
-  std::array<NP::REAL, DIM> calc_data(
+  std::array<REAL, DIM> calc_data(
       const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
       typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
-    return calc_data_recurse<0, DATATYPE...>(std::array<NP::REAL, 0>{}, index,
+    return calc_data_recurse<0, DATATYPE...>(std::array<REAL, 0>{}, index,
                                              req_int_props, req_real_props,
                                              rng_kernel);
   }
 
   template <size_t I, typename T, typename... ARGS>
-  std::array<NP::REAL, DIM> calc_data_recurse(
+  std::array<REAL, DIM> calc_data_recurse(
       const std::array<typename T::INPUT_TYPE, T::INPUT_DIM> input,
       const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
       typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {

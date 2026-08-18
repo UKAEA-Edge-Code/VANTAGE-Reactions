@@ -28,15 +28,15 @@ void CompositeTransform::add_transformation(
 }
 
 // Template instantiations
-template class CellwiseAccumulator<NP::REAL>;
-template class CellwiseAccumulator<NP::INT>;
-template class WeightedCellwiseAccumulator<NP::REAL>;
-template class WeightedCellwiseAccumulator<NP::INT>;
+template class CellwiseAccumulator<REAL>;
+template class CellwiseAccumulator<INT>;
+template class WeightedCellwiseAccumulator<REAL>;
+template class WeightedCellwiseAccumulator<INT>;
 
-template class ParticleDatZeroer<NP::REAL>;
-template class ParticleDatZeroer<NP::INT>;
+template class ParticleDatZeroer<REAL>;
+template class ParticleDatZeroer<INT>;
 
-template class CellwiseDistributor<NP::REAL>;
-template class CellwiseDistributor<NP::INT>;
+template class CellwiseDistributor<REAL>;
+template class CellwiseDistributor<INT>;
 
 } // namespace VANTAGE::Reactions

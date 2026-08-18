@@ -26,8 +26,8 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
 
   auto rng = std::mt19937(52234126 + rank);
 
-  std::uniform_real_distribution<NP::REAL> uniform_dist_m1(0.0, 10.0);
-  std::array<NP::REAL, trim_ndim> random_grid_nums;
+  std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
+  std::array<REAL, trim_ndim> random_grid_nums;
   for (int i = 0; i < trim_ndim; i++) {
     random_grid_nums[i] = uniform_dist_m1(rng);
   }
@@ -38,7 +38,7 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
   auto trim_dims_vec = coeffs_data.get_trim_dims_vec();
   auto trim_grid_func = coeffs_data.get_grid_func_concat();
 
-  std::array<std::vector<NP::REAL>, ndim> coords;
+  std::array<std::vector<REAL>, ndim> coords;
 
   for (int idim = 0; idim < dims_vec[0]; idim++) {
     coords[0].push_back(coords_flat_vec[idim]);

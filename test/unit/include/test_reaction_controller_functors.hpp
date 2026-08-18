@@ -16,8 +16,8 @@ struct WeightReducer {
  * @brief Functor for matching internal state values.
  */
 struct InternalStateEquals {
-  NP::INT value;
-  InternalStateEquals(NP::INT value) : value(value) {}
+  INT value;
+  InternalStateEquals(INT value) : value(value) {}
   template <typename T> bool operator()(const T &x) const {
     return x[0] == value;
   }

@@ -52,7 +52,7 @@ struct Recombination
       NP::SYCLTargetSharedPtr sycl_target, RateData rate_data,
       DataCalcType data_calc_obj, Species marker_species,
       Species electron_species, Species neutral_species,
-      const NP::REAL &normalised_potential_energy,
+      const REAL &normalised_potential_energy,
       const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<1, RateData, RecombReactionKernels<ndim, ndim>,
                            DataCalcType>(

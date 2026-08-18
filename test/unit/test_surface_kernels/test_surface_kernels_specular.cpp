@@ -36,7 +36,7 @@ TEST(SurfaceKernels, SpecularReflection) {
       },
       NP::Access::write(
           NP::BoundaryInteractionSpecification::intersection_normal),
-      NP::Access::write(NP::Sym<NP::REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
   auto descendant_particles = std::make_shared<NP::ParticleGroup>(
@@ -49,7 +49,7 @@ TEST(SurfaceKernels, SpecularReflection) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1, descendant_particles,
                         true); // Apply to all of weight, the same way a surface
                                // reaction controller would
-    auto velocity = particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+    auto velocity = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     const int nrow = velocity->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

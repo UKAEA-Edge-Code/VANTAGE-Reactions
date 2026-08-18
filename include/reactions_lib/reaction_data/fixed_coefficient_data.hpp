@@ -18,9 +18,9 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
   /**
    * @brief Constructor for FixedCoefficientDataOnDevice.
    *
-   * @param rate NP::REAL-valued rate to be used in reaction rate calculation.
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedCoefficientDataOnDevice(NP::REAL rate) : rate(rate) {};
+  FixedCoefficientDataOnDevice(REAL rate) : rate(rate) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate
@@ -37,23 +37,23 @@ struct FixedCoefficientDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A NP::REAL-valued array of size 1 containing the calculated
+   * @return A REAL-valued array of size 1 containing the calculated
    * reaction rate.
    */
-  std::array<NP::REAL, 1>
+  std::array<REAL, 1>
   calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
     auto weight = req_real_props.at(this->weight_ind, index, 0);
 
-    return std::array<NP::REAL, 1>{weight * this->rate};
+    return std::array<REAL, 1>{weight * this->rate};
   }
 
 public:
   int weight_ind;
-  NP::REAL rate;
+  REAL rate;
 };
 
 /**
@@ -77,7 +77,7 @@ struct FixedCoefficientData
    * used when remapping property names
    */
   FixedCoefficientData(
-      NP::REAL rate_coefficient,
+      REAL rate_coefficient,
       std::map<int, std::string> properties_map = get_default_map());
 
   /**

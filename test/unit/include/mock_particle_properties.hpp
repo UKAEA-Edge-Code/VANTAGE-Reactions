@@ -6,11 +6,11 @@
 using namespace VANTAGE::Reactions;
 
 namespace PropertiesTest {
-inline auto int_props = Properties<NP::INT>(
+inline auto int_props = Properties<INT>(
     std::vector<int>{default_properties.id, default_properties.internal_state,
                      default_properties.cell_id});
 
-inline auto real_props = Properties<NP::REAL>(
+inline auto real_props = Properties<REAL>(
     std::vector<int>{
         default_properties.position, default_properties.velocity,
         default_properties.tot_reaction_rate, default_properties.weight,

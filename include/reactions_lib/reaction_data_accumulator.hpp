@@ -65,20 +65,19 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         "CellwiseReactionDataAccumulator_loop", target_subgroup,
         [=](auto buffer, auto particle_index, auto req_int_props,
             auto req_real_props, auto kernel) {
-          std::array<NP::REAL, data_dim> data =
-              reaction_data_on_device.calc_data(particle_index, req_int_props,
-                                                req_real_props, kernel);
+          std::array<REAL, data_dim> data = reaction_data_on_device.calc_data(
+              particle_index, req_int_props, req_real_props, kernel);
 
           for (auto j = 0; j < data_dim; j++) {
             buffer.combine(j, 0, data[j]);
           }
         },
-        NP::Access::reduce(this->values, NP::Kernel::plus<NP::REAL>()),
+        NP::Access::reduce(this->values, NP::Kernel::plus<REAL>()),
         NP::Access::read(NP::ParticleLoopIndex{}),
         NP::Access::write(
-            NP::sym_vector<NP::INT>(target_subgroup, this->required_int_sums)),
-        NP::Access::read(NP::sym_vector<NP::REAL>(target_subgroup,
-                                                  this->required_real_syms)),
+            NP::sym_vector<INT>(target_subgroup, this->required_int_sums)),
+        NP::Access::read(
+            NP::sym_vector<REAL>(target_subgroup, this->required_real_syms)),
         NP::Access::read(this->reaction_data.get_rng_kernel()));
 
     loop->execute();
@@ -89,17 +88,14 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
    *
    */
 
-  NP::CellDatConstSharedPtr<NP::REAL> get_value_pointer() {
-    return this->values;
-  }
+  NP::CellDatConstSharedPtr<REAL> get_value_pointer() { return this->values; }
 
   /**
    * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
-   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<NP::REAL>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<REAL>
    */
-  void
-  set_value_pointer(NP::CellDatConstSharedPtr<NP::REAL> cell_dat_const_ptr) {
+  void set_value_pointer(NP::CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
 
     this->values = cell_dat_const_ptr;
   }
@@ -122,8 +118,8 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
 private:
   ReactionData reaction_data;
-  std::vector<NP::Sym<NP::INT>> required_int_sums;
-  std::vector<NP::Sym<NP::REAL>> required_real_syms;
+  std::vector<NP::Sym<INT>> required_int_sums;
+  std::vector<NP::Sym<REAL>> required_real_syms;
 
   std::shared_ptr<
       NP::CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>

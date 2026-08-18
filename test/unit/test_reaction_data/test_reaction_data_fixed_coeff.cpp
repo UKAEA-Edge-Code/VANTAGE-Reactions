@@ -29,7 +29,7 @@ TEST(ReactionData, FixedCoefficientData) {
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
-    auto weight = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

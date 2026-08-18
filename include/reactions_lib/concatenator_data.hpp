@@ -20,12 +20,12 @@ constexpr size_t total_dim() {
  */
 template <typename... DATATYPE>
 struct ConcatenatorDataOnDevice
-    : public CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, NP::REAL,
-                                   NP::REAL, DATATYPE...> {
+    : public CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
+                                   DATATYPE...> {
 
   ConcatenatorDataOnDevice() = default;
   ConcatenatorDataOnDevice(DATATYPE... data)
-      : CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, NP::REAL, NP::REAL,
+      : CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
                               DATATYPE...>(data...) {};
 
   static const size_t DIM = total_dim<DATATYPE...>();
@@ -46,15 +46,15 @@ struct ConcatenatorDataOnDevice
    *
    * @return Concatenated return arrays of all the contained device types
    */
-  std::array<NP::REAL, DIM> calc_data(
+  std::array<REAL, DIM> calc_data(
       const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
       typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
-    std::array<NP::REAL, DIM> result;
+    std::array<REAL, DIM> result;
 
     calc_data_recurse<0>(index, req_int_props, req_real_props, rng_kernel,
                          result, 0);
@@ -64,17 +64,17 @@ struct ConcatenatorDataOnDevice
   template <std::size_t I>
   void calc_data_recurse(
       const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
       typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel,
-      std::array<NP::REAL, DIM> &result, size_t dat_dim_idx) const {
+      std::array<REAL, DIM> &result, size_t dat_dim_idx) const {
     if constexpr (I < (sizeof...(DATATYPE))) {
 
       const auto arg = NP::Tuple::get<I>(this->data);
       constexpr auto data_dim = decltype(arg)::DIM;
-      std::array<NP::REAL, data_dim> calculated_data = arg.calc_data(
+      std::array<REAL, data_dim> calculated_data = arg.calc_data(
           index, req_int_props, req_real_props, rng_kernel.template get<I>());
       for (auto i = 0; i < data_dim; i++) {
         result[dat_dim_idx + i] = calculated_data[i];

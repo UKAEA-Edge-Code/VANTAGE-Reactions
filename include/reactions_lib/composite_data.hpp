@@ -96,9 +96,9 @@ struct CompositeData
         this->data);
   }
 
-  ArgumentNameSet<NP::REAL> get_required_real_props_children() {
+  ArgumentNameSet<REAL> get_required_real_props_children() {
 
-    auto new_set = ArgumentNameSet<NP::REAL>();
+    auto new_set = ArgumentNameSet<REAL>();
 
     std::apply(
         [&](auto &&...args) {
@@ -109,9 +109,9 @@ struct CompositeData
     return new_set;
   }
 
-  ArgumentNameSet<NP::INT> get_required_int_props_children() {
+  ArgumentNameSet<INT> get_required_int_props_children() {
 
-    auto new_set = ArgumentNameSet<NP::INT>();
+    auto new_set = ArgumentNameSet<INT>();
 
     std::apply(
         [&](auto &&...args) {
@@ -122,7 +122,7 @@ struct CompositeData
     return new_set;
   }
 
-  void set_required_int_props(const ArgumentNameSet<NP::INT> &props) {
+  void set_required_int_props(const ArgumentNameSet<INT> &props) {
     this->required_int_props = props;
     std::apply(
         [&](auto &&...args) { ((args.set_required_int_props(props)), ...); },
@@ -130,7 +130,7 @@ struct CompositeData
     this->index_on_device_object();
   }
 
-  void set_required_real_props(const ArgumentNameSet<NP::REAL> &props) {
+  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
     this->required_real_props = props;
     std::apply(
         [&](auto &&...args) { ((args.set_required_real_props(props)), ...); },

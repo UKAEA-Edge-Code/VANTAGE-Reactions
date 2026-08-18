@@ -21,13 +21,13 @@ public:
    *
    * @param min_npart Minimum number of particles in a cell.
    */
-  MinimumNPartInCellMarker(NP::INT min_npart);
+  MinimumNPartInCellMarker(INT min_npart);
 
   NP::ParticleSubGroupSharedPtr
   make_marker_subgroup_v(NP::ParticleSubGroupSharedPtr particle_group);
 
 private:
-  NP::INT min_npart;
+  INT min_npart;
 };
 
 /**
@@ -53,7 +53,7 @@ public:
   make_marker_subgroup_v(NP::ParticleSubGroupSharedPtr particle_group);
 
 private:
-  NP::Sym<NP::INT> panic_sym;
+  NP::Sym<INT> panic_sym;
 };
 
 bool panicked(

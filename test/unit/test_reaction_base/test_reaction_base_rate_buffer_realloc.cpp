@@ -21,7 +21,7 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
                                        Species("ELECTRON")),
               DataCalculator<FixedRateData>(FixedRateData(1))) {}
 
-    const NP::LocalArraySharedPtr<NP::REAL> &get_device_rate_buffer_derived() {
+    const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer_derived() {
       return this->get_device_rate_buffer();
     }
   };
@@ -34,8 +34,8 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
   EXPECT_EQ(test_reaction.get_device_rate_buffer_derived()->size, 200);
 
   // Subtract 70 particles
-  std::vector<NP::INT> cells;
-  std::vector<NP::INT> layers;
+  std::vector<INT> cells;
+  std::vector<INT> layers;
   cells.reserve(70);
   layers.reserve(70);
 

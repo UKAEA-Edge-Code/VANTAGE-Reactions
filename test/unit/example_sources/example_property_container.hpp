@@ -16,12 +16,12 @@ void property_container_example() {
   // We can encapsulate a few integer properties directly. We refer to
   // properties using a property enum, here the default one
 
-  auto int_props = Properties<NP::INT>(std::vector<int>{
+  auto int_props = Properties<INT>(std::vector<int>{
       default_properties.id, default_properties.internal_state});
 
   // We can do the same for real properties, but this time we also store some
   // species information
-  auto real_props = Properties<NP::REAL>(
+  auto real_props = Properties<REAL>(
       std::vector<int>{default_properties.velocity, default_properties.weight},
       std::vector<Species>{electron_species, ion_species},
       std::vector<int>{default_properties.temperature,

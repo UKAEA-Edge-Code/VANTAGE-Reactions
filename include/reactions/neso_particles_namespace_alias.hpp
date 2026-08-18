@@ -5,6 +5,8 @@
 
 namespace VANTAGE::Reactions {
 namespace NP = NESO::Particles;
-}
+using INT = NP::INT;
+using REAL = NP::REAL;
+} // namespace VANTAGE::Reactions
 
 #endif

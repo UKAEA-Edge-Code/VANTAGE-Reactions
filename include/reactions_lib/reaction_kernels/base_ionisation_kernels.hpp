@@ -47,15 +47,15 @@ struct IoniseReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
    * @param dt The current time step size.
    */
   void
-  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                   NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, 0> &out_states,
-                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
-    std::array<NP::REAL, ndim_velocity> k_V;
-    NP::REAL vsquared = 0.0;
+    std::array<REAL, ndim_velocity> k_V;
+    REAL vsquared = 0.0;
 
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
       k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
@@ -98,11 +98,10 @@ struct IoniseReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
   }
 
 public:
-  NP::INT velocity_ind, electron_source_density_ind,
-      projectile_source_energy_ind, projectile_source_momentum_ind,
-      target_source_density_ind, target_source_momentum_ind,
-      target_source_energy_ind, weight_ind;
-  NP::REAL target_mass;
+  INT velocity_ind, electron_source_density_ind, projectile_source_energy_ind,
+      projectile_source_momentum_ind, target_source_density_ind,
+      target_source_momentum_ind, target_source_energy_ind, weight_ind;
+  REAL target_mass;
 };
 
 /**
@@ -142,11 +141,11 @@ struct IoniseReactionKernels : public ReactionKernelsBase {
       const Species &projectile_species,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
-            Properties<NP::REAL>(required_simple_real_props,
-                                 std::vector<Species>{target_species,
-                                                      electron_species,
-                                                      projectile_species},
-                                 required_species_real_props),
+            Properties<REAL>(required_simple_real_props,
+                             std::vector<Species>{target_species,
+                                                  electron_species,
+                                                  projectile_species},
+                             required_species_real_props),
             has_momentum_req_data ? 2 : 1, properties_map) {
     static_assert(
         (ndim_velocity >= ndim_source_momentum),

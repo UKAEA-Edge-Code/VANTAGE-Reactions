@@ -6,16 +6,16 @@ void lambda_wrapper_array_transform_examples() {
   auto velocity_data_xy = extract<2>("VELOCITY");
 
   // Supported lambdas are binary and unary functions of either
-  // conforming NP::REAL arrays or of NP::REAL values, allowing for full array
+  // conforming REAL arrays or of REAL values, allowing for full array
   // or elementwise application
 
   // ------------------
   // Binary full array
   // ------------------
 
-  auto binary_lambda_full = [](const std::array<NP::REAL, 2> &a,
-                               const std::array<NP::REAL, 2> &b) {
-    return std::array<NP::REAL, 2>{a[0] * b[1], b[1]};
+  auto binary_lambda_full = [](const std::array<REAL, 2> &a,
+                               const std::array<REAL, 2> &b) {
+    return std::array<REAL, 2>{a[0] * b[1], b[1]};
   };
 
   // The lambda wrapper is templated on the type of the lambda, as well as the
@@ -32,7 +32,7 @@ void lambda_wrapper_array_transform_examples() {
   // Binary elementwise
   // ------------------
 
-  auto binary_lambda_elementwise = [](const NP::REAL &a, const NP::REAL &b) {
+  auto binary_lambda_elementwise = [](const REAL &a, const REAL &b) {
     return 2 * a + b;
   };
 
@@ -48,8 +48,8 @@ void lambda_wrapper_array_transform_examples() {
   // Unary full array
   // ------------------
 
-  auto unary_lambda_full = [=](const std::array<NP::REAL, 2> &a) {
-    return std::array<NP::REAL, 2>{a[0] * a[0], a[1] * a[1]};
+  auto unary_lambda_full = [=](const std::array<REAL, 2> &a) {
+    return std::array<REAL, 2>{a[0] * a[0], a[1] * a[1]};
   };
 
   auto unary_lambda_wrapper_full =
@@ -71,7 +71,7 @@ void lambda_wrapper_array_transform_examples() {
   // Unary elementwise
   // ------------------
 
-  auto unary_lambda_elementwise = [](const NP::REAL &a) { return 2 * a; };
+  auto unary_lambda_elementwise = [](const REAL &a) { return 2 * a; };
 
   auto unary_lambda_wrapper_elementwise =
       utils::LambdaWrapper(unary_lambda_elementwise);

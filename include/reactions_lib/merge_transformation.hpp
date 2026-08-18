@@ -55,11 +55,10 @@ struct MergeTransformationStrategy : TransformationStrategy {
         may be inconsitencies with indexing of properties.");
 
     this->position =
-        NP::Sym<NP::REAL>(properties_map.at(default_properties.position));
-    this->weight =
-        NP::Sym<NP::REAL>(properties_map.at(default_properties.weight));
+        NP::Sym<REAL>(properties_map.at(default_properties.position));
+    this->weight = NP::Sym<REAL>(properties_map.at(default_properties.weight));
     this->momentum =
-        NP::Sym<NP::REAL>(properties_map.at(default_properties.velocity));
+        NP::Sym<REAL>(properties_map.at(default_properties.velocity));
 
     static_assert(ndim == 2 || ndim == 3,
                   "Only 2D and 3D merging strategies supported");
@@ -85,19 +84,16 @@ struct MergeTransformationStrategy : TransformationStrategy {
     We assume that all of the particles have the same mass, so no normalization
     is needed by the algorithm.
     */
-    auto cell_dat_reduction_scalars =
-        std::make_shared<NP::CellDatConst<NP::REAL>>(part_group->sycl_target,
-                                                     cell_count, 2, 1);
-    auto cell_dat_reduction_pos = std::make_shared<NP::CellDatConst<NP::REAL>>(
+    auto cell_dat_reduction_scalars = std::make_shared<NP::CellDatConst<REAL>>(
+        part_group->sycl_target, cell_count, 2, 1);
+    auto cell_dat_reduction_pos = std::make_shared<NP::CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, ndim, 1);
-    auto cell_dat_reduction_mom = std::make_shared<NP::CellDatConst<NP::REAL>>(
+    auto cell_dat_reduction_mom = std::make_shared<NP::CellDatConst<REAL>>(
         part_group->sycl_target, cell_count, ndim, 1);
-    auto cell_dat_reduction_mom_min =
-        std::make_shared<NP::CellDatConst<NP::REAL>>(part_group->sycl_target,
-                                                     cell_count, 3, 1);
-    auto cell_dat_reduction_mom_max =
-        std::make_shared<NP::CellDatConst<NP::REAL>>(part_group->sycl_target,
-                                                     cell_count, 3, 1);
+    auto cell_dat_reduction_mom_min = std::make_shared<NP::CellDatConst<REAL>>(
+        part_group->sycl_target, cell_count, 3, 1);
+    auto cell_dat_reduction_mom_max = std::make_shared<NP::CellDatConst<REAL>>(
+        part_group->sycl_target, cell_count, 3, 1);
 
     if constexpr (ndim == 2) {
       auto reduction_loop = particle_loop(
@@ -113,19 +109,17 @@ struct MergeTransformationStrategy : TransformationStrategy {
           NP::Access::read(this->position), NP::Access::read(this->weight),
           NP::Access::read(this->momentum),
           NP::Access::reduce(cell_dat_reduction_scalars,
-                             NP::Kernel::plus<NP::REAL>()),
-          NP::Access::reduce(cell_dat_reduction_pos,
-                             NP::Kernel::plus<NP::REAL>()),
-          NP::Access::reduce(cell_dat_reduction_mom,
-                             NP::Kernel::plus<NP::REAL>()));
+                             NP::Kernel::plus<REAL>()),
+          NP::Access::reduce(cell_dat_reduction_pos, NP::Kernel::plus<REAL>()),
+          NP::Access::reduce(cell_dat_reduction_mom, NP::Kernel::plus<REAL>()));
 
       reduction_loop->execute();
     }
 
     if constexpr (ndim == 3) {
 
-      cell_dat_reduction_mom_min->fill(std::numeric_limits<NP::REAL>::max());
-      cell_dat_reduction_mom_max->fill(std::numeric_limits<NP::REAL>::min());
+      cell_dat_reduction_mom_min->fill(std::numeric_limits<REAL>::max());
+      cell_dat_reduction_mom_max->fill(std::numeric_limits<REAL>::min());
 
       auto reduction_loop = particle_loop(
           "merge_reduction_loop_3D", target_subgroup,
@@ -144,15 +138,13 @@ struct MergeTransformationStrategy : TransformationStrategy {
           NP::Access::read(this->position), NP::Access::read(this->weight),
           NP::Access::read(this->momentum),
           NP::Access::reduce(cell_dat_reduction_scalars,
-                             NP::Kernel::plus<NP::REAL>()),
-          NP::Access::reduce(cell_dat_reduction_pos,
-                             NP::Kernel::plus<NP::REAL>()),
-          NP::Access::reduce(cell_dat_reduction_mom,
-                             NP::Kernel::plus<NP::REAL>()),
+                             NP::Kernel::plus<REAL>()),
+          NP::Access::reduce(cell_dat_reduction_pos, NP::Kernel::plus<REAL>()),
+          NP::Access::reduce(cell_dat_reduction_mom, NP::Kernel::plus<REAL>()),
           NP::Access::reduce(cell_dat_reduction_mom_min,
-                             NP::Kernel::minimum<NP::REAL>()),
+                             NP::Kernel::minimum<REAL>()),
           NP::Access::reduce(cell_dat_reduction_mom_max,
-                             NP::Kernel::maximum<NP::REAL>()));
+                             NP::Kernel::maximum<REAL>()));
 
       reduction_loop->execute();
     }
@@ -180,13 +172,13 @@ struct MergeTransformationStrategy : TransformationStrategy {
           [=](auto INDEX, auto X, auto W, auto P, auto CDC_s, auto CDC_pos,
               auto CDC_mom, auto CDC_npart_cell) {
             if (CDC_npart_cell.at(0, 0) > 2) {
-              NP::REAL merge_pos[ndim];
-              NP::REAL mom_tot[ndim];
-              NP::REAL mom_a[ndim];
-              NP::REAL mom_b[ndim];
-              const NP::REAL wt = CDC_s.at(0, 0);
-              const NP::REAL one_over_wt = 1.0 / wt;
-              const NP::REAL et = CDC_s.at(1, 0);
+              REAL merge_pos[ndim];
+              REAL mom_tot[ndim];
+              REAL mom_a[ndim];
+              REAL mom_b[ndim];
+              const REAL wt = CDC_s.at(0, 0);
+              const REAL one_over_wt = 1.0 / wt;
+              const REAL et = CDC_s.at(1, 0);
               for (int dimx = 0; dimx < ndim; dimx++) {
                 merge_pos[dimx] = CDC_pos.at(dimx, 0) * one_over_wt;
                 mom_tot[dimx] = CDC_mom.at(dimx, 0);
@@ -194,21 +186,21 @@ struct MergeTransformationStrategy : TransformationStrategy {
                 mom_b[dimx] = mom_tot[dimx] * one_over_wt;
               }
 
-              const NP::REAL pt = NP::Kernel::sqrt(
+              const REAL pt = NP::Kernel::sqrt(
                   NP::Kernel::dot_product_2d(mom_tot, mom_tot));
 
               // et/wt is the momentum**2 for either of the result particles,
               // and pt/wt is the momentum in the direction of the total
               // momentum vector so the below is the perpendicular momentum of
               // the resulting particles
-              const NP::REAL p_perp2 =
+              const REAL p_perp2 =
                   NP::Kernel::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
-              const NP::REAL p_perp = NP::Kernel::sqrt(p_perp2);
+              const REAL p_perp = NP::Kernel::sqrt(p_perp2);
 
               // applying the the 2D 90deg rotation matrix [[0 -1][1 0]] to the
               // total momentum direction and scaling with the perpendicular
               // momentum
-              const NP::REAL p_perp_over_pt = pt != 0.0 ? p_perp / pt : 0.0;
+              const REAL p_perp_over_pt = pt != 0.0 ? p_perp / pt : 0.0;
               mom_a[0] -= mom_tot[1] * p_perp_over_pt;
               mom_a[1] += mom_tot[0] * p_perp_over_pt;
               mom_b[0] += mom_tot[1] * p_perp_over_pt;
@@ -241,13 +233,13 @@ struct MergeTransformationStrategy : TransformationStrategy {
               auto CDC_mom, auto CDC_mom_min, auto CDC_mom_max,
               auto CDC_npart_cell) {
             if (CDC_npart_cell.at(0, 0) > 2) {
-              NP::REAL merge_pos[ndim];
-              NP::REAL mom_tot[ndim];
-              NP::REAL mom_a[ndim];
-              NP::REAL mom_b[ndim];
-              const NP::REAL wt = CDC_s.at(0, 0);
-              const NP::REAL one_over_wt = 1.0 / wt;
-              const NP::REAL et = CDC_s.at(1, 0);
+              REAL merge_pos[ndim];
+              REAL mom_tot[ndim];
+              REAL mom_a[ndim];
+              REAL mom_b[ndim];
+              const REAL wt = CDC_s.at(0, 0);
+              const REAL one_over_wt = 1.0 / wt;
+              const REAL et = CDC_s.at(1, 0);
               for (int dimx = 0; dimx < ndim; dimx++) {
                 merge_pos[dimx] = CDC_pos.at(dimx, 0) * one_over_wt;
                 mom_tot[dimx] = CDC_mom.at(dimx, 0);
@@ -255,23 +247,23 @@ struct MergeTransformationStrategy : TransformationStrategy {
                 mom_b[dimx] = mom_tot[dimx] * one_over_wt;
               }
 
-              const NP::REAL pt = NP::Kernel::sqrt(
+              const REAL pt = NP::Kernel::sqrt(
                   NP::Kernel::dot_product_3d(mom_tot, mom_tot));
 
               // et/wt is the momentum**2 for either of the result particles,
               // and pt/wt is the momentum in the direction of the total
               // momentum vector so the below is the perpendicular momentum of
               // the resulting particles
-              const NP::REAL p_perp2 =
+              const REAL p_perp2 =
                   NP::Kernel::max((et / wt) - ((pt * pt) / (wt * wt)), 0.0);
-              const NP::REAL p_perp = NP::Kernel::sqrt(p_perp2);
+              const REAL p_perp = NP::Kernel::sqrt(p_perp2);
 
-              NP::REAL mom_cell_diag[3] = {
+              REAL mom_cell_diag[3] = {
                   CDC_mom_max.at(0, 0) - CDC_mom_min.at(0, 0),
                   CDC_mom_max.at(1, 0) - CDC_mom_min.at(1, 0),
                   CDC_mom_max.at(2, 0) - CDC_mom_min.at(2, 0)};
 
-              NP::REAL rotation_axis[3] = {0, 0, 0};
+              REAL rotation_axis[3] = {0, 0, 0};
               NP::Kernel::cross_product(mom_tot[0], mom_tot[1], mom_tot[2],
                                         mom_cell_diag[0], mom_cell_diag[1],
                                         mom_cell_diag[2], rotation_axis,
@@ -279,10 +271,10 @@ struct MergeTransformationStrategy : TransformationStrategy {
 
               // the cross product of the total momentum and the momentum space
               // bounding box diagonal of the subgroup
-              NP::REAL rotation_axis_norm = NP::Kernel::sqrt(
+              REAL rotation_axis_norm = NP::Kernel::sqrt(
                   NP::Kernel::dot_product_3d(rotation_axis, rotation_axis));
 
-              const NP::REAL mom_cell_diag_norm = NP::Kernel::sqrt(
+              const REAL mom_cell_diag_norm = NP::Kernel::sqrt(
                   NP::Kernel::dot_product_3d(mom_cell_diag, mom_cell_diag));
 
               // Use short circuit evaluation to mask of the 0/0 that happens if
@@ -302,13 +294,13 @@ struct MergeTransformationStrategy : TransformationStrategy {
               // [[0 -u_3 u_2][u_3 0 -u_1][-u_2 u_1 0]] where u is the rotation
               // axis this is the cross product matrix of the rotation axis -
               // hence
-              NP::REAL mom_perp[3] = {0, 0, 0};
+              REAL mom_perp[3] = {0, 0, 0};
               NP::Kernel::cross_product(rotation_axis[0], rotation_axis[1],
                                         rotation_axis[2], mom_tot[0],
                                         mom_tot[1], mom_tot[2], mom_perp,
                                         mom_perp + 1, mom_perp + 2);
 
-              const NP::REAL scaling_factor =
+              const REAL scaling_factor =
                   rotation_axis_norm != 0.0 ? p_perp / (pt * rotation_axis_norm)
                                             : 0.0;
               for (int i = 0; i < 3; i++) {
@@ -347,9 +339,9 @@ struct MergeTransformationStrategy : TransformationStrategy {
   }
 
 private:
-  NP::Sym<NP::REAL> position;
-  NP::Sym<NP::REAL> weight;
-  NP::Sym<NP::REAL> momentum;
+  NP::Sym<REAL> position;
+  NP::Sym<REAL> weight;
+  NP::Sym<REAL> momentum;
 };
 
 // Extern template declarations, so consumers do not re-instantiate what the

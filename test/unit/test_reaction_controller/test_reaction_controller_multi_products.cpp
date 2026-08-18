@@ -22,12 +22,12 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   auto reaction_controller = ReactionController(test_wrapper);
   reaction_controller.set_cell_block_size(2);
 
-  NP::REAL test_rate = 5.0;
+  REAL test_rate = 5.0;
 
   auto test_reaction1 = TestReaction<0>(particle_group->sycl_target, test_rate,
                                         0, std::array<int, 0>{});
 
-  const NP::INT num_products_per_parent = 2;
+  const INT num_products_per_parent = 2;
 
   test_rate = 10.0;
 
@@ -41,31 +41,31 @@ TEST(ReactionController, multi_reaction_multiple_products) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction2));
 
-  auto reduction = std::make_shared<NP::CellDatConst<NP::REAL>>(
+  auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(particle_group, WeightReducer{},
-                NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")),
+                NP::Access::read(NP::Sym<REAL>("WEIGHT")),
                 NP::Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_sub_group(particle_group), 0.1);
 
-  auto reduction_after = std::make_shared<NP::CellDatConst<NP::REAL>>(
+  auto reduction_after = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(particle_group, WeightReducer{},
-                NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")),
+                NP::Access::read(NP::Sym<REAL>("WEIGHT")),
                 NP::Access::add(reduction_after))
       ->execute();
 
   auto merged_species_1 =
       particle_sub_group(particle_group, InternalStateEquals(1),
-                         NP::Access::read(NP::Sym<NP::INT>("INTERNAL_STATE")));
+                         NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
 
   auto merged_species_2 =
       particle_sub_group(particle_group, InternalStateEquals(2),
-                         NP::Access::read(NP::Sym<NP::INT>("INTERNAL_STATE")));
+                         NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
 
   for (int icell = 0; icell < cell_count; icell++) {
     EXPECT_EQ(merged_species_1->get_npart_cell(icell), 2);

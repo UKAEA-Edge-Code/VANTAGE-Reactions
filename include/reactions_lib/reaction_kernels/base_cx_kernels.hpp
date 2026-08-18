@@ -45,13 +45,12 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param dt The current time step size.
    */
   void
-  scattering_kernel(NP::REAL &modified_weight,
-                    NP::Access::LoopIndex::Read &index,
+  scattering_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                     NP::Access::DescendantProducts::Write &descendant_products,
-                    NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                    NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                    NP::Access::SymVector::Write<INT> &req_int_props,
+                    NP::Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, 1> &out_states,
-                    NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                    NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                     double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
       descendant_products.at_real(index, 0, descendant_velocity_ind, dimx) =
@@ -80,13 +79,12 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * data
    * @param dt The current time step size.
    */
-  void weight_kernel(NP::REAL &modified_weight,
-                     NP::Access::LoopIndex::Read &index,
+  void weight_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                      NP::Access::DescendantProducts::Write &descendant_products,
-                     NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                     NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                     NP::Access::SymVector::Write<INT> &req_int_props,
+                     NP::Access::SymVector::Write<REAL> &req_real_props,
                      const std::array<int, 1> &out_states,
-                     NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     descendant_products.at_real(index, 0, descendant_weight_ind, 0) =
         modified_weight;
@@ -114,13 +112,12 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param dt The current time step size.
    */
   void transformation_kernel(
-      NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      REAL &modified_weight, NP::Access::LoopIndex::Read &index,
       NP::Access::DescendantProducts::Write &descendant_products,
-      NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+      NP::Access::SymVector::Write<INT> &req_int_props,
+      NP::Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, 1> &out_states,
-      NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
-      double dt) const {
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
         out_states[0];
   }
@@ -147,17 +144,17 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param dt The current time step size.
    */
   void
-  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                   NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, 1> &out_states,
-                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
 
-    std::array<NP::REAL, ndim_velocity> k_V, k_Vi;
-    NP::REAL vsquared = 0.0;
-    NP::REAL visquared = 0.0;
+    std::array<REAL, ndim_velocity> k_V, k_Vi;
+    REAL vsquared = 0.0;
+    REAL visquared = 0.0;
 
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
       k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
@@ -192,13 +189,12 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   }
 
 public:
-  NP::INT velocity_ind, projectile_source_density_ind,
-      projectile_source_energy_ind, projectile_source_momentum_ind,
-      target_source_density_ind, target_source_momentum_ind,
-      target_source_energy_ind, weight_ind;
-  NP::INT descendant_internal_state_ind, descendant_velocity_ind,
+  INT velocity_ind, projectile_source_density_ind, projectile_source_energy_ind,
+      projectile_source_momentum_ind, target_source_density_ind,
+      target_source_momentum_ind, target_source_energy_ind, weight_ind;
+  INT descendant_internal_state_ind, descendant_velocity_ind,
       descendant_weight_ind;
-  NP::REAL target_mass, projectile_mass;
+  REAL target_mass, projectile_mass;
 };
 
 /**
@@ -239,7 +235,7 @@ struct CXReactionKernels : public ReactionKernelsBase {
       const Species &target_species, const Species &projectile_species,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionKernelsBase(
-            Properties<NP::REAL>(
+            Properties<REAL>(
                 required_simple_real_props,
                 std::vector<Species>{target_species, projectile_species},
                 required_species_real_props),
@@ -292,10 +288,10 @@ struct CXReactionKernels : public ReactionKernelsBase {
         projectile_species.get_mass();
 
     this->set_required_descendant_int_props(
-        Properties<NP::INT>(required_descendant_simple_int_props));
+        Properties<INT>(required_descendant_simple_int_props));
 
     this->set_required_descendant_real_props(
-        Properties<NP::REAL>(required_descendant_simple_real_props));
+        Properties<REAL>(required_descendant_simple_real_props));
 
     this->cx_reaction_kernels_on_device.descendant_internal_state_ind =
         this->required_descendant_int_props.simple_prop_index(

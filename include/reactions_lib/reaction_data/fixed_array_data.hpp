@@ -17,10 +17,9 @@ struct FixedArrayDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
   /**
    * @brief Constructor for FixedArrayDataOnDevice.
    *
-   * @param data NP::REAL-valued array this object will returns.
+   * @param data REAL-valued array this object will returns.
    */
-  FixedArrayDataOnDevice(const std::array<NP::REAL, ndim> &data)
-      : data(data) {};
+  FixedArrayDataOnDevice(const std::array<REAL, ndim> &data) : data(data) {};
 
   /**
    * @brief Returns fixed array
@@ -38,17 +37,17 @@ struct FixedArrayDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
    *
    * @return Fixed ndim-sized array
    */
-  std::array<NP::REAL, ndim>
+  std::array<REAL, ndim>
   calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     return this->data;
   }
 
 private:
-  std::array<NP::REAL, ndim> data;
+  std::array<REAL, ndim> data;
 };
 
 /**
@@ -63,9 +62,9 @@ struct FixedArrayData
   /**
    * @brief Constructor for FixedArrayData.
    *
-   * @param data NP::REAL-valued array to always return.
+   * @param data REAL-valued array to always return.
    */
-  FixedArrayData(const std::array<NP::REAL, ndim> &data) {
+  FixedArrayData(const std::array<REAL, ndim> &data) {
     this->on_device_obj = FixedArrayDataOnDevice(data);
   };
 

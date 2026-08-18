@@ -16,9 +16,8 @@ TEST(DataCalculator, mixed_multi_dim) {
 
   // std::mt19937 rng = std::mt19937(std::random_device{}());
   // const double extents[1] = {1.0};
-  auto rng_lambda = [&]() -> NP::REAL { return 1.0; };
-  auto rng_kernel =
-      NP::host_atomic_block_kernel_rng<NP::REAL>(rng_lambda, N_total);
+  auto rng_lambda = [&]() -> REAL { return 1.0; };
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, N_total);
 
   // auto constant_rate_cross_section = ConstantRateCrossSection(1.0);
   auto vel_dat = FilteredMaxwellianSampler<2>(2.0, rng_kernel);
@@ -28,7 +27,7 @@ TEST(DataCalculator, mixed_multi_dim) {
                                       decltype(energy_dat_1)>(
       energy_dat_0, vel_dat, energy_dat_1);
 
-  auto pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
+  auto pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       particle_group->sycl_target, 0, data_calc_obj.get_data_size());
   pre_req_data->fill(0);
 
@@ -38,7 +37,7 @@ TEST(DataCalculator, mixed_multi_dim) {
     auto shape = pre_req_data->index.shape;
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
+    pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape[1]);
     pre_req_data->fill(0);
 

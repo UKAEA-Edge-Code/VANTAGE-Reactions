@@ -4,7 +4,7 @@ void spherical_basis_reflection_example() {
   auto used_map = get_default_map();
 
   // v = 2, theta = pi/4, phi = 3*pi/4
-  std::array<NP::REAL, 3> coords{2.0, M_PI / 4, 3 * M_PI / 4};
+  std::array<REAL, 3> coords{2.0, M_PI / 4, 3 * M_PI / 4};
   // Here we just use a fixed reflection value, but this can
   // be calculated using any other reaction data object
   auto coord_data = FixedArrayData<3>(coords);

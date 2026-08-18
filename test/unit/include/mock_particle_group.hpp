@@ -51,31 +51,31 @@ inline auto create_test_particle_group(int N_total)
   auto domain = std::make_shared<NP::Domain>(mesh, cart_local_mapper);
 
   NP::ParticleSpec particle_spec{
-      NP::ParticleProp(NP::Sym<NP::REAL>("POSITION"), ndim, true),
-      NP::ParticleProp(NP::Sym<NP::REAL>("VELOCITY"), ndim),
-      NP::ParticleProp(NP::Sym<NP::INT>("CELL_ID"), 1, true),
-      NP::ParticleProp(NP::Sym<NP::INT>("REACTIONS_PANIC_FLAG"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("REACTIONS_GROUPING_INDEX"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("REACTIONS_LINEAR_INDEX"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("PARTICLE_REACTED_FLAG"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("ID"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("WEIGHT"), 1),
-      NP::ParticleProp(NP::Sym<NP::INT>("INTERNAL_STATE"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ELECTRON_TEMPERATURE"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ELECTRON_DENSITY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ELECTRON_SOURCE_MOMENTUM"), ndim),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), ndim),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ION2_SOURCE_DENSITY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ION2_SOURCE_MOMENTUM"), ndim),
-      NP::ParticleProp(NP::Sym<NP::REAL>("ION2_SOURCE_ENERGY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("FLUID_DENSITY"), 1),
-      NP::ParticleProp(NP::Sym<NP::REAL>("FLUID_FLOW_SPEED"), ndim),
-      NP::ParticleProp(NP::Sym<NP::REAL>("FLUID_TEMPERATURE"), 1)};
+      NP::ParticleProp(NP::Sym<REAL>("POSITION"), ndim, true),
+      NP::ParticleProp(NP::Sym<REAL>("VELOCITY"), ndim),
+      NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_PANIC_FLAG"), 1),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_GROUPING_INDEX"), 1),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_LINEAR_INDEX"), 1),
+      NP::ParticleProp(NP::Sym<INT>("PARTICLE_REACTED_FLAG"), 1),
+      NP::ParticleProp(NP::Sym<INT>("ID"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("TOT_REACTION_RATE"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("WEIGHT"), 1),
+      NP::ParticleProp(NP::Sym<INT>("INTERNAL_STATE"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_SOURCE_MOMENTUM"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION_SOURCE_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("ION_SOURCE_ENERGY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION2_SOURCE_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION2_SOURCE_MOMENTUM"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("ION2_SOURCE_ENERGY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("FLUID_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("FLUID_FLOW_SPEED"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
       std::make_shared<NP::ParticleGroup>(domain, particle_spec, sycl_target);
 
@@ -100,29 +100,26 @@ inline auto create_test_particle_group(int N_total)
   NP::ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[NP::Sym<NP::REAL>("POSITION")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
-      initial_distribution[NP::Sym<NP::REAL>("VELOCITY")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("VELOCITY")][px][dimx] =
           velocities.at(dimx).at(px);
-      initial_distribution[NP::Sym<NP::REAL>("ELECTRON_SOURCE_MOMENTUM")][px]
+      initial_distribution[NP::Sym<REAL>("ELECTRON_SOURCE_MOMENTUM")][px]
                           [dimx] = 0.0;
-      initial_distribution[NP::Sym<NP::REAL>("FLUID_FLOW_SPEED")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("FLUID_FLOW_SPEED")][px][dimx] =
           1.0 + 2.0 * dimx;
     }
-    initial_distribution[NP::Sym<NP::INT>("CELL_ID")][px][0] = cells.at(px);
-    initial_distribution[NP::Sym<NP::INT>("ID")][px][0] = px;
-    initial_distribution[NP::Sym<NP::REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
-    initial_distribution[NP::Sym<NP::REAL>("WEIGHT")][px][0] = 1.0;
-    initial_distribution[NP::Sym<NP::INT>("INTERNAL_STATE")][px][0] = 0;
-    initial_distribution[NP::Sym<NP::REAL>("ELECTRON_TEMPERATURE")][px][0] =
-        2.0;
-    initial_distribution[NP::Sym<NP::REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
-    initial_distribution[NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY")][px][0] =
-        0.0;
-    initial_distribution[NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY")][px][0] =
-        0.0;
-    initial_distribution[NP::Sym<NP::REAL>("FLUID_DENSITY")][px][0] = 3.0e18;
-    initial_distribution[NP::Sym<NP::REAL>("FLUID_TEMPERATURE")][px][0] = 2.0;
+    initial_distribution[NP::Sym<INT>("CELL_ID")][px][0] = cells.at(px);
+    initial_distribution[NP::Sym<INT>("ID")][px][0] = px;
+    initial_distribution[NP::Sym<REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
+    initial_distribution[NP::Sym<REAL>("WEIGHT")][px][0] = 1.0;
+    initial_distribution[NP::Sym<INT>("INTERNAL_STATE")][px][0] = 0;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_TEMPERATURE")][px][0] = 2.0;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY")][px][0] = 0.0;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY")][px][0] = 0.0;
+    initial_distribution[NP::Sym<REAL>("FLUID_DENSITY")][px][0] = 3.0e18;
+    initial_distribution[NP::Sym<REAL>("FLUID_TEMPERATURE")][px][0] = 2.0;
   }
   particle_group->add_particles_local(initial_distribution);
 

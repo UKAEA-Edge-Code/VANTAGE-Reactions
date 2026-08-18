@@ -4,7 +4,7 @@
 
 namespace VANTAGE::Reactions {
 
-FixedRateData::FixedRateData(const NP::REAL &rate) {
+FixedRateData::FixedRateData(const REAL &rate) {
   this->on_device_obj = FixedRateDataOnDevice(rate);
 }
 

@@ -30,11 +30,11 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param coeffs A real-valued array of coefficients to be used in a 1D AMJUEL
    * reaction rate calculation.
    */
-  AMJUEL1DDataOnDevice(const NP::REAL &evolved_quantity_normalisation,
-                       const NP::REAL &density_normalisation,
-                       const NP::REAL &temperature_normalisation,
-                       const NP::REAL &time_normalisation,
-                       const std::array<NP::REAL, num_coeffs> &coeffs)
+  AMJUEL1DDataOnDevice(const REAL &evolved_quantity_normalisation,
+                       const REAL &density_normalisation,
+                       const REAL &temperature_normalisation,
+                       const REAL &time_normalisation,
+                       const std::array<REAL, num_coeffs> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
         temperature_normalisation(temperature_normalisation), coeffs(coeffs) {};
@@ -54,13 +54,13 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A NP::REAL-valued array of size 1 containing the calculated
+   * @return A REAL-valued array of size 1 containing the calculated
    * reaction rate.
    */
-  std::array<NP::REAL, 1>
+  std::array<REAL, 1>
   calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
     auto fluid_density_dat =
@@ -71,30 +71,30 @@ struct AMJUEL1DDataOnDevice : public ReactionDataBaseOnDevice<> {
     auto log_temp = NP::Kernel::log(fluid_temperature_dat *
                                     this->temperature_normalisation);
 
-    std::array<NP::REAL, num_coeffs> log_rate_arr;
+    std::array<REAL, num_coeffs> log_rate_arr;
     log_rate_arr[0] = 1.0;
     for (int i = 1; i < num_coeffs; i++) {
       log_rate_arr[i] = log_rate_arr[i - 1] * log_temp;
     }
 
-    NP::REAL log_rate = 0.0;
+    REAL log_rate = 0.0;
     for (int i = 0; i < num_coeffs; i++) {
       log_rate += this->coeffs[i] * log_rate_arr[i];
     }
 
-    NP::REAL rate = NP::Kernel::exp(log_rate) * 1.0e-6;
+    REAL rate = NP::Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;
 
-    return std::array<NP::REAL, 1>{rate};
+    return std::array<REAL, 1>{rate};
   }
 
 public:
   int fluid_density_ind, fluid_temperature_ind, weight_ind;
-  NP::REAL temperature_normalisation;
-  NP::REAL mult_const;
-  std::array<NP::REAL, num_coeffs> coeffs;
+  REAL temperature_normalisation;
+  REAL mult_const;
+  std::array<REAL, num_coeffs> coeffs;
 };
 
 /**
@@ -126,14 +126,14 @@ struct AMJUEL1DData
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names.
    */
-  AMJUEL1DData(const NP::REAL &evolved_quantity_normalisation,
-               const NP::REAL &density_normalisation,
-               const NP::REAL &temperature_normalisation,
-               const NP::REAL &time_normalisation,
-               const std::array<NP::REAL, num_coeffs> &coeffs,
+  AMJUEL1DData(const REAL &evolved_quantity_normalisation,
+               const REAL &density_normalisation,
+               const REAL &temperature_normalisation,
+               const REAL &time_normalisation,
+               const std::array<REAL, num_coeffs> &coeffs,
                std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<AMJUEL1DDataOnDevice<num_coeffs>>(
-            Properties<NP::REAL>(required_simple_real_props), properties_map) {
+            Properties<REAL>(required_simple_real_props), properties_map) {
 
     this->on_device_obj = AMJUEL1DDataOnDevice<num_coeffs>(
         evolved_quantity_normalisation, density_normalisation,

@@ -25,14 +25,13 @@ struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    * @param coeffs The array of polynomial coefficients, given in ascending
    * order from 0
    */
-  PolynomialArrayTransform(const std::array<NP::REAL, POLY_ORDER + 1> &coeffs)
+  PolynomialArrayTransform(const std::array<REAL, POLY_ORDER + 1> &coeffs)
       : coeffs(coeffs) {};
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
-    std::array<NP::REAL, DIM> result;
-    NP::REAL buffer;
+    std::array<REAL, DIM> result;
+    REAL buffer;
 
     for (int i = 0; i < DIM; i++) {
 
@@ -48,7 +47,7 @@ struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
   };
 
 private:
-  std::array<NP::REAL, POLY_ORDER + 1> coeffs;
+  std::array<REAL, POLY_ORDER + 1> coeffs;
 };
 
 /**
@@ -66,12 +65,11 @@ struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    *
    * @param mult The multiplicative constant to be used
    */
-  ScalerArrayTransform(const NP::REAL &mult) : mult(mult) {};
+  ScalerArrayTransform(const REAL &mult) : mult(mult) {};
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
-    std::array<NP::REAL, DIM> result;
+    std::array<REAL, DIM> result;
 
     for (int i = 0; i < DIM; i++) {
 
@@ -82,7 +80,7 @@ struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
   };
 
 private:
-  NP::REAL mult;
+  REAL mult;
 };
 
 /**
@@ -99,17 +97,15 @@ struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    *
    * @param dir The array representing the projection direction vector
    */
-  UnaryProjectArrayTransform(const std::array<NP::REAL, DIM> &dir)
-      : dir(dir) {};
+  UnaryProjectArrayTransform(const std::array<REAL, DIM> &dir) : dir(dir) {};
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
     return utils::project_vector(input, this->dir);
   };
 
 private:
-  std::array<NP::REAL, DIM> dir;
+  std::array<REAL, DIM> dir;
 };
 
 /**
@@ -129,13 +125,12 @@ struct UnaryProjectNormalArrayTransform
    *
    * @param dir The array representing the projection direction vector
    */
-  UnaryProjectNormalArrayTransform(const std::array<NP::REAL, DIM> &dir)
+  UnaryProjectNormalArrayTransform(const std::array<REAL, DIM> &dir)
       : dir(dir) {};
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
-    std::array<NP::REAL, DIM> proj = utils::project_vector(input, this->dir);
+    std::array<REAL, DIM> proj = utils::project_vector(input, this->dir);
 
     for (auto i = 0; i < DIM; i++) {
 
@@ -146,7 +141,7 @@ struct UnaryProjectNormalArrayTransform
   };
 
 private:
-  std::array<NP::REAL, DIM> dir;
+  std::array<REAL, DIM> dir;
 };
 
 /**
@@ -160,9 +155,8 @@ struct BinaryProjectArrayTransform
 
   BinaryProjectArrayTransform() = default;
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input_1,
-        const std::array<NP::REAL, DIM> &input_2) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
+                              const std::array<REAL, DIM> &input_2) const {
 
     return utils::project_vector(input_1, input_2);
   };
@@ -180,11 +174,10 @@ struct BinaryProjectNormalArrayTransform
 
   BinaryProjectNormalArrayTransform() = default;
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input_1,
-        const std::array<NP::REAL, DIM> &input_2) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
+                              const std::array<REAL, DIM> &input_2) const {
 
-    std::array<NP::REAL, DIM> proj = utils::project_vector(input_1, input_2);
+    std::array<REAL, DIM> proj = utils::project_vector(input_1, input_2);
 
     for (auto i = 0; i < DIM; i++) {
 
@@ -201,7 +194,7 @@ struct BinaryProjectNormalArrayTransform
  * @tparam DIM_IN The size of the transformed array
  * @tparam DIM_OUT The size of the transformed array
  * @tparam OP Unary operator to be used (a struct with operator(const
- * std::array<NP::REAL,DIM_IN>& input) defined)
+ * std::array<REAL,DIM_IN>& input) defined)
  */
 template <size_t DIM_IN, size_t DIM_OUT, typename OP>
 struct UnaryArrayOperatorTransform
@@ -210,8 +203,7 @@ struct UnaryArrayOperatorTransform
   UnaryArrayOperatorTransform() = default;
   UnaryArrayOperatorTransform(const OP &op) : op(op) {};
 
-  std::array<NP::REAL, DIM_OUT>
-  apply(const std::array<NP::REAL, DIM_IN> &input) const {
+  std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM_IN> &input) const {
 
     return this->op(input);
   };
@@ -223,7 +215,7 @@ private:
  * @brief Unary element-wise transform
  *
  * @tparam DIM The size of the transformed array
- * @tparam OP Unary operator to be used (a struct with operator(const NP::REAL&
+ * @tparam OP Unary operator to be used (a struct with operator(const REAL&
  * input) defined)
  */
 template <size_t DIM, typename OP>
@@ -233,10 +225,9 @@ struct UnaryElementwiseOperatorTransform
   UnaryElementwiseOperatorTransform() = default;
   UnaryElementwiseOperatorTransform(const OP &op) : op(op) {};
 
-  std::array<NP::REAL, DIM>
-  apply(const std::array<NP::REAL, DIM> &input) const {
+  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
-    std::array<NP::REAL, DIM> result;
+    std::array<REAL, DIM> result;
 
     for (int i = 0; i < DIM; i++) {
 
@@ -265,9 +256,8 @@ struct BinaryArrayOperatorTransform
   BinaryArrayOperatorTransform() = default;
   BinaryArrayOperatorTransform(const OP &op) : op(op) {};
 
-  std::array<NP::REAL, DIM_OUT>
-  apply(const std::array<NP::REAL, DIM1> &input_1,
-        const std::array<NP::REAL, DIM2> &input_2) const {
+  std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM1> &input_1,
+                                  const std::array<REAL, DIM2> &input_2) const {
 
     return this->op(input_1, input_2);
   };
@@ -300,14 +290,14 @@ struct BinaryElementwiseOperatorTransform
     };
   };
 
-  std::array<NP::REAL, std::max(DIM1, DIM2)>
-  apply(const std::array<NP::REAL, DIM1> &input_1,
-        const std::array<NP::REAL, DIM2> &input_2) const {
+  std::array<REAL, std::max(DIM1, DIM2)>
+  apply(const std::array<REAL, DIM1> &input_1,
+        const std::array<REAL, DIM2> &input_2) const {
 
     if constexpr (DIM1 == DIM2) {
 
       const size_t DIM = DIM1;
-      std::array<NP::REAL, DIM1> result;
+      std::array<REAL, DIM1> result;
 
       for (int i = 0; i < DIM; i++) {
 
@@ -316,7 +306,7 @@ struct BinaryElementwiseOperatorTransform
       return result;
     } else if constexpr (DIM1 == 1) {
 
-      std::array<NP::REAL, DIM2> result;
+      std::array<REAL, DIM2> result;
 
       for (int i = 0; i < DIM2; i++) {
 
@@ -327,7 +317,7 @@ struct BinaryElementwiseOperatorTransform
 
     else {
 
-      std::array<NP::REAL, DIM1> result;
+      std::array<REAL, DIM1> result;
 
       for (int i = 0; i < DIM1; i++) {
 
@@ -350,10 +340,9 @@ struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<DIM, DIM, 1> {
 
   BinaryDotArrayTransform() = default;
 
-  std::array<NP::REAL, 1>
-  apply(const std::array<NP::REAL, DIM> &input_1,
-        const std::array<NP::REAL, DIM> &input_2) const {
-    std::array<NP::REAL, 1> result{0};
+  std::array<REAL, 1> apply(const std::array<REAL, DIM> &input_1,
+                            const std::array<REAL, DIM> &input_2) const {
+    std::array<REAL, 1> result{0};
 
     for (auto i = 0; i < DIM; i++) {
 
@@ -438,7 +427,7 @@ inline auto dot_product(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(BinaryDotArrayTransform<T::DIM>(), lhs, rhs);
 };
-template <size_t DIM> inline auto scale_by(const NP::REAL &mult) {
+template <size_t DIM> inline auto scale_by(const REAL &mult) {
 
   return UnaryArrayTransformData(ScalerArrayTransform<DIM>(mult));
 }

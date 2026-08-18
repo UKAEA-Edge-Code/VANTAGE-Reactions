@@ -44,16 +44,16 @@ struct AbstractReaction : ProfilingBase {
    */
   virtual void
   calculate_rates_v(NP::ParticleSubGroupSharedPtr particle_sub_group,
-                    NP::INT cell_idx_start, NP::INT cell_idx_end) = 0;
+                    INT cell_idx_start, INT cell_idx_end) = 0;
 
   /**
    *  Specialisations should override calculate_rates_v not calculate_rates.
    */
   virtual void calculate_rates(NP::ParticleSubGroupSharedPtr particle_sub_group,
-                               NP::INT cell_idx_start, NP::INT cell_idx_end);
+                               INT cell_idx_start, INT cell_idx_end);
 
   virtual void apply_v(NP::ParticleSubGroupSharedPtr particle_sub_group,
-                       NP::INT cell_idx_start, NP::INT cell_idx_end, double dt,
+                       INT cell_idx_start, INT cell_idx_end, double dt,
                        NP::ParticleGroupSharedPtr child_group,
                        bool full_weight = false) = 0;
 
@@ -61,7 +61,7 @@ struct AbstractReaction : ProfilingBase {
    *  Specialisations should override apply_v not apply.
    */
   virtual void apply(NP::ParticleSubGroupSharedPtr particle_sub_group,
-                     NP::INT cell_idx_start, NP::INT cell_idx_end, double dt,
+                     INT cell_idx_start, INT cell_idx_end, double dt,
                      NP::ParticleGroupSharedPtr child_group,
                      bool full_weight = false);
 
@@ -84,9 +84,9 @@ struct AbstractReaction : ProfilingBase {
     this->max_buffer_size = max_size;
   }
 
-  const NP::Sym<NP::REAL> &get_weight_sym() const { return weight_sym; }
+  const NP::Sym<REAL> &get_weight_sym() const { return weight_sym; }
 
-  void set_weight_sym(const NP::Sym<NP::REAL> &weight_sym) {
+  void set_weight_sym(const NP::Sym<REAL> &weight_sym) {
     this->weight_sym = weight_sym;
   }
 
@@ -95,31 +95,29 @@ protected:
    * @brief Setters and getters for private members.
    */
 
-  const NP::Sym<NP::REAL> &get_total_reaction_rate() {
-    return total_reaction_rate;
-  }
+  const NP::Sym<REAL> &get_total_reaction_rate() { return total_reaction_rate; }
 
-  void set_total_reaction_rate(const NP::Sym<NP::REAL> &total_reaction_rate) {
+  void set_total_reaction_rate(const NP::Sym<REAL> &total_reaction_rate) {
     this->total_reaction_rate = total_reaction_rate;
   }
 
-  const NP::LocalArraySharedPtr<NP::REAL> &get_device_rate_buffer() {
+  const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() {
     return this->device_rate_buffer;
   }
 
-  const NP::LocalArraySharedPtr<NP::REAL> &get_device_weight_buffer() {
+  const NP::LocalArraySharedPtr<REAL> &get_device_weight_buffer() {
     return this->device_weight_buffer;
   }
   void set_device_weight_buffer(
-      NP::LocalArraySharedPtr<NP::REAL> &device_weight_buffer) {
+      NP::LocalArraySharedPtr<REAL> &device_weight_buffer) {
     this->device_weight_buffer = device_weight_buffer;
   }
   const size_t &get_device_rate_buffer_size() {
     return this->device_rate_buffer->size;
   }
 
-  void set_device_rate_buffer(
-      NP::LocalArraySharedPtr<NP::REAL> &device_rate_buffer) {
+  void
+  set_device_rate_buffer(NP::LocalArraySharedPtr<REAL> &device_rate_buffer) {
     this->device_rate_buffer = device_rate_buffer;
   }
 
@@ -127,26 +125,26 @@ protected:
     return sycl_target_stored;
   }
 
-  const NP::NDLocalArraySharedPtr<NP::REAL, 2> &get_pre_req_data() {
+  const NP::NDLocalArraySharedPtr<REAL, 2> &get_pre_req_data() {
     return pre_req_data;
   }
 
-  void set_pre_req_data(NP::NDLocalArraySharedPtr<NP::REAL, 2> &pre_req_data) {
+  void set_pre_req_data(NP::NDLocalArraySharedPtr<REAL, 2> &pre_req_data) {
     this->pre_req_data = pre_req_data;
   }
 
   size_t get_max_buffer_size() { return this->max_buffer_size; }
 
 private:
-  NP::Sym<NP::REAL> total_reaction_rate;
-  NP::LocalArraySharedPtr<NP::REAL> device_rate_buffer;
-  NP::LocalArraySharedPtr<NP::REAL> device_weight_buffer;
+  NP::Sym<REAL> total_reaction_rate;
+  NP::LocalArraySharedPtr<REAL> device_rate_buffer;
+  NP::LocalArraySharedPtr<REAL> device_weight_buffer;
   NP::SYCLTargetSharedPtr sycl_target_stored;
-  NP::NDLocalArraySharedPtr<NP::REAL, 2>
+  NP::NDLocalArraySharedPtr<REAL, 2>
       pre_req_data; //!< Real-valued local matrix for storing
                     //!< any pre-requisite data relating to a
                     //!< derived reaction.
-  NP::Sym<NP::REAL> weight_sym;
+  NP::Sym<REAL> weight_sym;
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
 };
 
@@ -188,10 +186,10 @@ struct LinearReactionBaseImpl : public AbstractReaction {
     this->calculate_rates_real_syms =
         reaction_data_buffer.get_required_real_sym_vector();
 
-    this->apply_int_syms = utils::build_sym_vector<NP::INT>(
+    this->apply_int_syms = utils::build_sym_vector<INT>(
         reaction_kernel_buffer.get_required_int_props());
 
-    this->apply_real_syms = utils::build_sym_vector<NP::REAL>(
+    this->apply_real_syms = utils::build_sym_vector<REAL>(
         reaction_kernel_buffer.get_required_real_props());
 
     auto descendant_matrix_spec =
@@ -215,8 +213,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * @param cell_idx_end The cell id up to which to run the rate loop over
    */
   void calculate_rates_v(NP::ParticleSubGroupSharedPtr particle_sub_group,
-                         NP::INT cell_idx_start,
-                         NP::INT cell_idx_end) override {
+                         INT cell_idx_start, INT cell_idx_end) override {
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
 
@@ -238,7 +235,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
     auto weight_loop = particle_loop(
         "store_weights_loop", particle_sub_group,
         [=](auto particle_index, auto weight, auto weight_buffer) {
-          NP::INT current_count = particle_index.get_loop_linear_index();
+          INT current_count = particle_index.get_loop_linear_index();
           weight_buffer[current_count] =
               weight[0]; // store the particle weight before the application
                          // of any kernels in case we need to know the total
@@ -255,18 +252,17 @@ struct LinearReactionBaseImpl : public AbstractReaction {
         "calc_data_loop", particle_sub_group,
         [=](auto particle_index, auto req_int_props, auto req_real_props,
             auto tot_rate, auto buffer, auto kernel) {
-          NP::INT current_count = particle_index.get_loop_linear_index();
-          std::array<NP::REAL, data_dim> rate =
-              reaction_data_on_device.calc_data(particle_index, req_int_props,
-                                                req_real_props, kernel);
+          INT current_count = particle_index.get_loop_linear_index();
+          std::array<REAL, data_dim> rate = reaction_data_on_device.calc_data(
+              particle_index, req_int_props, req_real_props, kernel);
           buffer[current_count] = rate[0];
           tot_rate[0] += rate[0];
         },
         NP::Access::read(NP::ParticleLoopIndex{}),
-        NP::Access::write(NP::sym_vector<NP::INT>(
-            particle_sub_group, this->calculate_rates_int_syms)),
-        NP::Access::read(NP::sym_vector<NP::REAL>(
-            particle_sub_group, this->calculate_rates_real_syms)),
+        NP::Access::write(NP::sym_vector<INT>(particle_sub_group,
+                                              this->calculate_rates_int_syms)),
+        NP::Access::read(NP::sym_vector<REAL>(particle_sub_group,
+                                              this->calculate_rates_real_syms)),
         NP::Access::write(this->get_total_reaction_rate()),
         NP::Access::write(device_rate_buffer),
         NP::Access::read(this->reaction_data.get_rng_kernel()));
@@ -294,7 +290,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * regardless of timestep
    */
   void apply_v(NP::ParticleSubGroupSharedPtr particle_sub_group,
-               NP::INT cell_idx_start, NP::INT cell_idx_end, double dt,
+               INT cell_idx_start, INT cell_idx_end, double dt,
                NP::ParticleGroupSharedPtr child_group,
                bool full_weight = false) override {
     auto sycl_target_stored = this->get_sycl_target();
@@ -322,17 +318,17 @@ struct LinearReactionBaseImpl : public AbstractReaction {
         [=](auto descendant_particle, auto particle_index, auto req_int_props,
             auto req_real_props, auto rate_buffer, auto pre_req_data,
             auto weight_buffer, auto total_reaction_rate) {
-          NP::INT current_count = particle_index.get_loop_linear_index();
-          NP::REAL rate = rate_buffer.at(current_count);
+          INT current_count = particle_index.get_loop_linear_index();
+          REAL rate = rate_buffer.at(current_count);
 
           // If the entire weight is used need to know the weight before any
           // reactions are applied
-          NP::REAL used_dt = full_weight ? weight_buffer.at(current_count) /
-                                               total_reaction_rate.at(0)
-                                         : dt;
-          NP::REAL deltaweight =
+          REAL used_dt = full_weight ? weight_buffer.at(current_count) /
+                                           total_reaction_rate.at(0)
+                                     : dt;
+          REAL deltaweight =
               used_dt * rate; // weight participating in this reaction
-          NP::REAL total_deltaweight =
+          REAL total_deltaweight =
               used_dt *
               total_reaction_rate.at(0); // Total weight participating in all
                                          // reactions (before rescaling_
@@ -340,11 +336,11 @@ struct LinearReactionBaseImpl : public AbstractReaction {
           // Use either the above calculated delta weight or a fraction of the
           // initial weight based on how much of the total reaction rate this
           // reaction is responsible
-          NP::REAL modified_weight = NP::Kernel::min(
+          REAL modified_weight = NP::Kernel::min(
               deltaweight, deltaweight * (weight_buffer.at(current_count) /
                                           total_deltaweight));
 
-          NP::REAL modified_dt = used_dt * modified_weight / deltaweight;
+          REAL modified_dt = used_dt * modified_weight / deltaweight;
           for (int childx = 0; childx < num_products_per_parent; childx++) {
 
             descendant_particle.set_parent(particle_index, childx);
@@ -373,7 +369,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
         NP::Access::write(this->descendant_particles),
         NP::Access::read(NP::ParticleLoopIndex{}),
         NP::Access::write(
-            NP::sym_vector<NP::INT>(particle_sub_group, this->apply_int_syms)),
+            NP::sym_vector<INT>(particle_sub_group, this->apply_int_syms)),
         NP::Access::write(
             NP::sym_vector(particle_sub_group, this->apply_real_syms)),
         NP::Access::read(device_rate_buffer),
@@ -381,7 +377,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
         NP::Access::read(device_weight_buffer),
         NP::Access::write(this->get_total_reaction_rate()));
 
-    NP::INT npart_block = 0;
+    INT npart_block = 0;
     for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
       npart_block += particle_sub_group->get_npart_cell(cx);
     }
@@ -403,7 +399,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * stored.
    */
   void flush_buffer(size_t buffer_size) override {
-    auto empty_device_rate_buffer = std::make_shared<NP::LocalArray<NP::REAL>>(
+    auto empty_device_rate_buffer = std::make_shared<NP::LocalArray<REAL>>(
         AbstractReaction::get_sycl_target(), buffer_size, 0);
     AbstractReaction::set_device_rate_buffer(empty_device_rate_buffer);
   }
@@ -415,7 +411,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * stored.
    */
   void flush_weight_buffer(size_t buffer_size) override {
-    auto empty_device_buffer = std::make_shared<NP::LocalArray<NP::REAL>>(
+    auto empty_device_buffer = std::make_shared<NP::LocalArray<REAL>>(
         AbstractReaction::get_sycl_target(), buffer_size, 0);
     AbstractReaction::set_device_weight_buffer(empty_device_buffer);
   }
@@ -432,7 +428,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
   void blockwise_flush_buffer(NP::ParticleSubGroupSharedPtr particle_sub_group,
                               int cell_idx_start, int cell_idx_end) {
     auto device_rate_buffer_size = this->get_device_rate_buffer_size();
-    NP::INT npart_block = 0;
+    INT npart_block = 0;
     for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
       npart_block += particle_sub_group->get_npart_cell(cx);
     }
@@ -468,7 +464,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    */
   void flush_pre_req_data(size_t buffer_size) {
     auto shape = this->get_pre_req_data()->index.shape;
-    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
+    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         AbstractReaction::get_sycl_target(), buffer_size, shape[1]);
     empty_pre_req_data->fill(0);
     AbstractReaction::set_pre_req_data(empty_pre_req_data);
@@ -489,7 +485,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
                                int cell_idx_start, int cell_idx_end) {
     auto shape = this->get_pre_req_data()->index.shape;
     auto pre_req_buffer_size = shape[0];
-    NP::INT npart_block = 0;
+    INT npart_block = 0;
     for (auto cx = cell_idx_start; cx < cell_idx_end; cx++) {
       npart_block += particle_sub_group->get_npart_cell(cx);
     }
@@ -525,9 +521,9 @@ struct LinearReactionBaseImpl : public AbstractReaction {
   }
 
   virtual void
-  fill_pre_req_data(NP::NDLocalArraySharedPtr<NP::REAL, 2> &pre_req_data,
+  fill_pre_req_data(NP::NDLocalArraySharedPtr<REAL, 2> &pre_req_data,
                     NP::ParticleSubGroupSharedPtr particle_sub_group,
-                    NP::INT cell_idx_start, NP::INT cell_idx_end) = 0;
+                    INT cell_idx_start, INT cell_idx_end) = 0;
 
   virtual ~LinearReactionBaseImpl() = default;
 
@@ -538,11 +534,11 @@ protected:
   ReactionKernels reaction_kernels;
   std::shared_ptr<NP::DescendantProducts> descendant_particles;
 
-  std::vector<NP::Sym<NP::INT>> calculate_rates_int_syms;
-  std::vector<NP::Sym<NP::REAL>> calculate_rates_real_syms;
+  std::vector<NP::Sym<INT>> calculate_rates_int_syms;
+  std::vector<NP::Sym<REAL>> calculate_rates_real_syms;
 
-  std::vector<NP::Sym<NP::INT>> apply_int_syms;
-  std::vector<NP::Sym<NP::REAL>> apply_real_syms;
+  std::vector<NP::Sym<INT>> apply_int_syms;
+  std::vector<NP::Sym<REAL>> apply_real_syms;
 };
 
 /**
@@ -601,7 +597,7 @@ struct LinearReactionBase
                "does not match the required number of dimensions for the "
                "provided ReactionKernels object.");
 
-    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<NP::REAL, 2>>(
+    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         AbstractReaction::get_sycl_target(), 0,
         this->data_calculator.get_data_size());
     empty_pre_req_data->fill(0);
@@ -636,10 +632,9 @@ struct LinearReactionBase
       : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
                            reaction_kernels, DataCalc(), properties_map) {}
 
-  void fill_pre_req_data(NP::NDLocalArraySharedPtr<NP::REAL, 2> &pre_req_data,
+  void fill_pre_req_data(NP::NDLocalArraySharedPtr<REAL, 2> &pre_req_data,
                          NP::ParticleSubGroupSharedPtr particle_sub_group,
-                         NP::INT cell_idx_start,
-                         NP::INT cell_idx_end) override {
+                         INT cell_idx_start, INT cell_idx_end) override {
     this->data_calculator.fill_buffer(pre_req_data, particle_sub_group,
                                       cell_idx_start, cell_idx_end);
   }

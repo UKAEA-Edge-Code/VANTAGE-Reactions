@@ -25,12 +25,12 @@ struct Species {
    * @brief Constructor for Species.
    *
    * @param name String defining the name of the species.
-   * @param mass NP::REAL value of the mass of the species (in atomic units).
-   * @param charge NP::REAL value of the charge of the species (in atomic
+   * @param mass REAL value of the mass of the species (in atomic units).
+   * @param charge REAL value of the charge of the species (in atomic
    * units).
-   * @param id NP::INT value that corresponds to the ID of the species.
+   * @param id INT value that corresponds to the ID of the species.
    */
-  Species(std::string name, NP::REAL mass, NP::REAL charge, NP::INT id);
+  Species(std::string name, REAL mass, REAL charge, INT id);
 
   /**
    * \overload
@@ -45,20 +45,20 @@ struct Species {
    * @brief Constructor for Species that only sets name and mass.
    *
    * @param name String defining the name of the species.
-   * @param mass NP::REAL value of the mass of the species (in atomic units).
+   * @param mass REAL value of the mass of the species (in atomic units).
    */
-  Species(std::string name, NP::REAL mass);
+  Species(std::string name, REAL mass);
 
   /**
    * \overload
    * @brief Constructor for Species that only sets name, mass and charge.
    *
    * @param name String defining the name of the species.
-   * @param mass NP::REAL value of the mass of the species (in atomic units).
-   * @param charge NP::REAL value of the charge of the species (in atomic
+   * @param mass REAL value of the mass of the species (in atomic units).
+   * @param charge REAL value of the charge of the species (in atomic
    * units).
    */
-  Species(std::string name, NP::REAL mass, NP::REAL charge);
+  Species(std::string name, REAL mass, REAL charge);
 
 public:
   /**
@@ -66,19 +66,19 @@ public:
    */
   std::string get_name() const;
 
-  NP::INT get_id() const;
+  INT get_id() const;
 
-  NP::REAL get_mass() const;
+  REAL get_mass() const;
 
-  NP::REAL get_charge() const;
+  REAL get_charge() const;
 
   void set_name(const std::string &name);
 
-  void set_id(const NP::INT &id);
+  void set_id(const INT &id);
 
-  void set_mass(const NP::REAL &mass);
+  void set_mass(const REAL &mass);
 
-  void set_charge(const NP::REAL &charge);
+  void set_charge(const REAL &charge);
 
   /**
    * @brief Return true if this species has an id associated with it
@@ -89,9 +89,9 @@ public:
 
 private:
   std::optional<std::string> name;
-  std::optional<NP::INT> id;
-  std::optional<NP::REAL> mass;
-  std::optional<NP::REAL> charge;
+  std::optional<INT> id;
+  std::optional<REAL> mass;
+  std::optional<REAL> charge;
 };
 
 // TODO: Make this more robust
@@ -113,7 +113,7 @@ std::string species_property(const Species &species,
  * ReactionKernel object might need.
  *
  * @tparam PROP_TYPE Property type of the properties to be stored in this struct
- * (either NP::INT or NP::REAL).
+ * (either INT or REAL).
  */
 template <typename PROP_TYPE> struct Properties {
   Properties() = default;
@@ -494,7 +494,7 @@ private:
  * @brief Wrapper type for holding a set of NP::Sym names that can be derived
  * from Properties
  *
- * @tparam PROP_TYPE NP::INT or NP::REAL, used in constructing the corresponding
+ * @tparam PROP_TYPE INT or REAL, used in constructing the corresponding
  * SymVector
  */
 template <typename PROP_TYPE> struct ArgumentNameSet {
@@ -587,13 +587,13 @@ private:
 // Extern template declarations, so consumers do not re-instantiate what the
 // library already provides
 
-extern template class Properties<NP::INT>;
+extern template class Properties<INT>;
 
-extern template class Properties<NP::REAL>;
+extern template class Properties<REAL>;
 
-extern template class ArgumentNameSet<NP::INT>;
+extern template class ArgumentNameSet<INT>;
 
-extern template class ArgumentNameSet<NP::REAL>;
+extern template class ArgumentNameSet<REAL>;
 
 }; // namespace VANTAGE::Reactions
 #endif

@@ -64,8 +64,7 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate =
-        particle_group->get_cell(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

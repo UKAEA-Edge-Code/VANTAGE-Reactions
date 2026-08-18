@@ -10,11 +10,11 @@ TEST(LinearReactionBase, calc_rate) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_subgroup = particle_sub_group(
       particle_group, [=](auto ISTATE) { return (ISTATE[0] == 0); },
-      NP::Access::read(NP::Sym<NP::INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
 
-  NP::REAL test_rate = 5.0; // example rate
+  REAL test_rate = 5.0; // example rate
 
-  const NP::INT num_products_per_parent = 0;
+  const INT num_products_per_parent = 0;
 
   auto test_reaction = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0, std::array<int, 0>{});
@@ -26,9 +26,9 @@ TEST(LinearReactionBase, calc_rate) {
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
-        particle_group->get_cell(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), i);
+        particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
 
     const int nrow = position->nrow;
 
@@ -56,9 +56,9 @@ TEST(LinearReactionBase, calc_var_rate) {
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
-        particle_group->get_cell(NP::Sym<NP::REAL>("TOT_REACTION_RATE"), i);
+        particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = position->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

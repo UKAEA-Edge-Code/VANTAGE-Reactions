@@ -73,7 +73,7 @@
 
 // Type discipline for indices:
 //   size_t  — API boundaries, container sizes, stride values
-//   NP::INT     — internal device computation (subtraction, decrement, clamp)
+//   INT     — internal device computation (subtraction, decrement, clamp)
 #ifndef REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
 #define REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
 #include "reactions/neso_particles_namespace_alias.hpp"
@@ -109,7 +109,7 @@ template <size_t output_ndim, size_t interp_ndim, size_t non_interp_ndim,
           typename DATATYPE>
 struct InterpolateDataOnDevice
     : public CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim,
-                                   NP::REAL, NP::REAL, DATATYPE> {
+                                   REAL, REAL, DATATYPE> {
 
   InterpolateDataOnDevice() = default;
   /**
@@ -127,8 +127,8 @@ struct InterpolateDataOnDevice
       const std::array<size_t, interp_ndim> &interp_indices,
       ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
       : interp_indices(interp_indices),
-        CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim,
-                              NP::REAL, NP::REAL, DATATYPE>(interp_data) {
+        CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim, REAL,
+                              REAL, DATATYPE>(interp_data) {
     switch (extrapolation_type) {
     case VANTAGE::Reactions::ExtrapolationType::continue_linear:
       this->continue_linear = true;
@@ -170,37 +170,35 @@ struct InterpolateDataOnDevice
    * calculation (the kernel type is inherited from the kernel type for
    * DATATYPE)
    *
-   * @return A NP::REAL-valued array of size output_ndim that contains the
+   * @return A REAL-valued array of size output_ndim that contains the
    * interpolated function evaluation at the given interpolation points.
    */
-  std::array<NP::REAL, output_ndim> calc_data(
-      const std::array<NP::REAL, interp_ndim + non_interp_ndim> &input_array,
+  std::array<REAL, output_ndim> calc_data(
+      const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
       [[maybe_unused]] const NP::Access::LoopIndex::Read &index,
-      [[maybe_unused]] const NP::Access::SymVector::Write<NP::INT>
-          &req_int_props,
-      [[maybe_unused]] const NP::Access::SymVector::Read<NP::REAL>
-          &req_real_props,
+      [[maybe_unused]] const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::KernelType
           &kernel) const {
 
-    std::array<NP::REAL, interp_ndim> mut_interpolation_points;
+    std::array<REAL, interp_ndim> mut_interpolation_points;
     for (size_t i = 0; i < interp_ndim; i++) {
       mut_interpolation_points[i] = input_array[this->interp_indices[i]];
     }
 
-    std::array<NP::REAL, non_interp_ndim> non_interpolation_points;
+    std::array<REAL, non_interp_ndim> non_interpolation_points;
     for (size_t i = 0; i < non_interp_ndim; i++) {
       non_interpolation_points[i] = input_array[non_interp_indices[i]];
     }
 
-    std::array<NP::INT, interp_ndim> origin_indices;
+    std::array<INT, interp_ndim> origin_indices;
 
-    std::array<NP::REAL, initial_num_points * output_ndim> vertex_func_evals;
-    std::array<NP::INT, interp_ndim> vertex_coord;
+    std::array<REAL, initial_num_points * output_ndim> vertex_func_evals;
+    std::array<INT, interp_ndim> vertex_coord;
 
-    std::array<NP::REAL, initial_num_points * output_ndim> output_evals;
-    std::array<NP::INT, initial_num_points> varying_dim;
+    std::array<REAL, initial_num_points * output_ndim> output_evals;
+    std::array<INT, initial_num_points> varying_dim;
 
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i] = 0;
@@ -215,7 +213,7 @@ struct InterpolateDataOnDevice
     }
 
     // Counter
-    NP::INT num_points = static_cast<NP::INT>(this->initial_num_points);
+    INT num_points = static_cast<INT>(this->initial_num_points);
 
     // Calculation of the indices that will form the "origin" of the
     // hypercube. These are the smallest indices in each dimension that
@@ -228,12 +226,11 @@ struct InterpolateDataOnDevice
     // their upper bounds. This is for the sake of aiding in extrapolation
     // handling and is reset after extrapolation handling.
     for (size_t i = 0; i < interp_ndim; i++) {
-      origin_indices[i] =
-          static_cast<NP::INT>(interp_utils::calc_floor_point_index(
-              mut_interpolation_points[i],
-              this->d_extended_coords_vec_ptr +
-                  this->d_extended_coords_strides_ptr[i],
-              this->d_extended_dims_vec_ptr[i] - 1));
+      origin_indices[i] = static_cast<INT>(interp_utils::calc_floor_point_index(
+          mut_interpolation_points[i],
+          this->d_extended_coords_vec_ptr +
+              this->d_extended_coords_strides_ptr[i],
+          this->d_extended_dims_vec_ptr[i] - 1));
     }
 
     // Out-of-range clamping handling
@@ -241,15 +238,14 @@ struct InterpolateDataOnDevice
     bool above_range = false;
     bool below_range = false;
 
-    NP::REAL above_clamp_to_edge = 0.0;
-    NP::REAL below_clamp_to_edge = 0.0;
+    REAL above_clamp_to_edge = 0.0;
+    REAL below_clamp_to_edge = 0.0;
 
     bool out_of_range_clamp_to_zero = false;
 
     for (size_t i = 0; i < interp_ndim; i++) {
-      above_range =
-          (origin_indices[i] ==
-           static_cast<NP::INT>(this->d_extended_dims_vec_ptr[i] - 2));
+      above_range = (origin_indices[i] ==
+                     static_cast<INT>(this->d_extended_dims_vec_ptr[i] - 2));
       below_range = (origin_indices[i] == 0);
 
       out_of_range = (above_range || below_range);
@@ -277,8 +273,8 @@ struct InterpolateDataOnDevice
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i]--;
       origin_indices[i] =
-          NP::Kernel::clamp(origin_indices[i], static_cast<NP::INT>(0),
-                            static_cast<NP::INT>(this->d_dims_vec_ptr[i] - 2));
+          NP::Kernel::clamp(origin_indices[i], static_cast<INT>(0),
+                            static_cast<INT>(this->d_dims_vec_ptr[i] - 2));
     }
 
     // Necessary for using the interp_utils functions.
@@ -306,15 +302,15 @@ struct InterpolateDataOnDevice
         this->non_interp_indices, this->d_dims_vec_ptr, index, req_int_props,
         req_real_props, kernel);
 
-    std::array<NP::REAL, output_ndim> calculated_interpolated_vals;
+    std::array<REAL, output_ndim> calculated_interpolated_vals;
     for (size_t i = 0; i < output_ndim; i++) {
       calculated_interpolated_vals[i] = 0.0;
     }
 
     // Loop until the last dimension (down to 0D)
     // Starts at dim_index = (interp_ndim - 1) and decrements to 0.
-    for (NP::INT dim_index = static_cast<NP::INT>(interp_ndim) - 1;
-         dim_index >= 0; dim_index--) {
+    for (INT dim_index = static_cast<INT>(interp_ndim) - 1; dim_index >= 0;
+         dim_index--) {
 
       // Contract the hypercube vertices and evaluations by performing linear
       // interpolation on the current dimension (denoted by dim_index). The
@@ -353,8 +349,8 @@ struct InterpolateDataOnDevice
 public:
   size_t const *d_hypercube_vertices_ptr;
   size_t const *d_dims_vec_ptr;
-  NP::REAL const *d_coords_vec_ptr;
-  NP::REAL const *d_extended_coords_vec_ptr;
+  REAL const *d_coords_vec_ptr;
+  REAL const *d_extended_coords_vec_ptr;
   size_t const *d_extended_dims_vec_ptr;
   size_t const *d_coords_strides_ptr;
   size_t const *d_extended_coords_strides_ptr;
@@ -417,7 +413,7 @@ struct InterpolateData
    * continue_linear, clamp_to_zero or clamp_to_edge.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<NP::REAL> &coords_vec,
+                  const std::vector<REAL> &coords_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
                   NP::SYCLTargetSharedPtr sycl_target,
                   const DATATYPE &interp_data,
@@ -452,7 +448,7 @@ struct InterpolateData
    * the grid-function evaluation reaction data object.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<NP::REAL> &coords_vec,
+                  const std::vector<REAL> &coords_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
                   NP::SYCLTargetSharedPtr sycl_target,
                   const DATATYPE &interp_data)
@@ -478,7 +474,7 @@ struct InterpolateData
    * the grid-function evaluation reaction data object.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<NP::REAL> &coords_vec,
+                  const std::vector<REAL> &coords_vec,
                   NP::SYCLTargetSharedPtr sycl_target,
                   const DATATYPE &interp_data)
       : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
@@ -508,7 +504,7 @@ struct InterpolateData
    * continue_linear, clamp_to_zero or clamp_to_edge.
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
-                  const std::vector<NP::REAL> &coords_vec,
+                  const std::vector<REAL> &coords_vec,
                   NP::SYCLTargetSharedPtr sycl_target,
                   const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type)
@@ -538,7 +534,7 @@ struct InterpolateData
             std::get<0>(this->data).get_on_device_obj(), this->interp_indices,
             this->extrapolation_type);
 
-    // NP::BufferDevice<NP::REAL> mock setup
+    // NP::BufferDevice<REAL> mock setup
     this->d_dims_vec = std::make_shared<NP::BufferDevice<size_t>>(
         this->sycl_target, this->dims_vec);
     this->on_device_obj->d_dims_vec_ptr = this->d_dims_vec->ptr;
@@ -554,7 +550,7 @@ struct InterpolateData
       }
     }
 
-    std::vector<NP::REAL> extended_coords_vec;
+    std::vector<REAL> extended_coords_vec;
     for (size_t idim = 0; idim < interp_ndim; idim++) {
       extended_coords_vec.push_back(-INF_INTERP_DOUBLE);
       for (size_t icoord = 0; icoord < this->dims_vec[idim]; icoord++) {
@@ -564,7 +560,7 @@ struct InterpolateData
       extended_coords_vec.push_back(INF_INTERP_DOUBLE);
     }
 
-    this->d_extended_coords_vec = std::make_shared<NP::BufferDevice<NP::REAL>>(
+    this->d_extended_coords_vec = std::make_shared<NP::BufferDevice<REAL>>(
         this->sycl_target, extended_coords_vec);
     this->on_device_obj->d_extended_coords_vec_ptr =
         this->d_extended_coords_vec->ptr;
@@ -574,7 +570,7 @@ struct InterpolateData
     this->on_device_obj->d_extended_dims_vec_ptr =
         this->d_extended_dims_vec->ptr;
 
-    this->d_coords_vec = std::make_shared<NP::BufferDevice<NP::REAL>>(
+    this->d_coords_vec = std::make_shared<NP::BufferDevice<REAL>>(
         this->sycl_target, this->coords_vec);
     this->on_device_obj->d_coords_vec_ptr = this->d_coords_vec->ptr;
 
@@ -596,13 +592,13 @@ struct InterpolateData
 
   NP::SYCLTargetSharedPtr sycl_target;
   std::vector<size_t> dims_vec;
-  std::vector<NP::REAL> coords_vec;
+  std::vector<REAL> coords_vec;
   std::array<size_t, interp_ndim> interp_indices;
   ExtrapolationType extrapolation_type;
 
   std::shared_ptr<NP::BufferDevice<size_t>> d_dims_vec;
-  std::shared_ptr<NP::BufferDevice<NP::REAL>> d_coords_vec;
-  std::shared_ptr<NP::BufferDevice<NP::REAL>> d_extended_coords_vec;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords_vec;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_extended_coords_vec;
   std::shared_ptr<NP::BufferDevice<size_t>> d_extended_dims_vec;
   std::shared_ptr<NP::BufferDevice<size_t>> d_coords_strides;
   std::shared_ptr<NP::BufferDevice<size_t>> d_extended_coords_strides;

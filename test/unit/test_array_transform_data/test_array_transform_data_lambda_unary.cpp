@@ -11,10 +11,10 @@ TEST(ArrayTransformData, unary_lambda_full_array) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
-  auto unary_lambda = [=](const std::array<NP::REAL, 2> &a) {
-    return std::array<NP::REAL, 2>{a[0] * a[0], a[1] * a[1]};
+  auto unary_lambda = [=](const std::array<REAL, 2> &a) {
+    return std::array<REAL, 2>{a[0] * a[0], a[1] * a[1]};
   };
 
   auto lambda_wrapper =
@@ -42,13 +42,13 @@ TEST(ArrayTransformData, unary_lambda_full_array) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0),
                        position->at(rowx, 0) * position->at(rowx, 0));
@@ -67,10 +67,10 @@ TEST(ArrayTransformData, unary_lambda_elementwise) {
   auto particle_sub_group =
       std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
-  NP::REAL capturable = 2.0;
-  auto unary_lambda = [=](const NP::REAL &a) { return capturable * a; };
+  REAL capturable = 2.0;
+  auto unary_lambda = [=](const REAL &a) { return capturable * a; };
 
   auto lambda_wrapper = utils::LambdaWrapper(unary_lambda);
   auto unary_transform_data =
@@ -96,13 +96,13 @@ TEST(ArrayTransformData, unary_lambda_elementwise) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), 2 * position->at(rowx, 0));
       EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 2 * position->at(rowx, 1));

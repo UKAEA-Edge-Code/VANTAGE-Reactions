@@ -17,7 +17,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
 
   auto test_data = FixedRateData(1.0);
 
-  auto velocity_data = ExtractorData<2>(NP::Sym<NP::REAL>("VELOCITY"));
+  auto velocity_data = ExtractorData<2>(NP::Sym<REAL>("VELOCITY"));
 
   auto specular_reflection = SpecularReflectionData<2>();
 
@@ -51,7 +51,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
       },
       NP::Access::write(
           NP::BoundaryInteractionSpecification::intersection_normal),
-      NP::Access::write(NP::Sym<NP::REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
   auto descendant_particles = std::make_shared<NP::ParticleGroup>(
@@ -64,18 +64,16 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto weight =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+    auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
 
     auto source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
     const int nrow = weight->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

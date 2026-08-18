@@ -14,9 +14,9 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
   /**
    * @brief Constructor for FixedRateDataOnDevice.
    *
-   * @param rate NP::REAL-valued rate to be used in reaction rate calculation.
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedRateDataOnDevice(const NP::REAL &rate) : rate(rate) {};
+  FixedRateDataOnDevice(const REAL &rate) : rate(rate) {};
 
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction
@@ -32,21 +32,21 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A NP::REAL-valued array of size 1 containing the calculated
+   * @return A REAL-valued array of size 1 containing the calculated
    * reaction rate.
    */
-  std::array<NP::REAL, 1>
+  std::array<REAL, 1>
   calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
-    return std::array<NP::REAL, 1>{this->rate};
+    return std::array<REAL, 1>{this->rate};
   }
 
 private:
-  NP::REAL rate;
+  REAL rate;
 };
 
 /**
@@ -57,9 +57,9 @@ struct FixedRateData : public ReactionDataBase<FixedRateDataOnDevice> {
   /**
    * @brief Constructor for FixedRateData.
    *
-   * @param rate NP::REAL-valued rate to be used in reaction rate calculation.
+   * @param rate REAL-valued rate to be used in reaction rate calculation.
    */
-  FixedRateData(const NP::REAL &rate);
+  FixedRateData(const REAL &rate);
 
   /**
    * @brief No-op since there are no required properties to index

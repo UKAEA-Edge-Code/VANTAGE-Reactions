@@ -226,10 +226,10 @@ public:
   }
 
   void set_rng_kernel(
-      std::shared_ptr<NP::HostPerParticleBlockRNG<NP::REAL>> rng_kernel) {
+      std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
-  std::shared_ptr<NP::HostPerParticleBlockRNG<NP::REAL>> get_rng_kernel() {
+  std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> get_rng_kernel() {
     NESOASSERT(this->rng_kernel != nullptr,
                "RNG kernel is nullptr, was set_rng_kernel called?");
     return this->rng_kernel;
@@ -256,14 +256,14 @@ private:
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
   std::shared_ptr<MarkingStrategy> reacted_marker;
-  NP::Sym<NP::INT> id_sym;
-  NP::Sym<NP::INT> panic_flag;
-  NP::Sym<NP::INT> reacted_flag;
-  NP::Sym<NP::REAL> tot_rate_buffer;
-  NP::Sym<NP::REAL> weight_sym;
+  NP::Sym<INT> id_sym;
+  NP::Sym<INT> panic_flag;
+  NP::Sym<INT> reacted_flag;
+  NP::Sym<REAL> tot_rate_buffer;
+  NP::Sym<REAL> weight_sym;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
-  std::shared_ptr<NP::HostPerParticleBlockRNG<NP::REAL>> rng_kernel;
+  std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
   std::shared_ptr<NP::ParticleGroupTemporary> particle_group_temporary;

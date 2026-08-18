@@ -4,7 +4,7 @@
 
 namespace VANTAGE::Reactions {
 
-MinimumNPartInCellMarker::MinimumNPartInCellMarker(NP::INT min_npart)
+MinimumNPartInCellMarker::MinimumNPartInCellMarker(INT min_npart)
     : min_npart(min_npart) {}
 
 NP::ParticleSubGroupSharedPtr MinimumNPartInCellMarker::make_marker_subgroup_v(
@@ -25,8 +25,7 @@ PanickedParticleMarker::PanickedParticleMarker(
         default_map (and therefore is not an extension of that map). There \
         may be inconsitencies with indexing of properties.");
 
-  this->panic_sym =
-      NP::Sym<NP::INT>(properties_map.at(default_properties.panic));
+  this->panic_sym = NP::Sym<INT>(properties_map.at(default_properties.panic));
 }
 
 NP::ParticleSubGroupSharedPtr PanickedParticleMarker::make_marker_subgroup_v(

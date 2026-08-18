@@ -10,9 +10,9 @@ TEST(TransformationWrapper, CompositeTransformZeroer) {
 
   auto composite = std::make_shared<CompositeTransform>(
       std::vector<std::shared_ptr<TransformationStrategy>>{
-          make_transformation_strategy<ParticleDatZeroer<NP::REAL>>(
+          make_transformation_strategy<ParticleDatZeroer<REAL>>(
               std::vector<std::string>{"V"})});
-  auto zeroerID = make_transformation_strategy<ParticleDatZeroer<NP::INT>>(
+  auto zeroerID = make_transformation_strategy<ParticleDatZeroer<INT>>(
       std::vector<std::string>{"ID"});
 
   composite->add_transformation(zeroerID);
@@ -24,8 +24,8 @@ TEST(TransformationWrapper, CompositeTransformZeroer) {
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto id = particle_group->get_cell(NP::Sym<NP::INT>("ID"), cellx);
-    auto V = particle_group->get_cell(NP::Sym<NP::REAL>("V"), cellx);
+    auto id = particle_group->get_cell(NP::Sym<INT>("ID"), cellx);
+    auto V = particle_group->get_cell(NP::Sym<REAL>("V"), cellx);
     int nrow = id->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -44,7 +44,7 @@ TEST(TransformationWrapper, CellwiseDistributor) {
 
   auto particle_group = create_test_particle_group_marking(N_total);
 
-  auto distributor_transform = std::make_shared<CellwiseDistributor<NP::REAL>>(
+  auto distributor_transform = std::make_shared<CellwiseDistributor<REAL>>(
       particle_group,
       std::vector<std::string>{"MOCK_SOURCE1D", "MOCK_SOURCE2D"});
 
@@ -76,9 +76,9 @@ TEST(TransformationWrapper, CellwiseDistributor) {
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
     auto mock_1d =
-        particle_group->get_cell(NP::Sym<NP::REAL>("MOCK_SOURCE1D"), cellx);
+        particle_group->get_cell(NP::Sym<REAL>("MOCK_SOURCE1D"), cellx);
     auto mock_2d =
-        particle_group->get_cell(NP::Sym<NP::REAL>("MOCK_SOURCE2D"), cellx);
+        particle_group->get_cell(NP::Sym<REAL>("MOCK_SOURCE2D"), cellx);
     int nrow = mock_1d->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -106,7 +106,7 @@ TEST(TransformationWrapper, CellwiseAccumulator) {
 
   auto particle_group = create_test_particle_group_marking(N_total);
 
-  auto accumulator_transform = std::make_shared<CellwiseAccumulator<NP::REAL>>(
+  auto accumulator_transform = std::make_shared<CellwiseAccumulator<REAL>>(
       particle_group,
       std::vector<std::string>{"MOCK_SOURCE1D", "MOCK_SOURCE2D"});
 
@@ -214,7 +214,7 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulator) {
   auto particle_group = create_test_particle_group_marking(N_total);
 
   auto accumulator_transform =
-      std::make_shared<WeightedCellwiseAccumulator<NP::REAL>>(
+      std::make_shared<WeightedCellwiseAccumulator<REAL>>(
           particle_group, std::vector<std::string>{"MOCK_SOURCE2D"},
           "MOCK_SOURCE1D");
 
@@ -288,7 +288,7 @@ TEST(TransformationWrapper, CellwiseAccumulatorINT) {
 
   auto particle_group = create_test_particle_group_marking(N_total);
 
-  auto accumulator_transform = std::make_shared<CellwiseAccumulator<NP::INT>>(
+  auto accumulator_transform = std::make_shared<CellwiseAccumulator<INT>>(
       particle_group, std::vector<std::string>{"MOCK_INT"});
 
   auto test_wrapper = TransformationWrapper(
@@ -312,7 +312,7 @@ TEST(TransformationWrapper, WeightedCellwiseAccumulatorINT) {
   auto particle_group = create_test_particle_group_marking(N_total);
 
   auto accumulator_transform =
-      std::make_shared<WeightedCellwiseAccumulator<NP::INT>>(
+      std::make_shared<WeightedCellwiseAccumulator<INT>>(
           particle_group, std::vector<std::string>{"MOCK_INT"},
           "MOCK_SOURCE1D");
 
@@ -341,8 +341,8 @@ TEST(TransformationWrapper, CellwiseReactionDataAccumulator) {
 
   auto particle_group = create_test_particle_group_marking(N_total);
 
-  auto mock_source1d = ExtractorData<1>(NP::Sym<NP::REAL>("MOCK_SOURCE1D"));
-  auto mock_source2d = ExtractorData<2>(NP::Sym<NP::REAL>("MOCK_SOURCE2D"));
+  auto mock_source1d = ExtractorData<1>(NP::Sym<REAL>("MOCK_SOURCE1D"));
+  auto mock_source2d = ExtractorData<2>(NP::Sym<REAL>("MOCK_SOURCE2D"));
 
   auto binary_transform_data_1d = mock_source1d * mock_source1d;
   auto binary_transform_data_2d = mock_source2d * mock_source2d;
@@ -392,7 +392,7 @@ TEST(TransformationWrapper, direct_marker_lambda) {
   auto particle_group = create_test_particle_group_marking(N_total);
 
   auto lambda_marker = [](auto w) { return w[0] < 0.5; };
-  auto accessor = NP::Access::read(NP::Sym<NP::REAL>("WEIGHT"));
+  auto accessor = NP::Access::read(NP::Sym<REAL>("WEIGHT"));
 
   auto lambda_remove = [](auto target) {
     target->get_particle_group()->remove_particles(target);
@@ -408,7 +408,7 @@ TEST(TransformationWrapper, direct_marker_lambda) {
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto W = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), cellx);
+    auto W = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cellx);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -426,8 +426,8 @@ TEST(TransformationWrapper, direct_marker_transform) {
   auto particle_group = create_test_particle_group_marking(N_total);
 
   auto lambda_marker = [](auto i) { return i[0] == 2; };
-  auto accessor = NP::Access::read(NP::Sym<NP::INT>("ID"));
-  auto accessor_write = NP::Access::write(NP::Sym<NP::INT>("ID"));
+  auto accessor = NP::Access::read(NP::Sym<INT>("ID"));
+  auto accessor_write = NP::Access::write(NP::Sym<INT>("ID"));
 
   auto lambda_set = [](auto i) { i.at(0) = 1; };
   auto test_wrapper = TransformationWrapper(
@@ -440,7 +440,7 @@ TEST(TransformationWrapper, direct_marker_transform) {
   auto num_cells = particle_group->domain->mesh->get_cell_count();
 
   for (int cellx = 0; cellx < num_cells; cellx++) {
-    auto id = particle_group->get_cell(NP::Sym<NP::INT>("ID"), cellx);
+    auto id = particle_group->get_cell(NP::Sym<INT>("ID"), cellx);
     int nrow = id->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

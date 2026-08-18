@@ -10,17 +10,17 @@ struct DummyDataOnDevice
                                         // template against the RNG kernel type
                                         // if used (unused here)
                                       > {
-  DummyDataOnDevice(NP::REAL rate // Here we just set the fixed coefficient
+  DummyDataOnDevice(REAL rate // Here we just set the fixed coefficient
   );
 
-  std::array<NP::REAL, 1> calc_data(
+  std::array<REAL, 1> calc_data(
       const NP::Access::LoopIndex::Read
           &index, // This is the NESO-Particles index accessor, needed for
                   // accessing the particle data
-      const NP::Access::SymVector::Write<NP::INT>
+      const NP::Access::SymVector::Write<INT>
           &req_int_props, // These are the required integer properties (here
                           // unused)
-      const NP::Access::SymVector::Read<NP::REAL>
+      const NP::Access::SymVector::Read<REAL>
           &req_real_props, // These are the required real properties - there
                            // will be only on but we will use the general
                            // indexing approach
@@ -33,13 +33,13 @@ struct DummyDataOnDevice
         this->weight_ind, index, 0); // Here we access the required real prop at
                                      // the weight_ind - the particle weight
 
-    return std::array<NP::REAL, 1>{
+    return std::array<REAL, 1>{
         weight * this->rate}; // The rate is given as weight * rate
   }
 
 public:
   int weight_ind; // This is the weight index that is set in the host type
-  NP::REAL rate;
+  REAL rate;
 };
 
 // This is the host type
@@ -59,12 +59,12 @@ struct DummyData
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.weight};
 
-  DummyData(NP::REAL rate_coefficient,
+  DummyData(REAL rate_coefficient,
             std::map<int, std::string> properties_map =
                 get_default_map() // Here we allow for property remapping
             )
       : ReactionDataBase(
-            Properties<NP::REAL>(
+            Properties<REAL>(
                 required_simple_real_props), // This is where the
                                              // required data enums go in
                                              // Here no Species required

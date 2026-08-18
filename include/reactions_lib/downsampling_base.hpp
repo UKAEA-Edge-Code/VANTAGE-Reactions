@@ -47,7 +47,7 @@ namespace VANTAGE::Reactions {
  *
  */
 
-using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<NP::REAL>;
+using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
 /**
  * Downsampling modes:
@@ -96,11 +96,11 @@ struct DownsamplingKernelOnDeviceBase {
    * @param rng_kernel RNG kernel access, if required
    */
   void apply(const NP::Access::LoopIndex::Read &index,
-             const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-             const NP::Access::SymVector::Write<NP::REAL> &req_real_props,
-             NP::Access::CellDatConst::Read<NP::REAL> &reduction,
-             NP::Access::CellDatConst::Read<NP::REAL> &reduction_min,
-             NP::Access::CellDatConst::Read<NP::REAL> &reduction_max,
+             const NP::Access::SymVector::Write<INT> &req_int_props,
+             const NP::Access::SymVector::Write<REAL> &req_real_props,
+             NP::Access::CellDatConst::Read<REAL> &reduction,
+             NP::Access::CellDatConst::Read<REAL> &reduction_min,
+             NP::Access::CellDatConst::Read<REAL> &reduction_max,
              const size_t &reduction_idx, const size_t &linear_idx,
              typename RNG_TYPE::KernelType &rng_kernel) const {
     return;
@@ -114,11 +114,10 @@ struct DownsamplingKernelOnDeviceBase {
    * @param req_real_props SymVector Write access to required real properties
    * @param rng_kernel RNG kernel access, if required
    */
-  void
-  apply_no_red(const NP::Access::LoopIndex::Read &index,
-               const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-               const NP::Access::SymVector::Write<NP::REAL> &req_real_props,
-               typename RNG_TYPE::KernelType &rng_kernel) const {
+  void apply_no_red(const NP::Access::LoopIndex::Read &index,
+                    const NP::Access::SymVector::Write<INT> &req_int_props,
+                    const NP::Access::SymVector::Write<REAL> &req_real_props,
+                    typename RNG_TYPE::KernelType &rng_kernel) const {
     return;
   }
 };
@@ -155,11 +154,11 @@ struct DownsamplingReductionKernelOnDeviceBase {
    * the particle belongs to, in principle used to access the corresponding
    * column of the reduction data
    */
-  void reduce(const NP::Access::SymVector::Read<NP::INT> &req_int_props,
-              const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
-              NP::Access::CellDatConst::Add<NP::REAL> &reduction,
-              NP::Access::CellDatConst::Min<NP::REAL> &reduction_min,
-              NP::Access::CellDatConst::Max<NP::REAL> &reduction_max,
+  void reduce(const NP::Access::SymVector::Read<INT> &req_int_props,
+              const NP::Access::SymVector::Read<REAL> &req_real_props,
+              NP::Access::CellDatConst::Add<REAL> &reduction,
+              NP::Access::CellDatConst::Min<REAL> &reduction_min,
+              NP::Access::CellDatConst::Max<REAL> &reduction_max,
               const size_t &reduction_idx) const {
     return;
   }
@@ -198,16 +197,15 @@ struct DownsamplingKernelBase {
   /**
    * @brief Base host-side downsampling kernel type constructor
    *
-   * @param required_int_props Properties<NP::INT> object containing information
-   * regarding the required NP::INT-based properties
-   * @param required_real_props Properties<NP::REAL> object containing
-   * information regarding the required NP::REAL-based properties
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names
    */
   DownsamplingKernelBase(
-      Properties<NP::INT> required_int_props,
-      Properties<NP::REAL> required_real_props,
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
       std::map<int, std::string> properties_map = get_default_map())
       : required_int_props(ArgumentNameSet(required_int_props, properties_map)),
         required_real_props(
@@ -227,22 +225,22 @@ struct DownsamplingKernelBase {
    * @brief Constructor for DownsamplingKernelBase that sets only required real
    * properties.
    *
-   * @param required_real_props Properties<NP::REAL> object containing
-   * information regarding the required NP::REAL-based properties
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names
    */
   DownsamplingKernelBase(
-      Properties<NP::REAL> required_real_props,
+      Properties<REAL> required_real_props,
       std::map<int, std::string> properties_map = get_default_map())
-      : DownsamplingKernelBase(Properties<NP::INT>(), required_real_props,
+      : DownsamplingKernelBase(Properties<INT>(), required_real_props,
                                properties_map) {}
 
   /**
    * @brief Return all required integer properties as a vector of Syms
    *
    */
-  std::vector<NP::Sym<NP::INT>> get_required_int_sym_vector() {
+  std::vector<NP::Sym<INT>> get_required_int_sym_vector() {
     return this->required_int_props.to_sym_vector();
   }
 
@@ -250,7 +248,7 @@ struct DownsamplingKernelBase {
    * @brief Return all required real properties as a vector of Syms
    *
    */
-  std::vector<NP::Sym<NP::REAL>> get_required_real_sym_vector() {
+  std::vector<NP::Sym<REAL>> get_required_real_sym_vector() {
     return this->required_real_props.to_sym_vector();
   }
 
@@ -277,8 +275,8 @@ struct DownsamplingKernelBase {
    * @param reductions Additive reduction values
    * @param pre_num_parts The number of particles per cell
    */
-  virtual void pre_calculate(NP::CellDatConstSharedPtr<NP::REAL> reductions,
-                             NP::CellDatConstSharedPtr<NP::INT> pre_num_parts) {
+  virtual void pre_calculate(NP::CellDatConstSharedPtr<REAL> reductions,
+                             NP::CellDatConstSharedPtr<INT> pre_num_parts) {
     return;
   };
   std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
@@ -290,8 +288,8 @@ struct DownsamplingKernelBase {
 protected:
   std::optional<REDUCTION_KERNEL_ON_DEVICE> reduction_on_device_obj;
   std::optional<DOWNSAMPLING_KERNEL_ON_DEVICE> downsampling_on_device_obj;
-  ArgumentNameSet<NP::INT> required_int_props;
-  ArgumentNameSet<NP::REAL> required_real_props;
+  ArgumentNameSet<INT> required_int_props;
+  ArgumentNameSet<REAL> required_real_props;
   std::map<int, std::string> properties_map;
   std::shared_ptr<RNG_TYPE> rng_kernel;
 };
@@ -334,31 +332,29 @@ struct DownsamplingStrategy : TransformationStrategy {
         may be inconsitencies with indexing of properties.");
 
     this->group_index_sym =
-        NP::Sym<NP::INT>(properties_map.at(default_properties.grouping_index));
+        NP::Sym<INT>(properties_map.at(default_properties.grouping_index));
 
     this->weight_sym =
-        NP::Sym<NP::REAL>(properties_map.at(default_properties.weight));
+        NP::Sym<REAL>(properties_map.at(default_properties.weight));
 
     this->linear_index_sym =
-        NP::Sym<NP::INT>(properties_map.at(default_properties.linear_index));
+        NP::Sym<INT>(properties_map.at(default_properties.linear_index));
     int cell_count = template_group->domain->mesh->get_cell_count();
 
     // We only need to allocate reduction quantities if there are any reductions
     // needed
     if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
-      this->reduction_cell_dats = std::make_shared<NP::CellDatConst<NP::REAL>>(
+      this->reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
           DOWNSAMPLING_KERNEL::REDUCTION_PLUS_DIM, num_downsampling_groups);
 
-      this->min_reduction_cell_dats =
-          std::make_shared<NP::CellDatConst<NP::REAL>>(
-              template_group->sycl_target, cell_count,
-              DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM, num_downsampling_groups);
+      this->min_reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
+          template_group->sycl_target, cell_count,
+          DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM, num_downsampling_groups);
 
-      this->max_reduction_cell_dats =
-          std::make_shared<NP::CellDatConst<NP::REAL>>(
-              template_group->sycl_target, cell_count,
-              DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM, num_downsampling_groups);
+      this->max_reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
+          template_group->sycl_target, cell_count,
+          DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM, num_downsampling_groups);
     }
 
     // We only need to track the number of particles in the merging mode
@@ -366,7 +362,7 @@ struct DownsamplingStrategy : TransformationStrategy {
     // properties
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
-      this->num_part_cell_dats = std::make_shared<NP::CellDatConst<NP::INT>>(
+      this->num_part_cell_dats = std::make_shared<NP::CellDatConst<INT>>(
           template_group->sycl_target, cell_count, num_downsampling_groups, 1);
     }
   }
@@ -389,9 +385,8 @@ struct DownsamplingStrategy : TransformationStrategy {
       // since all merging algorithms attempt to conserve at least some moments
       this->reduction_cell_dats->fill(0.0);
       this->num_part_cell_dats->fill(0);
-      this->min_reduction_cell_dats->fill(std::numeric_limits<NP::REAL>::max());
-      this->max_reduction_cell_dats->fill(
-          -std::numeric_limits<NP::REAL>::max());
+      this->min_reduction_cell_dats->fill(std::numeric_limits<REAL>::max());
+      this->max_reduction_cell_dats->fill(-std::numeric_limits<REAL>::max());
       particle_loop(
           "merge_reduction_loop", target_subgroup,
           [=](auto req_int_props, auto req_real_props, auto reduction_cell_dat,
@@ -405,10 +400,10 @@ struct DownsamplingStrategy : TransformationStrategy {
             linear_index[0] =
                 npart_group.fetch_add(downsampling_group_index[0], 0, 1);
           },
-          NP::Access::read(NP::sym_vector<NP::INT>(
+          NP::Access::read(NP::sym_vector<INT>(
               target_subgroup,
               this->downsampling_kernels.get_required_int_sym_vector())),
-          NP::Access::read(NP::sym_vector<NP::REAL>(
+          NP::Access::read(NP::sym_vector<REAL>(
               target_subgroup,
               this->downsampling_kernels.get_required_real_sym_vector())),
           NP::Access::add(this->reduction_cell_dats),
@@ -437,10 +432,10 @@ struct DownsamplingStrategy : TransformationStrategy {
                                  max_reduction_cell_dat,
                                  downsampling_group_index[0]);
           },
-          NP::Access::read(NP::sym_vector<NP::INT>(
+          NP::Access::read(NP::sym_vector<INT>(
               target_subgroup,
               this->downsampling_kernels.get_required_int_sym_vector())),
-          NP::Access::read(NP::sym_vector<NP::REAL>(
+          NP::Access::read(NP::sym_vector<REAL>(
               target_subgroup,
               this->downsampling_kernels.get_required_real_sym_vector())),
           NP::Access::add(this->reduction_cell_dats),
@@ -487,10 +482,10 @@ struct DownsamplingStrategy : TransformationStrategy {
             }
           },
           NP::Access::read(NP::ParticleLoopIndex{}),
-          NP::Access::write(NP::sym_vector<NP::INT>(
+          NP::Access::write(NP::sym_vector<INT>(
               target_subgroup,
               this->downsampling_kernels.get_required_int_sym_vector())),
-          NP::Access::write(NP::sym_vector<NP::REAL>(
+          NP::Access::write(NP::sym_vector<REAL>(
               target_subgroup,
               this->downsampling_kernels.get_required_real_sym_vector())),
           NP::Access::read(this->reduction_cell_dats),
@@ -534,10 +529,10 @@ struct DownsamplingStrategy : TransformationStrategy {
                   downsampling_group_index[0], 0, rng_kernel);
             },
             NP::Access::read(NP::ParticleLoopIndex{}),
-            NP::Access::write(NP::sym_vector<NP::INT>(
+            NP::Access::write(NP::sym_vector<INT>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_int_sym_vector())),
-            NP::Access::write(NP::sym_vector<NP::REAL>(
+            NP::Access::write(NP::sym_vector<REAL>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_real_sym_vector())),
             NP::Access::read(this->reduction_cell_dats),
@@ -558,10 +553,10 @@ struct DownsamplingStrategy : TransformationStrategy {
                                             req_real_props, rng_kernel);
             },
             NP::Access::read(NP::ParticleLoopIndex{}),
-            NP::Access::write(NP::sym_vector<NP::INT>(
+            NP::Access::write(NP::sym_vector<INT>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_int_sym_vector())),
-            NP::Access::write(NP::sym_vector<NP::REAL>(
+            NP::Access::write(NP::sym_vector<REAL>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_real_sym_vector())),
             NP::Access::read(this->downsampling_kernels.get_rng_kernel()))
@@ -582,14 +577,14 @@ struct DownsamplingStrategy : TransformationStrategy {
   }
 
 private:
-  NP::Sym<NP::INT> group_index_sym;
-  NP::Sym<NP::INT> linear_index_sym;
-  NP::Sym<NP::REAL> weight_sym;
+  NP::Sym<INT> group_index_sym;
+  NP::Sym<INT> linear_index_sym;
+  NP::Sym<REAL> weight_sym;
   DOWNSAMPLING_KERNEL downsampling_kernels;
-  NP::CellDatConstSharedPtr<NP::REAL> reduction_cell_dats;
-  NP::CellDatConstSharedPtr<NP::INT> num_part_cell_dats;
-  NP::CellDatConstSharedPtr<NP::REAL> min_reduction_cell_dats;
-  NP::CellDatConstSharedPtr<NP::REAL> max_reduction_cell_dats;
+  NP::CellDatConstSharedPtr<REAL> reduction_cell_dats;
+  NP::CellDatConstSharedPtr<INT> num_part_cell_dats;
+  NP::CellDatConstSharedPtr<REAL> min_reduction_cell_dats;
+  NP::CellDatConstSharedPtr<REAL> max_reduction_cell_dats;
 };
 } // namespace VANTAGE::Reactions
 #endif

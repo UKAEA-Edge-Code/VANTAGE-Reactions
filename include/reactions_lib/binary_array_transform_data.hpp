@@ -16,9 +16,9 @@ struct AbstractBinaryArrayTransform {
   static const size_t IN_DIM_2 = INPUT_DIM_2;
   static const size_t OUT_DIM = OUTPUT_DIM;
 
-  std::array<NP::REAL, OUT_DIM>
-  apply(const std::array<NP::REAL, IN_DIM_1> &input_1,
-        const std::array<NP::REAL, IN_DIM_2> &input_2) const {
+  std::array<REAL, OUT_DIM>
+  apply(const std::array<REAL, IN_DIM_1> &input_1,
+        const std::array<REAL, IN_DIM_2> &input_2) const {
     return {};
   };
 };
@@ -33,8 +33,8 @@ struct AbstractBinaryArrayTransform {
  */
 template <typename TRANSFORM, typename DATATYPE1, typename DATATYPE2>
 struct BinaryArrayTransformDataOnDevice
-    : public CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, NP::REAL, NP::REAL,
-                                   DATATYPE1, DATATYPE2> {
+    : public CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+                                   DATATYPE2> {
 
   BinaryArrayTransformDataOnDevice() = default;
 
@@ -48,8 +48,8 @@ struct BinaryArrayTransformDataOnDevice
    */
   BinaryArrayTransformDataOnDevice(TRANSFORM transform, DATATYPE1 data1,
                                    DATATYPE2 data2)
-      : CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, NP::REAL, NP::REAL,
-                              DATATYPE1, DATATYPE2>(data1, data2),
+      : CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+                              DATATYPE2>(data1, data2),
         transform(transform) {
 
     static_assert(
@@ -77,10 +77,10 @@ struct BinaryArrayTransformDataOnDevice
    * @return The result of applying the transform on the results of the two
    * contained data objects
    */
-  std::array<NP::REAL, TRANSFORM::OUT_DIM> calc_data(
+  std::array<REAL, TRANSFORM::OUT_DIM> calc_data(
       const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-      const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
       typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
           std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::KernelType

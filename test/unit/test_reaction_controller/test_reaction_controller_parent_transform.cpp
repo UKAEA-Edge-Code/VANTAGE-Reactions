@@ -35,21 +35,21 @@ TEST(ReactionController, parent_transform) {
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));
 
-  auto reduction = std::make_shared<NP::CellDatConst<NP::REAL>>(
+  auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(particle_group, WeightReducer{},
-                NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")),
+                NP::Access::read(NP::Sym<REAL>("WEIGHT")),
                 NP::Access::add(reduction))
       ->execute();
 
   reaction_controller.apply(particle_group, 5e-15);
 
-  auto reduction_after = std::make_shared<NP::CellDatConst<NP::REAL>>(
+  auto reduction_after = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
 
   particle_loop(particle_group, WeightReducer{},
-                NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")),
+                NP::Access::read(NP::Sym<REAL>("WEIGHT")),
                 NP::Access::add(reduction_after))
       ->execute();
 

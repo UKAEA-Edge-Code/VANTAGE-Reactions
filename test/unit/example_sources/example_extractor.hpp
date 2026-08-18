@@ -1,7 +1,7 @@
 void extractor_example() {
 
   // Extract the first 2 components (template arg) of the particle POSITION
-  auto extracted_data = ExtractorData<2>(NP::Sym<NP::REAL>("POSITION"));
+  auto extracted_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   // Alternatively
 

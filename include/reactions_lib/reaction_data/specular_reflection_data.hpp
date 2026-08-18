@@ -33,18 +33,18 @@ struct SpecularReflectionDataOnDevice
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A NP::REAL-valued array of size ndim that contains the calculated
+   * @return A REAL-valued array of size ndim that contains the calculated
    * reflected velocities.
    */
-  std::array<NP::REAL, ndim>
-  calc_data(const std::array<NP::REAL, ndim> input,
+  std::array<REAL, ndim>
+  calc_data(const std::array<REAL, ndim> input,
             const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice<ndim>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
-    std::array<NP::REAL, ndim> surface_n;
+    std::array<REAL, ndim> surface_n;
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim; vdim++) {
@@ -83,7 +83,7 @@ struct SpecularReflectionData
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim,
                          DEFAULT_RNG_KERNEL, ndim>(
-            Properties<NP::REAL>(required_simple_real_props), properties_map) {
+            Properties<REAL>(required_simple_real_props), properties_map) {
 
     this->on_device_obj = SpecularReflectionDataOnDevice<ndim>();
     this->index_on_device_object();

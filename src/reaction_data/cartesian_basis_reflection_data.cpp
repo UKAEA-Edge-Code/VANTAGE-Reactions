@@ -8,7 +8,7 @@ CartesianBasisReflectionData::CartesianBasisReflectionData(
     std::map<int, std::string> properties_map)
     : ReactionDataBase<CartesianBasisReflectionDataOnDevice, 3,
                        DEFAULT_RNG_KERNEL, 3>(
-          Properties<NP::REAL>(required_simple_real_props), properties_map) {
+          Properties<REAL>(required_simple_real_props), properties_map) {
 
   this->on_device_obj = CartesianBasisReflectionDataOnDevice();
   this->index_on_device_object();

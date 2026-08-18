@@ -41,16 +41,16 @@ struct GeneralAbsorptionKernelsOnDevice
    * @param dt The current time step size.
    */
   void
-  feedback_kernel(NP::REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
                   NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<NP::INT> &req_int_props,
-                  NP::Access::SymVector::Write<NP::REAL> &req_real_props,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, 0> &out_states,
-                  NP::Access::NDLocalArray::Read<NP::REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
 
-    std::array<NP::REAL, ndim_velocity> k_V_pre;
-    NP::REAL delta_vsquared = 0.0;
+    std::array<REAL, ndim_velocity> k_V_pre;
+    REAL delta_vsquared = 0.0;
 
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
       k_V_pre[vdim] = req_real_props.at(velocity_ind, index, vdim);
@@ -74,9 +74,9 @@ struct GeneralAbsorptionKernelsOnDevice
   }
 
 public:
-  NP::INT velocity_ind, source_density_ind, source_momentum_ind,
-      source_energy_ind, weight_ind;
-  NP::REAL mass;
+  INT velocity_ind, source_density_ind, source_momentum_ind, source_energy_ind,
+      weight_ind;
+  REAL mass;
 };
 
 /**
@@ -105,7 +105,7 @@ struct GeneralAbsorptionKernels : public ReactionKernelsBase {
   GeneralAbsorptionKernels(
       const Species &absorbed_species,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionKernelsBase(Properties<NP::REAL>(required_simple_real_props), 0,
+      : ReactionKernelsBase(Properties<REAL>(required_simple_real_props), 0,
                             properties_map) {
     this->absorption_kernels_on_device.velocity_ind =
 

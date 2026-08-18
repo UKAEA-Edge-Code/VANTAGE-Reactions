@@ -19,17 +19,16 @@ ReactionController::ReactionController(
         may be inconsitencies with indexing of properties.");
 
   this->id_sym =
-      NP::Sym<NP::INT>(properties_map.at(default_properties.internal_state));
+      NP::Sym<INT>(properties_map.at(default_properties.internal_state));
   this->weight_sym =
-      NP::Sym<NP::REAL>(properties_map.at(default_properties.weight));
-  this->tot_rate_buffer = NP::Sym<NP::REAL>(
-      properties_map.at(default_properties.tot_reaction_rate));
-  this->panic_flag =
-      NP::Sym<NP::INT>(properties_map.at(default_properties.panic));
+      NP::Sym<REAL>(properties_map.at(default_properties.weight));
+  this->tot_rate_buffer =
+      NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+  this->panic_flag = NP::Sym<INT>(properties_map.at(default_properties.panic));
   this->reacted_flag =
-      NP::Sym<NP::INT>(properties_map.at(default_properties.reacted_flag));
+      NP::Sym<INT>(properties_map.at(default_properties.reacted_flag));
 
-  auto zeroer = make_transformation_strategy<ParticleDatZeroer<NP::REAL>>(
+  auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
       std::vector<std::string>{tot_rate_buffer.name});
   this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
       std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
@@ -37,9 +36,9 @@ ReactionController::ReactionController(
   this->reacted_marker = make_direct_marking_strategy(
       "reacted_marker", [=](auto reacted) { return reacted[0] == 1; },
       NP::Access::read(this->reacted_flag));
-  auto rng_lambda = [&]() -> NP::REAL { return 0; };
+  auto rng_lambda = [&]() -> REAL { return 0; };
   this->rng_kernel =
-      std::make_shared<NP::HostPerParticleBlockRNG<NP::REAL>>(rng_lambda, 0);
+      std::make_shared<NP::HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
 }
 
 ReactionController::ReactionController(
@@ -247,7 +246,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
 
     for (int r = 0; r < this->reactions.size(); r++) {
 
-      NP::INT in_state = this->reactions[r]->get_in_states()[0];
+      INT in_state = this->reactions[r]->get_in_states()[0];
 
       this->reactions[r]->calculate_rates(
           this->species_groups[in_state], i,
@@ -281,7 +280,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
 
       for (int r = 0; r < this->reactions.size(); r++) {
 
-        NP::INT in_state = this->reactions[r]->get_in_states()[0];
+        INT in_state = this->reactions[r]->get_in_states()[0];
 
         this->reactions[r]->calculate_rates(
             this->reacted_species_groups[in_state], i,
@@ -297,7 +296,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
     }
 
     for (int r = 0; r < reactions.size(); r++) {
-      NP::INT in_state = this->reactions[r]->get_in_states()[0];
+      INT in_state = this->reactions[r]->get_in_states()[0];
 
       this->reactions[r]->apply(this->reacted_species_groups[in_state], i,
                                 std::min(i + this->cell_block_size, cell_count),

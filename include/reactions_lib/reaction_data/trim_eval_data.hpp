@@ -76,8 +76,8 @@ struct TrimEvalDataOnDevice
    * @param d_trim_dims Device buffer containing TRIM grid dimensions.
    */
   TrimEvalDataOnDevice(
-      const std::shared_ptr<NP::BufferDevice<NP::REAL>> &d_grid,
-      const std::shared_ptr<NP::BufferDevice<NP::REAL>> &d_coords,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_coords,
       const std::shared_ptr<NP::BufferDevice<size_t>> &d_dims,
       const std::shared_ptr<NP::BufferDevice<size_t>> &d_trim_dims)
       : TrimEvalDataOnDevice() {
@@ -104,19 +104,18 @@ struct TrimEvalDataOnDevice
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation (unused here).
    *
-   * @return A NP::REAL-valued array of size output_ndim containing the TRIM
+   * @return A REAL-valued array of size output_ndim containing the TRIM
    * values at the interpolation point.
    */
-  std::array<NP::REAL, output_ndim>
-  calc_data(const std::array<NP::REAL, input_ndim> &input,
-            const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            [[maybe_unused]] const NP::Access::SymVector::Read<NP::REAL>
-                &req_real_props,
-            [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
+  std::array<REAL, output_ndim> calc_data(
+      const std::array<REAL, input_ndim> &input,
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
+      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
 
-    std::array<NP::REAL, output_ndim> input_to_bin;
-    std::array<NP::INT, output_ndim> trim_dims_arr;
+    std::array<REAL, output_ndim> input_to_bin;
+    std::array<INT, output_ndim> trim_dims_arr;
     for (size_t i = 0; i < output_ndim; i++) {
       input_to_bin[i] = input[i + interp_ndim];
 
@@ -130,10 +129,10 @@ struct TrimEvalDataOnDevice
       trim_dims_arr[i] = this->d_trim_dims_ptr[i];
     }
 
-    std::array<NP::INT, output_ndim> binned_inputs =
+    std::array<INT, output_ndim> binned_inputs =
         interp_utils::bin_uniform_indices(input_to_bin, trim_dims_arr);
 
-    std::array<NP::INT, interp_ndim> grid_indices;
+    std::array<INT, interp_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
         input[0], this->d_coords_ptr, this->d_dims_ptr[0]);
     size_t aggregate_dims = 0;
@@ -144,13 +143,13 @@ struct TrimEvalDataOnDevice
     }
 
     auto grid_indices_ptr = grid_indices.data();
-    NP::INT grid_flat_index = interp_utils::coeff_index_on_device(
+    INT grid_flat_index = interp_utils::coeff_index_on_device(
         grid_indices_ptr, this->d_dims_ptr, (input_ndim - output_ndim));
 
     auto grid_access_point = grid_flat_index * this->grid_stride;
 
-    std::array<NP::INT, output_ndim> trim_indices;
-    std::array<NP::REAL, output_ndim> trim_vals;
+    std::array<INT, output_ndim> trim_indices;
+    std::array<REAL, output_ndim> trim_vals;
 
     for (int idim = 0; idim < output_ndim; idim++) {
       int field_access_point = 0;
@@ -182,8 +181,8 @@ public:
 
   static constexpr int interp_ndim = input_ndim - output_ndim;
 
-  NP::REAL const *d_grid_ptr;
-  NP::REAL const *d_coords_ptr;
+  REAL const *d_grid_ptr;
+  REAL const *d_coords_ptr;
   size_t const *d_dims_ptr;
   size_t const *d_trim_dims_ptr;
 
@@ -235,14 +234,14 @@ struct TrimEvalData
    * allocation.
    * @param properties_map Map of property indices to names.
    */
-  TrimEvalData(const std::vector<NP::REAL> &grid,
-               const std::vector<NP::REAL> &coords_vec,
+  TrimEvalData(const std::vector<REAL> &grid,
+               const std::vector<REAL> &coords_vec,
                const std::vector<size_t> &dims_vec,
                const std::vector<size_t> &trim_dims_vec,
                NP::SYCLTargetSharedPtr sycl_target,
                std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<TrimEvalDataOnDevice<input_ndim>>(
-            Properties<NP::INT>(required_simple_int_props), properties_map) {
+            Properties<INT>(required_simple_int_props), properties_map) {
 
     auto dims_size = dims_vec.size();
     NESOASSERT((dims_size == interp_ndim),
@@ -313,10 +312,10 @@ struct TrimEvalData
   };
 
 public:
-  std::shared_ptr<NP::BufferDevice<NP::REAL>> d_coords;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords;
   std::shared_ptr<NP::BufferDevice<size_t>> d_dims;
   std::shared_ptr<NP::BufferDevice<size_t>> d_trim_dims;
-  std::shared_ptr<NP::BufferDevice<NP::REAL>> d_grid;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_grid;
 };
 
 } // namespace VANTAGE::Reactions

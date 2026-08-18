@@ -5,14 +5,14 @@ using namespace VANTAGE::Reactions;
 
 TEST(SimpleThinningTransform, deterministic_rng_test) {
 
-  const NP::INT N_total = 1600;
+  const INT N_total = 1600;
 
   auto particle_group = create_test_particle_group(N_total);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto rng_lambda = [&]() -> NP::REAL { return 0.6; };
+  auto rng_lambda = [&]() -> REAL { return 0.6; };
 
-  auto rng_kernel = NP::host_per_particle_block_rng<NP::REAL>(rng_lambda, 1);
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(rng_lambda, 1);
 
   auto test_thinner =
       make_simple_thinning_strategy(particle_group, 0.5, rng_kernel);
@@ -23,7 +23,7 @@ TEST(SimpleThinningTransform, deterministic_rng_test) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    auto weight = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

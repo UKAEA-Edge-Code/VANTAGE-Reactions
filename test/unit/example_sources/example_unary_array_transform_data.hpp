@@ -17,7 +17,7 @@ void unary_array_transform_examples() {
   //
   // In this case, the elementwise polynomial will be 2x+1
   auto linear_poly =
-      PolynomialArrayTransform<2, 1>(std::array<NP::REAL, 2>{1.0, 2.0});
+      PolynomialArrayTransform<2, 1>(std::array<REAL, 2>{1.0, 2.0});
 
   // The transform can be wrapped into a reaction data object
   auto linear_poly_data = UnaryArrayTransformData(linear_poly);
@@ -52,7 +52,7 @@ void unary_array_transform_examples() {
   // The transform expects the same dimensionality of input data as that of the
   // direction vector
 
-  auto dir = std::array<NP::REAL, 2>{1.0, 0.0};
+  auto dir = std::array<REAL, 2>{1.0, 0.0};
 
   // Projects onto dir
   auto project = UnaryProjectArrayTransform(dir);

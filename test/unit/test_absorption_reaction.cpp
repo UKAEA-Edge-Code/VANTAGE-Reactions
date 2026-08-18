@@ -42,20 +42,19 @@ TEST(AbsorptionKernels, general) {
                         descendant_particles);
 
     auto source_density =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
 
     auto source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
-    auto weight = particle_group->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.9);

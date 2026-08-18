@@ -15,8 +15,7 @@ struct AbstractUnaryArrayTransform {
   static const size_t IN_DIM = INPUT_DIM;
   static const size_t OUT_DIM = OUTPUT_DIM;
 
-  std::array<NP::REAL, OUT_DIM>
-  apply(const std::array<NP::REAL, IN_DIM> &input) const {
+  std::array<REAL, OUT_DIM> apply(const std::array<REAL, IN_DIM> &input) const {
     return {};
   };
 };
@@ -58,11 +57,11 @@ struct UnaryArrayTransformDataOnDevice
    *
    * @return Result of applying the contained transform
    */
-  std::array<NP::REAL, TRANSFORM::OUT_DIM>
-  calc_data(const std::array<NP::REAL, TRANSFORM::IN_DIM> &input,
+  std::array<REAL, TRANSFORM::OUT_DIM>
+  calc_data(const std::array<REAL, TRANSFORM::IN_DIM> &input,
             const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-            const NP::Access::SymVector::Read<NP::REAL> &req_real_props,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     return this->transform.apply(input);

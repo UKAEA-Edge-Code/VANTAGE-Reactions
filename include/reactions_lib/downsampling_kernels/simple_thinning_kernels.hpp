@@ -19,7 +19,7 @@ namespace VANTAGE::Reactions {
  *
  */
 struct SimpleThinningOnDevice
-    : DownsamplingKernelOnDeviceBase<0, NP::HostPerParticleBlockRNG<NP::REAL>> {
+    : DownsamplingKernelOnDeviceBase<0, NP::HostPerParticleBlockRNG<REAL>> {
 
   SimpleThinningOnDevice() = default;
 
@@ -29,7 +29,7 @@ struct SimpleThinningOnDevice
    * @param thinning_ratio The probability of the particle being kept and its
    * weight increased by 1/thinning_ratio
    */
-  SimpleThinningOnDevice(NP::REAL thinning_ratio)
+  SimpleThinningOnDevice(REAL thinning_ratio)
       : inverse_thinning_ratio(1 / thinning_ratio),
         thinning_ratio(thinning_ratio) {};
 
@@ -41,12 +41,11 @@ struct SimpleThinningOnDevice
    * @param req_real_props SymVector Write access to required real properties
    * @param rng_kernel RNG kernel access, if required
    */
-  void
-  apply_no_red(const NP::Access::LoopIndex::Read &index,
-               const NP::Access::SymVector::Write<NP::INT> &req_int_props,
-               const NP::Access::SymVector::Write<NP::REAL> &req_real_props,
-               typename NP::HostPerParticleBlockRNG<NP::REAL>::KernelType
-                   &rng_kernel) const {
+  void apply_no_red(const NP::Access::LoopIndex::Read &index,
+                    const NP::Access::SymVector::Write<INT> &req_int_props,
+                    const NP::Access::SymVector::Write<REAL> &req_real_props,
+                    typename NP::HostPerParticleBlockRNG<REAL>::KernelType
+                        &rng_kernel) const {
 
     bool is_kernel_valid = true;
     bool accepted =
@@ -59,7 +58,7 @@ struct SimpleThinningOnDevice
 
 public:
   int weight_ind, panic_ind;
-  NP::REAL inverse_thinning_ratio, thinning_ratio;
+  REAL inverse_thinning_ratio, thinning_ratio;
 };
 
 /**
@@ -92,8 +91,8 @@ struct SimpleThinningKernels
    * used when remapping property names
    */
   SimpleThinningKernels(
-      NP::REAL thinning_ratio,
-      std::shared_ptr<NP::HostPerParticleBlockRNG<NP::REAL>> rng_kernel,
+      REAL thinning_ratio,
+      std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map());
 };
 
@@ -110,8 +109,8 @@ struct SimpleThinningKernels
  * used when remapping property names
  */
 std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
-    NP::ParticleGroupSharedPtr template_group, NP::REAL thinning_ratio,
-    std::shared_ptr<NP::HostPerParticleBlockRNG<NP::REAL>> rng_kernel,
+    NP::ParticleGroupSharedPtr template_group, REAL thinning_ratio,
+    std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
     const std::map<int, std::string> &properties_map = get_default_map());
 }; // namespace VANTAGE::Reactions
 #endif

@@ -21,7 +21,7 @@ void linear_reaction_CX_example(NP::ParticleGroupSharedPtr particle_group) {
   auto particle_subgroup = particle_sub_group(
       particle_group, [=](auto id) { return id[0] == spec_id; },
       NP::Access::read(
-          NP::Sym<NP::INT>(prop_map[default_properties.internal_state])));
+          NP::Sym<INT>(prop_map[default_properties.internal_state])));
 
   // For this example, we will use the FixedRateData reaction data class
   // it simply sets the rate to a fixed number

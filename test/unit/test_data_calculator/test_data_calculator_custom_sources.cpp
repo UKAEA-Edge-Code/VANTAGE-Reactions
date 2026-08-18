@@ -31,13 +31,13 @@ TEST(DataCalculator, custom_sources) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(NP::Sym<NP::REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
-    auto source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+    auto source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+    auto source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), 3.0);
       EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 4.0);

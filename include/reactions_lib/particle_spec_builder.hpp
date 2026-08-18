@@ -38,7 +38,7 @@ struct ParticleSpecBuilder {
   /**
    * @brief Method to add particle properties to member particle_spec.
    *
-   * @tparam PROP_TYPE Specifier for type of property (NP::INT or NP::REAL)
+   * @tparam PROP_TYPE Specifier for type of property (INT or REAL)
    * @param properties Properties object containing names of the particle
    * properties to be added.
    * @param ndim Number of dimensions for the properties to be added (note this

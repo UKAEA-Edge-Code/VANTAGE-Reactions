@@ -3,23 +3,23 @@ inline void interpolation_example(NP::ParticleGroupSharedPtr particle_group) {
   static constexpr int ndim = 3;
 
   // Example coordinates for dimension 0.
-  std::vector<NP::REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
-                                      5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
+  std::vector<REAL> dim0_range = {1.0e+18, 2.0e+18, 3.0e+18, 4.0e+18,
+                                  5.0e+18, 6.0e+18, 7.0e+18, 8.0e+18};
 
   // Example coordinates for dimension 1.
-  std::vector<NP::REAL> dim1_range = {
+  std::vector<REAL> dim1_range = {
       1.00000000e+01, 2.78255940e+01, 7.74263683e+01, 2.15443469e+02,
       5.99484250e+02, 1.66810054e+03, 4.64158883e+03, 1.29154967e+04,
       3.59381366e+04, 1.00000000e+05};
 
   // Example coordinates for dimension 2.
-  std::vector<NP::REAL> dim2_range = {-98.5, -94.,  -86.5, -76., -62.5,
-                                      -46.,  -26.5, -4.,   21.5, 50.,
-                                      81.5,  116.,  153.5, 194., 237.5};
+  std::vector<REAL> dim2_range = {-98.5, -94.,  -86.5, -76., -62.5,
+                                  -46.,  -26.5, -4.,   21.5, 50.,
+                                  81.5,  116.,  153.5, 194., 237.5};
 
   // Example lambda defining the values of the grid function at each coordinate.
   static constexpr auto grid_func_lambda =
-      [](const std::array<NP::REAL, ndim> &vals) {
+      [](const std::array<REAL, ndim> &vals) {
         return (vals[0] * vals[1] * vals[2]);
       };
 

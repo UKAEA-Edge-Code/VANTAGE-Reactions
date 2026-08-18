@@ -12,7 +12,7 @@ TEST(Recombination, kernel_test) {
 
   particle_loop(
       particle_group, [=](auto internal_state) { internal_state.at(0) = -1; },
-      NP::Access::write(NP::Sym<NP::INT>("INTERNAL_STATE")))
+      NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")))
       ->execute();
 
   auto particle_sub_group =
@@ -47,27 +47,26 @@ TEST(Recombination, kernel_test) {
                         descendant_particles);
 
     auto weight_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("WEIGHT"), i);
-    auto vel_parent =
-        particle_group->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
-        descendant_particles->get_cell(NP::Sym<NP::REAL>("VELOCITY"), i);
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
 
     auto id_child =
-        descendant_particles->get_cell(NP::Sym<NP::INT>("INTERNAL_STATE"), i);
+        descendant_particles->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     auto target_source_density =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_DENSITY"), i);
-    auto projectile_source_density = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
+    auto projectile_source_density =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
 
     auto target_source_momentum =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto target_source_energy =
-        particle_group->get_cell(NP::Sym<NP::REAL>("ION_SOURCE_ENERGY"), i);
-    auto projectile_source_energy = particle_group->get_cell(
-        NP::Sym<NP::REAL>("ELECTRON_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
+    auto projectile_source_energy =
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
 
     const int nrow = weight_child->nrow;
     const int parent_nrow = vel_parent->nrow;

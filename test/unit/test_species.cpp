@@ -19,15 +19,15 @@ TEST(Species, getters) {
   test_species.set_name(test_species_name);
   EXPECT_STREQ(test_species.get_name().c_str(), test_species_name.c_str());
 
-  NP::INT test_species_id = 10;
+  INT test_species_id = 10;
   test_species.set_id(test_species_id);
   EXPECT_EQ(test_species.get_id(), test_species_id);
 
-  NP::REAL test_species_mass = 5.5;
+  REAL test_species_mass = 5.5;
   test_species.set_mass(test_species_mass);
   EXPECT_DOUBLE_EQ(test_species.get_mass(), test_species_mass);
 
-  NP::REAL test_species_charge = 2.3;
+  REAL test_species_charge = 2.3;
   test_species.set_charge(test_species_charge);
   EXPECT_DOUBLE_EQ(test_species.get_charge(), test_species_charge);
 }

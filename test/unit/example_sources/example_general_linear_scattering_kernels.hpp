@@ -18,7 +18,7 @@ void general_linear_scattering_kernels_example(
                                     -1); // This is the projectile species
 
   // Implementing specular reflection on ingoing particle velocities
-  auto velocity_data = ExtractorData<2>(NP::Sym<NP::REAL>("VELOCITY"));
+  auto velocity_data = ExtractorData<2>(NP::Sym<REAL>("VELOCITY"));
 
   auto specular_reflection = SpecularReflectionData<2>();
 

@@ -243,16 +243,15 @@ struct MarkingStrategyBase : MarkingStrategy {
   /**
    * @brief Constructor for MarkingStrategyBase.
    *
-   * @param required_dats_real_read Standard vector of NP::Sym<NP::REAL>s
+   * @param required_dats_real_read Standard vector of NP::Sym<REAL>s
    * representing those real-valued NESO-Particles ParticleDats to be passed to
    * device type for determining marking function return
-   * @param required_dats_int_read Standard vector of NP::Sym<NP::INT>s
+   * @param required_dats_int_read Standard vector of NP::Sym<INT>s
    * representing those integer-valued NESO-Particles ParticleDats to be passed
    * to device type for determining marking function return
    */
-  MarkingStrategyBase(
-      const std::vector<NP::Sym<NP::REAL>> required_dats_real_read,
-      const std::vector<NP::Sym<NP::INT>> required_dats_int_read)
+  MarkingStrategyBase(const std::vector<NP::Sym<REAL>> required_dats_real_read,
+                      const std::vector<NP::Sym<INT>> required_dats_int_read)
       : required_particle_dats_real(required_dats_real_read),
         required_particle_dats_int(required_dats_int_read) {}
 
@@ -271,21 +270,21 @@ struct MarkingStrategyBase : MarkingStrategy {
           return device_type.marking_condition(req_reals, req_ints);
         },
         NP::Access::read(
-            NP::sym_vector<NP::REAL>(particle_sub_group->get_particle_group(),
-                                     this->required_particle_dats_real)),
+            NP::sym_vector<REAL>(particle_sub_group->get_particle_group(),
+                                 this->required_particle_dats_real)),
         NP::Access::read(
-            NP::sym_vector<NP::INT>(particle_sub_group->get_particle_group(),
-                                    this->required_particle_dats_int)));
+            NP::sym_vector<INT>(particle_sub_group->get_particle_group(),
+                                this->required_particle_dats_int)));
     return marker_subgroup;
   }
 
 private:
-  std::vector<NP::Sym<NP::REAL>>
+  std::vector<NP::Sym<REAL>>
       required_particle_dats_real; //!< vector of symbols associated with
                                    //!< real-valued read-only ParticleDats
                                    //!< needed to determine which particles get
                                    //!< marked
-  std::vector<NP::Sym<NP::INT>>
+  std::vector<NP::Sym<INT>>
       required_particle_dats_int; //!< vector of symbols associated with
                                   //!< integer-valued read-only ParticleDats
                                   //!< needed to determine which particles get
@@ -317,8 +316,8 @@ struct MarkingFunctionWrapperBase {
    * @return bool The return value of the marking_condition function on the
    * derived type.
    */
-  bool marking_condition(NP::Access::SymVector::Read<NP::REAL> &real_vars,
-                         NP::Access::SymVector::Read<NP::INT> &int_vars) const {
+  bool marking_condition(NP::Access::SymVector::Read<REAL> &real_vars,
+                         NP::Access::SymVector::Read<INT> &int_vars) const {
     const auto &underlying =
         static_cast<const MarkingFunctionWrapperDerived &>(*this);
 

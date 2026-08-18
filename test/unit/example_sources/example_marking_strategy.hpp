@@ -3,8 +3,8 @@ void direct_marking_example(NP::ParticleGroupSharedPtr particle_group) {
   // Here we create a marking strategy marking low weight particles
   auto marking_strategy = make_direct_marking_strategy(
       "test_strategy", // Name of the strategy for profiling purposes
-      [](auto w) { return w[0] < 1e-6; },           // Marking kernel
-      NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")) // Accessors for the kernel
+      [](auto w) { return w[0] < 1e-6; },       // Marking kernel
+      NP::Access::read(NP::Sym<REAL>("WEIGHT")) // Accessors for the kernel
   );
 
   // The subgroup can then be created as follows from another subgroup
@@ -15,7 +15,7 @@ void direct_marking_example(NP::ParticleGroupSharedPtr particle_group) {
   // Contrast the above with the full constructor call from NESO-Particles
   auto subgroup_low_weight_from_NP = particle_sub_group(
       particle_group, [](auto w) { return w[0] < 1e-6; },
-      NP::Access::read(NP::Sym<NP::REAL>("WEIGHT")));
+      NP::Access::read(NP::Sym<REAL>("WEIGHT")));
 
   return;
 }
