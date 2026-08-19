@@ -58,9 +58,8 @@ struct HSScatteringDataOnDevice
 
       REAL valuecos;
       const REAL valuesin = Kernel::sincos(two_pi * random_nums[0], &valuecos);
-      REAL valuecos_theta;
-      const REAL valuesin_theta =
-          Kernel::sincos(M_PI * random_nums[1], &valuecos_theta);
+      REAL valuecos_theta = 2 * random_nums[1] - 1;
+      REAL valuesin_theta = Kernel::sqrt(1 - valuecos_theta * valuecos_theta);
       random_dir[0] = valuecos * valuesin_theta;
       random_dir[1] = valuesin * valuesin_theta;
       random_dir[2] = valuecos_theta;
