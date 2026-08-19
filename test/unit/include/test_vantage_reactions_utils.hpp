@@ -1,12 +1,13 @@
 #ifndef REACTIONS_TEST_UTILS_H
 #define REACTIONS_TEST_UTILS_H
+
+#include "test_common.hpp"
 #include <random>
-#include <reactions/reactions.hpp>
 
 namespace VANTAGE::Reactions {
 inline REAL relative_error(const REAL correct, const REAL to_test) {
-  const REAL abs_error = Kernel::abs(correct - to_test);
-  const REAL abs_correct = Kernel::abs(correct);
+  const REAL abs_error = NP::Kernel::abs(correct - to_test);
+  const REAL abs_correct = NP::Kernel::abs(correct);
   return abs_correct > 0.0 ? abs_error / abs_correct : abs_error;
 }
 

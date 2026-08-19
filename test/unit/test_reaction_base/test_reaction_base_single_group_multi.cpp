@@ -1,8 +1,7 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, single_group_multi_reaction) {
@@ -29,16 +28,16 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
   int num_reactions = static_cast<int>(reactions.size());
 
-  auto parent_particles = std::make_shared<ParticleGroup>(
+  auto parent_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto particle_subgroup = particle_sub_group(particle_group);
@@ -53,8 +52,8 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
     }
 
     auto internal_state =
-        particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+        particle_group->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       if (internal_state->at(rowx, 0) == 0) {

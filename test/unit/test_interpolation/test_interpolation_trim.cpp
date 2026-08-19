@@ -1,14 +1,12 @@
 #include "../include/mock_interpolation_data.hpp"
 #include "../include/mock_particle_group.hpp"
+#include "../include/test_common.hpp"
 #include "../include/test_vantage_reactions_utils.hpp"
-#include <gtest/gtest.h>
 #include <memory>
-#include <neso_particles/typedefs.hpp>
 #include <random>
 
 #define INTERPOLATION_TOLERANCE 1e-14
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
@@ -23,14 +21,15 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
-  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_ndim);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
-                                   trim_ndim);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROPS"), ndim);
+  particle_group->add_particle_dat(NP::Sym<REAL>("TRIM_INDICES"), trim_ndim);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"), trim_ndim);
 
   // PANIC flag for TrimEval
-  particle_group->remove_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"));
-  particle_group->add_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"), trim_ndim);
+  particle_group->remove_particle_dat(NP::Sym<INT>("REACTIONS_PANIC_FLAG"));
+  particle_group->add_particle_dat(NP::Sym<INT>("REACTIONS_PANIC_FLAG"),
+                                   trim_ndim);
 
   // Setup the mock data.
   std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
@@ -54,7 +53,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
     dims_arr[i] = dims_vec[i];
   }
 
-  auto h_coords_arr = std::make_shared<BufferDevice<REAL>>(
+  auto h_coords_arr = std::make_shared<NP::BufferDevice<REAL>>(
       particle_group->sycl_target, coords_vec);
   auto d_coords_arr = h_coords_arr->ptr;
 
@@ -68,11 +67,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
   std::uniform_int_distribution<INT> uniform_dist_1(0, dims_vec[1] - 1);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
-  auto rng_kernel0 = host_per_particle_block_rng<INT>(
+  auto rng_kernel0 = NP::host_per_particle_block_rng<INT>(
       rng_lambda_wrapper_int(uniform_dist_0, rng), 1);
-  auto rng_kernel1 = host_per_particle_block_rng<INT>(
+  auto rng_kernel1 = NP::host_per_particle_block_rng<INT>(
       rng_lambda_wrapper_int(uniform_dist_1, rng), 1);
-  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
+  auto trim_rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
   particle_loop(
@@ -108,13 +107,16 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
         expected_value.at(1) = result[1];
         expected_value.at(2) = result[2];
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
-      Access::read(rng_kernel0), Access::read(rng_kernel1),
-      Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
-      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROPS")), NP::Access::read(rng_kernel0),
+      NP::Access::read(rng_kernel1),
+      NP::Access::write(NP::Sym<REAL>("TRIM_INDICES")),
+      NP::Access::read(trim_rng_kernel),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
@@ -142,11 +144,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -193,14 +195,15 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
-  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_ndim);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
-                                   trim_ndim);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROPS"), ndim);
+  particle_group->add_particle_dat(NP::Sym<REAL>("TRIM_INDICES"), trim_ndim);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"), trim_ndim);
 
   // PANIC flag for TrimEval
-  particle_group->remove_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"));
-  particle_group->add_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"), trim_ndim);
+  particle_group->remove_particle_dat(NP::Sym<INT>("REACTIONS_PANIC_FLAG"));
+  particle_group->add_particle_dat(NP::Sym<INT>("REACTIONS_PANIC_FLAG"),
+                                   trim_ndim);
 
   // Setup the mock data.
   std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
@@ -231,11 +234,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
                                                       upper_bounds[1]);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
-  auto rng_kernel0 = host_per_particle_block_rng<REAL>(
+  auto rng_kernel0 = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
-  auto rng_kernel1 = host_per_particle_block_rng<REAL>(
+  auto rng_kernel1 = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
-  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
+  auto trim_rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
   particle_loop(
@@ -264,13 +267,16 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
         expected_value.at(1) = result[1];
         expected_value.at(2) = result[2];
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
-      Access::read(rng_kernel0), Access::read(rng_kernel1),
-      Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
-      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROPS")), NP::Access::read(rng_kernel0),
+      NP::Access::read(rng_kernel1),
+      NP::Access::write(NP::Sym<REAL>("TRIM_INDICES")),
+      NP::Access::read(trim_rng_kernel),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
@@ -298,11 +304,11 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -349,14 +355,15 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROPS"), ndim);
-  particle_group->add_particle_dat(Sym<REAL>("TRIM_INDICES"), trim_ndim);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"),
-                                   trim_ndim);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROPS"), ndim);
+  particle_group->add_particle_dat(NP::Sym<REAL>("TRIM_INDICES"), trim_ndim);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE"), trim_ndim);
 
   // PANIC flag for TrimEval
-  particle_group->remove_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"));
-  particle_group->add_particle_dat(Sym<INT>("REACTIONS_PANIC_FLAG"), trim_ndim);
+  particle_group->remove_particle_dat(NP::Sym<INT>("REACTIONS_PANIC_FLAG"));
+  particle_group->add_particle_dat(NP::Sym<INT>("REACTIONS_PANIC_FLAG"),
+                                   trim_ndim);
 
   // Setup the mock data.
   std::uniform_real_distribution<REAL> uniform_dist_m1(0.0, 10.0);
@@ -387,11 +394,11 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
                                                       upper_bounds[1]);
   std::uniform_real_distribution<REAL> uniform_dist_2(0.0, 1.0);
 
-  auto rng_kernel0 = host_per_particle_block_rng<REAL>(
+  auto rng_kernel0 = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_0, rng), 1);
-  auto rng_kernel1 = host_per_particle_block_rng<REAL>(
+  auto rng_kernel1 = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_1, rng), 1);
-  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(
+  auto trim_rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist_2, rng), trim_ndim);
 
   particle_loop(
@@ -420,13 +427,16 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
         expected_value.at(1) = result[1];
         expected_value.at(2) = result[2];
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROPS")),
-      Access::read(rng_kernel0), Access::read(rng_kernel1),
-      Access::write(Sym<REAL>("TRIM_INDICES")), Access::read(trim_rng_kernel),
-      Access::write(Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROPS")), NP::Access::read(rng_kernel0),
+      NP::Access::read(rng_kernel1),
+      NP::Access::write(NP::Sym<REAL>("TRIM_INDICES")),
+      NP::Access::read(trim_rng_kernel),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
@@ -454,11 +464,11 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,

@@ -1,12 +1,8 @@
 #ifndef REACTIONS_MOCK_INTERPOLATION_DATA_H
 #define REACTIONS_MOCK_INTERPOLATION_DATA_H
-#include "reactions_lib/utils.hpp"
+#include "test_common.hpp"
 #include "test_extern_templates.hpp"
-#include <neso_particles.hpp>
-#include <reactions/reactions.hpp>
-#include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 struct abstract_coefficient_values {
@@ -20,7 +16,7 @@ protected:
   std::vector<REAL> lower_bounds;
   std::vector<REAL> upper_bounds;
   std::vector<size_t> dims_vec;
-  std::optional<SYCLTargetSharedPtr> sycl_target;
+  std::optional<NP::SYCLTargetSharedPtr> sycl_target;
 
 public:
   const std::vector<REAL> &get_coeffs_vec() { return this->coeffs_vec; }
@@ -66,7 +62,7 @@ private:
 
 public:
   coefficient_values_1D(
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
@@ -114,7 +110,7 @@ private:
 
 public:
   coefficient_values_2D(
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
@@ -216,7 +212,7 @@ private:
         for (int idim = 0; idim < trim_dim0; idim++) {
           result[idim] = (dim0_val * dim1_val);
           result[idim] *=
-              rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0);
+              rand_nums[0] * NP::Kernel::pow(static_cast<REAL>(idim), 4.0);
         }
         return result;
       };
@@ -230,8 +226,8 @@ private:
           INT jdim = counter % trim_dim1;
           result[counter] = counter * (dim0_val * dim1_val);
           result[counter] *=
-              (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
-               rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0));
+              (rand_nums[0] * NP::Kernel::pow(static_cast<REAL>(idim), 4.0) +
+               rand_nums[1] * NP::Kernel::pow(static_cast<REAL>(jdim), 3.0));
         }
         return result;
       };
@@ -248,9 +244,9 @@ private:
           INT kdim = counter % trim_dim2;
           result[counter] = counter * (dim0_val * dim1_val);
           result[counter] *=
-              (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
-               rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0) +
-               rand_nums[2] * Kernel::pow(static_cast<REAL>(kdim), 2.0));
+              (rand_nums[0] * NP::Kernel::pow(static_cast<REAL>(idim), 4.0) +
+               rand_nums[1] * NP::Kernel::pow(static_cast<REAL>(jdim), 3.0) +
+               rand_nums[2] * NP::Kernel::pow(static_cast<REAL>(kdim), 2.0));
         }
         return result;
       };
@@ -317,7 +313,7 @@ private:
 public:
   trim_coefficient_values(
       const std::array<REAL, trim_ndim> &rand_nums,
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values(),
         grid_descriptor({this->dim0_range, this->dim1_range},
                         {trim_dim0, trim_dim1, trim_dim2},
@@ -414,7 +410,7 @@ private:
         for (int idim = 0; idim < trim_dim0; idim++) {
           result[idim] = (dim0_val * dim1_val);
           result[idim] *=
-              rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0);
+              rand_nums[0] * NP::Kernel::pow(static_cast<REAL>(idim), 4.0);
         }
         return result;
       };
@@ -428,8 +424,8 @@ private:
           INT jdim = counter % trim_dim1;
           result[counter] = counter * (dim0_val * dim1_val);
           result[counter] *=
-              (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
-               rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0));
+              (rand_nums[0] * NP::Kernel::pow(static_cast<REAL>(idim), 4.0) +
+               rand_nums[1] * NP::Kernel::pow(static_cast<REAL>(jdim), 3.0));
         }
         return result;
       };
@@ -446,9 +442,9 @@ private:
           INT kdim = counter % trim_dim2;
           result[counter] = counter * (dim0_val * dim1_val);
           result[counter] *=
-              (rand_nums[0] * Kernel::pow(static_cast<REAL>(idim), 4.0) +
-               rand_nums[1] * Kernel::pow(static_cast<REAL>(jdim), 3.0) +
-               rand_nums[2] * Kernel::pow(static_cast<REAL>(kdim), 2.0));
+              (rand_nums[0] * NP::Kernel::pow(static_cast<REAL>(idim), 4.0) +
+               rand_nums[1] * NP::Kernel::pow(static_cast<REAL>(jdim), 3.0) +
+               rand_nums[2] * NP::Kernel::pow(static_cast<REAL>(kdim), 2.0));
         }
         return result;
       };
@@ -515,7 +511,7 @@ private:
 public:
   trim_coefficient_values_asym(
       const std::array<REAL, trim_ndim> &rand_nums,
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values(),
         grid_descriptor(
             {this->dim0_range, this->dim1_range},
@@ -583,7 +579,7 @@ private:
 
 public:
   coefficient_values_3D(
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
@@ -652,7 +648,7 @@ private:
 
 public:
   coefficient_values_4D(
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;
@@ -733,7 +729,7 @@ private:
 
 public:
   coefficient_values_5D(
-      std::optional<SYCLTargetSharedPtr> sycl_target = std::nullopt)
+      std::optional<NP::SYCLTargetSharedPtr> sycl_target = std::nullopt)
       : abstract_coefficient_values() {
 
     this->sycl_target = sycl_target;

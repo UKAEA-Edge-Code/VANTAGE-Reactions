@@ -1,13 +1,13 @@
 #ifndef REACTIONS_REACTION_DATA_H
 #define REACTIONS_REACTION_DATA_H
+#include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <memory>
-#include <neso_particles.hpp>
+
 #include <type_traits>
 #include <utility>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -69,7 +69,7 @@ struct AbstractCrossSection {
   }
 };
 
-using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
+using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
 /**
  * @brief Compile-time helpers for checking that a derived on-device
@@ -156,14 +156,15 @@ struct ReactionDataBaseImpl {
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the
+   * reaction data.
    * @param required_int_props_ephemeral Properties<INT> object containing
-   * information regarding the required INT-based ephemeral properties for the
-   * reaction data.
+   * information regarding the required INT-based ephemeral properties for
+   * the reaction data.
    * @param required_real_props_ephemeral Properties<REAL> object containing
-   * information regarding the required REAL-based ephemeral properties for the
-   * reaction data.
+   * information regarding the required REAL-based ephemeral properties for
+   * the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
@@ -206,8 +207,9 @@ struct ReactionDataBaseImpl {
    * @brief Constructor for ReactionDataBaseImpl that sets only required real
    * properties.
    *
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the
+   * reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
@@ -223,8 +225,9 @@ struct ReactionDataBaseImpl {
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the
+   * reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
@@ -250,7 +253,7 @@ struct ReactionDataBaseImpl {
    * @brief Return all required integer properties as a vector of Syms
    *
    */
-  std::vector<Sym<INT>> get_required_int_sym_vector();
+  std::vector<NP::Sym<INT>> get_required_int_sym_vector();
 
   /**
    * @brief Return all required real properteis, including ephemeral
@@ -263,7 +266,7 @@ struct ReactionDataBaseImpl {
    * @brief Return all required real properties as a vector of Syms
    *
    */
-  std::vector<Sym<REAL>> get_required_real_sym_vector();
+  std::vector<NP::Sym<REAL>> get_required_real_sym_vector();
 
   /**
    * @brief Setter for required real properties
@@ -316,9 +319,9 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
 
       static_assert(
           is_calc_data_callable_v<ON_DEVICE_TYPE, input_t,
-                                  const Access::LoopIndex::Read &,
-                                  const Access::SymVector::Write<INT> &,
-                                  const Access::SymVector::Read<REAL> &,
+                                  const NP::Access::LoopIndex::Read &,
+                                  const NP::Access::SymVector::Write<INT> &,
+                                  const NP::Access::SymVector::Read<REAL> &,
                                   typename RNG_TYPE::KernelType &>,
           "ON_DEVICE_TYPE::calc_data parameter signature mismatch");
 
@@ -326,9 +329,9 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
                         ON_DEVICE_TYPE,
                         std::array<typename ON_DEVICE_TYPE::VALUE_TYPE,
                                    ON_DEVICE_TYPE::DIM>,
-                        input_t, const Access::LoopIndex::Read &,
-                        const Access::SymVector::Write<INT> &,
-                        const Access::SymVector::Read<REAL> &,
+                        input_t, const NP::Access::LoopIndex::Read &,
+                        const NP::Access::SymVector::Write<INT> &,
+                        const NP::Access::SymVector::Read<REAL> &,
                         typename RNG_TYPE::KernelType &>(),
                     "ON_DEVICE_TYPE::calc_data return type mismatch");
     }
@@ -340,14 +343,15 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the
+   * reaction data.
    * @param required_int_props_ephemeral Properties<INT> object containing
-   * information regarding the required INT-based ephemeral properties for the
-   * reaction data.
+   * information regarding the required INT-based ephemeral properties for
+   * the reaction data.
    * @param required_real_props_ephemeral Properties<REAL> object containing
-   * information regarding the required REAL-based ephemeral properties for the
-   * reaction data.
+   * information regarding the required REAL-based ephemeral properties for
+   * the reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
@@ -401,8 +405,9 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
    * @brief Constructor for ReactionDataBase that sets only required real
    * properties.
    *
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the
+   * reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
@@ -421,8 +426,9 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties for the
+   * reaction data.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
@@ -485,8 +491,8 @@ struct ReactionDataBaseOnDevice {
   /**
    * @brief Function to calculate the reaction data.
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -496,15 +502,15 @@ struct ReactionDataBaseOnDevice {
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation
    *
-   * @return A REAL-valued array of size dim containing the calculated reaction
-   * rate.
+   * @return A REAL-valued array of size dim containing the calculated
+   * reaction rate.
    */
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D == 0) && D == INPUT_DIM, int> = 0>
   std::array<VAL_TYPE, dim>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename RNG_TYPE::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
   }
@@ -513,9 +519,9 @@ struct ReactionDataBaseOnDevice {
             std::enable_if_t<(D > 0) && D == INPUT_DIM, int> = 0>
   std::array<VAL_TYPE, dim>
   calc_data(const std::array<IN_TYPE, INPUT_DIM> &input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+            const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename RNG_TYPE::KernelType &rng_kernel) const {
     return std::array<REAL, dim>{0.0};
   }

@@ -1,11 +1,10 @@
 #include "../include/mock_interpolation_data.hpp"
 #include "../include/mock_particle_group.hpp"
+#include "../include/test_common.hpp"
 #include "../include/test_vantage_reactions_utils.hpp"
-#include <gtest/gtest.h>
 
 #define EXTRAPOLATION_TOLERANCE 1e-14
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ExtrapolationTest, BINARY_SEARCH_EXTRAPOLATE_UNDER) {
@@ -50,9 +49,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROP0"), 1);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"),
-                                   1);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROP0"), 1);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"), 1);
 
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
@@ -72,7 +71,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
   std::uniform_real_distribution<REAL> uniform_dist(
       upper_bounds[0], 0.5 * std::numeric_limits<REAL>::max());
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
@@ -82,12 +81,14 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
         auto coords = std::array<REAL, ndim>{prop0.at(0)};
         expected_value.at(0) = grid_func(coords);
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
-      Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
-      Access::read(rng_kernel))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROP0")),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
+      NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::continue_linear;
@@ -107,12 +108,12 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     calc_pre_req_data->fill(0);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -150,9 +151,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROP0"), 1);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"),
-                                   1);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROP0"), 1);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"), 1);
 
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
@@ -172,7 +173,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
   std::uniform_real_distribution<REAL> uniform_dist(
       -(0.5 * std::numeric_limits<REAL>::max()), lower_bounds[0]);
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
@@ -182,12 +183,14 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
         auto coords = std::array<REAL, ndim>{prop0.at(0)};
         expected_value.at(0) = grid_func(coords);
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
-      Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
-      Access::read(rng_kernel))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROP0")),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
+      NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::continue_linear;
@@ -207,12 +210,12 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     calc_pre_req_data->fill(0);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -250,9 +253,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROP0"), 1);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"),
-                                   1);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROP0"), 1);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"), 1);
 
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
@@ -271,7 +274,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
   std::uniform_real_distribution<REAL> uniform_dist(
       upper_bounds[0], (0.5 * std::numeric_limits<REAL>::max()));
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
@@ -280,12 +283,14 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
         prop0.at(0) = kernel.at(index, 0);
         expected_value.at(0) = 0.0; // ExtrapolationType::clamp_to_zero;
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
-      Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
-      Access::read(rng_kernel))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROP0")),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
+      NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
@@ -305,12 +310,12 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     calc_pre_req_data->fill(0);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -347,9 +352,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROP0"), 1);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"),
-                                   1);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROP0"), 1);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"), 1);
 
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
@@ -368,7 +373,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
   std::uniform_real_distribution<REAL> uniform_dist(
       -(0.5 * std::numeric_limits<REAL>::max()), lower_bounds[0]);
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
@@ -377,12 +382,14 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
         prop0.at(0) = kernel.at(index, 0);
         expected_value.at(0) = 0.0; // ExtrapolationType::clamp_to_zero;
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
-      Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
-      Access::read(rng_kernel))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROP0")),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
+      NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
@@ -402,12 +409,12 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     calc_pre_req_data->fill(0);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -444,9 +451,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROP0"), 1);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"),
-                                   1);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROP0"), 1);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"), 1);
 
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
@@ -466,7 +473,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
   std::uniform_real_distribution<REAL> uniform_dist(
       bounds_arr[0], (0.5 * std::numeric_limits<REAL>::max()));
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
@@ -476,12 +483,14 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
         expected_value.at(0) =
             grid_func(bounds_arr); // ExtrapolationType::clamp_to_edge;
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
-      Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
-      Access::read(rng_kernel))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROP0")),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
+      NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
@@ -501,12 +510,12 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     calc_pre_req_data->fill(0);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,
@@ -543,9 +552,9 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
 
   auto npart = particle_group->get_npart_local();
 
-  particle_group->add_particle_dat(Sym<REAL>("PROP0"), 1);
-  particle_group->add_particle_dat(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"),
-                                   1);
+  particle_group->add_particle_dat(NP::Sym<REAL>("PROP0"), 1);
+  particle_group->add_particle_dat(
+      NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE"), 1);
 
   // Setup the mock data.
   auto coeffs_data = coefficient_values_1D(particle_group->sycl_target);
@@ -565,7 +574,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
   std::uniform_real_distribution<REAL> uniform_dist(
       -(0.5 * std::numeric_limits<REAL>::max()), bounds_arr[0]);
 
-  auto rng_kernel = host_per_particle_block_rng<REAL>(
+  auto rng_kernel = NP::host_per_particle_block_rng<REAL>(
       rng_lambda_wrapper_real(uniform_dist, rng), 1);
 
   particle_loop(
@@ -575,12 +584,14 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
         expected_value.at(0) =
             grid_func(bounds_arr); // ExtrapolationType::clamp_to_edge;
       },
-      Access::read(ParticleLoopIndex{}), Access::write(Sym<REAL>("PROP0")),
-      Access::write(Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
-      Access::read(rng_kernel))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("PROP0")),
+      NP::Access::write(NP::Sym<REAL>("EXPECTED_EXTRAPOLATION_VALUE")),
+      NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
@@ -600,12 +611,12 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
     auto shape = concat_data_calc.get_data_size();
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    auto calc_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto calc_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
     calc_pre_req_data->fill(0);
 
     shape = expect_data_calc.get_data_size();
-    auto expect_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto expect_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape);
 
     concat_data_calc.fill_buffer(calc_pre_req_data, particle_sub_group, i,

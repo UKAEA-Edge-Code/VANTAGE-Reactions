@@ -27,7 +27,7 @@ void property_container_example() {
       std::vector<int>{default_properties.temperature,
                        default_properties.density});
 
-  // In order to convert property information into NESO-Particle Sym names,
+  // In order to convert property information into NESO-Particle NP::Sym names,
   // we require a property map. This defaults to the default_map object, but
   // users can supply their own, usually to the constructor of the object that
   // own the properies.

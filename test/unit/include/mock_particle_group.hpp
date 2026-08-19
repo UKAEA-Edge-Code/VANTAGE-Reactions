@@ -1,10 +1,8 @@
 #ifndef REACTIONS_MOCK_PARTICLE_GROUP_H
 #define REACTIONS_MOCK_PARTICLE_GROUP_H
+#include "test_common.hpp"
 #include "test_extern_templates.hpp"
-#include <neso_particles.hpp>
-#include <reactions/reactions.hpp>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 inline auto mesh_sycl_target_only() {
@@ -14,18 +12,18 @@ inline auto mesh_sycl_target_only() {
   const int subdivision_order = 1;
   const int stencil_width = 1;
 
-  auto mesh = std::make_shared<CartesianHMesh>(
+  auto mesh = std::make_shared<NP::CartesianHMesh>(
       MPI_COMM_WORLD, 2, dims, cell_extent, subdivision_order, stencil_width);
 
   auto sycl_target =
-      std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
+      std::make_shared<NP::SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
 
   return std::tuple(mesh, sycl_target);
 }
 
 template <size_t ndim = 2>
 inline auto create_test_particle_group(int N_total)
-    -> std::shared_ptr<ParticleGroup> {
+    -> std::shared_ptr<NP::ParticleGroup> {
 
   auto dims = std::vector<int>(ndim, 2);
 
@@ -41,45 +39,45 @@ inline auto create_test_particle_group(int N_total)
   const int npart_per_cell =
       std::round((double)N_total / (double)global_cell_count);
 
-  auto mesh =
-      std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
-                                       subdivision_order, stencil_width);
+  auto mesh = std::make_shared<NP::CartesianHMesh>(
+      MPI_COMM_WORLD, ndim, dims, cell_extent, subdivision_order,
+      stencil_width);
 
   auto sycl_target =
-      std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
+      std::make_shared<NP::SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
 
   auto cart_local_mapper = CartesianHMeshLocalMapper(sycl_target, mesh);
 
-  auto domain = std::make_shared<Domain>(mesh, cart_local_mapper);
+  auto domain = std::make_shared<NP::Domain>(mesh, cart_local_mapper);
 
-  ParticleSpec particle_spec{
-      ParticleProp(Sym<REAL>("POSITION"), ndim, true),
-      ParticleProp(Sym<REAL>("VELOCITY"), ndim),
-      ParticleProp(Sym<INT>("CELL_ID"), 1, true),
-      ParticleProp(Sym<INT>("REACTIONS_PANIC_FLAG"), 1),
-      ParticleProp(Sym<INT>("REACTIONS_GROUPING_INDEX"), 1),
-      ParticleProp(Sym<INT>("REACTIONS_LINEAR_INDEX"), 1),
-      ParticleProp(Sym<INT>("PARTICLE_REACTED_FLAG"), 1),
-      ParticleProp(Sym<INT>("ID"), 1),
-      ParticleProp(Sym<REAL>("TOT_REACTION_RATE"), 1),
-      ParticleProp(Sym<REAL>("WEIGHT"), 1),
-      ParticleProp(Sym<INT>("INTERNAL_STATE"), 1),
-      ParticleProp(Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
-      ParticleProp(Sym<REAL>("ELECTRON_DENSITY"), 1),
-      ParticleProp(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), 1),
-      ParticleProp(Sym<REAL>("ELECTRON_SOURCE_MOMENTUM"), ndim),
-      ParticleProp(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), 1),
-      ParticleProp(Sym<REAL>("ION_SOURCE_DENSITY"), 1),
-      ParticleProp(Sym<REAL>("ION_SOURCE_MOMENTUM"), ndim),
-      ParticleProp(Sym<REAL>("ION_SOURCE_ENERGY"), 1),
-      ParticleProp(Sym<REAL>("ION2_SOURCE_DENSITY"), 1),
-      ParticleProp(Sym<REAL>("ION2_SOURCE_MOMENTUM"), ndim),
-      ParticleProp(Sym<REAL>("ION2_SOURCE_ENERGY"), 1),
-      ParticleProp(Sym<REAL>("FLUID_DENSITY"), 1),
-      ParticleProp(Sym<REAL>("FLUID_FLOW_SPEED"), ndim),
-      ParticleProp(Sym<REAL>("FLUID_TEMPERATURE"), 1)};
+  NP::ParticleSpec particle_spec{
+      NP::ParticleProp(NP::Sym<REAL>("POSITION"), ndim, true),
+      NP::ParticleProp(NP::Sym<REAL>("VELOCITY"), ndim),
+      NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_PANIC_FLAG"), 1),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_GROUPING_INDEX"), 1),
+      NP::ParticleProp(NP::Sym<INT>("REACTIONS_LINEAR_INDEX"), 1),
+      NP::ParticleProp(NP::Sym<INT>("PARTICLE_REACTED_FLAG"), 1),
+      NP::ParticleProp(NP::Sym<INT>("ID"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("TOT_REACTION_RATE"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("WEIGHT"), 1),
+      NP::ParticleProp(NP::Sym<INT>("INTERNAL_STATE"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_TEMPERATURE"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_SOURCE_MOMENTUM"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION_SOURCE_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("ION_SOURCE_ENERGY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION2_SOURCE_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("ION2_SOURCE_MOMENTUM"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("ION2_SOURCE_ENERGY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("FLUID_DENSITY"), 1),
+      NP::ParticleProp(NP::Sym<REAL>("FLUID_FLOW_SPEED"), ndim),
+      NP::ParticleProp(NP::Sym<REAL>("FLUID_TEMPERATURE"), 1)};
   auto particle_group =
-      std::make_shared<ParticleGroup>(domain, particle_spec, sycl_target);
+      std::make_shared<NP::ParticleGroup>(domain, particle_spec, sycl_target);
 
   const int rank = sycl_target->comm_pair.rank_parent;
   const int size = sycl_target->comm_pair.size_parent;
@@ -96,41 +94,40 @@ inline auto create_test_particle_group(int N_total)
   uniform_within_cartesian_cells(mesh, npart_per_cell, positions, cells,
                                  rng_pos);
 
-  auto velocities =
-      NESO::Particles::normal_distribution(N, ndim, 0.0, 0.5, rng_vel);
+  auto velocities = NP::normal_distribution(N, ndim, 0.0, 0.5, rng_vel);
   // std::uniform_int_distribution<int> uniform_dist(
   //     0, size - 1);
-  ParticleSet initial_distribution(N, particle_group->get_particle_spec());
+  NP::ParticleSet initial_distribution(N, particle_group->get_particle_spec());
   for (int px = 0; px < N; px++) {
     for (int dimx = 0; dimx < ndim; dimx++) {
-      initial_distribution[Sym<REAL>("POSITION")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("POSITION")][px][dimx] =
           positions.at(dimx).at(px);
-      initial_distribution[Sym<REAL>("VELOCITY")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("VELOCITY")][px][dimx] =
           velocities.at(dimx).at(px);
-      initial_distribution[Sym<REAL>("ELECTRON_SOURCE_MOMENTUM")][px][dimx] =
-          0.0;
-      initial_distribution[Sym<REAL>("FLUID_FLOW_SPEED")][px][dimx] =
+      initial_distribution[NP::Sym<REAL>("ELECTRON_SOURCE_MOMENTUM")][px]
+                          [dimx] = 0.0;
+      initial_distribution[NP::Sym<REAL>("FLUID_FLOW_SPEED")][px][dimx] =
           1.0 + 2.0 * dimx;
     }
-    initial_distribution[Sym<INT>("CELL_ID")][px][0] = cells.at(px);
-    initial_distribution[Sym<INT>("ID")][px][0] = px;
-    initial_distribution[Sym<REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
-    initial_distribution[Sym<REAL>("WEIGHT")][px][0] = 1.0;
-    initial_distribution[Sym<INT>("INTERNAL_STATE")][px][0] = 0;
-    initial_distribution[Sym<REAL>("ELECTRON_TEMPERATURE")][px][0] = 2.0;
-    initial_distribution[Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
-    initial_distribution[Sym<REAL>("ELECTRON_SOURCE_ENERGY")][px][0] = 0.0;
-    initial_distribution[Sym<REAL>("ELECTRON_SOURCE_DENSITY")][px][0] = 0.0;
-    initial_distribution[Sym<REAL>("FLUID_DENSITY")][px][0] = 3.0e18;
-    initial_distribution[Sym<REAL>("FLUID_TEMPERATURE")][px][0] = 2.0;
+    initial_distribution[NP::Sym<INT>("CELL_ID")][px][0] = cells.at(px);
+    initial_distribution[NP::Sym<INT>("ID")][px][0] = px;
+    initial_distribution[NP::Sym<REAL>("TOT_REACTION_RATE")][px][0] = 0.0;
+    initial_distribution[NP::Sym<REAL>("WEIGHT")][px][0] = 1.0;
+    initial_distribution[NP::Sym<INT>("INTERNAL_STATE")][px][0] = 0;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_TEMPERATURE")][px][0] = 2.0;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_DENSITY")][px][0] = 3.0e18;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY")][px][0] = 0.0;
+    initial_distribution[NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY")][px][0] = 0.0;
+    initial_distribution[NP::Sym<REAL>("FLUID_DENSITY")][px][0] = 3.0e18;
+    initial_distribution[NP::Sym<REAL>("FLUID_TEMPERATURE")][px][0] = 2.0;
   }
   particle_group->add_particles_local(initial_distribution);
 
-  auto pbc = std::make_shared<CartesianPeriodic>(sycl_target, mesh,
-                                                 particle_group->position_dat);
-  auto ccb = std::make_shared<CartesianCellBin>(sycl_target, mesh,
-                                                particle_group->position_dat,
-                                                particle_group->cell_id_dat);
+  auto pbc = std::make_shared<NP::CartesianPeriodic>(
+      sycl_target, mesh, particle_group->position_dat);
+  auto ccb = std::make_shared<NP::CartesianCellBin>(
+      sycl_target, mesh, particle_group->position_dat,
+      particle_group->cell_id_dat);
 
   pbc->execute();
   particle_group->hybrid_move();

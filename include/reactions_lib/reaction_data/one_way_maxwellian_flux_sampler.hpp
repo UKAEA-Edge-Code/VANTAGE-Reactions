@@ -17,7 +17,7 @@ namespace VANTAGE::Reactions {
  *
  */
 struct OneWayMaxwellianFluxOnDevice
-    : public ReactionDataBaseOnDevice<3, HostAtomicBlockKernelRNG<REAL>> {
+    : public ReactionDataBaseOnDevice<3, NP::HostAtomicBlockKernelRNG<REAL>> {
 
   OneWayMaxwellianFluxOnDevice() = default;
 
@@ -46,11 +46,11 @@ struct OneWayMaxwellianFluxOnDevice
          27.0 * coef_a_sq * coef_d) /
         (27.0 * coef_a_sq * coef_a);
 
-    const REAL sqrt_term = Kernel::sqrt(-p / 3.0);
+    const REAL sqrt_term = NP::Kernel::sqrt(-p / 3.0);
     const REAL root =
         2.0 * sqrt_term *
-        Kernel::cos(sycl::acos((3.0 * q) / (2.0 * p * sqrt_term)) / 3.0 -
-                    2.0 * REAL(M_PI) / 3.0);
+        NP::Kernel::cos(sycl::acos((3.0 * q) / (2.0 * p * sqrt_term)) / 3.0 -
+                        2.0 * REAL(M_PI) / 3.0);
     return root - coef_b / (3.0 * coef_a);
   }
 
@@ -63,12 +63,13 @@ struct OneWayMaxwellianFluxOnDevice
    */
   static REAL rejection_function(REAL d, REAL t) {
     const REAL s = 1.0 - t;
-    return t * Kernel::exp(-((t / s - d) * (t / s - d)) / 2.0) / (s * s * s);
+    return t * NP::Kernel::exp(-((t / s - d) * (t / s - d)) / 2.0) /
+           (s * s * s);
   }
 
   REAL sample_positive_maxwellian(
-      REAL drift, REAL thermal_sigma, const Access::LoopIndex::Read &index,
-      typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
+      REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
       int &sample_counter, bool &is_kernel_valid) const {
     if (!is_kernel_valid || thermal_sigma <= REAL(0.0)) {
       return 0.0;
@@ -92,11 +93,11 @@ struct OneWayMaxwellianFluxOnDevice
     } while (true);
   }
 
-  std::array<REAL, 3>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
-            typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
+  std::array<REAL, 3> calc_data(
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
     const REAL fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
 
@@ -123,7 +124,7 @@ struct OneWayMaxwellianFluxOnDevice
     }
 
     const REAL thermal_sigma =
-        Kernel::sqrt(fluid_temperature_dat * this->norm_ratio);
+        NP::Kernel::sqrt(fluid_temperature_dat * this->norm_ratio);
 
     bool is_kernel_valid = true;
     int sample_counter = 0;
@@ -174,14 +175,15 @@ public:
  * @param norm_ratio The ratio of the temperature and kinetic energy
  * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
  * and v are the temperature and velocity normalisation constants
- * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
- * be set as the rng_kernel in ReactionDataBase.
+ * @param rng_kernel A shared pointer of a
+ * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
+ * ReactionDataBase.
  * @param properties_map (Optional) A std::map<int, std::string> object to be
  * used when remapping property names.
  */
 struct OneWayMaxwellianFluxSampler
     : public ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
-                              HostAtomicBlockKernelRNG<REAL>> {
+                              NP::HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
 
@@ -194,7 +196,7 @@ struct OneWayMaxwellianFluxSampler
 
   OneWayMaxwellianFluxSampler(
       const REAL &norm_ratio,
-      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
+      std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map());
 
   void index_on_device_object();

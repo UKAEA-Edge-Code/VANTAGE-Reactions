@@ -1,15 +1,14 @@
 #ifndef REACTIONS_GRID_DESCRIPTOR_H
 #define REACTIONS_GRID_DESCRIPTOR_H
 
+#include "../../reactions/neso_particles_namespace_alias.hpp"
 #include "../../reactions/neso_test_assert.hpp"
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <neso_particles.hpp>
+
 #include <type_traits>
 #include <vector>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -27,7 +26,8 @@ template <typename T> struct is_std_array_of_real : std::false_type {};
 /**
  * @brief Partial specialization for std::array<REAL, N>.
  *
- * Yields std::true_type when std::array of REAL values is inferred implicitly.
+ * Yields std::true_type when std::array of REAL values is inferred
+ * implicitly.
  *
  * @tparam N Number of elements in the array.
  */
@@ -90,7 +90,8 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
  * @brief Append elements from a container into the flat grid buffer at the
  * current offset.
  *
- * @tparam Container Valid types: std::array<REAL, N>, std::vector<REAL>.
+ * @tparam Container Valid types: std::array<REAL, N>,
+ * std::vector<REAL>.
  * @param ptr Pointer to the first value of the data that is to be copied to.
  * @param offset Location to specify where in ptr to copy data to. This is
  * updated post-copy so subsequent calls have the right offset.
@@ -136,8 +137,8 @@ void append(REAL *ptr, size_t &offset, const REAL *data, size_t n);
  * grid point.
  *
  * When output_ndim = 3, the struct operates in "TrimEvalData" mode where the
- * func that is passed is expected to provide a std::array<REAL, (trim_dim0 +
- * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)> where
+ * func that is passed is expected to provide a std::array<REAL, (trim_dim0
+ * + (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)> where
  * trim_dim0, trim_dim1, trim_dim2 are the 3 trim dimensions (eg. 5, 5, 5 for
  * EIRENE TRIM data so the size of the function result array would be 155) as an
  * output and subsequently the grid that is calculated will have multiple values
@@ -152,8 +153,8 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * generator function (with optional additional context).
    *
    * The generator function is called once per interpolation point in row-major
-   * order. It must return a REAL value. Each value is appended to the internal
-   * flat grid buffer.
+   * order. It must return a REAL value. Each value is appended to the
+   * internal flat grid buffer.
    *
    * @tparam FUNC Generator callable type.
    * @tparam Context Type names of any additional context data needed for the
@@ -205,8 +206,8 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * generator function (with optional additional context).
    *
    * The generator function is called once per interpolation point in row-major
-   * order. It must return a REAL std::array/std::vector of size (trim_dim0 +
-   * (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
+   * order. It must return a REAL std::array/std::vector of size (trim_dim0
+   * + (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
    * array/vector is appended to the flat grid buffer.
    *
    * @tparam FUNC Generator callable type.

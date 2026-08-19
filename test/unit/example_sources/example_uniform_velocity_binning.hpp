@@ -1,6 +1,7 @@
-void uniform_velocity_binning_example(ParticleGroupSharedPtr particle_group) {
+void uniform_velocity_binning_example(
+    NP::ParticleGroupSharedPtr particle_group) {
 
-  auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto prop_map = get_default_map();
 
@@ -14,9 +15,9 @@ void uniform_velocity_binning_example(ParticleGroupSharedPtr particle_group) {
           std::array<INT, 2>{10, 10}, // Number of main binning cells in each
                                       // dimension - will result in 12 x 12
                                       // total cells, accounting for guard cells
-          Sym<INT>("REACTIONS_GROUPING_INDEX"), // The linear velocity indexing
-                                                // Sym
-          Sym<REAL>("VELOCITY")                 // The velocity Sym
+          NP::Sym<INT>("REACTIONS_GROUPING_INDEX"), // The linear velocity
+                                                    // indexing NP::Sym
+          NP::Sym<REAL>("VELOCITY")                 // The velocity NP::Sym
       );
 
   velocity_bin->transform(input_subgroup);

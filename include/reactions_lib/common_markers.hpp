@@ -1,10 +1,8 @@
 #ifndef REACTIONS_COMMON_MARKERS_H
 #define REACTIONS_COMMON_MARKERS_H
 #include "particle_properties_map.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "transformation_wrapper.hpp"
-#include <neso_particles.hpp>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -25,8 +23,8 @@ public:
    */
   MinimumNPartInCellMarker(INT min_npart);
 
-  ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group);
+  NP::ParticleSubGroupSharedPtr
+  make_marker_subgroup_v(NP::ParticleSubGroupSharedPtr particle_group);
 
 private:
   INT min_npart;
@@ -46,20 +44,20 @@ public:
    * @brief Constructor for PanickedParticleMarker.
    *
    * @param properties_map (Optional) A std::map<int, std::string> object to be
-   * used to remap the Sym for the Panic property.
+   * used to remap the NP::Sym for the Panic property.
    */
   PanickedParticleMarker(
       const std::map<int, std::string> &properties_map = get_default_map());
 
-  ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group);
+  NP::ParticleSubGroupSharedPtr
+  make_marker_subgroup_v(NP::ParticleSubGroupSharedPtr particle_group);
 
 private:
-  Sym<INT> panic_sym;
+  NP::Sym<INT> panic_sym;
 };
 
 bool panicked(
-    ParticleSubGroupSharedPtr particle_group,
+    NP::ParticleSubGroupSharedPtr particle_group,
     const std::map<int, std::string> &properties_map = get_default_map());
 
 } // namespace VANTAGE::Reactions

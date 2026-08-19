@@ -1,9 +1,9 @@
 // This is the on-device type
 //
 // The function calc_data must be callable from a NESO-Particles
-// ParticleLoop
+// NP::ParticleLoop
 //
-// See NESO-Particles ParticleLoop documentation for details
+// See NESO-Particles NP::ParticleLoop documentation for details
 struct DummyDataOnDevice
     : public ReactionDataBaseOnDevice<1 // This is the dimensionality of the
                                         // data In general, you would also
@@ -14,13 +14,13 @@ struct DummyDataOnDevice
   );
 
   std::array<REAL, 1> calc_data(
-      const Access::LoopIndex::Read
+      const NP::Access::LoopIndex::Read
           &index, // This is the NESO-Particles index accessor, needed for
                   // accessing the particle data
-      const Access::SymVector::Write<INT>
+      const NP::Access::SymVector::Write<INT>
           &req_int_props, // These are the required integer properties (here
                           // unused)
-      const Access::SymVector::Read<REAL>
+      const NP::Access::SymVector::Read<REAL>
           &req_real_props, // These are the required real properties - there
                            // will be only on but we will use the general
                            // indexing approach

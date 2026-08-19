@@ -1,8 +1,7 @@
 #ifndef VANTAGE_REACTIONS_TYPE_ALIASES_HPP
 #define VANTAGE_REACTIONS_TYPE_ALIASES_HPP
 
-#include <neso_particles.hpp>
-#include <reactions/reactions.hpp>
+#include "test_common.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -16,7 +15,7 @@ using SquaredWeightData =
     decltype(std::declval<FixedCoefficientData>() * extract<1>("WEIGHT"));
 
 using VelocityReflectionPipeline2D =
-    decltype(pipe(VelocityExtractor2D(NESO::Particles::Sym<REAL>("VELOCITY")),
+    decltype(pipe(VelocityExtractor2D(NP::Sym<REAL>("VELOCITY")),
                   SpecularReflectionData<2>()));
 
 using ScatteringDataCalculator2D =
@@ -26,7 +25,7 @@ using ScatteringDataCalculator2D =
 using VelocityExtractor3D = decltype(extract<3>("VELOCITY"));
 
 using VelocityReflectionPipeline3D =
-    decltype(pipe(VelocityExtractor3D(NESO::Particles::Sym<REAL>("VELOCITY")),
+    decltype(pipe(VelocityExtractor3D(NP::Sym<REAL>("VELOCITY")),
                   SpecularReflectionData<3>()));
 
 using ScatteringDataCalculator3D =

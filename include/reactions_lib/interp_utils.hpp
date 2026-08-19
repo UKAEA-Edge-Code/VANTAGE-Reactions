@@ -1,15 +1,18 @@
 #ifndef REACTIONS_INTERP_UTILS_H
 #define REACTIONS_INTERP_UTILS_H
-#include <neso_particles.hpp>
+
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <vector>
 
-using namespace NESO::Particles;
 // Type discipline for indices:
 //   size_t  — API boundaries, container sizes, stride values
-//   INT     — internal device computation (subtraction, decrement, clamp)
-static_assert(
-    sizeof(INT) >= sizeof(size_t) || sizeof(size_t) <= 8,
-    "INT must be able to represent all size_t values on this platform");
+//   NESO::Particles::INT     — internal device computation (subtraction,
+//   decrement, clamp)
+static_assert(sizeof(NESO::Particles::INT) >= sizeof(size_t) ||
+                  sizeof(size_t) <= 8,
+              "NESO::Particles::INT must be able to represent all size_t "
+              "values on this platform");
+
 namespace VANTAGE::Reactions::interp_utils {
 /**
  * Helper function that extracts the value of the binary representation of i at
@@ -112,7 +115,8 @@ inline size_t calc_floor_point_index(const REAL &x_interp,
  * @param f0 The function value at x0.
  * @param f1 The function value at x1.
  *
- * @return REAL value of the linearly interpolated function value at x_interp.
+ * @return REAL value of the linearly interpolated function value at
+ * x_interp.
  */
 inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
                           const REAL &f0, const REAL &f1) {
@@ -136,16 +140,16 @@ inline REAL linear_interp(const REAL &x_interp, const REAL &x0, const REAL &x1,
  *
  * @param ndim The number of dimensions.
  *
- * @return std::vector<INT> That contains the points denoting the vertices of
- * the hypercube.
+ * @return std::vector<INT> That contains the points denoting the vertices
+ * of the hypercube.
  */
 std::vector<size_t> construct_initial_hypercube(const size_t &ndim);
 
 /**
  * @brief Function to bin REAL-valued (between 0.0 and 1.0) elements of an
- * input array, u, into INT-valued indices that lie between 0 and an upper limit
- * defined by the elements of dims. For example with u = {0.1, 0.7, 0.3} and
- * dims = {4, 6, 9} the output coords would be: {0, 4, 2}
+ * input array, u, into INT-valued indices that lie between 0 and an upper
+ * limit defined by the elements of dims. For example with u = {0.1, 0.7, 0.3}
+ * and dims = {4, 6, 9} the output coords would be: {0, 4, 2}
  *
  * @tparam index_ndim The size of the u array, the dims array and the output
  * from the function.
@@ -206,8 +210,8 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * @param non_interpolation_indices Array of indices that correspond to the
  * dimensions that will not be interpolated.
  * @param dims_vec Pointer to a vector that contains the size of each dimension.
- * @param index Read-only accessor to a loop index for a ParticleLoop
- * inside which calc_data is called. Access using either
+ * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+ * inside which calc_data is called. NP::Access using either
  * index.get_loop_linear_index(), index.get_local_linear_index(),
  * index.get_sub_linear_index() as required.
  * @param req_int_props Vector of symbols for integer-valued properties that
@@ -227,10 +231,10 @@ inline void initial_func_eval_on_device(
     const std::array<REAL, non_interp_ndim> &non_interpolation_points,
     const std::array<size_t, interp_ndim> &interpolation_indices,
     const std::array<size_t, non_interp_ndim> &non_interpolation_indices,
-    size_t const *dims_vec, const Access::LoopIndex::Read &index,
-    const Access::SymVector::Write<INT> &req_int_props,
-    const Access::SymVector::Read<REAL> &req_real_props,
-    typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
+    size_t const *dims_vec, const NP::Access::LoopIndex::Read &index,
+    const NP::Access::SymVector::Write<INT> &req_int_props,
+    const NP::Access::SymVector::Read<REAL> &req_real_props,
+    typename NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
         KernelType &rng_kernel) {
 
   std::array<REAL, output_ndim> grid_func_output;

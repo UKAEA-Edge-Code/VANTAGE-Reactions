@@ -1,6 +1,8 @@
+
 #include <random>
 #include <tuple>
-inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
+inline void
+trim_interpolation_example(NP::ParticleGroupSharedPtr particle_group) {
   // Number of dimensions of the pre-calculated grid
   static constexpr int interp_ndim = 2;
 
@@ -97,7 +99,7 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
     return rng_sample;
   };
 
-  auto trim_rng_kernel = host_per_particle_block_rng<REAL>(rng_lambda, 1);
+  auto trim_rng_kernel = NP::host_per_particle_block_rng<REAL>(rng_lambda, 1);
 
   auto trim_sampler = SamplerData(trim_rng_kernel);
   // This is hard-coded here to avoid bloated general implementation for
@@ -111,7 +113,7 @@ inline void trim_interpolation_example(ParticleGroupSharedPtr particle_group) {
   auto pipeline = pipe(concatenator, interpolate_data);
 
   // Wrapping in a DataCalculator allows the extraction of values from
-  // interpolate_data via a NDLocalArray buffer.
+  // interpolate_data via a NP::NDLocalArray buffer.
   auto data_calc = DataCalculator(pipeline);
 
   return;

@@ -1,5 +1,5 @@
 #include "include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 
 using namespace VANTAGE::Reactions;
 
@@ -8,10 +8,10 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   const int N_total = 100;
   auto particle_group = create_test_particle_group<3>(N_total);
 
-  particle_group->add_particle_dat(Sym<REAL>("SURFACE_BASIS_E1"), 3);
-  particle_group->add_particle_dat(Sym<REAL>("SURFACE_BASIS_E2"), 3);
-  particle_group->add_particle_dat(Sym<REAL>("SURFACE_BASIS_PI"), 3);
-  particle_group->add_particle_dat(Sym<REAL>("SAMPLED_VELOCITY"), 3);
+  particle_group->add_particle_dat(NP::Sym<REAL>("SURFACE_BASIS_E1"), 3);
+  particle_group->add_particle_dat(NP::Sym<REAL>("SURFACE_BASIS_E2"), 3);
+  particle_group->add_particle_dat(NP::Sym<REAL>("SURFACE_BASIS_PI"), 3);
+  particle_group->add_particle_dat(NP::Sym<REAL>("SAMPLED_VELOCITY"), 3);
 
   std::array<REAL, 3> flow_speed{};
   std::array<REAL, 3> basis_e1{};
@@ -41,11 +41,11 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
           basis_pi_dat[i] = basis_pi[i];
         }
       },
-      Access::read(ParticleLoopIndex{}),
-      Access::write(Sym<REAL>("FLUID_FLOW_SPEED")),
-      Access::write(Sym<REAL>("SURFACE_BASIS_E1")),
-      Access::write(Sym<REAL>("SURFACE_BASIS_E2")),
-      Access::write(Sym<REAL>("SURFACE_BASIS_PI")))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::Sym<REAL>("FLUID_FLOW_SPEED")),
+      NP::Access::write(NP::Sym<REAL>("SURFACE_BASIS_E1")),
+      NP::Access::write(NP::Sym<REAL>("SURFACE_BASIS_E2")),
+      NP::Access::write(NP::Sym<REAL>("SURFACE_BASIS_PI")))
       ->execute();
 
   const REAL norm_ratio = 1.0;
@@ -66,7 +66,7 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   }
 
   auto rng_lambda = [&]() -> REAL { return 0.75; };
-  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
   OneWayMaxwellianFluxSampler sampler(norm_ratio, rng_kernel,
                                       get_default_map());
@@ -85,17 +85,17 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
         sampled_velocity[1] = sampled[1];
         sampled_velocity[2] = sampled[2];
       },
-      Access::read(ParticleLoopIndex{}),
-      Access::write(sym_vector<INT>(particle_group, req_int_props_)),
-      Access::read(sym_vector<REAL>(particle_group, req_real_props_)),
-      Access::write(Sym<REAL>("SAMPLED_VELOCITY")),
-      Access::read(sampler.get_rng_kernel()))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::sym_vector<INT>(particle_group, req_int_props_)),
+      NP::Access::read(NP::sym_vector<REAL>(particle_group, req_real_props_)),
+      NP::Access::write(NP::Sym<REAL>("SAMPLED_VELOCITY")),
+      NP::Access::read(sampler.get_rng_kernel()))
       ->execute();
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
     auto sampled_cell =
-        particle_group->get_cell(Sym<REAL>("SAMPLED_VELOCITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("SAMPLED_VELOCITY"), i);
 
     for (int row = 0; row < sampled_cell->nrow; row++) {
       EXPECT_NEAR(sampled_cell->at(row, 0), expected_vals[0], 1e-14);

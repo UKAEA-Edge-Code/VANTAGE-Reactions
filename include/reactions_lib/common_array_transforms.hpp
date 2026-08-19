@@ -1,7 +1,9 @@
 #ifndef REACTIONS_COMMON_ARRAY_TRANSFORMS_H
 #define REACTIONS_COMMON_ARRAY_TRANSFORMS_H
+
 #include "binary_array_transform_data.hpp"
 #include "reaction_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "unary_array_transform_data.hpp"
 
 namespace VANTAGE::Reactions {
@@ -389,7 +391,7 @@ template <
         bool> = true>
 inline auto operator-(const T &lhs, const U &rhs) {
 
-  // TODO: change to Kernel::minus when available
+  // TODO: change to NP::Kernel::minus when available
   return BinaryArrayTransformData(
       BinaryElementwiseOperatorTransform<T::DIM, U::DIM,
                                          decltype(std::minus())>(std::minus()),
@@ -405,7 +407,7 @@ template <
         bool> = true>
 inline auto operator/(const T &lhs, const U &rhs) {
 
-  // TODO: change to Kernel::divides when available
+  // TODO: change to NP::Kernel::divides when available
   return BinaryArrayTransformData(
       BinaryElementwiseOperatorTransform<T::DIM, U::DIM,
                                          decltype(std::divides())>(

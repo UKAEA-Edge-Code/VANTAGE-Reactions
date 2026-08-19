@@ -1,4 +1,6 @@
+
 #include "../include/reactions_lib/reaction_kernels.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -79,7 +81,7 @@ ReactionKernelsBase::get_required_descendant_real_props() {
   return this->required_descendant_real_props;
 }
 
-std::shared_ptr<ProductMatrixSpec>
+std::shared_ptr<NP::ProductMatrixSpec>
 ReactionKernelsBase::get_descendant_matrix_spec() {
   return this->descendant_matrix_spec;
 }

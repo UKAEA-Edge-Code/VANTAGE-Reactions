@@ -1,4 +1,6 @@
+
 #include "../include/reactions_lib/reaction_controller.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -7,7 +9,7 @@ ReactionController::ReactionController(
     std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
     bool auto_clean_tot_rate_buffer,
     const std::map<int, std::string> &properties_map)
-    : cell_block_size(get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
+    : cell_block_size(NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
       parent_transform(parent_transform), child_transform(child_transform),
       auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
@@ -16,13 +18,15 @@ ReactionController::ReactionController(
         default_map (and therefore is not an extension of that map). There \
         may be inconsitencies with indexing of properties.");
 
-  this->id_sym = Sym<INT>(properties_map.at(default_properties.internal_state));
-  this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
+  this->id_sym =
+      NP::Sym<INT>(properties_map.at(default_properties.internal_state));
+  this->weight_sym =
+      NP::Sym<REAL>(properties_map.at(default_properties.weight));
   this->tot_rate_buffer =
-      Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
-  this->panic_flag = Sym<INT>(properties_map.at(default_properties.panic));
+      NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+  this->panic_flag = NP::Sym<INT>(properties_map.at(default_properties.panic));
   this->reacted_flag =
-      Sym<INT>(properties_map.at(default_properties.reacted_flag));
+      NP::Sym<INT>(properties_map.at(default_properties.reacted_flag));
 
   auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
       std::vector<std::string>{tot_rate_buffer.name});
@@ -31,10 +35,10 @@ ReactionController::ReactionController(
   this->setup_particle_group_temporary();
   this->reacted_marker = make_direct_marking_strategy(
       "reacted_marker", [=](auto reacted) { return reacted[0] == 1; },
-      Access::read(this->reacted_flag));
+      NP::Access::read(this->reacted_flag));
   auto rng_lambda = [&]() -> REAL { return 0; };
   this->rng_kernel =
-      std::make_shared<HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
+      std::make_shared<NP::HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
 }
 
 ReactionController::ReactionController(
@@ -75,7 +79,7 @@ void ReactionController::controller_pre_process() {
             in_state, make_direct_marking_strategy(
                           "species_selector_" + std::to_string(in_state),
                           [=](auto id) { return id[0] == in_state; },
-                          Access::read(this->id_sym))));
+                          NP::Access::read(this->id_sym))));
       }
     }
 
@@ -89,7 +93,7 @@ void ReactionController::controller_pre_process() {
             out_state, make_direct_marking_strategy(
                            "species_selector_" + std::to_string(out_state),
                            [=](auto id) { return id[0] == out_state; },
-                           Access::read(this->id_sym))));
+                           NP::Access::read(this->id_sym))));
       }
     }
   }
@@ -102,7 +106,8 @@ void ReactionController::add_reaction(
 }
 
 void ReactionController::apply_parent_transforms_impl(
-    ParticleSubGroupSharedPtr target, ParticleGroupSharedPtr particle_group) {
+    NP::ParticleSubGroupSharedPtr target,
+    NP::ParticleGroupSharedPtr particle_group) {
 
   if (this->reference_particle_group == nullptr) {
     this->reference_particle_group = particle_group;
@@ -122,10 +127,10 @@ void ReactionController::apply_parent_transforms_impl(
   }
 }
 
-void ReactionController::apply_impl(ParticleSubGroupSharedPtr target,
-                                    ParticleGroupSharedPtr particle_group,
+void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
+                                    NP::ParticleGroupSharedPtr particle_group,
                                     double dt,
-                                    ParticleGroupSharedPtr product_group,
+                                    NP::ParticleGroupSharedPtr product_group,
                                     ControllerMode controller_mode,
                                     bool is_particle_group) {
 
@@ -146,17 +151,17 @@ void ReactionController::apply_impl(ParticleSubGroupSharedPtr target,
   }
 
   NESOASSERT(particle_group->contains_dat(this->id_sym, 1),
-             "ParticleGroup passed to controller does not contain expected "
+             "NP::ParticleGroup passed to controller does not contain expected "
              "ID dat, or the dat has wrong dimensionality");
   NESOASSERT(particle_group->contains_dat(this->tot_rate_buffer, 1),
-             "ParticleGroup passed to controller does not contain expected "
+             "NP::ParticleGroup passed to controller does not contain expected "
              "total rate dat, or the dat has wrong dimensionality");
   NESOASSERT(particle_group->contains_dat(this->panic_flag, 1),
-             "ParticleGroup passed to controller does not contain expected "
+             "NP::ParticleGroup passed to controller does not contain expected "
              "panic flag dat, or the dat has wrong dimensionality");
 
   NESOASSERT(particle_group->contains_dat(this->reacted_flag, 1),
-             "ParticleGroup passed to controller does not contain expected "
+             "NP::ParticleGroup passed to controller does not contain expected "
              "reacted flag dat, or the dat has wrong dimensionality");
   NESOASSERT(this->reactions.size() > 0,
              "ReactionController.apply(...) cannot be called "
@@ -258,14 +263,16 @@ void ReactionController::apply_impl(ParticleSubGroupSharedPtr target,
           [=](auto index, auto reacted_flag, auto total_reaction_rate,
               auto weight, auto kernel) {
             reacted_flag.at(0) =
-                (1 - Kernel::exp(-total_reaction_rate.at(0) * dt / weight[0])) >
-                        kernel.at(index, 0)
+                (1 - NP::Kernel::exp(-total_reaction_rate.at(0) * dt /
+                                     weight[0])) > kernel.at(index, 0)
                     ? 1
                     : 0;
           },
-          Access::read(ParticleLoopIndex{}), Access::write(this->reacted_flag),
-          Access::read(this->tot_rate_buffer), Access::read(this->weight_sym),
-          Access::read(this->rng_kernel));
+          NP::Access::read(NP::ParticleLoopIndex{}),
+          NP::Access::write(this->reacted_flag),
+          NP::Access::read(this->tot_rate_buffer),
+          NP::Access::read(this->weight_sym),
+          NP::Access::read(this->rng_kernel));
 
       loop->execute(i, std::min(i + this->cell_block_size, cell_count));
       rate_buffer_zeroer->transform(

@@ -1,9 +1,11 @@
+
 #include "../include/reactions_lib/common_transformations.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
 void SimpleRemovalTransformationStrategy::transform_v(
-    ParticleSubGroupSharedPtr target_subgroup) {
+    NP::ParticleSubGroupSharedPtr target_subgroup) {
   auto particle_group = target_subgroup->get_particle_group();
 
   particle_group->remove_particles(target_subgroup);
@@ -14,7 +16,7 @@ CompositeTransform::CompositeTransform(
     : components(components) {}
 
 void CompositeTransform::transform_v(
-    ParticleSubGroupSharedPtr target_subgroup) {
+    NP::ParticleSubGroupSharedPtr target_subgroup) {
   for (auto &comp : this->components) {
     comp->transform(target_subgroup);
   }

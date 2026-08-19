@@ -1,4 +1,6 @@
+
 #include "../include/reactions_lib/reaction_kernel_pre_reqs.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 

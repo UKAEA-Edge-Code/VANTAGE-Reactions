@@ -1,17 +1,15 @@
 #ifndef REACTIONS_GRID_EVAL_DATA_H
 #define REACTIONS_GRID_EVAL_DATA_H
 
+#include "../../reactions/neso_particles_namespace_alias.hpp"
 #include "../../reactions/neso_test_assert.hpp"
 #include "../interp_utils.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
 #include <array>
 #include <memory>
-#include <neso_particles.hpp>
 
 #include "grid_descriptors.hpp"
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -46,9 +44,9 @@ struct CartesianGridDataOnDevice
    * interpolation axes.
    */
   CartesianGridDataOnDevice(
-      const std::shared_ptr<BufferDevice<REAL>> &d_grid,
-      const std::shared_ptr<BufferDevice<REAL>> &d_coords,
-      const std::shared_ptr<BufferDevice<size_t>> &d_dims) {
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_coords,
+      const std::shared_ptr<NP::BufferDevice<size_t>> &d_dims) {
     this->d_grid_ptr = d_grid->ptr;
     this->d_coords_ptr = d_coords->ptr;
     this->d_dims_ptr = d_dims->ptr;
@@ -59,8 +57,8 @@ struct CartesianGridDataOnDevice
    * return the grid value at the computed index.
    *
    * @param input The input coordinate array of size input_ndim.
-   * @param index Read-only accessor to a loop index for a ParticleLoop inside
-   * which calc_data is called (unused for this data type).
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called (unused for this data type).
    * @param req_int_props Vector of symbols for integer-valued properties that
    * need to be used for the reaction rate calculation (unused for this data
    * type).
@@ -75,9 +73,9 @@ struct CartesianGridDataOnDevice
    */
   std::array<REAL, 1> calc_data(
       const std::array<REAL, input_ndim> &input,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
+      [[maybe_unused]] const NP::Access::LoopIndex::Read &index,
+      [[maybe_unused]] const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
     std::array<INT, input_ndim> grid_indices;
     grid_indices[0] = interp_utils::calc_floor_point_index(
@@ -106,16 +104,16 @@ public:
  * @brief Reaction rate data calculation managing buffers for grid, coords, and
  * dims, enabling on-device grid evaluation.
  *
- * The grid evaluation works with the BufferDevice objects that are constructed
- * for the input vectors (grid, coords_vec, dims_vec). As such, there are
- * constraints on the format of the vectors. All input vectors are 1D vectors
- * and are accessed using the logic in the on-device calc_data(...). For a given
- * input coordinate, the index in each dimension is found by locating the index
- * of the closest point in the coordinates for that dimension that is less than
- * the input coordinate value. These per-dimension indices are then flattened
- * via row-major ordering into a single index, and the corresponding value is
- * retrieved from d_grid_ptr (a pointer to a BufferDevice that
- * is constructed from std::vector<REAL> grid).
+ * The grid evaluation works with the NP::BufferDevice objects that are
+ * constructed for the input vectors (grid, coords_vec, dims_vec). As such,
+ * there are constraints on the format of the vectors. All input vectors are 1D
+ * vectors and are accessed using the logic in the on-device calc_data(...). For
+ * a given input coordinate, the index in each dimension is found by locating
+ * the index of the closest point in the coordinates for that dimension that is
+ * less than the input coordinate value. These per-dimension indices are then
+ * flattened via row-major ordering into a single index, and the corresponding
+ * value is retrieved from d_grid_ptr (a pointer to a NP::BufferDevice that is
+ * constructed from std::vector<REAL> grid).
  *
  * @tparam input_ndim The number of input dimensions for the grid lookup.
  */
@@ -135,7 +133,7 @@ struct CartesianGridData
   CartesianGridData(const std::vector<REAL> &grid,
                     const std::vector<REAL> &coords_vec,
                     const std::vector<size_t> &dims_vec,
-                    SYCLTargetSharedPtr sycl_target) {
+                    NP::SYCLTargetSharedPtr sycl_target) {
 
     auto dims_size = dims_vec.size();
     NESOASSERT((dims_size == input_ndim), "Invalid size of input dims vector.");
@@ -168,15 +166,15 @@ struct CartesianGridData
    * @brief Constructor using a GridDescriptor object.
    */
   CartesianGridData(const GridDescriptor<input_ndim> &grid_descriptor,
-                    SYCLTargetSharedPtr sycl_target)
+                    NP::SYCLTargetSharedPtr sycl_target)
       : CartesianGridData(grid_descriptor.get_flat_grid(),
                           grid_descriptor.get_flat_coords(),
                           grid_descriptor.get_interp_dims(), sycl_target) {}
 
 public:
-  std::shared_ptr<BufferDevice<REAL>> d_grid;
-  std::shared_ptr<BufferDevice<REAL>> d_coords;
-  std::shared_ptr<BufferDevice<size_t>> d_dims;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_grid;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_dims;
 };
 
 } // namespace VANTAGE::Reactions

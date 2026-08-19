@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_CONTROLLER_H
 #define REACTIONS_REACTION_CONTROLLER_H
+#include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "common_markers.hpp"
 #include "common_transformations.hpp"
@@ -9,12 +10,6 @@
 #include <ios>
 #include <iostream>
 #include <memory>
-#include <neso_particles.hpp>
-#include <neso_particles/particle_group.hpp>
-#include <neso_particles/particle_sub_group/particle_sub_group_base.hpp>
-#include <neso_particles/typedefs.hpp>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -38,7 +33,7 @@ enum class ControllerMode {
 
 /**
  * @brief A reaction controller that orchestrates the application of reactions
- * to a given ParticleGroup or ParticleSubGroup.
+ * to a given NP::ParticleGroup or NP::ParticleSubGroup.
  *
  * @param parent_transform TransformationWrapper(s) informing how parent
  * particles are to be handled
@@ -170,8 +165,8 @@ public:
   /**
    * @brief Apply parent transform on the target group or subgroup
    *
-   * @param target The ParticleGroup or ParticleSubGroup to apply the transforms
-   * to
+   * @param target The NP::ParticleGroup or NP::ParticleSubGroup to apply the
+   * transforms to
    */
   template <typename PARENT>
   void apply_parent_transforms(std::shared_ptr<PARENT> target) {
@@ -189,21 +184,22 @@ public:
    * transformation wrapper. Parents are transformed according to the
    * parent_transform transformation wrapper.
    *
-   * @param target The ParticleGroup or ParticleSubGroup to apply the
+   * @param target The NP::ParticleGroup or NP::ParticleSubGroup to apply the
    * reactions to.
    * @param dt The current time step size.
-   * @param product_group The ParticleGroup into which to add the products,
+   * @param product_group The NP::ParticleGroup into which to add the products,
    * should have the same spec as the parent.
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
    */
   template <typename PARENT>
   void apply(std::shared_ptr<PARENT> target, double dt,
-             ParticleGroupSharedPtr product_group,
+             NP::ParticleGroupSharedPtr product_group,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
     auto particle_group = get_particle_group(target);
     auto target_as_subgroup = particle_sub_group(target);
-    const bool is_particle_group = std::is_same<ParticleGroup, PARENT>::value;
+    const bool is_particle_group =
+        std::is_same<NP::ParticleGroup, PARENT>::value;
     this->apply_impl(target_as_subgroup, particle_group, dt, product_group,
                      controller_mode, is_particle_group);
   }
@@ -216,7 +212,7 @@ public:
    * child_transform transformation wrapper. Parents are transformed according
    * to the parent_transform transformation wrapper.
    *
-   * @param target The ParticleGroup or ParticleSubGroup to apply the
+   * @param target The NP::ParticleGroup or NP::ParticleSubGroup to apply the
    * reactions to.
    * @param dt The current time step size.
    * @param controller_mode The mode to run the controller in. Either
@@ -225,32 +221,32 @@ public:
   template <typename PARENT>
   void apply(std::shared_ptr<PARENT> target, double dt,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
-    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+    NP::ParticleGroupSharedPtr particle_group = get_particle_group(target);
     this->apply(target, dt, particle_group, controller_mode);
   }
 
-  void
-  set_rng_kernel(std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel) {
+  void set_rng_kernel(
+      std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel) {
     this->rng_kernel = rng_kernel;
   }
-  std::shared_ptr<HostPerParticleBlockRNG<REAL>> get_rng_kernel() {
+  std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> get_rng_kernel() {
     NESOASSERT(this->rng_kernel != nullptr,
                "RNG kernel is nullptr, was set_rng_kernel called?");
     return this->rng_kernel;
   }
 
 private:
-  void apply_parent_transforms_impl(ParticleSubGroupSharedPtr target,
-                                    ParticleGroupSharedPtr particle_group);
-  void apply_impl(ParticleSubGroupSharedPtr target,
-                  ParticleGroupSharedPtr particle_group, double dt,
-                  ParticleGroupSharedPtr product_group,
+  void apply_parent_transforms_impl(NP::ParticleSubGroupSharedPtr target,
+                                    NP::ParticleGroupSharedPtr particle_group);
+  void apply_impl(NP::ParticleSubGroupSharedPtr target,
+                  NP::ParticleGroupSharedPtr particle_group, double dt,
+                  NP::ParticleGroupSharedPtr product_group,
                   ControllerMode controller_mode, bool is_particle_group);
 
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
-  std::map<int, ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, ParticleSubGroupSharedPtr> reacted_species_groups;
-  ParticleGroupSharedPtr reference_particle_group = nullptr;
+  std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
+  std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
+  NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::set<int> parent_ids;
   std::set<int> child_ids;
@@ -260,20 +256,21 @@ private:
   std::vector<std::shared_ptr<TransformationWrapper>> child_transform;
 
   std::shared_ptr<MarkingStrategy> reacted_marker;
-  Sym<INT> id_sym;
-  Sym<INT> panic_flag;
-  Sym<INT> reacted_flag;
-  Sym<REAL> tot_rate_buffer;
-  Sym<REAL> weight_sym;
+  NP::Sym<INT> id_sym;
+  NP::Sym<INT> panic_flag;
+  NP::Sym<INT> reacted_flag;
+  NP::Sym<REAL> tot_rate_buffer;
+  NP::Sym<REAL> weight_sym;
   std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
   bool auto_clean_tot_rate_buffer;
-  std::shared_ptr<HostPerParticleBlockRNG<REAL>> rng_kernel;
+  std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel;
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
-  std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;
+  std::shared_ptr<NP::ParticleGroupTemporary> particle_group_temporary;
 
   void setup_particle_group_temporary() {
-    this->particle_group_temporary = std::make_shared<ParticleGroupTemporary>();
+    this->particle_group_temporary =
+        std::make_shared<NP::ParticleGroupTemporary>();
   }
 };
 

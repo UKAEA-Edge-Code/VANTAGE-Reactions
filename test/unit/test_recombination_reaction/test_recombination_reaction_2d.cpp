@@ -1,7 +1,6 @@
 #include "../include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(Recombination, kernel_test) {
@@ -13,10 +12,11 @@ TEST(Recombination, kernel_test) {
 
   particle_loop(
       particle_group, [=](auto internal_state) { internal_state.at(0) = -1; },
-      Access::write(Sym<INT>("INTERNAL_STATE")))
+      NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")))
       ->execute();
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto marker_species = Species("ION", 1.0, 0.0, -1);
   auto neutral_species = Species("ION", 1.0, 0.0, 0);
@@ -38,7 +38,7 @@ TEST(Recombination, kernel_test) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_spec, particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {
@@ -46,25 +46,27 @@ TEST(Recombination, kernel_test) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto weight_child = descendant_particles->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto vel_parent = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
-    auto vel_child = descendant_particles->get_cell(Sym<REAL>("VELOCITY"), i);
+    auto weight_child =
+        descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
+    auto vel_child =
+        descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
 
     auto id_child =
-        descendant_particles->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+        descendant_particles->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     auto target_source_density =
-        particle_group->get_cell(Sym<REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
     auto projectile_source_density =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
 
     auto target_source_momentum =
-        particle_group->get_cell(Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto target_source_energy =
-        particle_group->get_cell(Sym<REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
     auto projectile_source_energy =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
 
     const int nrow = weight_child->nrow;
     const int parent_nrow = vel_parent->nrow;

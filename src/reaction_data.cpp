@@ -1,4 +1,6 @@
+
 #include "../include/reactions_lib/reaction_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -56,7 +58,7 @@ void ReactionDataBaseImpl::set_required_int_props(
   this->index_on_device_object();
 }
 
-std::vector<Sym<INT>> ReactionDataBaseImpl::get_required_int_sym_vector() {
+std::vector<NP::Sym<INT>> ReactionDataBaseImpl::get_required_int_sym_vector() {
   return this->required_int_props.to_sym_vector();
 }
 
@@ -70,7 +72,8 @@ void ReactionDataBaseImpl::set_required_real_props(
   this->index_on_device_object();
 }
 
-std::vector<Sym<REAL>> ReactionDataBaseImpl::get_required_real_sym_vector() {
+std::vector<NP::Sym<REAL>>
+ReactionDataBaseImpl::get_required_real_sym_vector() {
   return this->required_real_props.to_sym_vector();
 }
 

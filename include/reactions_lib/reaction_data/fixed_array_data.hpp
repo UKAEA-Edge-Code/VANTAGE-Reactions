@@ -1,9 +1,8 @@
 #ifndef REACTIONS_FIXED_ARRAY_DATA_H
 #define REACTIONS_FIXED_ARRAY_DATA_H
 #include "../reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -25,8 +24,8 @@ struct FixedArrayDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
   /**
    * @brief Returns fixed array
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -39,9 +38,9 @@ struct FixedArrayDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
    * @return Fixed ndim-sized array
    */
   std::array<REAL, ndim>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     return this->data;

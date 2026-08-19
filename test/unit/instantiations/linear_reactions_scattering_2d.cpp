@@ -5,6 +5,7 @@
 // The set is a pay-once baseline for the documented configurations; it is
 // not a closed enumeration of every Data x Kernels x DataCalc combination.
 
+#include "../include/test_common.hpp"
 #include "../include/test_extern_templates.hpp"
 
 namespace VANTAGE::Reactions {

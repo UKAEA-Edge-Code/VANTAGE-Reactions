@@ -1,7 +1,7 @@
 #ifndef REACTIONS_NESO_TEST_ASSERT_H
 #define REACTIONS_NESO_TEST_ASSERT_H
+#include "neso_particles/typedefs.hpp"
 #include <cstdlib>
-#include <neso_particles/typedefs.hpp>
 #include <stdexcept>
 
 #undef NESOASSERT_FUNCTION

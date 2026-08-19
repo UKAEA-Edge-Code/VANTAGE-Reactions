@@ -1,4 +1,4 @@
-void distributor_strategy_example(ParticleGroupSharedPtr particle_group) {
+void distributor_strategy_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = particle_sub_group(particle_group);
 

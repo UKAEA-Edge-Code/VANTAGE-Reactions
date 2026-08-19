@@ -1,4 +1,4 @@
-void accumulator_strategy_example(ParticleGroupSharedPtr particle_group) {
+void accumulator_strategy_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = particle_sub_group(particle_group);
 
@@ -18,7 +18,7 @@ void accumulator_strategy_example(ParticleGroupSharedPtr particle_group) {
   accumulator->transform(input_subgroup);
 
   // Upon accumulation, the accumulated data is stored in NESO-Particle
-  // CellDatConst objects and can be retrieved easily
+  // NP::CellDatConst objects and can be retrieved easily
   auto accumulated_electron_source =
       accumulator->get_cell_data("ELECTRON_SOURCE_DENSITY");
 

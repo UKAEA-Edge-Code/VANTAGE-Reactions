@@ -1,4 +1,6 @@
+
 #include "../include/reactions_lib/reaction_data/arrhenius_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 

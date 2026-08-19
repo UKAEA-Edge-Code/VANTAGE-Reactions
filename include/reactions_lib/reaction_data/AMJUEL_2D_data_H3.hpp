@@ -3,12 +3,12 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
 #include <cmath>
-#include <neso_particles.hpp>
+
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -57,8 +57,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * @brief Function to calculate the reaction rate for a 2D H.3 AMJUEL-based
    * reaction.
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -68,21 +68,21 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size 1 containing the calculated reaction
-   * rate.
+   * @return A REAL-valued array of size 1 containing the calculated
+   * reaction rate.
    */
   std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
-    REAL log_temp =
-        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
+    REAL log_temp = NP::Kernel::log(fluid_temperature_dat *
+                                    this->temperature_normalisation);
 
     REAL E = 0;
     for (int i = 0; i < dim; i++) {
@@ -95,7 +95,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
       E = 0.1;
     }
 
-    REAL log_E = Kernel::log(E);
+    REAL log_E = NP::Kernel::log(E);
 
     std::array<REAL, num_coeffs_E> log_E_m_arr;
     log_E_m_arr[0] = 1.0;
@@ -116,7 +116,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
       }
     }
 
-    REAL rate = Kernel::exp(log_rate) * 1.0e-6;
+    REAL rate = NP::Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;

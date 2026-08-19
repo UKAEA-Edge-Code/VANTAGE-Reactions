@@ -1,13 +1,10 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "../include/test_common.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
-#include "reactions_lib/reaction_controller.hpp"
-#include <gtest/gtest.h>
 #include <memory>
-#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 #include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, surface_mode_test) {
@@ -15,7 +12,7 @@ TEST(ReactionController, surface_mode_test) {
 
   auto particle_group = create_test_particle_group(N_total);
 
-  auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+  auto accessor = NP::Access::read(NP::Sym<REAL>("WEIGHT"));
 
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -47,8 +44,8 @@ TEST(ReactionController, surface_mode_test) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
 
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto id = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto id = particle_group->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     const int nrow = weight->nrow;
 

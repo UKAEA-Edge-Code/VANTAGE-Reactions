@@ -1,4 +1,4 @@
-void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
+void linear_reaction_CX_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
@@ -17,10 +17,11 @@ void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
       projectile_species.get_id(); // projectile species internal state id = 0
   // The resulting subgroup will have only particles with ID=0
   // using the default properties name for the internal state
-  auto input_subgroup = std::make_shared<ParticleSubGroup>(particle_group);
+  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
   auto particle_subgroup = particle_sub_group(
       particle_group, [=](auto id) { return id[0] == spec_id; },
-      Access::read(Sym<INT>(prop_map[default_properties.internal_state])));
+      NP::Access::read(
+          NP::Sym<INT>(prop_map[default_properties.internal_state])));
 
   // For this example, we will use the FixedRateData reaction data class
   // it simply sets the rate to a fixed number
@@ -84,7 +85,7 @@ void linear_reaction_CX_example(ParticleGroupSharedPtr particle_group) {
   //
   // We will loop over all cells and generate products
   int cell_count = particle_group->domain->mesh->get_cell_count();
-  auto product_group = std::make_shared<ParticleGroup>(
+  auto product_group = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_spec, particle_group->sycl_target);
 
   for (int i = 0; i < cell_count; i++) {

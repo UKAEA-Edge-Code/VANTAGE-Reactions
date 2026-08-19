@@ -1,16 +1,16 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "../include/test_common.hpp"
 #include <cmath>
-#include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionData, AMJUEL2DData) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto amjuel_data = AMJUEL2DData<2, 2>(
       3e12, 1.0, 1.0, 1.0,
@@ -23,7 +23,7 @@ TEST(ReactionData, AMJUEL2DData) {
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -33,7 +33,7 @@ TEST(ReactionData, AMJUEL2DData) {
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -49,7 +49,8 @@ TEST(ReactionData, AMJUEL2DDataH3) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   REAL mass_amu = 1.0;
   REAL vel_norm = std::sqrt(
@@ -70,7 +71,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -78,8 +79,8 @@ TEST(ReactionData, AMJUEL2DDataH3) {
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
-    auto vel = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto vel = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -100,7 +101,8 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   // Manipulating the normalisation quantities to trigger the coronal limit
   // calculation
@@ -115,7 +117,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -126,7 +128,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

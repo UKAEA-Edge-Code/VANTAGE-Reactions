@@ -1,7 +1,7 @@
 #ifndef TEST_REACTION_CONTROLLER_FUNCTORS_HPP
 #define TEST_REACTION_CONTROLLER_FUNCTORS_HPP
 
-#include <neso_particles/typedefs.hpp>
+#include "test_common.hpp"
 
 /**
  * @brief Functor for reducing particle weights into a cellwise accumulator.

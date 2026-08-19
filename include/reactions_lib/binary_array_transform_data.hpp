@@ -1,9 +1,8 @@
 #ifndef REACTIONS_BINARY_ARRAY_TRANSFORM_DATA_H
 #define REACTIONS_BINARY_ARRAY_TRANSFORM_DATA_H
 #include "composite_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -64,8 +63,8 @@ struct BinaryArrayTransformDataOnDevice
    * @brief Return the result of applying the binary transform on the results of
    * the two contained objects
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties
@@ -73,24 +72,25 @@ struct BinaryArrayTransformDataOnDevice
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernels used in the
-   * calculation, a TupleRNG accessor
+   * calculation, a NP::TupleRNG accessor
    *
    * @return The result of applying the transform on the results of the two
    * contained data objects
    */
   std::array<REAL, TRANSFORM::OUT_DIM> calc_data(
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      const Access::SymVector::Read<REAL> &req_real_props,
-      typename TupleRNG<std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
-                        std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::
-          KernelType &rng_kernel) const {
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      typename NP::TupleRNG<
+          std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
+          std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::KernelType
+          &rng_kernel) const {
 
     return this->transform.apply(
-        Tuple::get<0>(this->data)
+        NP::Tuple::get<0>(this->data)
             .calc_data(index, req_int_props, req_real_props,
                        rng_kernel.template get<0>()),
-        Tuple::get<1>(this->data)
+        NP::Tuple::get<1>(this->data)
             .calc_data(index, req_int_props, req_real_props,
                        rng_kernel.template get<1>()));
   }

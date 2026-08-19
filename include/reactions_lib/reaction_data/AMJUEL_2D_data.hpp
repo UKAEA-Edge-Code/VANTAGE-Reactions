@@ -3,11 +3,10 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
 #include <cmath>
-#include <neso_particles.hpp>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -49,8 +48,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @brief Function to calculate the reaction rate for a 2D AMJUEL-based
    * reaction.
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -63,17 +62,17 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @return A REAL-valued array containing the calculated reaction rate.
    */
   std::array<REAL, 1>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
     auto fluid_density_dat =
         req_real_props.at(this->fluid_density_ind, index, 0);
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
-    REAL log_temp =
-        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
+    REAL log_temp = NP::Kernel::log(fluid_temperature_dat *
+                                    this->temperature_normalisation);
 
     std::array<REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;
@@ -85,8 +84,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     // Ensuring the Coronal asymptote gets treated correctly
     // TODO: Add variable Coronal cut-off density
     auto log_n = (fluid_density_dat * this->density_normalisation >= 1e14)
-                     ? Kernel::log(fluid_density_dat *
-                                   this->density_normalisation / 1e14)
+                     ? NP::Kernel::log(fluid_density_dat *
+                                       this->density_normalisation / 1e14)
                      : 0;
     // TODO: Ensure LTE asymptotic behaviour obeyed
 
@@ -102,7 +101,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       }
     }
 
-    REAL rate = Kernel::exp(log_rate) * 1.0e-6;
+    REAL rate = NP::Kernel::exp(log_rate) * 1.0e-6;
 
     rate *= req_real_props.at(this->weight_ind, index, 0) * fluid_density_dat *
             this->mult_const;

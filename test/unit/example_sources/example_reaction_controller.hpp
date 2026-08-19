@@ -1,4 +1,4 @@
-void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
+void reaction_controller_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
@@ -53,7 +53,7 @@ void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       std::vector<std::shared_ptr<MarkingStrategy>>{
           make_direct_marking_strategy(
               "very_low_weight", [](auto w) { return w[0] < 1e-6; },
-              Access::read(Sym<REAL>("WEIGHT")))},
+              NP::Access::read(NP::Sym<REAL>("WEIGHT")))},
       make_transformation_strategy<SimpleRemovalTransformationStrategy>());
   // But will first try merge any children/parents below a higher weight
   // threshold
@@ -65,7 +65,7 @@ void reaction_controller_example(ParticleGroupSharedPtr particle_group) {
       std::vector<std::shared_ptr<MarkingStrategy>>{
           make_direct_marking_strategy(
               "low_weight", [](auto w) { return w[0] < 1e-2; },
-              Access::read(Sym<REAL>("WEIGHT")))},
+              NP::Access::read(NP::Sym<REAL>("WEIGHT")))},
       merge_transform);
 
   auto reaction_controller = ReactionController(

@@ -3,12 +3,12 @@
 #include "../cross_sections/constant_rate_cs.hpp"
 #include "../particle_properties_map.hpp"
 #include "../utils.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <iostream>
-#include <neso_particles.hpp>
+
 #include <type_traits>
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -25,7 +25,8 @@ namespace VANTAGE::Reactions {
  */
 template <size_t ndim, typename CROSS_SECTION>
 struct FilteredMaxwellianOnDevice
-    : public ReactionDataBaseOnDevice<ndim, HostAtomicBlockKernelRNG<REAL>> {
+    : public ReactionDataBaseOnDevice<ndim,
+                                      NP::HostAtomicBlockKernelRNG<REAL>> {
 
   FilteredMaxwellianOnDevice() = default;
   /**
@@ -45,8 +46,8 @@ struct FilteredMaxwellianOnDevice
    * @brief Function to calculate the sampled ion velocities from a filtered
    * Maxwellian
    *
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -58,11 +59,11 @@ struct FilteredMaxwellianOnDevice
    * @return A REAL-valued array of size ndim that contains the calculated
    * sampled ion velocities.
    */
-  std::array<REAL, ndim>
-  calc_data(const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
-            typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
+  std::array<REAL, ndim> calc_data(
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
     auto fluid_temperature_dat =
         req_real_props.at(this->fluid_temperature_ind, index, 0);
 
@@ -114,14 +115,14 @@ struct FilteredMaxwellianOnDevice
       REAL relative_vel_sq = 0;
       for (int i = 0; i < ndim; i++) {
         sampled_vels[i] =
-            Kernel::sqrt(fluid_temperature_dat * this->norm_ratio) *
+            NP::Kernel::sqrt(fluid_temperature_dat * this->norm_ratio) *
                 total_samples[i] +
             fluid_flows[i];
         relative_vel_sq += (neutral_vels[i] - sampled_vels[i]) *
                            (neutral_vels[i] - sampled_vels[i]);
       }
 
-      REAL relative_vel = Kernel::sqrt(relative_vel_sq);
+      REAL relative_vel = NP::Kernel::sqrt(relative_vel_sq);
       REAL value_at = this->cross_section.get_value_at(relative_vel);
       REAL max_rate_val = this->cross_section.get_max_rate_val();
 
@@ -161,7 +162,7 @@ public:
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
     : public ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>,
-                              ndim, HostAtomicBlockKernelRNG<REAL>> {
+                              ndim, NP::HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
 
@@ -179,17 +180,18 @@ struct FilteredMaxwellianSampler
    * and v are the temperature and velocity normalisation constants
    * @param cross_section Cross section object to be used in the rejection
    * method sampling
-   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
-   * be set as the rng_kernel in ReactionDataBase.
+   * @param rng_kernel A shared pointer of a
+   * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
+   * ReactionDataBase.
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names.
    */
   FilteredMaxwellianSampler(
       const REAL &norm_ratio, CROSS_SECTION cross_section,
-      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
+      std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>, ndim,
-                         HostAtomicBlockKernelRNG<REAL>>(
+                         NP::HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
     this->on_device_obj = FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
@@ -211,8 +213,9 @@ struct FilteredMaxwellianSampler
    * @param norm_ratio The ratio of the temperature and kinetic energy
    * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
    * and v are the temperature and velocity normalisation constants
-   * @param rng_kernel A shared pointer of a HostAtomicBlockKernelRNG<REAL> to
-   * be set as the rng_kernel in ReactionDataBase.
+   * @param rng_kernel A shared pointer of a
+   * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
+   * ReactionDataBase.
    */
   // FUNC is defaulted (not deduced) so the enable_if below
   // substitutes into a viable SFINAE context for the default-CROSS_SECTION
@@ -225,7 +228,7 @@ struct FilteredMaxwellianSampler
                 int> = 0>
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,
-      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel)
+      std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel)
       : FilteredMaxwellianSampler(norm_ratio, ConstantRateCrossSection(0.0),
                                   rng_kernel) {}
 

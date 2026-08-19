@@ -1,10 +1,11 @@
 #ifndef REACTIONS_REACTION_KERNEL_PRE_REQS_H
 #define REACTIONS_REACTION_KERNEL_PRE_REQS_H
+#include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "particle_properties_map.hpp"
 #include "utils.hpp"
 #include <iterator>
-#include <neso_particles.hpp>
+
 #include <optional>
 #include <set>
 #include <stdexcept>
@@ -12,7 +13,6 @@
 #include <strings.h>
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 /**
  * @brief Species struct to hold a limited description of a species that may be
@@ -26,7 +26,8 @@ struct Species {
    *
    * @param name String defining the name of the species.
    * @param mass REAL value of the mass of the species (in atomic units).
-   * @param charge REAL value of the charge of the species (in atomic units).
+   * @param charge REAL value of the charge of the species (in atomic
+   * units).
    * @param id INT value that corresponds to the ID of the species.
    */
   Species(std::string name, REAL mass, REAL charge, INT id);
@@ -54,7 +55,8 @@ struct Species {
    *
    * @param name String defining the name of the species.
    * @param mass REAL value of the mass of the species (in atomic units).
-   * @param charge REAL value of the charge of the species (in atomic units).
+   * @param charge REAL value of the charge of the species (in atomic
+   * units).
    */
   Species(std::string name, REAL mass, REAL charge);
 
@@ -489,8 +491,8 @@ private:
 };
 
 /**
- * @brief Wrapper type for holding a set of Sym names that can be derived from
- * Properties
+ * @brief Wrapper type for holding a set of NP::Sym names that can be derived
+ * from Properties
  *
  * @tparam PROP_TYPE INT or REAL, used in constructing the corresponding
  * SymVector
@@ -538,7 +540,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
   /**
    * @brief Add a name directly to the set
    *
-   * @param elem String representing a Sym name of the corresponding type
+   * @param elem String representing a NP::Sym name of the corresponding type
    */
   void add(std::string elem) { this->name_set.insert(elem); };
 
@@ -557,7 +559,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    *
    * @return std::vector of Syms of the corresponding type
    */
-  std::vector<Sym<PROP_TYPE>> to_sym_vector() {
+  std::vector<NP::Sym<PROP_TYPE>> to_sym_vector() {
 
     return utils::build_sym_vector<PROP_TYPE>(this->to_string_vector());
   };

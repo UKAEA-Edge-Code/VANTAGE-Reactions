@@ -1,9 +1,7 @@
 #include "include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
-#include <neso_particles/typedefs.hpp>
+#include "include/test_common.hpp"
 #include <random>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {

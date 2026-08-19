@@ -1,14 +1,8 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include "reactions_lib/reaction_data/fixed_rate_data.hpp"
-#include "reactions_lib/reaction_data/specular_reflection_data.hpp"
-#include "reactions_lib/reaction_kernels/general_linear_scattering_kernels.hpp"
-#include "reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
+#include "../include/test_common.hpp"
 #include <cmath>
-#include <gtest/gtest.h>
-#include <neso_particles/boundary/boundary_interaction_specification.hpp>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(SurfaceKernels, SpecularReflection) {
@@ -17,8 +11,9 @@ TEST(SurfaceKernels, SpecularReflection) {
 
   auto particle_group = create_test_particle_group(N_total);
   particle_group->add_particle_dat(
-      BoundaryInteractionSpecification::intersection_normal, 2);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+      NP::BoundaryInteractionSpecification::intersection_normal, 2);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto test_data = FixedRateData(1.0);
 
@@ -39,11 +34,12 @@ TEST(SurfaceKernels, SpecularReflection) {
         velocity.at(0) = -1.0;
         velocity.at(1) = 1.0;
       },
-      Access::write(BoundaryInteractionSpecification::intersection_normal),
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(
+          NP::BoundaryInteractionSpecification::intersection_normal),
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -53,7 +49,7 @@ TEST(SurfaceKernels, SpecularReflection) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1, descendant_particles,
                         true); // Apply to all of weight, the same way a surface
                                // reaction controller would
-    auto velocity = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
+    auto velocity = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     const int nrow = velocity->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

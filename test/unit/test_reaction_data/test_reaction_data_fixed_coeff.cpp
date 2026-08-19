@@ -1,16 +1,16 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "../include/test_common.hpp"
 #include <cmath>
-#include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionData, FixedCoefficientData) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto test_reaction =
       LinearReactionBase<0, FixedCoefficientData, TestReactionKernels<0>>(
@@ -18,7 +18,7 @@ TEST(ReactionData, FixedCoefficientData) {
           FixedCoefficientData(2.0), TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
   for (int i = 0; i < cell_count; i++) {
@@ -29,7 +29,7 @@ TEST(ReactionData, FixedCoefficientData) {
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
     const int nrow = weight->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

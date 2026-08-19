@@ -1,20 +1,19 @@
 #ifndef REACTIONS_TRANSFORM_WRAPPER_H
 #define REACTIONS_TRANSFORM_WRAPPER_H
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <memory>
-#include <neso_particles.hpp>
+
 #include <vector>
 
 #include "../reactions/neso_test_assert.hpp"
 #include "profiling_base.hpp"
 
-using namespace NESO::Particles;
-
 namespace VANTAGE::Reactions {
 
 /**
  * @brief Abstract base class for marking strategies. All marking strategies
- produce a ParticleSubGroupSharedPtr from another ParticleSubGroupSharedPtr
- using some selection criterion.
+ produce a NP::ParticleSubGroupSharedPtr from another
+ NP::ParticleSubGroupSharedPtr using some selection criterion.
  *
  */
 struct MarkingStrategy : ProfilingBase {
@@ -22,23 +21,23 @@ struct MarkingStrategy : ProfilingBase {
   /**
    * Create the marker sub group.
    *
-   * @param particle_group Parent `ParticleSubGroup` to create marker sub group
-   * from.
+   * @param particle_group Parent `NP::ParticleSubGroup` to create marker sub
+   * group from.
    * @returns Marker sub group.
    */
-  virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr particle_group);
+  virtual NP::ParticleSubGroupSharedPtr
+  make_marker_subgroup_v(NP::ParticleSubGroupSharedPtr particle_group);
 
   /**
    * Create the marker sub group. Specialisations should override
    * `make_marker_subgroup_v` instead of this method.
    *
-   * @param particle_group Parent `ParticleSubGroup` to create marker sub group
-   * from.
+   * @param particle_group Parent `NP::ParticleSubGroup` to create marker sub
+   * group from.
    * @returns Marker sub group.
    */
-  virtual ParticleSubGroupSharedPtr
-  make_marker_subgroup(ParticleSubGroupSharedPtr particle_group);
+  virtual NP::ParticleSubGroupSharedPtr
+  make_marker_subgroup(NP::ParticleSubGroupSharedPtr particle_group);
 
   virtual ~MarkingStrategy() = default;
 };
@@ -62,7 +61,7 @@ inline std::shared_ptr<MarkingStrategy> make_marking_strategy(ARGS &&...args) {
 
 /**
  * @brief Abstract base class for transformation strategies. All transformation
- * strategies take a ParticleSubGroupSharedPtr and perform an arbitrary
+ * strategies take a NP::ParticleSubGroupSharedPtr and perform an arbitrary
  * transformation on it.
  */
 struct TransformationStrategy : ProfilingBase {
@@ -74,9 +73,9 @@ struct TransformationStrategy : ProfilingBase {
    * override. Callers of the transformation strategy should call the
    * `transform` method.
    *
-   * @param target_subgroup ParticleSubGroup to be transformed.
+   * @param target_subgroup NP::ParticleSubGroup to be transformed.
    */
-  virtual void transform_v(ParticleSubGroupSharedPtr target_subgroup);
+  virtual void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup);
 
   /**
    * This is the method which should be called by downstream code to apply a
@@ -84,9 +83,9 @@ struct TransformationStrategy : ProfilingBase {
    * transformation. To implement a transformation in a specialisation class the
    * `transform_v` method should be overridden.
    *
-   * @param target_subgroup ParticleSubGroup to be transformed.
+   * @param target_subgroup NP::ParticleSubGroup to be transformed.
    */
-  virtual void transform(ParticleSubGroupSharedPtr target_subgroup);
+  virtual void transform(NP::ParticleSubGroupSharedPtr target_subgroup);
 
   virtual ~TransformationStrategy() = default;
 };
@@ -111,9 +110,9 @@ make_transformation_strategy(ARGS &&...args) {
 
 /**
  * @brief Wrapper class containing a marking and a transformation strategy to be
- * applied to a ParticleGroup. Its responsibility is to apply the two strategies
- * in order to transform those particles in a ParticleGroup that satisfy some
- * condition.
+ * applied to a NP::ParticleGroup. Its responsibility is to apply the two
+ * strategies in order to transform those particles in a NP::ParticleGroup that
+ * satisfy some condition.
  *
  */
 struct TransformationWrapper {
@@ -145,10 +144,10 @@ struct TransformationWrapper {
 
   /**
    * @brief Applies the marking and transformation strategies to a given
-   * ParticleGroup or ParticleSubGroup, transforming those particles that
-   * satisfy some condition.
+   * NP::ParticleGroup or NP::ParticleSubGroup, transforming those particles
+   * that satisfy some condition.
    *
-   * @param target ParticleGroup or ParticleSubGroup to transform
+   * @param target NP::ParticleGroup or NP::ParticleSubGroup to transform
    */
   template <typename PARENT> void transform(std::shared_ptr<PARENT> target) {
 
@@ -157,10 +156,10 @@ struct TransformationWrapper {
 
   /**
    * @brief Applies the marking and transformation strategies to a given
-   * ParticleGroup or ParticleSubGroup, transforming those particles that
-   * satisfy some condition in a given cell.
+   * NP::ParticleGroup or NP::ParticleSubGroup, transforming those particles
+   * that satisfy some condition in a given cell.
    *
-   * @param target ParticleGroup or ParticleSubGroup to transform
+   * @param target NP::ParticleGroup or NP::ParticleSubGroup to transform
    * @param cell_id Local cell id index to restrict the transformation to
    */
   template <typename PARENT>
@@ -170,10 +169,10 @@ struct TransformationWrapper {
   }
   /**
    * @brief Applies the marking and transfomation strategies to a given
-   * ParticleGroup, transforming those particle that satisfy some condition in a
-   * given block of cells.
+   * NP::ParticleGroup, transforming those particle that satisfy some condition
+   * in a given block of cells.
    *
-   * @param target ParticleGroup to transform
+   * @param target NP::ParticleGroup to transform
    * @param cell_id_start Local cell id block start index to restrict the
    * transformation to
    * @param cell_id_end Local cell id block end index to restrict the
@@ -183,12 +182,12 @@ struct TransformationWrapper {
   void transform(std::shared_ptr<PARENT> target, int cell_id_start,
                  int cell_id_end) {
 
-    ParticleSubGroupSharedPtr marker_subgroup;
+    NP::ParticleSubGroupSharedPtr marker_subgroup;
     if (cell_id_start >= 0) {
 
       size_t cell_num;
 
-      if constexpr (std::is_same<ParticleGroup, PARENT>::value) {
+      if constexpr (std::is_same<NP::ParticleGroup, PARENT>::value) {
         cell_num = target->domain->mesh->get_cell_count();
       } else {
 
@@ -244,20 +243,20 @@ struct MarkingStrategyBase : MarkingStrategy {
   /**
    * @brief Constructor for MarkingStrategyBase.
    *
-   * @param required_dats_real_read Standard vector of Sym<REAL>s representing
-   * those real-valued NESO-Particles ParticleDats to be passed to device type
-   * for determining marking function return
-   * @param required_dats_int_read Standard vector of Sym<INT>s representing
-   * those integer-valued NESO-Particles ParticleDats to be passed to device
-   * type for determining marking function return
+   * @param required_dats_real_read Standard vector of NP::Sym<REAL>s
+   * representing those real-valued NESO-Particles ParticleDats to be passed to
+   * device type for determining marking function return
+   * @param required_dats_int_read Standard vector of NP::Sym<INT>s
+   * representing those integer-valued NESO-Particles ParticleDats to be passed
+   * to device type for determining marking function return
    */
-  MarkingStrategyBase(const std::vector<Sym<REAL>> required_dats_real_read,
-                      const std::vector<Sym<INT>> required_dats_int_read)
+  MarkingStrategyBase(const std::vector<NP::Sym<REAL>> required_dats_real_read,
+                      const std::vector<NP::Sym<INT>> required_dats_int_read)
       : required_particle_dats_real(required_dats_real_read),
         required_particle_dats_int(required_dats_int_read) {}
 
-  ParticleSubGroupSharedPtr make_marker_subgroup_v(
-      ParticleSubGroupSharedPtr particle_sub_group) override {
+  NP::ParticleSubGroupSharedPtr make_marker_subgroup_v(
+      NP::ParticleSubGroupSharedPtr particle_sub_group) override {
 
     NESOASSERT(particle_sub_group != nullptr,
                "Passing nullptr for particle_sub_group argument!");
@@ -265,25 +264,27 @@ struct MarkingStrategyBase : MarkingStrategy {
     const auto &underlying = static_cast<MarkingStrategyDerived &>(*this);
     auto device_type = underlying.get_device_data();
 
-    auto marker_subgroup = std::make_shared<ParticleSubGroup>(
+    auto marker_subgroup = std::make_shared<NP::ParticleSubGroup>(
         particle_sub_group,
         [=](auto req_reals, auto req_ints) {
           return device_type.marking_condition(req_reals, req_ints);
         },
-        Access::read(sym_vector<REAL>(particle_sub_group->get_particle_group(),
-                                      this->required_particle_dats_real)),
-        Access::read(sym_vector<INT>(particle_sub_group->get_particle_group(),
-                                     this->required_particle_dats_int)));
+        NP::Access::read(
+            NP::sym_vector<REAL>(particle_sub_group->get_particle_group(),
+                                 this->required_particle_dats_real)),
+        NP::Access::read(
+            NP::sym_vector<INT>(particle_sub_group->get_particle_group(),
+                                this->required_particle_dats_int)));
     return marker_subgroup;
   }
 
 private:
-  std::vector<Sym<REAL>>
+  std::vector<NP::Sym<REAL>>
       required_particle_dats_real; //!< vector of symbols associated with
                                    //!< real-valued read-only ParticleDats
                                    //!< needed to determine which particles get
                                    //!< marked
-  std::vector<Sym<INT>>
+  std::vector<NP::Sym<INT>>
       required_particle_dats_int; //!< vector of symbols associated with
                                   //!< integer-valued read-only ParticleDats
                                   //!< needed to determine which particles get
@@ -308,15 +309,15 @@ struct MarkingFunctionWrapperBase {
    *
    * @param real_vars Read-only accessor to a list of real-valued ParticleDats.
    * Use real_vars.at(v_idx,c_idx) to access the c_idx-th component of v_idx-th
-   * ParticleDat in the list
+   * NP::ParticleDat in the list
    * @param int_vars  Accessor to a list of integer-valued
    * ParticleDats. Use int_vars.at(v_idx,c_idx) to access the c_idx-th component
-   * of v_idx-th ParticleDat in the list
+   * of v_idx-th NP::ParticleDat in the list
    * @return bool The return value of the marking_condition function on the
    * derived type.
    */
-  bool marking_condition(Access::SymVector::Read<REAL> &real_vars,
-                         Access::SymVector::Read<INT> &int_vars) const {
+  bool marking_condition(NP::Access::SymVector::Read<REAL> &real_vars,
+                         NP::Access::SymVector::Read<INT> &int_vars) const {
     const auto &underlying =
         static_cast<const MarkingFunctionWrapperDerived &>(*this);
 
@@ -351,8 +352,8 @@ struct MarkingStrategyDirect : MarkingStrategy {
       : stored_args(std::forward_as_tuple(std::forward<ARGS>(args)...)),
         kernel(std::forward<KERNEL>(kernel)), name(name) {}
 
-  ParticleSubGroupSharedPtr
-  make_marker_subgroup_v(ParticleSubGroupSharedPtr target) override {
+  NP::ParticleSubGroupSharedPtr
+  make_marker_subgroup_v(NP::ParticleSubGroupSharedPtr target) override {
 
     NESOASSERT(target != nullptr,
                "Passing nullptr for particle_sub_group argument!");
@@ -415,12 +416,12 @@ struct TransformationStrategyDirect : TransformationStrategy {
         stored_args(std::forward_as_tuple(std::forward<ARGS>(args)...)),
         kernel(std::forward<KERNEL>(kernel)) {}
 
-  void transform_v(ParticleSubGroupSharedPtr target) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target) override {
 
     NESOASSERT(target != nullptr,
                "Passing nullptr for particle_sub_group argument!");
 
-    ParticleLoopSharedPtr loop = std::apply(
+    NP::ParticleLoopSharedPtr loop = std::apply(
         [&](auto &&...args) {
           return particle_loop(this->loop_name, target, this->kernel,
                                std::forward<decltype(args)>(args)...);
@@ -471,7 +472,7 @@ struct TransformationStrategyLambda : TransformationStrategy {
   TransformationStrategyLambda(std::string name, LAMBDA &&lambda)
       : name(name), stored_lambda(std::forward<LAMBDA>(lambda)) {}
 
-  void transform_v(ParticleSubGroupSharedPtr target) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target) override {
 
     NESOASSERT(target != nullptr,
                "Passing nullptr for particle_sub_group argument!");

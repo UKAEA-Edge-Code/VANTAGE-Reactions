@@ -1,15 +1,15 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(DataCalculator, custom_sources) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto test_reaction =
       LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
@@ -22,7 +22,7 @@ TEST(DataCalculator, custom_sources) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -31,13 +31,13 @@ TEST(DataCalculator, custom_sources) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto source_density =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
     auto source_energy =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0), 3.0);
       EXPECT_DOUBLE_EQ(source_energy->at(rowx, 0), 4.0);

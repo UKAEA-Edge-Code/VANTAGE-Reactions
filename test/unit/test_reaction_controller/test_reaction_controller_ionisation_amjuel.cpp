@@ -1,13 +1,10 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
+#include "../include/test_common.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
-#include "reactions_lib/reaction_controller.hpp"
-#include <gtest/gtest.h>
 #include <memory>
-#include <neso_particles/particle_sub_group/particle_sub_group.hpp>
 #include <utility>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ReactionController, ionisation_reaction_amjuel) {
@@ -77,7 +74,7 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
 
   reaction_controller.apply(particle_group, 0.1);
 
-  auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+  auto accessor = NP::Access::read(NP::Sym<REAL>("WEIGHT"));
 
   auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
       std::vector<std::shared_ptr<MarkingStrategy>>{
@@ -93,8 +90,9 @@ TEST(ReactionController, ionisation_reaction_amjuel) {
   auto expected_rate = 26.993377387251336;
 
   for (int icell = 0; icell < num_cells; icell++) {
-    auto W = particle_group->get_cell(Sym<REAL>("WEIGHT"), icell);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), icell);
+    auto W = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), icell);
+    auto rate =
+        particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), icell);
     int nrow = W->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

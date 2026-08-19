@@ -25,7 +25,8 @@
 int main() {
   using namespace VANTAGE::Reactions;
 
-  // --- Kernel classes ------------------------------------------------------
+  // --- NP::Kernel classes
+  // ------------------------------------------------------
   using K0 = CXReactionKernels<2>;
   K0 *k0 = nullptr;
   (void)k0;

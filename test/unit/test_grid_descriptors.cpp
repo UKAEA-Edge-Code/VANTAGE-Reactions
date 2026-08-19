@@ -1,10 +1,8 @@
 #include "include/mock_interpolation_data.hpp"
+#include "include/test_common.hpp"
 #include <cstdlib>
-#include <gtest/gtest.h>
-#include <neso_particles/typedefs.hpp>
 #include <random>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
@@ -17,12 +15,12 @@ TEST(GridDescriptors, INVALID_TRIM_FUNCS) {
   const int subdivision_order = 1;
   const int stencil_width = 1;
 
-  auto mesh =
-      std::make_shared<CartesianHMesh>(MPI_COMM_WORLD, ndim, dims, cell_extent,
-                                       subdivision_order, stencil_width);
+  auto mesh = std::make_shared<NP::CartesianHMesh>(
+      MPI_COMM_WORLD, ndim, dims, cell_extent, subdivision_order,
+      stencil_width);
 
   auto sycl_target =
-      std::make_shared<SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
+      std::make_shared<NP::SYCLTarget>(GPU_SELECTOR, mesh->get_comm());
 
   const int rank = sycl_target->comm_pair.rank_parent;
 

@@ -76,13 +76,12 @@
 //   INT     — internal device computation (subtraction, decrement, clamp)
 #ifndef REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
 #define REACTIONS_COMPOSITE_INTERPOLATE_DATA_H
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/composite_data.hpp"
 #include "reactions_lib/interp_utils.hpp"
 #include <algorithm>
 #include <memory>
-#include <neso_particles.hpp>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 constexpr auto INF_INTERP_DOUBLE = std::numeric_limits<double>::infinity();
 
@@ -159,8 +158,8 @@ struct InterpolateDataOnDevice
    * @param interpolation_points An array containing all of the values needed
    * for grid-function evaluation. (Both the interpolation points as well as
    * pass-through values)
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -176,12 +175,12 @@ struct InterpolateDataOnDevice
    */
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
-      [[maybe_unused]] const Access::LoopIndex::Read &index,
-      [[maybe_unused]] const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
-      [[maybe_unused]]
-      typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
-          KernelType &kernel) const {
+      [[maybe_unused]] const NP::Access::LoopIndex::Read &index,
+      [[maybe_unused]] const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
+      [[maybe_unused]] typename NP::TupleRNG<
+          std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::KernelType
+          &kernel) const {
 
     std::array<REAL, interp_ndim> mut_interpolation_points;
     for (size_t i = 0; i < interp_ndim; i++) {
@@ -274,8 +273,8 @@ struct InterpolateDataOnDevice
     for (size_t i = 0; i < interp_ndim; i++) {
       origin_indices[i]--;
       origin_indices[i] =
-          Kernel::clamp(origin_indices[i], static_cast<INT>(0),
-                        static_cast<INT>(this->d_dims_vec_ptr[i] - 2));
+          NP::Kernel::clamp(origin_indices[i], static_cast<INT>(0),
+                            static_cast<INT>(this->d_dims_vec_ptr[i] - 2));
     }
 
     // Necessary for using the interp_utils functions.
@@ -290,7 +289,7 @@ struct InterpolateDataOnDevice
     auto output_evals_ptr = output_evals.data();
     auto varying_dim_ptr = varying_dim.data();
 
-    auto interp_data = Tuple::get<0>(this->data);
+    auto interp_data = NP::Tuple::get<0>(this->data);
 
     // Initial function evaluation (ie values of the coeffs_vec) based on the
     // origin_indices and the vertices of the hypercube and any data needed for
@@ -416,7 +415,8 @@ struct InterpolateData
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &coords_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
-                  SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
+                  NP::SYCLTargetSharedPtr sycl_target,
+                  const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type)
       : CompositeData<
             InterpolateDataOnDevice<output_ndim, interp_ndim, non_interp_ndim,
@@ -450,7 +450,8 @@ struct InterpolateData
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &coords_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
-                  SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
+                  NP::SYCLTargetSharedPtr sycl_target,
+                  const DATATYPE &interp_data)
       : InterpolateData(dims_vec, coords_vec, interp_indices, sycl_target,
                         interp_data, ExtrapolationType::continue_linear) {};
 
@@ -474,7 +475,8 @@ struct InterpolateData
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &coords_vec,
-                  SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data)
+                  NP::SYCLTargetSharedPtr sycl_target,
+                  const DATATYPE &interp_data)
       : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data) {
     for (size_t i = 0; i < interp_ndim; i++)
@@ -503,7 +505,8 @@ struct InterpolateData
    */
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &coords_vec,
-                  SYCLTargetSharedPtr sycl_target, const DATATYPE &interp_data,
+                  NP::SYCLTargetSharedPtr sycl_target,
+                  const DATATYPE &interp_data,
                   const ExtrapolationType &extrapolation_type)
       : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data, extrapolation_type) {
@@ -531,9 +534,9 @@ struct InterpolateData
             std::get<0>(this->data).get_on_device_obj(), this->interp_indices,
             this->extrapolation_type);
 
-    // BufferDevice<REAL> mock setup
-    this->d_dims_vec = std::make_shared<BufferDevice<size_t>>(this->sycl_target,
-                                                              this->dims_vec);
+    // NP::BufferDevice<REAL> mock setup
+    this->d_dims_vec = std::make_shared<NP::BufferDevice<size_t>>(
+        this->sycl_target, this->dims_vec);
     this->on_device_obj->d_dims_vec_ptr = this->d_dims_vec->ptr;
 
     std::vector<size_t> coords_strides(interp_ndim);
@@ -557,48 +560,49 @@ struct InterpolateData
       extended_coords_vec.push_back(INF_INTERP_DOUBLE);
     }
 
-    this->d_extended_coords_vec = std::make_shared<BufferDevice<REAL>>(
+    this->d_extended_coords_vec = std::make_shared<NP::BufferDevice<REAL>>(
         this->sycl_target, extended_coords_vec);
     this->on_device_obj->d_extended_coords_vec_ptr =
         this->d_extended_coords_vec->ptr;
 
-    this->d_extended_dims_vec = std::make_shared<BufferDevice<size_t>>(
+    this->d_extended_dims_vec = std::make_shared<NP::BufferDevice<size_t>>(
         this->sycl_target, extended_dims_vec);
     this->on_device_obj->d_extended_dims_vec_ptr =
         this->d_extended_dims_vec->ptr;
 
-    this->d_coords_vec = std::make_shared<BufferDevice<REAL>>(this->sycl_target,
-                                                              this->coords_vec);
+    this->d_coords_vec = std::make_shared<NP::BufferDevice<REAL>>(
+        this->sycl_target, this->coords_vec);
     this->on_device_obj->d_coords_vec_ptr = this->d_coords_vec->ptr;
 
-    this->d_coords_strides = std::make_shared<BufferDevice<size_t>>(
+    this->d_coords_strides = std::make_shared<NP::BufferDevice<size_t>>(
         this->sycl_target, coords_strides);
     this->on_device_obj->d_coords_strides_ptr = this->d_coords_strides->ptr;
 
-    this->d_extended_coords_strides = std::make_shared<BufferDevice<size_t>>(
-        this->sycl_target, extended_coords_strides);
+    this->d_extended_coords_strides =
+        std::make_shared<NP::BufferDevice<size_t>>(this->sycl_target,
+                                                   extended_coords_strides);
     this->on_device_obj->d_extended_coords_strides_ptr =
         this->d_extended_coords_strides->ptr;
 
-    this->d_hypercube_vertices = std::make_shared<BufferDevice<size_t>>(
+    this->d_hypercube_vertices = std::make_shared<NP::BufferDevice<size_t>>(
         this->sycl_target, initial_hypercube);
     this->on_device_obj->d_hypercube_vertices_ptr =
         this->d_hypercube_vertices->ptr;
   }
 
-  SYCLTargetSharedPtr sycl_target;
+  NP::SYCLTargetSharedPtr sycl_target;
   std::vector<size_t> dims_vec;
   std::vector<REAL> coords_vec;
   std::array<size_t, interp_ndim> interp_indices;
   ExtrapolationType extrapolation_type;
 
-  std::shared_ptr<BufferDevice<size_t>> d_dims_vec;
-  std::shared_ptr<BufferDevice<REAL>> d_coords_vec;
-  std::shared_ptr<BufferDevice<REAL>> d_extended_coords_vec;
-  std::shared_ptr<BufferDevice<size_t>> d_extended_dims_vec;
-  std::shared_ptr<BufferDevice<size_t>> d_coords_strides;
-  std::shared_ptr<BufferDevice<size_t>> d_extended_coords_strides;
-  std::shared_ptr<BufferDevice<size_t>> d_hypercube_vertices;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_dims_vec;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords_vec;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_extended_coords_vec;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_extended_dims_vec;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_coords_strides;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_extended_coords_strides;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_hypercube_vertices;
 };
 }; // namespace VANTAGE::Reactions
 #endif

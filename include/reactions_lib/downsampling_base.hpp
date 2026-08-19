@@ -1,6 +1,7 @@
 #ifndef REACTIONS_DOWNSAMPLING_BASE_H
 #define REACTIONS_DOWNSAMPLING_BASE_H
 
+#include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "common_markers.hpp"
 #include "particle_properties_map.hpp"
@@ -12,10 +13,8 @@
 #include <functional>
 #include <limits>
 #include <memory>
-#include <neso_particles.hpp>
-#include <vector>
 
-using namespace NESO::Particles;
+#include <vector>
 
 namespace VANTAGE::Reactions {
 
@@ -48,7 +47,7 @@ namespace VANTAGE::Reactions {
  *
  */
 
-using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
+using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
 /**
  * Downsampling modes:
@@ -96,12 +95,12 @@ struct DownsamplingKernelOnDeviceBase {
    * particles the current particle is
    * @param rng_kernel RNG kernel access, if required
    */
-  void apply(const Access::LoopIndex::Read &index,
-             const Access::SymVector::Write<INT> &req_int_props,
-             const Access::SymVector::Write<REAL> &req_real_props,
-             Access::CellDatConst::Read<REAL> &reduction,
-             Access::CellDatConst::Read<REAL> &reduction_min,
-             Access::CellDatConst::Read<REAL> &reduction_max,
+  void apply(const NP::Access::LoopIndex::Read &index,
+             const NP::Access::SymVector::Write<INT> &req_int_props,
+             const NP::Access::SymVector::Write<REAL> &req_real_props,
+             NP::Access::CellDatConst::Read<REAL> &reduction,
+             NP::Access::CellDatConst::Read<REAL> &reduction_min,
+             NP::Access::CellDatConst::Read<REAL> &reduction_max,
              const size_t &reduction_idx, const size_t &linear_idx,
              typename RNG_TYPE::KernelType &rng_kernel) const {
     return;
@@ -115,9 +114,9 @@ struct DownsamplingKernelOnDeviceBase {
    * @param req_real_props SymVector Write access to required real properties
    * @param rng_kernel RNG kernel access, if required
    */
-  void apply_no_red(const Access::LoopIndex::Read &index,
-                    const Access::SymVector::Write<INT> &req_int_props,
-                    const Access::SymVector::Write<REAL> &req_real_props,
+  void apply_no_red(const NP::Access::LoopIndex::Read &index,
+                    const NP::Access::SymVector::Write<INT> &req_int_props,
+                    const NP::Access::SymVector::Write<REAL> &req_real_props,
                     typename RNG_TYPE::KernelType &rng_kernel) const {
     return;
   }
@@ -155,11 +154,11 @@ struct DownsamplingReductionKernelOnDeviceBase {
    * the particle belongs to, in principle used to access the corresponding
    * column of the reduction data
    */
-  void reduce(const Access::SymVector::Read<INT> &req_int_props,
-              const Access::SymVector::Read<REAL> &req_real_props,
-              Access::CellDatConst::Add<REAL> &reduction,
-              Access::CellDatConst::Min<REAL> &reduction_min,
-              Access::CellDatConst::Max<REAL> &reduction_max,
+  void reduce(const NP::Access::SymVector::Read<INT> &req_int_props,
+              const NP::Access::SymVector::Read<REAL> &req_real_props,
+              NP::Access::CellDatConst::Add<REAL> &reduction,
+              NP::Access::CellDatConst::Min<REAL> &reduction_min,
+              NP::Access::CellDatConst::Max<REAL> &reduction_max,
               const size_t &reduction_idx) const {
     return;
   }
@@ -200,8 +199,8 @@ struct DownsamplingKernelBase {
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names
    */
@@ -226,8 +225,8 @@ struct DownsamplingKernelBase {
    * @brief Constructor for DownsamplingKernelBase that sets only required real
    * properties.
    *
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties
+   * @param required_real_props Properties<REAL> object containing
+   * information regarding the required REAL-based properties
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names
    */
@@ -241,7 +240,7 @@ struct DownsamplingKernelBase {
    * @brief Return all required integer properties as a vector of Syms
    *
    */
-  std::vector<Sym<INT>> get_required_int_sym_vector() {
+  std::vector<NP::Sym<INT>> get_required_int_sym_vector() {
     return this->required_int_props.to_sym_vector();
   }
 
@@ -249,7 +248,7 @@ struct DownsamplingKernelBase {
    * @brief Return all required real properties as a vector of Syms
    *
    */
-  std::vector<Sym<REAL>> get_required_real_sym_vector() {
+  std::vector<NP::Sym<REAL>> get_required_real_sym_vector() {
     return this->required_real_props.to_sym_vector();
   }
 
@@ -276,8 +275,8 @@ struct DownsamplingKernelBase {
    * @param reductions Additive reduction values
    * @param pre_num_parts The number of particles per cell
    */
-  virtual void pre_calculate(CellDatConstSharedPtr<REAL> reductions,
-                             CellDatConstSharedPtr<INT> pre_num_parts) {
+  virtual void pre_calculate(NP::CellDatConstSharedPtr<REAL> reductions,
+                             NP::CellDatConstSharedPtr<INT> pre_num_parts) {
     return;
   };
   std::shared_ptr<RNG_TYPE> get_rng_kernel() { return this->rng_kernel; }
@@ -314,14 +313,14 @@ struct DownsamplingStrategy : TransformationStrategy {
    * downsampling strategy algorithms
    * @param num_downsampling_groups The number of distinct downsampling groups
    * (such as velocity/phase space bins) - determines the dimensionality of the
-   * CellDatConst objects storing cell-wise and downsampling group-wise
+   * NP::CellDatConst objects storing cell-wise and downsampling group-wise
    * reductions of the properties needed for the downsampling algorithm
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names, in particular the grouping index,
    * linear index, and particle weights
    */
   DownsamplingStrategy(
-      ParticleGroupSharedPtr template_group,
+      NP::ParticleGroupSharedPtr template_group,
       DOWNSAMPLING_KERNEL downsampling_kernels, size_t num_downsampling_groups,
       const std::map<int, std::string> &properties_map = get_default_map())
       : downsampling_kernels(downsampling_kernels) {
@@ -333,26 +332,27 @@ struct DownsamplingStrategy : TransformationStrategy {
         may be inconsitencies with indexing of properties.");
 
     this->group_index_sym =
-        Sym<INT>(properties_map.at(default_properties.grouping_index));
+        NP::Sym<INT>(properties_map.at(default_properties.grouping_index));
 
-    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
+    this->weight_sym =
+        NP::Sym<REAL>(properties_map.at(default_properties.weight));
 
     this->linear_index_sym =
-        Sym<INT>(properties_map.at(default_properties.linear_index));
+        NP::Sym<INT>(properties_map.at(default_properties.linear_index));
     int cell_count = template_group->domain->mesh->get_cell_count();
 
     // We only need to allocate reduction quantities if there are any reductions
     // needed
     if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
-      this->reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
+      this->reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
           DOWNSAMPLING_KERNEL::REDUCTION_PLUS_DIM, num_downsampling_groups);
 
-      this->min_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
+      this->min_reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
           DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM, num_downsampling_groups);
 
-      this->max_reduction_cell_dats = std::make_shared<CellDatConst<REAL>>(
+      this->max_reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
           DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM, num_downsampling_groups);
     }
@@ -362,7 +362,7 @@ struct DownsamplingStrategy : TransformationStrategy {
     // properties
     if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
-      this->num_part_cell_dats = std::make_shared<CellDatConst<INT>>(
+      this->num_part_cell_dats = std::make_shared<NP::CellDatConst<INT>>(
           template_group->sycl_target, cell_count, num_downsampling_groups, 1);
     }
   }
@@ -372,7 +372,7 @@ struct DownsamplingStrategy : TransformationStrategy {
    *
    * @param target_subgroup
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
     auto part_group = target_subgroup->get_particle_group();
 
     auto reduction_obj =
@@ -400,18 +400,18 @@ struct DownsamplingStrategy : TransformationStrategy {
             linear_index[0] =
                 npart_group.fetch_add(downsampling_group_index[0], 0, 1);
           },
-          Access::read(sym_vector<INT>(
+          NP::Access::read(NP::sym_vector<INT>(
               target_subgroup,
               this->downsampling_kernels.get_required_int_sym_vector())),
-          Access::read(sym_vector<REAL>(
+          NP::Access::read(NP::sym_vector<REAL>(
               target_subgroup,
               this->downsampling_kernels.get_required_real_sym_vector())),
-          Access::add(this->reduction_cell_dats),
-          Access::min(this->min_reduction_cell_dats),
-          Access::max(this->max_reduction_cell_dats),
-          Access::read(this->group_index_sym),
-          Access::add(this->num_part_cell_dats),
-          Access::write(this->linear_index_sym))
+          NP::Access::add(this->reduction_cell_dats),
+          NP::Access::min(this->min_reduction_cell_dats),
+          NP::Access::max(this->max_reduction_cell_dats),
+          NP::Access::read(this->group_index_sym),
+          NP::Access::add(this->num_part_cell_dats),
+          NP::Access::write(this->linear_index_sym))
           ->execute();
       this->downsampling_kernels.pre_calculate(this->reduction_cell_dats,
                                                this->num_part_cell_dats);
@@ -432,16 +432,16 @@ struct DownsamplingStrategy : TransformationStrategy {
                                  max_reduction_cell_dat,
                                  downsampling_group_index[0]);
           },
-          Access::read(sym_vector<INT>(
+          NP::Access::read(NP::sym_vector<INT>(
               target_subgroup,
               this->downsampling_kernels.get_required_int_sym_vector())),
-          Access::read(sym_vector<REAL>(
+          NP::Access::read(NP::sym_vector<REAL>(
               target_subgroup,
               this->downsampling_kernels.get_required_real_sym_vector())),
-          Access::add(this->reduction_cell_dats),
-          Access::min(this->min_reduction_cell_dats),
-          Access::max(this->max_reduction_cell_dats),
-          Access::read(this->group_index_sym))
+          NP::Access::add(this->reduction_cell_dats),
+          NP::Access::min(this->min_reduction_cell_dats),
+          NP::Access::max(this->max_reduction_cell_dats),
+          NP::Access::read(this->group_index_sym))
           ->execute();
     }
 
@@ -460,7 +460,7 @@ struct DownsamplingStrategy : TransformationStrategy {
           [=](auto linear_index) {
             return linear_index[0] < DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM;
           },
-          Access::read(this->linear_index_sym));
+          NP::Access::read(this->linear_index_sym));
 
       // Then we apply the merging loop by going through the first
       // DOWNSAMPLING_DIM in each downsampling group, and if there are
@@ -481,20 +481,20 @@ struct DownsamplingStrategy : TransformationStrategy {
                   downsampling_group_index[0], linear_index[0], rng_kernel);
             }
           },
-          Access::read(ParticleLoopIndex{}),
-          Access::write(sym_vector<INT>(
+          NP::Access::read(NP::ParticleLoopIndex{}),
+          NP::Access::write(NP::sym_vector<INT>(
               target_subgroup,
               this->downsampling_kernels.get_required_int_sym_vector())),
-          Access::write(sym_vector<REAL>(
+          NP::Access::write(NP::sym_vector<REAL>(
               target_subgroup,
               this->downsampling_kernels.get_required_real_sym_vector())),
-          Access::read(this->reduction_cell_dats),
-          Access::read(this->min_reduction_cell_dats),
-          Access::read(this->max_reduction_cell_dats),
-          Access::read(this->num_part_cell_dats),
-          Access::read(this->group_index_sym),
-          Access::read(this->linear_index_sym),
-          Access::read(this->downsampling_kernels.get_rng_kernel()))
+          NP::Access::read(this->reduction_cell_dats),
+          NP::Access::read(this->min_reduction_cell_dats),
+          NP::Access::read(this->max_reduction_cell_dats),
+          NP::Access::read(this->num_part_cell_dats),
+          NP::Access::read(this->group_index_sym),
+          NP::Access::read(this->linear_index_sym),
+          NP::Access::read(this->downsampling_kernels.get_rng_kernel()))
           ->execute();
 
       // Finally, all of the remaining particles are removed
@@ -503,7 +503,7 @@ struct DownsamplingStrategy : TransformationStrategy {
           [=](auto linear_index) {
             return linear_index[0] >= DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM;
           },
-          Access::read(this->linear_index_sym));
+          NP::Access::read(this->linear_index_sym));
 
       part_group->remove_particles(sub_group_to_remove_particles);
       break;
@@ -528,18 +528,18 @@ struct DownsamplingStrategy : TransformationStrategy {
                   min_reduction_cell_dat, max_reduction_cell_dat,
                   downsampling_group_index[0], 0, rng_kernel);
             },
-            Access::read(ParticleLoopIndex{}),
-            Access::write(sym_vector<INT>(
+            NP::Access::read(NP::ParticleLoopIndex{}),
+            NP::Access::write(NP::sym_vector<INT>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_int_sym_vector())),
-            Access::write(sym_vector<REAL>(
+            NP::Access::write(NP::sym_vector<REAL>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_real_sym_vector())),
-            Access::read(this->reduction_cell_dats),
-            Access::read(this->min_reduction_cell_dats),
-            Access::read(this->max_reduction_cell_dats),
-            Access::read(this->group_index_sym),
-            Access::read(this->downsampling_kernels.get_rng_kernel()))
+            NP::Access::read(this->reduction_cell_dats),
+            NP::Access::read(this->min_reduction_cell_dats),
+            NP::Access::read(this->max_reduction_cell_dats),
+            NP::Access::read(this->group_index_sym),
+            NP::Access::read(this->downsampling_kernels.get_rng_kernel()))
             ->execute();
       } else {
 
@@ -552,14 +552,14 @@ struct DownsamplingStrategy : TransformationStrategy {
               downsampling_obj.apply_no_red(loop_index, req_int_props,
                                             req_real_props, rng_kernel);
             },
-            Access::read(ParticleLoopIndex{}),
-            Access::write(sym_vector<INT>(
+            NP::Access::read(NP::ParticleLoopIndex{}),
+            NP::Access::write(NP::sym_vector<INT>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_int_sym_vector())),
-            Access::write(sym_vector<REAL>(
+            NP::Access::write(NP::sym_vector<REAL>(
                 target_subgroup,
                 this->downsampling_kernels.get_required_real_sym_vector())),
-            Access::read(this->downsampling_kernels.get_rng_kernel()))
+            NP::Access::read(this->downsampling_kernels.get_rng_kernel()))
             ->execute();
       }
 
@@ -569,7 +569,7 @@ struct DownsamplingStrategy : TransformationStrategy {
           [=](auto weight) {
             return weight[0] < 1e-16; // HARDCODED COMPARISON
           },
-          Access::read(this->weight_sym));
+          NP::Access::read(this->weight_sym));
       part_group->remove_particles(sub_group_to_remove_particles);
       break;
     }
@@ -577,14 +577,14 @@ struct DownsamplingStrategy : TransformationStrategy {
   }
 
 private:
-  Sym<INT> group_index_sym;
-  Sym<INT> linear_index_sym;
-  Sym<REAL> weight_sym;
+  NP::Sym<INT> group_index_sym;
+  NP::Sym<INT> linear_index_sym;
+  NP::Sym<REAL> weight_sym;
   DOWNSAMPLING_KERNEL downsampling_kernels;
-  CellDatConstSharedPtr<REAL> reduction_cell_dats;
-  CellDatConstSharedPtr<INT> num_part_cell_dats;
-  CellDatConstSharedPtr<REAL> min_reduction_cell_dats;
-  CellDatConstSharedPtr<REAL> max_reduction_cell_dats;
+  NP::CellDatConstSharedPtr<REAL> reduction_cell_dats;
+  NP::CellDatConstSharedPtr<INT> num_part_cell_dats;
+  NP::CellDatConstSharedPtr<REAL> min_reduction_cell_dats;
+  NP::CellDatConstSharedPtr<REAL> max_reduction_cell_dats;
 };
 } // namespace VANTAGE::Reactions
 #endif

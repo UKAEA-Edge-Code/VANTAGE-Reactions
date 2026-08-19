@@ -6,8 +6,8 @@ void lambda_wrapper_array_transform_examples() {
   auto velocity_data_xy = extract<2>("VELOCITY");
 
   // Supported lambdas are binary and unary functions of either
-  // conforming REAL arrays or of REAL values, allowing for full array or
-  // elementwise application
+  // conforming REAL arrays or of REAL values, allowing for full array
+  // or elementwise application
 
   // ------------------
   // Binary full array

@@ -1,4 +1,4 @@
-void array_lookup_example(ParticleGroupSharedPtr particle_group) {
+void array_lookup_example(NP::ParticleGroupSharedPtr particle_group) {
 
   // The arrays can be any size
   // The default array is what is returned if the key value isn't
@@ -14,13 +14,13 @@ void array_lookup_example(ParticleGroupSharedPtr particle_group) {
   // return the corresponding map value if found, otherwise returning
   // the default array
   auto array_lookup_data =
-      ArrayLookupData<1>(Sym<INT>("INTERNAL_STATE"), // The key Sym to
-                                                     // be used for lookup
-                         0,                          // The component of the
-                                                     // ParticleDat referred
-                                                     // to by the key Sym to
-                                                     // be used for the key
-                                                     // value
+      ArrayLookupData<1>(NP::Sym<INT>("INTERNAL_STATE"), // The key NP::Sym to
+                                                         // be used for lookup
+                         0,                              // The component of the
+                            // NP::ParticleDat referred
+                            // to by the key NP::Sym to
+                            // be used for the key
+                            // value
                          lookup_table_map, default_array,
                          particle_group->sycl_target); // A sycl target is
                                                        // needed to store the

@@ -1,8 +1,7 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, device_rate_buffer_reallocation) {
@@ -12,7 +11,7 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
       : public LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
                                   DataCalculator<FixedRateData>> {
 
-    TestDeviceRateBufferReaction(ParticleGroupSharedPtr particle_group)
+    TestDeviceRateBufferReaction(NP::ParticleGroupSharedPtr particle_group)
         : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
                              DataCalculator<FixedRateData>>(
               particle_group->sycl_target, 0, std::array<int, 0>{},
@@ -22,7 +21,7 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
                                        Species("ELECTRON")),
               DataCalculator<FixedRateData>(FixedRateData(1))) {}
 
-    const LocalArraySharedPtr<REAL> &get_device_rate_buffer_derived() {
+    const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer_derived() {
       return this->get_device_rate_buffer();
     }
   };

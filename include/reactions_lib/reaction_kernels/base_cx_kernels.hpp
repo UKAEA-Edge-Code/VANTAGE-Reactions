@@ -3,11 +3,11 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "../reaction_kernels.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
-#include <neso_particles.hpp>
+
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -29,8 +29,8 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -40,16 +40,18 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
+   * data
    * @param dt The current time step size.
    */
-  void scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                         Access::DescendantProducts::Write &descendant_products,
-                         Access::SymVector::Write<INT> &req_int_props,
-                         Access::SymVector::Write<REAL> &req_real_props,
-                         const std::array<int, 1> &out_states,
-                         Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                         double dt) const {
+  void
+  scattering_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                    NP::Access::DescendantProducts::Write &descendant_products,
+                    NP::Access::SymVector::Write<INT> &req_int_props,
+                    NP::Access::SymVector::Write<REAL> &req_real_props,
+                    const std::array<int, 1> &out_states,
+                    NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                    double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
       descendant_products.at_real(index, 0, descendant_velocity_ind, dimx) =
           pre_req_data.at(index.get_loop_linear_index(), dimx);
@@ -62,8 +64,8 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -73,15 +75,16 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
+   * data
    * @param dt The current time step size.
    */
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Write<INT> &req_int_props,
-                     Access::SymVector::Write<REAL> &req_real_props,
+  void weight_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                     NP::Access::DescendantProducts::Write &descendant_products,
+                     NP::Access::SymVector::Write<INT> &req_int_props,
+                     NP::Access::SymVector::Write<REAL> &req_real_props,
                      const std::array<int, 1> &out_states,
-                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     descendant_products.at_real(index, 0, descendant_weight_ind, 0) =
         modified_weight;
@@ -93,8 +96,8 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -104,17 +107,17 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
+   * data
    * @param dt The current time step size.
    */
-  void
-  transformation_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                        Access::DescendantProducts::Write &descendant_products,
-                        Access::SymVector::Write<INT> &req_int_props,
-                        Access::SymVector::Write<REAL> &req_real_props,
-                        const std::array<int, 1> &out_states,
-                        Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                        double dt) const {
+  void transformation_kernel(
+      REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      NP::Access::DescendantProducts::Write &descendant_products,
+      NP::Access::SymVector::Write<INT> &req_int_props,
+      NP::Access::SymVector::Write<REAL> &req_real_props,
+      const std::array<int, 1> &out_states,
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
         out_states[0];
   }
@@ -125,8 +128,8 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which apply is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which apply is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param descendant_products Write accessor to descendant products
@@ -136,16 +139,18 @@ struct CXReactionKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    * @param req_real_props Vector of symbols for real-valued properties that
    * need to be used for operations inside the kernel.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NDLocalArray containing pre-calculated data
+   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
+   * data
    * @param dt The current time step size.
    */
-  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                       Access::DescendantProducts::Write &descendant_products,
-                       Access::SymVector::Write<INT> &req_int_props,
-                       Access::SymVector::Write<REAL> &req_real_props,
-                       const std::array<int, 1> &out_states,
-                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                       double dt) const {
+  void
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                  NP::Access::DescendantProducts::Write &descendant_products,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
+                  const std::array<int, 1> &out_states,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                  double dt) const {
 
     std::array<REAL, ndim_velocity> k_V, k_Vi;
     REAL vsquared = 0.0;

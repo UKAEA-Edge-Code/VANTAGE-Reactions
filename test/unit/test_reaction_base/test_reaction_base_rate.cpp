@@ -1,8 +1,7 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(LinearReactionBase, calc_rate) {
@@ -11,7 +10,7 @@ TEST(LinearReactionBase, calc_rate) {
   auto particle_group = create_test_particle_group(N_total);
   auto particle_subgroup = particle_sub_group(
       particle_group, [=](auto ISTATE) { return (ISTATE[0] == 0); },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
 
   REAL test_rate = 5.0; // example rate
 
@@ -27,9 +26,9 @@ TEST(LinearReactionBase, calc_rate) {
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
-        particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+        particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
 
     const int nrow = position->nrow;
 
@@ -57,9 +56,9 @@ TEST(LinearReactionBase, calc_var_rate) {
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
     test_reaction.calculate_rates(particle_subgroup, i, i + 1);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     auto tot_reaction_rate =
-        particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+        particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = position->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

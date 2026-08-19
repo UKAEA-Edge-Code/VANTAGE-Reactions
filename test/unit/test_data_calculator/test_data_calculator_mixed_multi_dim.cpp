@@ -1,15 +1,15 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(DataCalculator, mixed_multi_dim) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto energy_dat_0 = FixedRateData(0.1);
   auto energy_dat_1 = FixedRateData(1.5);
@@ -17,7 +17,7 @@ TEST(DataCalculator, mixed_multi_dim) {
   // std::mt19937 rng = std::mt19937(std::random_device{}());
   // const double extents[1] = {1.0};
   auto rng_lambda = [&]() -> REAL { return 1.0; };
-  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, N_total);
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, N_total);
 
   // auto constant_rate_cross_section = ConstantRateCrossSection(1.0);
   auto vel_dat = FilteredMaxwellianSampler<2>(2.0, rng_kernel);
@@ -27,7 +27,7 @@ TEST(DataCalculator, mixed_multi_dim) {
                                       decltype(energy_dat_1)>(
       energy_dat_0, vel_dat, energy_dat_1);
 
-  auto pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+  auto pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       particle_group->sycl_target, 0, data_calc_obj.get_data_size());
   pre_req_data->fill(0);
 
@@ -37,7 +37,7 @@ TEST(DataCalculator, mixed_multi_dim) {
     auto shape = pre_req_data->index.shape;
     auto n_part_cell = particle_sub_group->get_npart_cell(i);
     size_t buffer_size = n_part_cell;
-    pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         particle_group->sycl_target, buffer_size, shape[1]);
     pre_req_data->fill(0);
 

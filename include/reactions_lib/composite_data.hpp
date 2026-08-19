@@ -1,9 +1,8 @@
 #ifndef REACTIONS_COMPOSITE_DATA_H
 #define REACTIONS_COMPOSITE_DATA_H
 #include "reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -22,15 +21,17 @@ template <size_t dim, size_t input_dim, typename VAL_TYPE, typename IN_TYPE,
           typename... DATATYPE>
 struct CompositeDataOnDevice
     : public ReactionDataBaseOnDevice<
-          dim, TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+          dim,
+          NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
           input_dim, VAL_TYPE, IN_TYPE> {
 
   CompositeDataOnDevice() = default;
 
-  CompositeDataOnDevice(DATATYPE... data) : data(Tuple::to_tuple(data...)) {};
+  CompositeDataOnDevice(DATATYPE... data)
+      : data(NP::Tuple::to_tuple(data...)) {};
 
 protected:
-  Tuple::Tuple<DATATYPE...> data;
+  NP::Tuple::Tuple<DATATYPE...> data;
 };
 
 template <typename... DATATYPE>
@@ -57,7 +58,7 @@ template <typename ON_DEVICE_TYPE, size_t dim, size_t input_dim,
 struct CompositeData
     : public ReactionDataBase<
           ON_DEVICE_TYPE, dim,
-          TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+          NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
           input_dim> {
 
   /**
@@ -77,7 +78,7 @@ struct CompositeData
     this->set_required_int_props(this->get_required_int_props_children());
     this->set_required_real_props(this->get_required_real_props_children());
     this->set_rng_kernel(std::apply(
-        tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+        NP::tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
         this->get_rng_kernels_children()));
   }
 

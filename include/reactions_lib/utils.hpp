@@ -1,14 +1,14 @@
 #ifndef REACTIONS_UTILS_H
 #define REACTIONS_UTILS_H
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <cassert>
 #include <cmath>
 #include <memory>
-#include <neso_particles.hpp>
+
 #include <numeric>
 #include <type_traits>
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions::utils {
 
 /**
@@ -47,21 +47,21 @@ private:
 };
 
 /**
- * @brief Helper function to construct a shared pointer to a BufferDevice from a
- * vector.
+ * @brief Helper function to construct a shared pointer to a NP::BufferDevice
+ * from a vector.
  *
  * @tparam T Arithmetic type template parameter
  *
  * @param sycl_target SYCL target shared pointer used for buffer allocation.
- * @param vec Vector to be wrapped by BufferDevice.
+ * @param vec Vector to be wrapped by NP::BufferDevice.
  *
- * @return Shared pointer to an allocated BufferDevice.
+ * @return Shared pointer to an allocated NP::BufferDevice.
  */
 template <typename T>
-std::shared_ptr<BufferDevice<T>>
-make_buffer_device_ptr(SYCLTargetSharedPtr sycl_target,
+std::shared_ptr<NP::BufferDevice<T>>
+make_buffer_device_ptr(NP::SYCLTargetSharedPtr sycl_target,
                        const std::vector<T> &vec) {
-  return std::make_shared<BufferDevice<T>>(sycl_target, vec);
+  return std::make_shared<NP::BufferDevice<T>>(sycl_target, vec);
 }
 
 /**
@@ -117,13 +117,13 @@ std::vector<T> cross_product(const std::vector<T> &a, const std::vector<T> &b) {
  * std::vector<Syms<PROP_TYPE>>)
  */
 template <typename PROP_TYPE>
-std::vector<Sym<PROP_TYPE>>
+std::vector<NP::Sym<PROP_TYPE>>
 build_sym_vector(std::vector<std::string> required_properties) {
 
-  std::vector<Sym<PROP_TYPE>> syms = {};
+  std::vector<NP::Sym<PROP_TYPE>> syms = {};
 
   for (auto req_prop : required_properties) {
-    syms.push_back(Sym<PROP_TYPE>(req_prop));
+    syms.push_back(NP::Sym<PROP_TYPE>(req_prop));
   }
 
   return syms;
@@ -137,16 +137,16 @@ build_sym_vector(std::vector<std::string> required_properties) {
  * @param u1 First uniformly distributed random number
  * @param u2 Second uniformly distributed random number
  *
- * @return A REAL-valued array of size 2 containing the calculated two normal
- * variates.
+ * @return A REAL-valued array of size 2 containing the calculated two
+ * normal variates.
  */
 inline std::array<REAL, 2> box_muller_transform(const REAL &u1,
                                                 const REAL &u2) {
   constexpr REAL two_pi = 2 * M_PI;
 
-  auto magnitude = Kernel::sqrt(-2 * Kernel::log(u1));
+  auto magnitude = NP::Kernel::sqrt(-2 * NP::Kernel::log(u1));
   REAL valuecos;
-  const REAL valuesin = Kernel::sincos(two_pi * u2, &valuecos);
+  const REAL valuesin = NP::Kernel::sincos(two_pi * u2, &valuecos);
   return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
 };
 
@@ -252,7 +252,7 @@ inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
 
   for (auto i = 0; i < 3; i++) {
 
-    result[i] = result[i] / Kernel::sqrt(norm);
+    result[i] = result[i] / NP::Kernel::sqrt(norm);
   }
 
   REAL sign = -sycl::copysign(1.0, proj_factor);
@@ -282,11 +282,11 @@ normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
 
   REAL costheta;
   REAL theta = coords[1];
-  const REAL sintheta = Kernel::sincos(theta, &costheta);
+  const REAL sintheta = NP::Kernel::sincos(theta, &costheta);
 
   REAL cosphi;
   REAL phi = coords[2];
-  const REAL sinphi = Kernel::sincos(phi, &cosphi);
+  const REAL sinphi = NP::Kernel::sincos(phi, &cosphi);
 
   std::array<REAL, 3> result;
 
@@ -316,9 +316,9 @@ inline size_t bin_uniform_symmetric_guard_1d(const REAL &inverse_2L,
                                              const INT &n_cells,
                                              const REAL &position) {
 
-  return Kernel::max(
-      Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),
-                  n_cells + 1),
+  return NP::Kernel::max(
+      NP::Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),
+                      n_cells + 1),
       0);
 }
 

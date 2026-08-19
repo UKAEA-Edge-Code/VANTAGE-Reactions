@@ -1,5 +1,5 @@
 void reaction_data_accumulator_strategy_example(
-    ParticleGroupSharedPtr particle_group) {
+    NP::ParticleGroupSharedPtr particle_group) {
 
   auto input_subgroup = particle_sub_group(particle_group);
 
@@ -24,7 +24,7 @@ void reaction_data_accumulator_strategy_example(
   accumulator->transform(input_subgroup);
 
   // Upon accumulation, the accumulated data is stored in NESO-Particle
-  // CellDatConst objects and can be retrieved easily
+  // NP::CellDatConst objects and can be retrieved easily
   auto accumulated_kin_energy = accumulator->get_cell_data();
 
   // The buffer can be zeroed as

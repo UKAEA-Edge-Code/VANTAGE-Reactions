@@ -1,12 +1,11 @@
 #ifndef REACTIONS_REACTION_DATA_ACCUMULATOR_H
 #define REACTIONS_REACTION_DATA_ACCUMULATOR_H
 #include "reaction_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "transformation_wrapper.hpp"
 #include <memory>
-#include <neso_particles.hpp>
-#include <utility>
 
-using namespace NESO::Particles;
+#include <utility>
 
 namespace VANTAGE::Reactions {
 /**
@@ -25,7 +24,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
    * CellDatConsts for the dats specified by dat_names.
    * @param reaction_data ReactionData whose outputs are to be reduced cellwise
    */
-  CellwiseReactionDataAccumulator(ParticleGroupSharedPtr template_group,
+  CellwiseReactionDataAccumulator(NP::ParticleGroupSharedPtr template_group,
                                   ReactionData reaction_data)
       : reaction_data(reaction_data) {
 
@@ -39,8 +38,8 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         "ReactionDataBase...");
 
     constexpr auto data_dim = ReactionData::DIM;
-    this->values = std::make_shared<
-        CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>(
+    this->values = std::make_shared<NP::CellDatConst<
+        typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>(
         template_group->sycl_target,
         template_group->domain->mesh->get_cell_count(), data_dim, 1);
 
@@ -54,7 +53,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
    */
-  void transform_v(ParticleSubGroupSharedPtr target_subgroup) override {
+  void transform_v(NP::ParticleSubGroupSharedPtr target_subgroup) override {
 
     auto reaction_data_on_device = this->reaction_data.get_on_device_obj();
 
@@ -73,39 +72,40 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
             buffer.combine(j, 0, data[j]);
           }
         },
-        Access::reduce(this->values, Kernel::plus<REAL>()),
-        Access::read(ParticleLoopIndex{}),
-        Access::write(
-            sym_vector<INT>(target_subgroup, this->required_int_sums)),
-        Access::read(
-            sym_vector<REAL>(target_subgroup, this->required_real_syms)),
-        Access::read(this->reaction_data.get_rng_kernel()));
+        NP::Access::reduce(this->values, NP::Kernel::plus<REAL>()),
+        NP::Access::read(NP::ParticleLoopIndex{}),
+        NP::Access::write(
+            NP::sym_vector<INT>(target_subgroup, this->required_int_sums)),
+        NP::Access::read(
+            NP::sym_vector<REAL>(target_subgroup, this->required_real_syms)),
+        NP::Access::read(this->reaction_data.get_rng_kernel()));
 
     loop->execute();
   }
 
   /**
-   * @brief Get the pointer to underlying CellDatConst object
+   * @brief Get the pointer to underlying NP::CellDatConst object
    *
    */
 
-  CellDatConstSharedPtr<REAL> get_value_pointer() { return this->values; }
+  NP::CellDatConstSharedPtr<REAL> get_value_pointer() { return this->values; }
 
   /**
-   * @brief Set the underlying CellDatConst pointer for given named data
+   * @brief Set the underlying NP::CellDatConst pointer for given named data
    *
-   * @param cell_dat_const_ptr Shared pointer to CellDatConst<REAL>
+   * @param cell_dat_const_ptr Shared pointer to NP::CellDatConst<REAL>
    */
-  void set_value_pointer(CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
+  void set_value_pointer(NP::CellDatConstSharedPtr<REAL> cell_dat_const_ptr) {
 
     this->values = cell_dat_const_ptr;
   }
 
   /**
    * @brief Extract the cell-wise accumulated data as a standard vector of
-   * CellData objects
+   * NP::CellData objects
    */
-  std::vector<CellData<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
+  std::vector<
+      NP::CellData<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
   get_cell_data() {
 
     return this->values->get_all_cells();
@@ -118,11 +118,11 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
 private:
   ReactionData reaction_data;
-  std::vector<Sym<INT>> required_int_sums;
-  std::vector<Sym<REAL>> required_real_syms;
+  std::vector<NP::Sym<INT>> required_int_sums;
+  std::vector<NP::Sym<REAL>> required_real_syms;
 
   std::shared_ptr<
-      CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
+      NP::CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
       values;
 };
 } // namespace VANTAGE::Reactions

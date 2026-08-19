@@ -1,9 +1,8 @@
 #ifndef REACTIONS_AMJUEL_FIT_CS_H
 #define REACTIONS_AMJUEL_FIT_CS_H
 #include "../reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -76,7 +75,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
 
     REAL E = this->mult_const * relative_vel * relative_vel;
 
-    REAL logE = Kernel::log(E);
+    REAL logE = NP::Kernel::log(E);
     if (E >= this->max_E) {
       return this->max_val / relative_vel;
     };
@@ -114,7 +113,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
       }
     }
 
-    return Kernel::exp(sum_E) * this->scaled_inverse_cs_norm;
+    return NP::Kernel::exp(sum_E) * this->scaled_inverse_cs_norm;
   };
 
   /**

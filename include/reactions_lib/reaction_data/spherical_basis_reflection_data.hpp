@@ -3,9 +3,8 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -28,8 +27,8 @@ struct SphericalBasisReflectionDataOnDevice
    * @brief Function to calculate the specularly reflected velocities
    *
    * @param input The v, theta, phi components of the reflected vector
-   * @param index Read-only accessor to a loop index for a ParticleLoop
-   * inside which calc_data is called. Access using either
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
    * index.get_loop_linear_index(), index.get_local_linear_index(),
    * index.get_sub_linear_index() as required.
    * @param req_int_props Vector of symbols for integer-valued properties that
@@ -44,9 +43,9 @@ struct SphericalBasisReflectionDataOnDevice
    */
   std::array<REAL, 3>
   calc_data(const std::array<REAL, 3> input,
-            const Access::LoopIndex::Read &index,
-            const Access::SymVector::Write<INT> &req_int_props,
-            const Access::SymVector::Read<REAL> &req_real_props,
+            const NP::Access::LoopIndex::Read &index,
+            const NP::Access::SymVector::Write<INT> &req_int_props,
+            const NP::Access::SymVector::Read<REAL> &req_real_props,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
     std::array<REAL, 3> surface_n;

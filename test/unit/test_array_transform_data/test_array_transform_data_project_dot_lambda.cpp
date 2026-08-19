@@ -1,17 +1,17 @@
 #include "../include/mock_particle_group.hpp"
 #include "../include/mock_reactions.hpp"
-#include <gtest/gtest.h>
+#include "../include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(ArrayTransformData, unary_project) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(Sym<REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto unary_transform_data = UnaryArrayTransformData(
       UnaryProjectArrayTransform(std::array<REAL, 2>{1.0, 0.5}));
@@ -27,7 +27,7 @@ TEST(ArrayTransformData, unary_project) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -36,13 +36,13 @@ TEST(ArrayTransformData, unary_project) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto source_density =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
     auto source_energy =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(source_density->at(rowx, 0),
                        position->at(rowx, 0) + 0.5 * position->at(rowx, 1));
@@ -59,9 +59,10 @@ TEST(ArrayTransformData, binary_project) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(Sym<REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = BinaryArrayTransformData(
       BinaryProjectArrayTransform<2>(), position_data, position_data);
@@ -76,7 +77,7 @@ TEST(ArrayTransformData, binary_project) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -85,13 +86,13 @@ TEST(ArrayTransformData, binary_project) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto source_density =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
     auto source_energy =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       auto norm2 = position->at(rowx, 0) * position->at(rowx, 0) +
                    position->at(rowx, 1) * position->at(rowx, 1);
@@ -109,9 +110,10 @@ TEST(ArrayTransformData, binary_dot) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto position_data = ExtractorData<2>(Sym<REAL>("POSITION"));
+  auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
   auto binary_transform_data = dot_product(position_data, position_data);
 
@@ -127,7 +129,7 @@ TEST(ArrayTransformData, binary_dot) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -136,13 +138,13 @@ TEST(ArrayTransformData, binary_dot) {
     test_reaction.apply(particle_sub_group, i, i + 1, 0.1,
                         descendant_particles);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
     auto source_density =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_DENSITY"), i);
     auto source_energy =
-        particle_group->get_cell(Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ELECTRON_SOURCE_ENERGY"), i);
     for (int rowx = 0; rowx < nrow; rowx++) {
       auto norm2 = position->at(rowx, 0) * position->at(rowx, 0) +
                    position->at(rowx, 1) * position->at(rowx, 1);

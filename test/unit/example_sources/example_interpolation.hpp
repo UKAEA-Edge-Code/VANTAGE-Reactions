@@ -1,4 +1,4 @@
-inline void interpolation_example(ParticleGroupSharedPtr particle_group) {
+inline void interpolation_example(NP::ParticleGroupSharedPtr particle_group) {
   // Number of dimensions of the pre-calculated grid
   static constexpr int ndim = 3;
 
@@ -62,7 +62,7 @@ inline void interpolation_example(ParticleGroupSharedPtr particle_group) {
   auto pipeline = pipe(concatenator, interpolate_data);
 
   // Wrapping in a DataCalculator allows the extraction of values from
-  // interpolate_data via a NDLocalArray buffer.
+  // interpolate_data via a NP::NDLocalArray buffer.
   auto data_calc = DataCalculator(pipeline);
 
   return;

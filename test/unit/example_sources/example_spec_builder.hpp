@@ -17,8 +17,9 @@ void spec_builder_example() {
   // which will not add any of the default properties.
   // The user is responsible then for ensuring that
   // all required properties are available when requested.
-  auto basic_spec = ParticleSpec{ParticleProp(Sym<REAL>("POSITION"), 2, true),
-                                 ParticleProp(Sym<INT>("CELL_ID"), 1, true)};
+  auto basic_spec =
+      NP::ParticleSpec{NP::ParticleProp(NP::Sym<REAL>("POSITION"), 2, true),
+                       NP::ParticleProp(NP::Sym<INT>("CELL_ID"), 1, true)};
   auto particle_spec_builder = ParticleSpecBuilder(basic_spec);
 
   // Default properties alias
@@ -54,8 +55,8 @@ void spec_builder_example() {
   // Finally we can merge the particle spec in the builder with other specs
   // (will ignore duplicates)
   particle_spec_builder.add_particle_spec(
-      ParticleSpec{ParticleProp(Sym<REAL>("w"), 1, false),
-                   ParticleProp(Sym<REAL>("NEW_PROP"), 2, false)});
+      NP::ParticleSpec{NP::ParticleProp(NP::Sym<REAL>("w"), 1, false),
+                       NP::ParticleProp(NP::Sym<REAL>("NEW_PROP"), 2, false)});
 
   auto built_spec = particle_spec_builder.get_particle_spec();
   return;

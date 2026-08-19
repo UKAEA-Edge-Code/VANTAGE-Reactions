@@ -1,6 +1,7 @@
 #ifndef REACTIONS_TRIM_EVAL_DATA_H
 #define REACTIONS_TRIM_EVAL_DATA_H
 
+#include "../../reactions/neso_particles_namespace_alias.hpp"
 #include "../../reactions/neso_test_assert.hpp"
 #include "../interp_utils.hpp"
 #include "../particle_properties_map.hpp"
@@ -8,11 +9,8 @@
 #include "../utils.hpp"
 #include <array>
 #include <memory>
-#include <neso_particles.hpp>
 
 #include "grid_descriptors.hpp"
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -77,10 +75,11 @@ struct TrimEvalDataOnDevice
    * interpolation axes.
    * @param d_trim_dims Device buffer containing TRIM grid dimensions.
    */
-  TrimEvalDataOnDevice(const std::shared_ptr<BufferDevice<REAL>> &d_grid,
-                       const std::shared_ptr<BufferDevice<REAL>> &d_coords,
-                       const std::shared_ptr<BufferDevice<size_t>> &d_dims,
-                       const std::shared_ptr<BufferDevice<size_t>> &d_trim_dims)
+  TrimEvalDataOnDevice(
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_coords,
+      const std::shared_ptr<NP::BufferDevice<size_t>> &d_dims,
+      const std::shared_ptr<NP::BufferDevice<size_t>> &d_trim_dims)
       : TrimEvalDataOnDevice() {
     this->d_grid_ptr = d_grid->ptr;
     this->d_coords_ptr = d_coords->ptr;
@@ -95,8 +94,8 @@ struct TrimEvalDataOnDevice
    * interpolation point.
    *
    * @param input The input coordinate array of size input_ndim.
-   * @param index Read-only accessor to a loop index for a ParticleLoop inside
-   * which calc_data is called.
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called.
    * @param req_int_props Vector of symbols for integer-valued properties that
    * need to be used for the reaction rate calculation. The panic counter is
    * incremented when a TRIM coordinate falls outside 0.0 and 1.0.
@@ -105,14 +104,14 @@ struct TrimEvalDataOnDevice
    * @param rng_kernel The random number generator kernel potentially used in
    * the calculation (unused here).
    *
-   * @return A REAL-valued array of size output_ndim containing the TRIM values
-   * at the interpolation point.
+   * @return A REAL-valued array of size output_ndim containing the TRIM
+   * values at the interpolation point.
    */
   std::array<REAL, output_ndim> calc_data(
       const std::array<REAL, input_ndim> &input,
-      const Access::LoopIndex::Read &index,
-      const Access::SymVector::Write<INT> &req_int_props,
-      [[maybe_unused]] const Access::SymVector::Read<REAL> &req_real_props,
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
       [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
 
     std::array<REAL, output_ndim> input_to_bin;
@@ -194,8 +193,8 @@ public:
  * @brief Reaction rate data calculation managing buffers for grid, coords,
  * dims, and trim_dims, enabling on-device tabulated distribution evaluation.
  *
- * The evaluation works with the BufferDevice objects that are constructed for
- * the input vectors (grid, coords_vec, dims_vec, trim_dims_vec). All input
+ * The evaluation works with the NP::BufferDevice objects that are constructed
+ * for the input vectors (grid, coords_vec, dims_vec, trim_dims_vec). All input
  * vectors are 1D vectors and are accessed using the logic in the on-device
  * calc_data(...). The interpolated points are calculated with the same indexing
  * as in CartesianGridDataOnDevice. The TRIM dimensions are uniformly binned.
@@ -239,7 +238,7 @@ struct TrimEvalData
                const std::vector<REAL> &coords_vec,
                const std::vector<size_t> &dims_vec,
                const std::vector<size_t> &trim_dims_vec,
-               SYCLTargetSharedPtr sycl_target,
+               NP::SYCLTargetSharedPtr sycl_target,
                std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<TrimEvalDataOnDevice<input_ndim>>(
             Properties<INT>(required_simple_int_props), properties_map) {
@@ -296,7 +295,7 @@ struct TrimEvalData
    * @brief Construct from a GridDescriptor object.
    */
   TrimEvalData(const GridDescriptor<interp_ndim, output_ndim> &grid_descriptor,
-               SYCLTargetSharedPtr sycl_target,
+               NP::SYCLTargetSharedPtr sycl_target,
                std::map<int, std::string> properties_map = get_default_map())
       : TrimEvalData(
             grid_descriptor.get_flat_grid(), grid_descriptor.get_flat_coords(),
@@ -313,10 +312,10 @@ struct TrimEvalData
   };
 
 public:
-  std::shared_ptr<BufferDevice<REAL>> d_coords;
-  std::shared_ptr<BufferDevice<size_t>> d_dims;
-  std::shared_ptr<BufferDevice<size_t>> d_trim_dims;
-  std::shared_ptr<BufferDevice<REAL>> d_grid;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_dims;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_trim_dims;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_grid;
 };
 
 } // namespace VANTAGE::Reactions

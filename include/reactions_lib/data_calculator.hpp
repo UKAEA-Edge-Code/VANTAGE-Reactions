@@ -1,14 +1,13 @@
 #ifndef REACTIONS_DATA_CALCULATOR_H
 #define REACTIONS_DATA_CALCULATOR_H
+#include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "reaction_data.hpp"
 #include "utils.hpp"
-#include <neso_particles.hpp>
+
 #include <tuple>
 #include <type_traits>
 #include <vector>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -68,17 +67,17 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Fills an NDLocalArray buffer by invoking the stored ReactionData
+   * @brief Fills an NP::NDLocalArray buffer by invoking the stored ReactionData
    * objects for a given cell index
    *
-   * @param buffer NDLocalArray buffer - size should conform to the stored
+   * @param buffer NP::NDLocalArray buffer - size should conform to the stored
    * ReactionData tuple size
    * @param particle_sub_group Particle subgroup used to fill out the buffer
    * @param cell_idx Cell index for which to invoke the corresponding particle
    * loops
    */
-  void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
-                   ParticleSubGroupSharedPtr particle_sub_group,
+  void fill_buffer(const NP::NDLocalArraySharedPtr<REAL, 2> &buffer,
+                   NP::ParticleSubGroupSharedPtr particle_sub_group,
                    INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
@@ -107,13 +106,14 @@ struct DataCalculator : public AbstractDataCalculator {
                         buffer.at(current_count, dat_dim_idx + i) = rate[i];
                       }
                     },
-                    Access::read(ParticleLoopIndex{}),
-                    Access::write(sym_vector<INT>(
+                    NP::Access::read(NP::ParticleLoopIndex{}),
+                    NP::Access::write(NP::sym_vector<INT>(
                         particle_sub_group, this->data_loop_int_syms[dat_idx])),
-                    Access::read(
-                        sym_vector<REAL>(particle_sub_group,
-                                         this->data_loop_real_syms[dat_idx])),
-                    Access::write(buffer), Access::read(args.get_rng_kernel()));
+                    NP::Access::read(NP::sym_vector<REAL>(
+                        particle_sub_group,
+                        this->data_loop_real_syms[dat_idx])),
+                    NP::Access::write(buffer),
+                    NP::Access::read(args.get_rng_kernel()));
 
                 loop->execute(cell_idx_start, cell_idx_end);
                 dat_idx++;
@@ -150,8 +150,8 @@ struct DataCalculator : public AbstractDataCalculator {
 
 private:
   std::tuple<DATATYPE...> data;
-  std::vector<std::vector<Sym<INT>>> data_loop_int_syms;
-  std::vector<std::vector<Sym<REAL>>> data_loop_real_syms;
+  std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms;
+  std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms;
 };
 } // namespace VANTAGE::Reactions
 #endif
