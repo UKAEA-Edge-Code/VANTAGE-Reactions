@@ -8,6 +8,10 @@ namespace VANTAGE::Reactions {
 /**
  * @brief Abstract base class encapsulating a binary transformation of two
  * std::arrays
+ *
+ * @tparam INPUT_DIM_1 Size of the first (lhs) array
+ * @tparam INPUT_DIM_2 Size of the second (lhs) array
+ * @tparam OUTPUT_DIM Size of the output (rhs) array
  */
 template <size_t INPUT_DIM_1, size_t INPUT_DIM_2, size_t OUTPUT_DIM>
 struct AbstractBinaryArrayTransform {
@@ -16,6 +20,15 @@ struct AbstractBinaryArrayTransform {
   static const size_t IN_DIM_2 = INPUT_DIM_2;
   static const size_t OUT_DIM = OUTPUT_DIM;
 
+  /**
+   * @brief Function to apply a binary transform to two arrays.
+   *
+   * @input_1 First (lhs) REAL-valued array
+   * @input_2 Second (lhs) REAL-valued array
+   *
+   * @return REAL-valued array of size OUT_DIM that's the result of the binary
+   * transformation on the two input arrays.
+   */
   std::array<REAL, OUT_DIM>
   apply(const std::array<REAL, IN_DIM_1> &input_1,
         const std::array<REAL, IN_DIM_2> &input_2) const {
@@ -75,7 +88,7 @@ struct BinaryArrayTransformDataOnDevice
    * calculation, a NP::TupleRNG accessor
    *
    * @return The result of applying the transform on the results of the two
-   * contained data objects
+   * contained data objects. REAL-valued array of size TRANSFORM::OUT_DIM
    */
   std::array<REAL, TRANSFORM::OUT_DIM> calc_data(
       const NP::Access::LoopIndex::Read &index,

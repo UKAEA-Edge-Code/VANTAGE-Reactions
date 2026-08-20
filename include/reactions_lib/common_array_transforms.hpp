@@ -28,6 +28,14 @@ struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
   PolynomialArrayTransform(const std::array<REAL, POLY_ORDER + 1> &coeffs)
       : coeffs(coeffs) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input REAL-valued array of size DIM to which the transform is
+   * applied.
+   *
+   * @return REAL-valued array of size DIM that is the transformed array.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
     std::array<REAL, DIM> result;
@@ -67,6 +75,14 @@ struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    */
   ScalerArrayTransform(const REAL &mult) : mult(mult) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input REAL-valued array of size DIM to which the transform is
+   * applied.
+   *
+   * @return REAL-valued array of size DIM that is the transformed array.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
     std::array<REAL, DIM> result;
@@ -99,6 +115,14 @@ struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    */
   UnaryProjectArrayTransform(const std::array<REAL, DIM> &dir) : dir(dir) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input REAL-valued array of size DIM to which the transform is
+   * applied.
+   *
+   * @return REAL-valued array of size DIM that is the transformed array.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
     return utils::project_vector(input, this->dir);
@@ -128,6 +152,14 @@ struct UnaryProjectNormalArrayTransform
   UnaryProjectNormalArrayTransform(const std::array<REAL, DIM> &dir)
       : dir(dir) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input REAL-valued array of size DIM to which the transform is
+   * applied.
+   *
+   * @return REAL-valued array of size DIM that is the transformed array.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
     std::array<REAL, DIM> proj = utils::project_vector(input, this->dir);
@@ -155,6 +187,15 @@ struct BinaryProjectArrayTransform
 
   BinaryProjectArrayTransform() = default;
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input_1 Input REAL-valued array of size DIM to project onto input_2.
+   * @param input_2 Input REAL-valued array of size DIM on which input_1 is
+   * projected.
+   *
+   * @return REAL-valued array of size DIM, that's the result of the projection.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
                               const std::array<REAL, DIM> &input_2) const {
 
@@ -174,6 +215,16 @@ struct BinaryProjectNormalArrayTransform
 
   BinaryProjectNormalArrayTransform() = default;
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input_1 Input REAL-valued array of size DIM to project onto the
+   * plane normal to input_2.
+   * @param input_2 Input REAL-valued array of size DIM whose plane normal
+   * input_1 is projected onto.
+   *
+   * @return REAL-valued array of size DIM, that's the result of the projection.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
                               const std::array<REAL, DIM> &input_2) const {
 
@@ -201,8 +252,22 @@ struct UnaryArrayOperatorTransform
     : AbstractUnaryArrayTransform<DIM_IN, DIM_OUT> {
 
   UnaryArrayOperatorTransform() = default;
+
+  /**
+   * @brief Constructor for UnaryArrayOperatorTransform.
+   *
+   * @param op Unary operator.
+   */
   UnaryArrayOperatorTransform(const OP &op) : op(op) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input REAL-valued array of size DIM to which the transform is
+   * applied.
+   *
+   * @return REAL-valued array of size DIM that is the transformed array.
+   */
   std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM_IN> &input) const {
 
     return this->op(input);
@@ -223,8 +288,22 @@ struct UnaryElementwiseOperatorTransform
     : AbstractUnaryArrayTransform<DIM, DIM> {
 
   UnaryElementwiseOperatorTransform() = default;
+
+  /**
+   * @brief Constructor for UnaryElementwiseOperatorTransform.
+   *
+   * @param op Unary operator.
+   */
   UnaryElementwiseOperatorTransform(const OP &op) : op(op) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input REAL-valued array of size DIM to which the transform is
+   * applied.
+   *
+   * @return REAL-valued array of size DIM that is the transformed array.
+   */
   std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
 
     std::array<REAL, DIM> result;
@@ -254,8 +333,24 @@ struct BinaryArrayOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, DIM_OUT> {
 
   BinaryArrayOperatorTransform() = default;
+
+  /**
+   * @brief Constructor for BinaryArrayOperatorTransform.
+   *
+   * @param op Binary operator.
+   */
   BinaryArrayOperatorTransform(const OP &op) : op(op) {};
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input_1 REAL-valued array of size DIM1 that's passed to the binary
+   * operator.
+   * @param input_2 REAL-valued array of size DIM2 that's passed to the binary
+   * operator.
+   *
+   * @return REAL-valued array of size DIM_OUT that is the transformed array.
+   */
   std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM1> &input_1,
                                   const std::array<REAL, DIM2> &input_2) const {
 
@@ -279,6 +374,12 @@ struct BinaryElementwiseOperatorTransform
     : AbstractBinaryArrayTransform<DIM1, DIM2, std::max(DIM1, DIM2)> {
 
   BinaryElementwiseOperatorTransform() = default;
+
+  /**
+   * @brief Constructor for BinaryElementwiseOperatorTransform.
+   *
+   * @param op Binary operator.
+   */
   BinaryElementwiseOperatorTransform(const OP &op) : op(op) {
 
     if constexpr (DIM1 != DIM2) {
@@ -290,6 +391,17 @@ struct BinaryElementwiseOperatorTransform
     };
   };
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input_1 REAL-valued array of size DIM1 that's passed elementwise to
+   * the binary operator.
+   * @param input_2 REAL-valued array of size DIM2 that's passed elementwise to
+   * the binary operator.
+   *
+   * @return REAL-valued array of size max(DIM1, DIM2) that is the transformed
+   * array.
+   */
   std::array<REAL, std::max(DIM1, DIM2)>
   apply(const std::array<REAL, DIM1> &input_1,
         const std::array<REAL, DIM2> &input_2) const {
@@ -340,6 +452,14 @@ struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<DIM, DIM, 1> {
 
   BinaryDotArrayTransform() = default;
 
+  /**
+   * @brief Function to apply the transform.
+   *
+   * @param input_1 REAL-valued array of size DIM.
+   * @param input_2 REAL-valued array of size DIM.
+   *
+   * @return REAL-valued array of size 1 that is the result of the dot product.
+   */
   std::array<REAL, 1> apply(const std::array<REAL, DIM> &input_1,
                             const std::array<REAL, DIM> &input_2) const {
     std::array<REAL, 1> result{0};
@@ -351,6 +471,16 @@ struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<DIM, DIM, 1> {
     return result;
   };
 };
+
+/**
+ * @brief Overload of the "+" operator for adding the outputs of
+ * two ReactionData objects using BinaryArrayTransformData. The addition is
+ * elementwise.
+ *
+ * Example usage: auto result = obj1 + obj2;
+ * Where obj1 and obj2 both inherit from ReactionDataBase.
+ * The result can be treated as CompositeData-derived object.
+ */
 template <
     typename T, typename U,
     std::enable_if_t<
@@ -366,6 +496,15 @@ inline auto operator+(const T &lhs, const U &rhs) {
       lhs, rhs);
 };
 
+/**
+ * @brief Overload of the "*" operator for multiplying the outputs of
+ * two ReactionData objects using BinaryArrayTransformData. The multiplication
+ * is elementwise.
+ *
+ * Example usage: auto result = obj1 * obj2;
+ * Where obj1 and obj2 both inherit from ReactionDataBase.
+ * The result can be treated as CompositeData-derived object.
+ */
 template <
     typename T, typename U,
     std::enable_if_t<
@@ -382,6 +521,15 @@ inline auto operator*(const T &lhs, const U &rhs) {
       lhs, rhs);
 };
 
+/**
+ * @brief Overload of the "-" operator for subtracting the outputs of
+ * two ReactionData objects using BinaryArrayTransformData. The subtraction is
+ * elementwise.
+ *
+ * Example usage: auto result = obj1 - obj2;
+ * Where obj1 and obj2 both inherit from ReactionDataBase.
+ * The result can be treated as CompositeData-derived object.
+ */
 template <
     typename T, typename U,
     std::enable_if_t<
@@ -398,6 +546,15 @@ inline auto operator-(const T &lhs, const U &rhs) {
       lhs, rhs);
 };
 
+/**
+ * @brief Overload of the "/" operator for dividing the outputs of
+ * two ReactionData objects using BinaryArrayTransformData. The division is
+ * elementwise.
+ *
+ * Example usage: auto result = obj1 / obj2;
+ * Where obj1 and obj2 both inherit from ReactionDataBase.
+ * The result can be treated as CompositeData-derived object.
+ */
 template <
     typename T, typename U,
     std::enable_if_t<
@@ -415,6 +572,21 @@ inline auto operator/(const T &lhs, const U &rhs) {
       lhs, rhs);
 };
 
+/**
+ * @brief Helper function to apply a dot product to the outputs of two
+ * ReactionData objects using BinaryArrayTransformData. The dot product itself
+ * is applied via BinaryDotArrayTransform.
+ *
+ * Example usage: auto result = dot_product(obj1, obj2);
+ * Where obj1 and obj2 both inherit from ReactionDataBase.
+ * The result can be treated as CompositeData-derived object.
+ *
+ * @param lhs ReactionData object (with the same output dimensions as rhs).
+ * @param rhs ReactionData object (with the same output dimensions as lhs).
+ *
+ * @return BinaryArrayTransformData object whose calc_data will output the
+ * result of the dot product.
+ */
 template <
     typename T, typename U,
     std::enable_if_t<
@@ -422,16 +594,60 @@ template <
                                          typename T::RNG_KERNEL_TYPE, 0>,
                         T>::value,
         bool> = true>
-
 inline auto dot_product(const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(BinaryDotArrayTransform<T::DIM>(), lhs, rhs);
 };
+
+/**
+ * @brief Helper function to generate a UnaryArrayTransformData that can be used
+ * to scale the output of a ReactionData object by a scalar.
+ *
+ * Example usage:
+ *     auto velocity_data = extract<3>("VELOCITY");
+ *     auto doubler = scale_by<3>(2.0);
+ *     auto pipeline = pipe(velocity_data, doubler)
+ *
+ * The pipeline can be treated as CompositeData-derived object.
+ *
+ * @param mult REAL-valued scalar to multiply the elements of the output of a
+ * ReactionData object.
+ *
+ * @return UnaryArrayTransformData object whose calc_data will output an
+ * elementwise multiplication of the output of the calc_data of a ReactionData
+ * object.
+ */
 template <size_t DIM> inline auto scale_by(const REAL &mult) {
 
   return UnaryArrayTransformData(ScalerArrayTransform<DIM>(mult));
 }
 
+/**
+ * @brief Helper function to generate a UnaryArrayTransformData that can be used
+ * to pass the output of a ReactionData object to a lambda function.
+ *
+ * Example usage:
+ *     auto velocity_data = extract<2>("VELOCITY");
+ *     auto vnorm_lambda = [](const std::array<REAL, 2> &arr) {
+ *       return std::array<REAL, 1>{
+ *           std::sqrt(arr[0] * arr[0] + arr[1] * arr[1])
+ *       };
+ *     };
+ *     auto vnorm_lambda_wrapper =
+ *         utils::LambdaWrapper<decltype(vnorm_lambda), 2>(vnorm_lambda);
+ *     auto unary_transform_data =
+ *         uatData<2, decltype(vnorm_lambda_wrapper)>(vnorm_lambda_wrapper);
+ *     auto pipeline = pipe(velocity_data, unary_transform_data)
+ *
+ * The pipeline can be treated as CompositeData-derived object.
+ *
+ * @param lambda A lambda wrapper object that defines the transformation to
+ * apply to a ReactionData object.
+ *
+ * @return UnaryArrayTransformData object whose calc_data will output a
+ * transformation of the output of the calc_data of a ReactionData object
+ * according to the lamdba argument.
+ */
 template <size_t DIM_IN, typename LAMBDA>
 inline auto uatData(const LAMBDA &lambda) {
 
@@ -439,6 +655,29 @@ inline auto uatData(const LAMBDA &lambda) {
       UnaryArrayOperatorTransform<DIM_IN, LAMBDA::OUTPUT_DIM, LAMBDA>(lambda));
 }
 
+/**
+ * @brief Helper function to generate a UnaryArrayTransformData that can be used
+ * to pass the output of a ReactionData object to a lambda function elementwise.
+ *
+ * Example usage:
+ *     auto velocity_data = extract<2>("VELOCITY");
+ *     auto vsquare_lambda = [](const REAL &v_comp) {
+ *       return v_comp * v_comp;
+ *     };
+ *     auto vsquare_lambda_wrapper = utils::LambdaWrapper(vsquare_lambda);
+ *     auto unary_transform_data =
+ *         uetData<2,decltype(vsquare_lambda_wrapper)>(vsquare_lambda_wrapper);
+ *     auto pipeline = pipe(velocity_data, unary_transform_data)
+ *
+ * The pipeline can be treated as CompositeData-derived object.
+ *
+ * @param lambda A lambda wrapper object that defines the elementwise
+ * transformation to apply to a ReactionData object.
+ *
+ * @return UnaryArrayTransformData object whose calc_data will output an
+ * elementwise transformation of the output of the calc_data of a ReactionData
+ * object according to the lamdba argument.
+ */
 template <size_t DIM_IN, typename LAMBDA>
 inline auto uetData(const LAMBDA &lambda) {
 
@@ -446,6 +685,19 @@ inline auto uetData(const LAMBDA &lambda) {
       UnaryElementwiseOperatorTransform<DIM_IN, LAMBDA>(lambda));
 }
 
+/**
+ * @brief Helper function to generate a BinaryArrayTransformData that can be
+ * used to pass the output of two ReactionData objects to a lambda function.
+ *
+ * @param lambda A lambda wrapper object that defines the transformation to
+ * apply to the ReactionData objects.
+ * @param lhs ReactionData object
+ * @param rhs ReactionData object
+ *
+ * @return BinaryArrayTransformData object whose calc_data will output the
+ * binary transformation that will be applied to the outputs of the calc_data of
+ * two ReactionData objects according to the lambda argument.
+ */
 template <
     typename LAMBDA, typename T, typename U,
     std::enable_if_t<
@@ -461,6 +713,20 @@ inline auto batData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
       lhs, rhs);
 }
 
+/**
+ * @brief Helper function to generate a BinaryArrayTransformData that can be
+ * used to pass the output of two ReactionData objects to a lambda function to
+ * be operated on elementwise.
+ *
+ * @param lambda A lambda wrapper object that defines the elementwise
+ * transformation to apply to the ReactionData objects.
+ * @param lhs ReactionData object
+ * @param rhs ReactionData object
+ *
+ * @return BinaryArrayTransformData object whose calc_data will output the
+ * binary transformation that will be elementwise applied to the outputs of the
+ * calc_data of two ReactionData objects according to the lambda argument.
+ */
 template <
     typename LAMBDA, typename T, typename U,
     std::enable_if_t<

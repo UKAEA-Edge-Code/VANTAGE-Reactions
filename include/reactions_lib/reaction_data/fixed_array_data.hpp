@@ -35,7 +35,7 @@ struct FixedArrayDataOnDevice : public ReactionDataBaseOnDevice<ndim> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return Fixed ndim-sized array
+   * @return Fixed REAL-valued array of size ndim.
    */
   std::array<REAL, ndim>
   calc_data(const NP::Access::LoopIndex::Read &index,

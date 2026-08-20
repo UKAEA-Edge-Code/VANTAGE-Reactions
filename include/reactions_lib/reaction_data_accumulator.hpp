@@ -5,12 +5,13 @@
 #include "transformation_wrapper.hpp"
 #include <memory>
 
-#include <utility>
-
 namespace VANTAGE::Reactions {
 /**
  * @brief Transformation evaluating a ReactionData object and reducing the
  * results cellwise
+ *
+ * @tparam ReactionData Type of object whose outputs are to be reduced cellwise
+ * (must be derived from ReactionDataBase).
  */
 template <typename ReactionData>
 struct CellwiseReactionDataAccumulator : TransformationStrategy {

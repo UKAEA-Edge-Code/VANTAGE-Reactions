@@ -4,7 +4,6 @@
 #include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
-#include <cmath>
 
 namespace VANTAGE::Reactions {
 

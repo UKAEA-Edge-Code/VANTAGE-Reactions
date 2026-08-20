@@ -7,8 +7,6 @@
 #include "particle_properties_map.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
-#include <ios>
-#include <iostream>
 #include <memory>
 
 namespace VANTAGE::Reactions {
@@ -34,15 +32,6 @@ enum class ControllerMode {
 /**
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given NP::ParticleGroup or NP::ParticleSubGroup.
- *
- * @param parent_transform TransformationWrapper(s) informing how parent
- * particles are to be handled
- * @param child_transform TransformationWrapper(s) informing how descendant
- * products are to be handled
- * @param auto_clean_tot_rate_buffer Automatically flush the total rate buffer.
- * Defaults to true.
- * @param properties_map Optional remapping of default properties (panic flag,
- * internal_state, and total rate)
  */
 struct ReactionController {
 
@@ -129,7 +118,7 @@ public:
    * @brief Function to add reactions to a stored vector of AbstractReaction
    * pointers.
    *
-   * @param reaction The reaction to be added
+   * @param reaction Shared pointer of the reaction to be added
    */
   void add_reaction(std::shared_ptr<AbstractReaction> reaction);
 
@@ -155,6 +144,10 @@ public:
   void set_cell_block_size(size_t cell_block_size) {
     this->cell_block_size = cell_block_size;
   }
+
+  /**
+   * Setter and getter for auto_clean_tot_rate_buffer setting.
+   */
   void set_auto_clean_tot_rate_buffer(const bool &auto_clean_setting) {
     this->auto_clean_tot_rate_buffer = auto_clean_setting;
   }
@@ -236,8 +229,32 @@ public:
   }
 
 private:
+  /**
+   * @brief Non-templated code from apply_parent_transforms to allow for
+   * definition/declaration separation.
+   *
+   * @param target The NP::ParticleSubGroup to apply the
+   * transforms to
+   * @param particle_group A reference NP::ParticleGroup.
+   */
   void apply_parent_transforms_impl(NP::ParticleSubGroupSharedPtr target,
                                     NP::ParticleGroupSharedPtr particle_group);
+
+  /**
+   * @brief Non-templated code from apply to allow for
+   * definition/declaration separation.
+   *
+   * @param target The NP::ParticleSubGroup to apply the
+   * reactions to.
+   * @param particle_group A reference NP::ParticleGroup.
+   * @param dt The current time step size.
+   * @param product_group The NP::ParticleGroup into which to add the products,
+   * should have the same spec as the parent.
+   * @param controller_mode The mode to run the controller in. Either
+   * standard_mode (default) or semi_dsmc_mode.
+   * @param is_particle_group A boolean that specifies if the PARENT template
+   * parameter passed to apply is NP::ParticleGroup.
+   */
   void apply_impl(NP::ParticleSubGroupSharedPtr target,
                   NP::ParticleGroupSharedPtr particle_group, double dt,
                   NP::ParticleGroupSharedPtr product_group,

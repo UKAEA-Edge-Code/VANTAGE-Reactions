@@ -3,8 +3,6 @@
 #include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 
-#include <vector>
-
 namespace VANTAGE::Reactions {
 
 /**

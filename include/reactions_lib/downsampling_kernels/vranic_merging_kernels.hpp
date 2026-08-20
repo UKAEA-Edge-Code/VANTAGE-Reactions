@@ -3,7 +3,6 @@
 
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/downsampling_base.hpp"
-#include <cmath>
 
 namespace VANTAGE::Reactions {
 
@@ -50,7 +49,7 @@ struct VranicMergingOnDevice : DownsamplingKernelOnDeviceBase<2> {
    * column of the reduction data
    * @param linear_idx Linear index determining which of the post-downsampling
    * particles the current particle is
-   * @param rng_kernel RNG kernel access, if required
+   * @param rng_kernel RNG kernel, if required
    */
   void
   apply(const NP::Access::LoopIndex::Read &index,

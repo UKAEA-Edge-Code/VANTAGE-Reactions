@@ -3,7 +3,6 @@
 #include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
 #include "reaction_data.hpp"
-#include "utils.hpp"
 
 #include <tuple>
 #include <type_traits>
@@ -73,8 +72,10 @@ struct DataCalculator : public AbstractDataCalculator {
    * @param buffer NP::NDLocalArray buffer - size should conform to the stored
    * ReactionData tuple size
    * @param particle_sub_group Particle subgroup used to fill out the buffer
-   * @param cell_idx Cell index for which to invoke the corresponding particle
-   * loops
+   * @param cell_idx_start Starting cell index for which to invoke the
+   * corresponding particle loops
+   * @param cell_idx_end Ending cell index for which to invoke the corresponding
+   * particle loops
    */
   void fill_buffer(const NP::NDLocalArraySharedPtr<REAL, 2> &buffer,
                    NP::ParticleSubGroupSharedPtr particle_sub_group,

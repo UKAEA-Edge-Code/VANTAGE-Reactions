@@ -8,6 +8,9 @@ namespace VANTAGE::Reactions {
 /**
  * @brief Abstract base class encapsulating a unary transformation of a
  * std::array
+ *
+ * @tparam INPUT_DIM Expected input size
+ * @tparam OUTPUT_DIM Expected output_size
  */
 template <size_t INPUT_DIM, size_t OUTPUT_DIM>
 struct AbstractUnaryArrayTransform {

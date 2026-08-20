@@ -40,7 +40,7 @@ struct CartesianBasisReflectionDataOnDevice
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size e that contains the calculated
+   * @return A REAL-valued array of size 3 that contains the calculated
    * reflected velocities.
    */
   std::array<REAL, 3>

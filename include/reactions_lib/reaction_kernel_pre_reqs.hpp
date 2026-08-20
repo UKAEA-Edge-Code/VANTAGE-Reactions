@@ -8,7 +8,6 @@
 
 #include <optional>
 #include <set>
-#include <stdexcept>
 #include <string>
 #include <strings.h>
 #include <vector>
@@ -103,6 +102,7 @@ bool operator==(const Species &lhs, const Species &rhs);
  *
  * @param species Species to use
  * @param property Property name to use
+ *
  * @return Species-specific property name
  */
 std::string species_property(const Species &species,
@@ -244,6 +244,8 @@ template <typename PROP_TYPE> struct Properties {
    * properties of this object are inserted first.
    *
    * @param other The Properties object to merge with
+   *
+   * @return Merged Properties object.
    */
   Properties<PROP_TYPE> merge_with(Properties<PROP_TYPE> other) {
 

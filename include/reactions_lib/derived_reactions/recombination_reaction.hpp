@@ -18,6 +18,8 @@ namespace VANTAGE::Reactions {
  * calculation
  * @tparam DataCalcType DataCalculator template parameter used for calculating,
  * electron source energy loss and the velocities for generated neutrals
+ * @tparam ndim Template parameter defining the ndim_velocity template
+ * parameter to use with RecombReactionKernels
  *
  */
 

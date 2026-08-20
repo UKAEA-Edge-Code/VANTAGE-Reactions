@@ -3,8 +3,6 @@
 #include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 
-#include <vector>
-
 namespace VANTAGE::Reactions {
 
 /**
@@ -93,6 +91,17 @@ private:
   NP::Sym<REAL> extracted_sym;
 };
 
+/**
+ * @brief Helper function to construct ExtractorData using the name of a
+ * NP::Sym<REAL>.
+ *
+ * @tparam ncomp Number of components of the dat to be extracted
+ *
+ * @param name Name of the NP::Sym<REAL> corresponding to the ParticleDat whose
+ * components should be extracted.
+ *
+ * @return Specified ExtractorData object.
+ */
 template <size_t n_comp> auto inline extract(const std::string &name) {
 
   return ExtractorData<n_comp>(NP::Sym<REAL>(name));

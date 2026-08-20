@@ -3,9 +3,7 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
-#include <iostream>
 #include <neso_particles.hpp>
-#include <vector>
 
 namespace VANTAGE::Reactions {
 /**
@@ -21,16 +19,24 @@ struct OneWayMaxwellianFluxOnDevice
 
   OneWayMaxwellianFluxOnDevice() = default;
 
+  /**
+   * Constructor for OneWayMaxwellianFluxOnDevice.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants.
+   */
   OneWayMaxwellianFluxOnDevice(const REAL &norm_ratio)
       : norm_ratio(norm_ratio) {};
 
   /**
-   * @brief solves the cubic equation used to find the maximum of
+   * @brief Solves the cubic equation used to find the maximum of
    * the rejection sampling function for the one way / truncated maxwellian
    * distribution
    *
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
-   * @return maximum of the rejection sampling function
+   * @return Solution of cubic equation of the form x^3 + p * x + q = 0 (where p
+   * and q are calculated within this function).
    */
   static REAL cardano_cubic_solver(REAL d) {
     const REAL coef_a = 2.0;
@@ -55,10 +61,11 @@ struct OneWayMaxwellianFluxOnDevice
   }
 
   /**
-   * @brief Gives the unnormalized function used in the one way / truncated
+   * @brief Gives the unnormalized value used in the one way / truncated
    * maxwellian rejection sampling algorithm
    *
    * @param d Ratio of flow speed to sigma (thermal spread) of the distribution
+   * @param t Result of cardano_cubic_solver(d) or a sampled random number.
    * @return maximum of the rejection sampling function
    */
   static REAL rejection_function(REAL d, REAL t) {
@@ -67,6 +74,21 @@ struct OneWayMaxwellianFluxOnDevice
            (s * s * s);
   }
 
+  /**
+   * @brief Samples a single value from a positive Maxwellian.
+   *
+   * @param drift Drift velocity due to fluid flow speed in the basis_pi
+   * direction.
+   * @param thermal_sigma Thermal velocity (derived from fluid temperature).
+   * @param index Read-only accessor to a loop index (used by kernel.at()).
+   * @param kernel The random number generator kernel.
+   * @param sample_counter Marker used to select which component of the kernel
+   * to access in kernel.at().
+   * @param is_kernel_valid Boolean that stores the validity of the kernel as
+   * returned by kernel.at(). If this is false then a value of 0.0 is returned.
+   *
+   * @return The sampled velocity value.
+   */
   REAL sample_positive_maxwellian(
       REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
       typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
@@ -93,6 +115,23 @@ struct OneWayMaxwellianFluxOnDevice
     } while (true);
   }
 
+  /**
+   * @brief Function to calculate the sampled ion velocities from a one way /
+   * truncated Maxwellian.
+   *
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for the reaction rate calculation.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for the reaction rate calculation.
+   * @param kernel The random number generator kernel
+   *
+   * @return A REAL-valued array of size 3 that contains the calculated sampled
+   * ion velocities.
+   */
   std::array<REAL, 3> calc_data(
       const NP::Access::LoopIndex::Read &index,
       const NP::Access::SymVector::Write<INT> &req_int_props,
@@ -172,14 +211,6 @@ public:
  * vectors that define the surface tangential and normal directions.
  * These are assumed to be orthonormal. See EIRENE docs section 1.5 Recycling
  * surface sources for more details.
- * @param norm_ratio The ratio of the temperature and kinetic energy
- * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
- * and v are the temperature and velocity normalisation constants
- * @param rng_kernel A shared pointer of a
- * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
- * ReactionDataBase.
- * @param properties_map (Optional) A std::map<int, std::string> object to be
- * used when remapping property names.
  */
 struct OneWayMaxwellianFluxSampler
     : public ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
@@ -194,11 +225,27 @@ struct OneWayMaxwellianFluxSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
+  /**
+   * @brief Constructor for OneWayMaxwellianFluxSampler.
+   *
+   * @param norm_ratio The ratio of the temperature and kinetic energy
+   * normalisations. Specifically kT/mv^2 where m is the mass of the ions, and T
+   * and v are the temperature and velocity normalisation constants
+   * @param rng_kernel A shared pointer of a
+   * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
+   * ReactionDataBase.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
+   */
   OneWayMaxwellianFluxSampler(
       const REAL &norm_ratio,
       std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map());
 
+  /**
+   * @brief Index the fluid flow speed, fluid temperature, surface basis
+   * functions and the panic flag on the on-device object
+   */
   void index_on_device_object();
 };
 }; // namespace VANTAGE::Reactions

@@ -148,10 +148,38 @@ private:
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
 };
 
+/**
+ * @brief Non-template implementation base for linear reaction type.
+ * Specifically meant for reactions that only involve a single particle at the
+ * start of the reaction. A thinner implementation version of LinearReactionBase
+ * (Open-ended DataCalculator template parameter is omitted here.)
+ *
+ * @tparam num_products_per_parent The number of products produced per parent
+ * by the derived linear reaction.
+ * @tparam ReactionData typename for reaction_data constructor argument
+ * @tparam ReactionKernels template class for reaction_kernels constructor
+ * argument
+ */
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels>
 struct LinearReactionBaseImpl : public AbstractReaction {
 
+  /**
+   * @brief Constructor for LinearReactionBaseImpl.
+   *
+   * @param sycl_target Compute device used by the instance.
+   * @param in_state Integer specifying the ID of the species on
+   * which the derived reaction is acting on.
+   * @param out_states Array of integers specifying the species IDs of the
+   * descendants produced by the derived reaction.
+   * @param reaction_data ReactionData object defining the reaction rate (used
+   * in calculate_rates)
+   * @param reaction_kernels ReactionKernels object defining the properties of
+   * the products and the feedback on the parent particle and fields (used in
+   * apply)
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names (weight and total_reaction_rate).
+   */
   LinearReactionBaseImpl(
       NP::SYCLTargetSharedPtr sycl_target, int in_state,
       std::array<int, num_products_per_parent> out_states,
@@ -206,6 +234,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * particles within a property assigned to each particle (all particles know
    * the total reaction rate) and stores the rate for each particle within a
    * buffer.
+   *
    * @param particle_sub_group A NP::ParticleSubGroupSharedPtr that contains
    * particles with the relevant species ID out of the full NP::ParticleGroup
    * @param cell_idx_start The id of the first cell over which to run the
@@ -632,6 +661,18 @@ struct LinearReactionBase
       : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
                            reaction_kernels, DataCalc(), properties_map) {}
 
+  /**
+   * @brief Function to fill pre_req_data
+   *
+   * @param pre_req_data NP::NDLocalArraySharedPtr<REAL, 2> object to contain
+   * pre calculated data needed for reaction_kernels.
+   * @param particle_sub_group Shared pointer of a ParticleSubGroup to apply the
+   * ReactionData objects in data_calculator to.
+   * @param cell_idx_start The id of the first cell over which to run the
+   * NP::ParticleLoop in data_calculator.
+   * @param cell_idx_end The cell id up to which to run the loop in
+   * data_calculator.
+   */
   void fill_pre_req_data(NP::NDLocalArraySharedPtr<REAL, 2> &pre_req_data,
                          NP::ParticleSubGroupSharedPtr particle_sub_group,
                          INT cell_idx_start, INT cell_idx_end) override {

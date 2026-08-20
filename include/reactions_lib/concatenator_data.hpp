@@ -5,6 +5,14 @@
 
 namespace VANTAGE::Reactions {
 
+/**
+ * @brief Recursive helper function to accumulate the DIM-values of
+ * each ReactionData (or ReactionDataOnDevice) object in DATATYPE (specifically
+ * the size of the output of their on-device calc_data functions).
+ *
+ * Use within ConcatenatorData or ConcatenatorDataOnDevice as:
+ * total_dim<DATATYPE...>();
+ */
 template <typename T> constexpr size_t total_dim() { return T::DIM; };
 template <typename T, typename U, typename... DATATYPE>
 constexpr size_t total_dim() {
@@ -24,6 +32,13 @@ struct ConcatenatorDataOnDevice
                                    DATATYPE...> {
 
   ConcatenatorDataOnDevice() = default;
+
+  /**
+   * @brief Constructor for ConcatenatorDataOnDevice.
+   *
+   * @param data Variadic argument with all of the contained
+   * ReactionDataOnDevice objects
+   */
   ConcatenatorDataOnDevice(DATATYPE... data)
       : CompositeDataOnDevice<total_dim<DATATYPE...>(), 0, REAL, REAL,
                               DATATYPE...>(data...) {};

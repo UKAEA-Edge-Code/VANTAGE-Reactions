@@ -186,8 +186,6 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * @tparam interp_ndim Number of dimensions being interpolated.
  * @tparam non_interp_ndim Number of non-interpolated dimensions (ie. dimensions
  * passed through without modification to calc_data(...)).
- * @tparam total_ndim The size of the input array to pass to calc_data(...) (ie.
- * interp_ndim + non_interp_ndim).
  * @param vertex_func_evals Pointer to a vector to fill
  * with function evaluations.
  * @param vertex_coord Pointer to a vector to fill with

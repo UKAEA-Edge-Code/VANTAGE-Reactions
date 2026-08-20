@@ -1,11 +1,8 @@
 #ifndef REACTIONS_SAMPLER_DATA_H
 #define REACTIONS_SAMPLER_DATA_H
 #include "../particle_properties_map.hpp"
-#include "../utils.hpp"
+#include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include <iostream>
-
-#include <vector>
 
 namespace VANTAGE::Reactions {
 
@@ -33,7 +30,8 @@ struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL> {
    * need to be used for the reaction rate calculation.
    * @param rng_kernel The random number generator kernel to sample from
    *
-   * @return Sampled random number
+   * @return Sampled random number (in the form of a REAL-valued array of size
+   * 1).
    */
   std::array<REAL, 1>
   calc_data(const NP::Access::LoopIndex::Read &index,

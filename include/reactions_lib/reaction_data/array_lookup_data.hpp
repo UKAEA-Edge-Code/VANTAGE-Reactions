@@ -2,7 +2,6 @@
 #define REACTIONS_ARRAY_LOOKUP_DATA_H
 #include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/reaction_kernels/specular_reflection_kernels.hpp"
 #include <array>
 #include <memory>
 
@@ -17,9 +16,6 @@ namespace VANTAGE::Reactions {
  * @tparam N The size of the REAL-valued array stored in the lookup table
  * @tparam ephemeral_dat True if the NP::Sym storing the key value is an
  * ephemeral dat
- * @param key_comp The key dat component index to use as the lookup key
- * @param default_data The default array to be returned in case the lookup key
- * cannot be found
  */
 template <size_t N, bool ephemeral_dat>
 struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
@@ -36,7 +32,7 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
       : key_comp(key_comp), default_data(default_data) {};
 
   /**
-   * @brief Function to calculate the reaction rate for a fixed rate reaction
+   * @brief Function to retrieve values from a lookup-table.
    *
    * @param index Read-only accessor to a loop index for a NP::ParticleLoop
    * inside which calc_data is called. NP::Access using either
@@ -48,6 +44,10 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
    * need to be used for the reaction rate calculation.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
+   *
+   * @return REAL-valued array of size N containing the values from the
+   * lookup-table for a given key_val (retrieved from ParticleDat using
+   * key_ind).
    */
   std::array<REAL, N>
   calc_data(const NP::Access::LoopIndex::Read &index,
@@ -95,13 +95,25 @@ public:
  * @tparam ephemeral_dat True if the NP::Sym storing the key value is an
  * ephemeral dat
  * @param key_comp The key dat component index to use as the lookup key
- * @param default_data The default array to be returned in case the lookup key
- * cannot be found
  */
 template <size_t N, bool ephemeral_dat = false>
 struct ArrayLookupData
     : public ReactionDataBase<ArrayLookupDataOnDevice<N, ephemeral_dat>, N> {
 
+  /**
+   * @brief Constructor for ArrayLookupData
+   *
+   * @param key_sym NP::Sym<INT> that designates which NP::ParticleDat to use
+   * for the key.
+   * @param key_sym_comp The component of the NP::ParticleDat signified by
+   * key_sym to be used as the key.
+   * @param lookup_table A map between int and std::array<REAL, N> that contains
+   * the lookup table (this will be used to fill a NP::BlockedBinaryNode).
+   * @default_values The default array to be returned in case the lookup key
+   * cannot be found.
+   * @sycl_target SYCL target shared pointer used for initialization of
+   * NP::BlockedBinaryTree.
+   */
   ArrayLookupData(const NP::Sym<INT> &key_sym, int key_sym_comp,
                   const std::map<int, std::array<REAL, N>> &lookup_table,
                   const std::array<REAL, N> &default_values,
