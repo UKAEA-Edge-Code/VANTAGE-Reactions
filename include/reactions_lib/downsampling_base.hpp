@@ -3,14 +3,9 @@
 
 #include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
-#include "common_markers.hpp"
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include "transformation_wrapper.hpp"
-#include "utils.hpp"
-#include <algorithm>
-#include <cmath>
-#include <functional>
 #include <limits>
 #include <memory>
 
@@ -93,7 +88,7 @@ struct DownsamplingKernelOnDeviceBase {
    * column of the reduction data
    * @param linear_idx Linear index determining which of the post-downsampling
    * particles the current particle is
-   * @param rng_kernel RNG kernel access, if required
+   * @param rng_kernel RNG kernel, if required
    */
   void apply(const NP::Access::LoopIndex::Read &index,
              const NP::Access::SymVector::Write<INT> &req_int_props,
@@ -112,7 +107,7 @@ struct DownsamplingKernelOnDeviceBase {
    * @param index LoopIndex accessor used for linear indexing
    * @param req_int_props SymVector Write access to required integer properties
    * @param req_real_props SymVector Write access to required real properties
-   * @param rng_kernel RNG kernel access, if required
+   * @param rng_kernel RNG kernel, if required
    */
   void apply_no_red(const NP::Access::LoopIndex::Read &index,
                     const NP::Access::SymVector::Write<INT> &req_int_props,

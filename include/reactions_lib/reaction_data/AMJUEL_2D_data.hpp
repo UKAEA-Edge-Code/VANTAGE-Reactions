@@ -5,7 +5,6 @@
 #include "../reaction_kernel_pre_reqs.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
-#include <cmath>
 
 namespace VANTAGE::Reactions {
 
@@ -59,7 +58,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array containing the calculated reaction rate.
+   * @return A REAL-valued array of size 1 containing the calculated reaction
+   * rate.
    */
   std::array<REAL, 1>
   calc_data(const NP::Access::LoopIndex::Read &index,

@@ -52,6 +52,9 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    *
    * @param relative_vel Relative velocity of projectile and target
    * @param uniform_rand Uniformly distributed random number
+   * @param value_at Cross-section value at a given relative velocity
+   * @param max_rate_val Maximum value of the rate, sigma*v, for this
+   * cross-section.
    * @return true
    */
   bool accept_reject(REAL relative_vel, REAL uniform_rand, REAL value_at,

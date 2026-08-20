@@ -50,8 +50,6 @@ namespace VANTAGE::Reactions {
  *
  * @tparam input_ndim Total input dimensionality (interpolation plus TRIM
  * dimensions).
- * @tparam output_ndim Number of TRIM dimensions (size of the returned value
- * array).
  */
 template <int input_ndim>
 struct TrimEvalDataOnDevice
@@ -68,12 +66,14 @@ struct TrimEvalDataOnDevice
   /**
    * @brief Constructor for TrimEvalDataOnDevice.
    *
-   * @param d_grid Device buffer containing the tabulated distribution data.
-   * @param d_coords Device buffer containing coordinate boundaries for the
-   * interpolation dimensions.
-   * @param d_dims Device buffer containing grid dimensions for the
-   * interpolation axes.
-   * @param d_trim_dims Device buffer containing TRIM grid dimensions.
+   * @param d_grid Shared pointer to a device buffer containing the tabulated
+   * distribution data.
+   * @param d_coords Shared pointer to a device buffer containing coordinate
+   * boundaries for the interpolation dimensions.
+   * @param d_dims Shared pointer to a device buffer containing grid dimensions
+   * for the interpolation axes.
+   * @param d_trim_dims Shared pointer to a device buffer containing TRIM grid
+   * dimensions.
    */
   TrimEvalDataOnDevice(
       const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,
@@ -306,6 +306,9 @@ struct TrimEvalData
                   "input_ndim - output_ndim");
   }
 
+  /**
+   * @brief Index the panic flag on the on-device object
+   */
   void index_on_device_obj() {
     this->on_device_obj->panic_ind = this->required_int_props.find_index(
         this->properties_map.at(props.panic));

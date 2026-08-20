@@ -24,7 +24,7 @@ struct SphericalBasisReflectionDataOnDevice
   SphericalBasisReflectionDataOnDevice() = default;
 
   /**
-   * @brief Function to calculate the specularly reflected velocities
+   * @brief Function to calculate the spherically reflected velocities
    *
    * @param input The v, theta, phi components of the reflected vector
    * @param index Read-only accessor to a loop index for a NP::ParticleLoop
@@ -38,7 +38,7 @@ struct SphericalBasisReflectionDataOnDevice
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return A REAL-valued array of size e that contains the calculated
+   * @return A REAL-valued array of size 3 that contains the calculated
    * reflected velocities.
    */
   std::array<REAL, 3>

@@ -14,6 +14,9 @@ namespace VANTAGE::Reactions::utils {
 /**
  * @brief Wrapper class to provide default constructible lambdas for templating
  * device types that need them
+ *
+ * @tparam F Class of wrapped function
+ * @tparam DIM The size of the dimensions of the output of the wrapped function.
  */
 template <class F, size_t DIM = 1> struct LambdaWrapper {
 
@@ -21,6 +24,11 @@ template <class F, size_t DIM = 1> struct LambdaWrapper {
 
   LambdaWrapper() = default;
 
+  /**
+   * @brief Constructor for LambdaWrapper.
+   *
+   * @param f The lambda function to wrap.
+   */
   explicit LambdaWrapper(F &f) {
 
     static_assert(
@@ -36,6 +44,11 @@ template <class F, size_t DIM = 1> struct LambdaWrapper {
     return *std::launder(reinterpret_cast<const F *>(this->buf));
   }
 
+  /**
+   * @brief Overload of the call operator.
+   *
+   * @param args Arguments to pass to the wrapped lambda function.
+   */
   template <class... Args>
   auto operator()(Args &...args) const
       -> decltype(std::declval<const F &>()(std::forward<Args>(args)...)) {
@@ -83,6 +96,7 @@ template <typename T> T norm2(const std::vector<T> &vec) {
  * @brief Helper function to compute vector cross product of two length 3
  * vectors.
  *
+ * @tparam T Arithmetic type template parameter
  * @param a first cross product argument
  * @param b second cross product argument
  * @return std::vector<T> a x b
@@ -186,6 +200,7 @@ reflect_vector(const std::array<REAL, n_dim> &input,
  *
  * @param input The input vector
  * @param proj_direction Direction onto which to project the input
+ * @return Projected vector.
  */
 template <size_t n_dim>
 inline std::array<REAL, n_dim>
@@ -225,6 +240,8 @@ project_vector(const std::array<REAL, n_dim> &input,
  * into the surface
  * @param normal Normal vector at the surface, assumed to be a unit vector, but
  * can be either into or out of the surface
+ *
+ * @return Normal basis.
  */
 inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
                                             const std::array<REAL, 3> &normal) {
@@ -275,6 +292,8 @@ inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
  * @param coords r,theta, phi coordinates
  * @param basis Flattened rotated cartesian basis with respect to which the
  * coords are given
+ *
+ * @return Cartesian components of the input coords.
  */
 inline std::array<REAL, 3>
 normal_basis_to_cartesian(const std::array<REAL, 3> &coords,

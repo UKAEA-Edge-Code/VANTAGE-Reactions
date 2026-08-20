@@ -163,10 +163,12 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * @param func Generator callable with signature
    *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
    * returning a REAL value.
+   * @param context Argument pack with types defined by Context... that may need
+   * to be passed to func.
    */
-  // The extra std::is_same_v condition is due to Clang limitation not allowing
-  // deactivation using enable_if_t when the condition only uses the template
-  // parameter from the enclosing struct.
+  // The extra std::is_same_v condition is due to a Clang limitation not
+  // allowing deactivation using enable_if_t when the condition only uses the
+  // template parameter from the enclosing struct.
   template <typename FUNC, typename... Context,
             std::enable_if_t<(output_ndim == 0) && std::is_same_v<FUNC, FUNC>,
                              int> = 0>
@@ -218,6 +220,8 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * @param func Generator callable with signature
    *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
    * returning a REAL std::array
+   * @param context Argument pack with types defined by Context... that may need
+   * to be passed to func.
    */
   // The extra std::is_same_v condition is due to Clang limitation not allowing
   // deactivation using enable_if_t when the condition only uses the template

@@ -7,13 +7,13 @@
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
 
-#include <vector>
-
 namespace VANTAGE::Reactions {
 
 /**
- * struct SpecularReflectionKernelsOnDevice - SYCL device-compatible kernel for
- * specular reflection surface process.
+ * @brief Device type for specular reflection surface process.
+ *
+ * @tparam ndim_velocity The number of dimensions for the particle velocity
+ * property.
  */
 template <int ndim_velocity>
 struct SpecularReflectionKernelsOnDevice
@@ -73,7 +73,8 @@ public:
 };
 
 /**
- * @brief Simple specular reflection kernels, without any surface feedback
+ * @brief Host type for simple specular reflection kernels, without any surface
+ * feedback
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)

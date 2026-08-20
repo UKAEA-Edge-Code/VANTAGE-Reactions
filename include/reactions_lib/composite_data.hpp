@@ -27,6 +27,12 @@ struct CompositeDataOnDevice
 
   CompositeDataOnDevice() = default;
 
+  /**
+   * @brief Constructor for CompositeDataOnDevice.
+   *
+   * @param data Variadic argument with all of the contained
+   * ReactionDataOnDevice objects
+   */
   CompositeDataOnDevice(DATATYPE... data)
       : data(NP::Tuple::to_tuple(data...)) {};
 
@@ -34,6 +40,10 @@ protected:
   NP::Tuple::Tuple<DATATYPE...> data;
 };
 
+/**
+ * @brief Getter that returns tuple of ReactionDataOnDevice objects associated
+ * with each DATATYPE object in data.
+ */
 template <typename... DATATYPE>
 inline std::tuple<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>
 get_on_device_objs(std::tuple<DATATYPE...> &data) {
@@ -109,6 +119,10 @@ struct CompositeData
     return new_set;
   }
 
+  /**
+   * @brief Getter for the merged set of required integer properties of all of
+   * the contained ReactionData objects.
+   */
   ArgumentNameSet<INT> get_required_int_props_children() {
 
     auto new_set = ArgumentNameSet<INT>();
@@ -122,6 +136,10 @@ struct CompositeData
     return new_set;
   }
 
+  /**
+   * @brief Setter of the required integer properties for all of the contained
+   * ReactionData objects.
+   */
   void set_required_int_props(const ArgumentNameSet<INT> &props) {
     this->required_int_props = props;
     std::apply(
@@ -130,6 +148,10 @@ struct CompositeData
     this->index_on_device_object();
   }
 
+  /**
+   * @brief Setter of the required REAL properties for all of the contained
+   * ReactionData objects.
+   */
   void set_required_real_props(const ArgumentNameSet<REAL> &props) {
     this->required_real_props = props;
     std::apply(

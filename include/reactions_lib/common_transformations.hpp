@@ -47,11 +47,12 @@ struct CompositeTransform : TransformationStrategy {
    * the member variable components.
    *
    * @param components A vector of TransformationStrategy shared pointers. These
-   * define the transfrormations that are to be applied when calling the
+   * define the transformations that are to be applied when calling the
    * transform member function.
    */
   CompositeTransform(
       std::vector<std::shared_ptr<TransformationStrategy>> components);
+
   /**
    * @brief Apply all children of this transform in order of addition
    *

@@ -37,11 +37,12 @@ struct CartesianGridDataOnDevice
   /**
    * @brief Constructor for CartesianGridDataOnDevice.
    *
-   * @param d_grid Device buffer containing the tabulated data.
-   * @param d_coords Device buffer containing coordinate boundaries for the
-   * interpolation dimensions.
-   * @param d_dims Device buffer containing grid dimensions for the
-   * interpolation axes.
+   * @param d_grid Shared pointer to a device buffer containing the tabulated
+   * data.
+   * @param d_coords Shared pointer to a device buffer containing coordinate
+   * boundaries for the interpolation dimensions.
+   * @param d_dims Shared pointer to a device buffer containing grid dimensions
+   * for the interpolation axes.
    */
   CartesianGridDataOnDevice(
       const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,

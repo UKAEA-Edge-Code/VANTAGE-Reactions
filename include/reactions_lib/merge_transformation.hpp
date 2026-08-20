@@ -3,17 +3,10 @@
 
 #include "../reactions/neso_particles_namespace_alias.hpp"
 #include "../reactions/neso_test_assert.hpp"
-#include "common_markers.hpp"
 #include "particle_properties_map.hpp"
 #include "transformation_wrapper.hpp"
-#include "utils.hpp"
-#include <algorithm>
-#include <cmath>
-#include <functional>
 #include <limits>
 #include <memory>
-
-#include <vector>
 
 namespace VANTAGE::Reactions {
 /**

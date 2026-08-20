@@ -6,15 +6,39 @@
 
 namespace VANTAGE::Reactions {
 
+/**
+ * @brief Recursive helper function to retrieve the size of the dimensions of
+ * the last ReactionData (or ReactionDataOnDevice) object in DATATYPE
+ * (specifically the dimensions of the output of its on-device calc_data
+ * function).
+ *
+ * Use within PipelineData or PipelineDataOnDevice as: last_dim<DATATYPE...>();
+ */
 template <typename T> constexpr size_t last_dim() { return T::DIM; };
 template <typename T, typename U, typename... DATATYPE>
 constexpr size_t last_dim() {
   return last_dim<U, DATATYPE...>();
 };
 
+/**
+ * @brief Helper function to retrieve the size of input dimensions of the first
+ * ReactionData (or ReactionDataOnDevice) object in DATATYPE
+ *
+ * Use within PipelineData or PipelineDataOnDevice as:
+ * first_in_dim<DATATYPE...>();
+ */
 template <typename T, typename... DATATYPE> constexpr size_t first_in_dim() {
   return T::INPUT_DIM;
 };
+
+/**
+ * @brief Helper function to check that the size of input dimensions of a given
+ * ReactionData object in DATATYPE equals the size of output dimensions of
+ * the previous ReactionData (or ReactionDataOnDevice) object.
+ *
+ * Use within PipelineData or PipelineDataOnDevice as:
+ * check_consistency<DATATYPE...>();
+ */
 template <typename T> constexpr bool check_consistency() { return true; };
 template <typename T, typename U, typename... DATATYPE>
 constexpr bool check_consistency() {
@@ -39,6 +63,12 @@ struct PipelineDataOnDevice
 
   PipelineDataOnDevice() = default;
 
+  /**
+   * @brief Constructor for PipelineDataOnDevice.
+   *
+   * @param data Variadic argument with all of the contained
+   * ReactionDataOnDevice objects
+   */
   PipelineDataOnDevice(DATATYPE... data)
       : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
                               DATATYPE...>(data...) {
@@ -64,7 +94,8 @@ struct PipelineDataOnDevice
    * @param kernel The random number generator kernels used in the
    * calculation, a NP::TupleRNG accessor
    *
-   * @return Concatenated return arrays of all the contained device types
+   * @return A return array containing the result of the calc_data of the last
+   * ReactionDataOnDevice object  in DATATYPE.
    */
   std::array<REAL, DIM> calc_data(
       const NP::Access::LoopIndex::Read &index,
@@ -156,6 +187,14 @@ struct PipelineData
   };
 };
 
+/**
+ * @brief Helper function to construct a PipelineData object.
+ *
+ * @param data Variadic argument with all of the contained ReactionData
+ * objects
+ *
+ * @return PipelineData object.
+ */
 template <typename... DATATYPE> inline auto pipe(DATATYPE... data) {
 
   return PipelineData(data...);

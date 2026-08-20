@@ -155,7 +155,7 @@ struct InterpolateDataOnDevice
   /**
    * @brief Function to calculate interpolated function evaluations.
    *
-   * @param interpolation_points An array containing all of the values needed
+   * @param input_array An array containing all of the values needed
    * for grid-function evaluation. (Both the interpolation points as well as
    * pass-through values)
    * @param index Read-only accessor to a loop index for a NP::ParticleLoop
@@ -382,7 +382,7 @@ public:
  * @tparam DATATYPE ReactionDataBase derived type corresponding to the
  * grid-function evaluation reaction data object.
  * @tparam non_interp_ndim The number of dimensions that are not interpolated
- * and are used by calc_data from DATATYPE.
+ * and are used by calc_data from DATATYPE. (default is 0)
  */
 
 template <size_t output_ndim, size_t interp_ndim, typename DATATYPE,

@@ -4,10 +4,8 @@
 #include "../particle_properties_map.hpp"
 #include "../utils.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include <iostream>
 
 #include <type_traits>
-#include <vector>
 
 namespace VANTAGE::Reactions {
 
