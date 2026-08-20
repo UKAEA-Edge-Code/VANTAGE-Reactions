@@ -74,6 +74,21 @@ struct OneWayMaxwellianFluxOnDevice
            (s * s * s);
   }
 
+  /**
+   * @brief Samples a single value from a positive Maxwellian.
+   *
+   * @param drift Drift velocity due to fluid flow speed in the basis_pi
+   * direction.
+   * @param thermal_sigma Thermal velocity (derived from fluid temperature).
+   * @param index Read-only accessor to a loop index (used by kernel.at()).
+   * @param kernel The random number generator kernel.
+   * @param sample_counter Marker used to select which component of the kernel
+   * to access in kernel.at().
+   * @param is_kernel_valid Boolean that stores the validity of the kernel as
+   * returned by kernel.at(). If this is false then a value of 0.0 is returned.
+   *
+   * @return The sampled velocity value.
+   */
   REAL sample_positive_maxwellian(
       REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
       typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
