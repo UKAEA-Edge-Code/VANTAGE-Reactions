@@ -331,6 +331,8 @@ struct CollisionCellManager {
     }
   };
 
+  std::vector<INT> get_species_ids() { return this->species_ids; }
+
 private:
   std::shared_ptr<DSMC::CollisionCellPartition> coll_cell_partition;
   std::shared_ptr<AbstractCollCellHierarchy> coll_cell_hierarchy;
