@@ -1,29 +1,32 @@
-#ifndef REACTIONS_CONSTANT_CS_H
-#define REACTIONS_CONSTANT_CS_H
+#ifndef REACTIONS_IPL_CS_H
+#define REACTIONS_IPL_CS_H
 #include "../cross_section_abstract.hpp"
-#include <limits>
 #include <neso_particles.hpp>
 
 using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A constant cross section. The rate is unbounded, so a default maximum
- * velocity needs to be suplied. NOTE: Ideally, the default maximum rate call
- * wouldn't be used.
+ * @brief An inverse power law cross-section, proportional to v_rel^{-b}, with b
+ * < 1. The rate is unbounded, so a default maximum velocity needs to be
+ * suplied. NOTE: Ideally, the default maximum rate call wouldn't be used.
  */
-struct ConstantCrossSection : public AbstractCrossSection {
+struct IPLCrossSection : public AbstractCrossSection {
 
-  ConstantCrossSection() = default;
+  IPLCrossSection() = default;
   /**
-   * @brief Constructor for ConstantCrossSection.
+   * @brief Constructor for IPLCrossSection.
    *
-   * @param constant_sigma Constant collision rate
+   * @param reference_sigma Reference cross-section
+   * @param reference_vel Reference velocity value
+   * @param power Inverse power law power (<1)
    * @param default_max_vel The maximum allowed relative velocity for the
    * get_max_rate_val() call
    */
-  ConstantCrossSection(REAL constant_sigma, REAL default_max_vel)
-      : constant_sigma(constant_sigma), default_max_vel(default_max_vel) {};
+  IPLCrossSection(REAL reference_sigma, REAL reference_vel, REAL power,
+                  REAL default_max_vel)
+      : mult_const(reference_sigma * std::pow(reference_vel, power)),
+        power(power), default_max_vel(default_max_vel) {};
 
   /**
    * @brief Returns the cross-section value at given relative velocity
@@ -32,7 +35,7 @@ struct ConstantCrossSection : public AbstractCrossSection {
    * @return REAL-valued cross-section
    */
   REAL get_value_at(const REAL &relative_vel) const {
-    return this->constant_sigma;
+    return this->mult_const / Kernel::pow(relative_vel, this->power);
   };
 
   /**
@@ -41,7 +44,8 @@ struct ConstantCrossSection : public AbstractCrossSection {
    * @return REAL-valued constant
    */
   REAL get_max_rate_val() const {
-    return this->constant_sigma * this->default_max_vel;
+    return this->mult_const /
+           Kernel::pow(this->default_max_vel, 1 - this->power);
   };
 
   /**
@@ -55,11 +59,12 @@ struct ConstantCrossSection : public AbstractCrossSection {
    * @return REAL-valued maximum rate
    */
   REAL get_max_rate_val_greedy(const REAL &relative_vel) const {
-    return this->constant_sigma * relative_vel;
+    return this->mult_const / Kernel::pow(relative_vel, 1 - this->power);
   };
 
 private:
-  REAL constant_sigma;
+  REAL mult_const;
+  REAL power;
   REAL default_max_vel;
 };
 }; // namespace VANTAGE::Reactions
