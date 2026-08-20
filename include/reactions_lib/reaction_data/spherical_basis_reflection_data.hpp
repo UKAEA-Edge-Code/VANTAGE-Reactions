@@ -24,7 +24,7 @@ struct SphericalBasisReflectionDataOnDevice
   SphericalBasisReflectionDataOnDevice() = default;
 
   /**
-   * @brief Function to calculate the spherically reflected velocities
+   * @brief Function to calculate the reflected velocities using post-reflection values in spherical coordinates
    *
    * @param input The v, theta, phi components of the reflected vector
    * @param index Read-only accessor to a loop index for a NP::ParticleLoop
