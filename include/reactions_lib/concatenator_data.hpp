@@ -6,9 +6,9 @@
 namespace VANTAGE::Reactions {
 
 /**
- * @brief Recursive helper function to accumulate the size of the dimensions of
+ * @brief Recursive helper function to accumulate the DIM-values of
  * each ReactionData (or ReactionDataOnDevice) object in DATATYPE (specifically
- * the dimensions of the output of their on-device calc_data functions).
+ * the size of the output of their on-device calc_data functions).
  *
  * Use within ConcatenatorData or ConcatenatorDataOnDevice as:
  * total_dim<DATATYPE...>();

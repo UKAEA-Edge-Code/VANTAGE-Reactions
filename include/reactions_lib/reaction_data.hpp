@@ -296,7 +296,7 @@ protected:
  * @tparam dim Used to set the size of the array that calc_data returns
  * (Optional).
  * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
- * @tparam input_dim The dimension of the input array (Optional, defaults to 0,
+ * @tparam input_dim The size of the input array (Optional, defaults to 0,
  * not defining the corresponding calc_data)
  */
 template <typename ON_DEVICE_TYPE, size_t dim = 1,

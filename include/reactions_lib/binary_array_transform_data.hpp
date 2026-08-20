@@ -9,9 +9,9 @@ namespace VANTAGE::Reactions {
  * @brief Abstract base class encapsulating a binary transformation of two
  * std::arrays
  *
- * @tparam INPUT_DIM_1 Dimensions of the first (lhs) array
- * @tparam INPUT_DIM_2 Dimensions of the second (lhs) array
- * @tparam OUTPUT_DIM Dimensions of the output (rhs) array
+ * @tparam INPUT_DIM_1 Size of the first (lhs) array
+ * @tparam INPUT_DIM_2 Size of the second (lhs) array
+ * @tparam OUTPUT_DIM Size of the output (rhs) array
  */
 template <size_t INPUT_DIM_1, size_t INPUT_DIM_2, size_t OUTPUT_DIM>
 struct AbstractBinaryArrayTransform {

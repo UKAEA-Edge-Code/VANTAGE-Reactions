@@ -16,7 +16,7 @@ namespace VANTAGE::Reactions::utils {
  * device types that need them
  *
  * @tparam F Class of wrapped function
- * @tparam DIM The size of the dimensions of the output of the wrapped function.
+ * @tparam DIM The size of the output array of the wrapped function.
  */
 template <class F, size_t DIM = 1> struct LambdaWrapper {
 

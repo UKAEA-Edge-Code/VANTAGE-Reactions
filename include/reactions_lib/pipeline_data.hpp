@@ -7,9 +7,9 @@
 namespace VANTAGE::Reactions {
 
 /**
- * @brief Recursive helper function to retrieve the size of the dimensions of
+ * @brief Recursive helper function to retrieve the DIM-value of
  * the last ReactionData (or ReactionDataOnDevice) object in DATATYPE
- * (specifically the dimensions of the output of its on-device calc_data
+ * (specifically the size of the output of its on-device calc_data
  * function).
  *
  * Use within PipelineData or PipelineDataOnDevice as: last_dim<DATATYPE...>();
@@ -21,7 +21,7 @@ constexpr size_t last_dim() {
 };
 
 /**
- * @brief Helper function to retrieve the size of input dimensions of the first
+ * @brief Helper function to retrieve the INPUT_DIM-value of the first
  * ReactionData (or ReactionDataOnDevice) object in DATATYPE
  *
  * Use within PipelineData or PipelineDataOnDevice as:
@@ -32,8 +32,8 @@ template <typename T, typename... DATATYPE> constexpr size_t first_in_dim() {
 };
 
 /**
- * @brief Helper function to check that the size of input dimensions of a given
- * ReactionData object in DATATYPE equals the size of output dimensions of
+ * @brief Helper function to check that the INPUT_DIM-value of a given
+ * ReactionData object in DATATYPE equals the DIM-value of
  * the previous ReactionData (or ReactionDataOnDevice) object.
  *
  * Use within PipelineData or PipelineDataOnDevice as:
@@ -95,7 +95,7 @@ struct PipelineDataOnDevice
    * calculation, a NP::TupleRNG accessor
    *
    * @return A return array containing the result of the calc_data of the last
-   * ReactionDataOnDevice object  in DATATYPE.
+   * ReactionDataOnDevice object in DATATYPE.
    */
   std::array<REAL, DIM> calc_data(
       const NP::Access::LoopIndex::Read &index,
