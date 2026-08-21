@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 # no space in these names! used as shared object name and python module name
 set(PROJECT_NAME VANTAGE-Reactions)
 
-project(${PROJECT_NAME} VERSION 0.0.0 LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION 0.2.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

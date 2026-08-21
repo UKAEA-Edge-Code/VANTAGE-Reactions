@@ -1,8 +1,8 @@
 # Build stage with Spack pre-installed and ready to be used
-FROM spack/ubuntu-noble:1.0.2
+FROM spack/ubuntu-noble:1.1.1
 
 RUN apt update && apt upgrade -y
-RUN apt install -y git nano python3 cmake openmpi-bin libhdf5-openmpi-dev
+RUN apt install -y git nano python3 cmake openmpi-bin libhdf5-openmpi-dev lcov
 
 RUN spack compiler find
 

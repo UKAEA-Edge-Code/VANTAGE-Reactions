@@ -2,6 +2,9 @@ name: CI-Workflow
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -27,8 +30,21 @@ jobs:
         # run_tests.sh builds + runs the unit tests, then runs the
         # external-consumer smoke test against the installed
         # libVANTAGE-Reactions.so (see the script's consumer block).
+        # generate_coverage.sh builds + runs the unit tests for Debug build_type and generates a
+        # coverage_lib.info containing the coverage information.
         run: |
-          docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
+          docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh && source generate_coverage.sh"
+      - name: check-coverage-file-exists
+        run: |
+          [ -f ${{ github.workspace }}/build-coverage/coverage_lib.info ] && echo "coverage_lib.info file exists and is a regular file" || echo "missing"
+      - name: Upload code coverage
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ github.workspace }}/build-coverage/coverage_lib.info
+          fail_ci_if_error: true
+          verbose: true
 
   docs:
     runs-on: ubuntu-24.04

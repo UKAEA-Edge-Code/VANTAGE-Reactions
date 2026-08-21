@@ -1,9 +1,11 @@
 #!/bin/bash
 
+: "${MAX_JOBS:=$(nproc)}"
+
 source /opt/spack/share/spack/setup-env.sh
 cd /root/Reactions
 spack env activate -p -d environments/spack_default
-spack install
+spack install -j"$MAX_JOBS"
 spack load vantagereactions
 OMP_NUM_THREADS=1 mpirun -n 1 --allow-run-as-root unit_tests
 
@@ -19,4 +21,6 @@ if [ -f "${VANTAGE_PREFIX}/lib/libVANTAGE-Reactions.so" ]; then
   cmake --build build-consumer >/dev/null
   ./build-consumer/consumer_smoke
 fi
+
+spack unload vantagereactions
 
