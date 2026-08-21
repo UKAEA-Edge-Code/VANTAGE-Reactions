@@ -13,13 +13,12 @@ In order to accommodate the above, VANTAGE-Reactions offers a uniform interface 
 Marking Strategies
 ==================
 
-A marking strategy is the abstract wrapper class for the creation of NESO-Particles particle subgroups. The below strategies are the two currently implemented.
+A marking strategy is the abstract wrapper class for the creation of NESO-Particles particle subgroups. The main marking strategy is the :class:`MarkingStrategyDirect`, which is effectively a closure for the NESO-Particles subgroup constructor (see below how this enables transformation wrappers).
 
 .. literalinclude:: ../example_sources/example_marking_strategy.hpp
    :language: cpp
-   :caption: Example of several marking strategies
+   :caption: Example of the direct marking strategy
 
-As demonstrated above, marking strategies are composed by applying them one after the other to get particle subgroups where particles respect all conditions.
 
 Transformation Strategies
 =========================
@@ -47,11 +46,29 @@ VANTAGE-Reactions assumes that particles carry information of their contribution
 Accumulator Strategies
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Another common requirement is the accumulation of particle properties cellwise. This is a requirement for finite volume methods (projection of sources) as well as general particle data analysis (weighted averages of quantities). Two classes of transformation strategies are provided for this use.
+Another common requirement is the accumulation of particle properties cellwise. This is a requirement for finite volume methods (projection of sources) as well as general particle data analysis (weighted averages of quantities). Three classes of transformation strategies are provided for this use:
+
+* `CellwiseAccumulator` - accumulating one or more properties cellwise
+* `WeightedCellwiseAccumulator` - accumulating one or more properties cellwise while weighing them with the particle weights
+* `CellwiseReactionDataAccumulator` - accumulating the result of a reaction data object, for use in cases when the first two are two restrictive
 
 .. literalinclude:: ../example_sources/example_accumulator_strategy.hpp
    :language: cpp
    :caption: :class:`CellwiseAccumulator` and :class:`WeightedCellwiseAccumulator` example
+   
+.. literalinclude:: ../example_sources/example_reaction_data_accumulator_strategy.hpp
+   :language: cpp
+   :caption: :class:`CellwiseReactionDataAccumulator` example
+
+Cellwise distributor strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to the requirement for accumulating properties cellwise, there are situations where we want to broadcast one or more property onto all particles in a cell. The `CellwiseDistributor` transformation strategy offers this, working like the inverse of the `CellwiseAccumulator`.
+
+
+.. literalinclude:: ../example_sources/example_cellwise_distributor_strategy.hpp
+   :language: cpp
+   :caption: :class:`CellwiseDistributor` example
 
 Composite Strategy
 ~~~~~~~~~~~~~~~~~~
@@ -62,19 +79,70 @@ Sometimes multuple strategies need to be applied in order. It is possible to com
    :language: cpp
    :caption: Applying accumulator and zeroer strategies as part of a composite strategy
 
-Particle Merging Strategy
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Downsampling Strategies
+~~~~~~~~~~~~~~~~~~~~~~~
 
-VANTAGE-Reaction implements a simplified merging algorithim from [VRANIC2015]_. It assumes that all particles being merged are of the same species (i.e. have the same mass) and that they are non-relativistic. 
-In the original paper, the authors merge particles within momentum space cells, while we merge all particles in the subgroup passed to the transformation strategy (and we use the momentum space bounding box in 3D to determine the plane in which the merged particle momenta lie). 
+A common problem in weighted particle methods is ensemble management, and in particular downsampling. VANTAGE-Reactions offers a framework for building downsampling transformation strategies, with a small number of them supplied through helper functions.
 
-Particles are merged cell-wise into 2 particles. The properties modified by the merging algorithm are the positions, weights, and momenta/velocities. Other properties are taken from 2 other particles in the passed subgroups, i.e. properties like cell and species IDs should be copied consistently, but all other properties should be considered undefined. As such, merging should only be invoked once all particle properties have been used for their respective purposes. 
+In general, downsampling strategies consist of the following steps:
 
-The implementation of :class:`MergeTransformationStrategy` is available in 2D and 3D, and, given the above considerations, is easily used. 
+1. Reduction - where a number of quantities across the particle ensemble are reduced, i.e. moments or other quantities are calculated
+2. Downsampling - where the properties of the particles are modified in such a way that some of them are effectively marked for removal, while the remaining particles are modified according to the downsampling algorithm.
+3. Removal - particles effectively "marked" for removal are removed 
+
+The above can be applied on multiple downsampling groups separately, and the downsampling strategies that assume grouping expect that it has been prepared beforehand, by default using the `grouping_index` integer property. See uniform velocity binning below as an example of a binning transform.
+
+Vranic Merging Strategy
+^^^^^^^^^^^^^^^^^^^^^^^
+
+VANTAGE-Reactions implements a version of the merging algorithim from [VRANIC2015]_. It assumes that all particles being merged are of the same species (i.e. have the same mass) and that they are non-relativistic. 
+In the original paper, the authors merge particles within momentum space cells, while we merge all particles in the downsampling group, which could be a momentum/velocity space cell, but doesn't have to be. Correspondingly, in 3D we use the momentum space bounding box in 3D to determine the plane in which the merged particle momenta lie. 
+
+Particles are merged cell-wise and downsampling-group-wise into 2 particles. The properties modified by the merging algorithm are the weights and momenta/velocities. Other properties are taken from 2 other particles in the passed subgroups, i.e. properties like cell and species IDs should be copied consistently, but all other properties should be considered undefined. As such, merging should only be invoked once all particle properties have been used for their respective purposes, such as recording sources. Note that the above means that the first two particles' positions in the downsampling group will be used as the merged particle positions.
+
+.. literalinclude:: ../example_sources/example_vranic_merging_strategy.hpp
+   :language: cpp
+   :caption: An example of constructing the above merging strategy in 2D 
+
+Simple Thinning Strategy
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+A classic alternative to merging is particle thinning, i.e. removing some particles randomly while modifying the properties of the rest. The simple thinning strategy keeps particles with some probability - the `thinning_ratio`, scaling their weights with the inverse of that probability, while removing the rest of the particles. This procedure conserves particle weight on average only. 
+
+.. literalinclude:: ../example_sources/example_simple_thinning_strategy.hpp
+   :language: cpp
+   :caption: An example of constructing a simple thinning strategy
+
+**DEPRECATED** Legacy Merging Strategy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is a purely cell-wise version of the above Vranic merging strategy, which also merges particles into the centre of mass. Both of these are drawbacks and the transformation is likely to be removed in the future. 
+
+The implementation of of the legacy :class:`MergeTransformationStrategy` is available in 2D and 3D:
 
 .. literalinclude:: ../example_sources/example_merging_strategy.hpp
    :language: cpp
    :caption: An example of constructing a merging strategy in 2D
+
+Direct transformation strategies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In cases where the user wants to apply a custom lambda function to a particle subgroup or call a particular :class:`ParticleLoop` as a transformation strategy VANTAGE-Reactions supplies :class:`TransformationStrategyDirect` and :class:`TransformationStrategyLambda`.
+
+.. literalinclude:: ../example_sources/example_direct_transformations.hpp
+   :language: cpp
+   :caption: Examples of the two direct transformation strategies enabling flexibility
+
+Uniform velocity space binning strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A simple strategy that bins particles into uniform velocity cells is provided with VANTAGE-Reactions. It splits each of the velocity space dimensions into some number of uniform cells, up to a given extent, and in addition adds guard cells used to bin particles that might be outside of the extents. The resulting linear bin index is recorded in an integer particle property.
+
+For example, the below strategy will bin particles into a core binning region spanning :math:`(-1.5,1.5] \times (-1.5,1.5]` split into 10 by 10 cells, and with an outer layer of guard cells capturing any particles with velocity components outside of the binning region - resulting in a total of 144 binning cells.
+
+.. literalinclude:: ../example_sources/example_uniform_velocity_binning.hpp
+   :language: cpp
+   :caption: Example construction of uniform velocity binning transform
 
 Transformation Wrappers
 =======================

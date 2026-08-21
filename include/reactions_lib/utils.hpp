@@ -1,0 +1,345 @@
+#ifndef REACTIONS_UTILS_H
+#define REACTIONS_UTILS_H
+#include "reactions/neso_particles_namespace_alias.hpp"
+#include <cassert>
+#include <cmath>
+#include <memory>
+
+#include <numeric>
+#include <type_traits>
+#include <vector>
+
+namespace VANTAGE::Reactions::utils {
+
+/**
+ * @brief Wrapper class to provide default constructible lambdas for templating
+ * device types that need them
+ *
+ * @tparam F Class of wrapped function
+ * @tparam DIM The size of the output array of the wrapped function.
+ */
+template <class F, size_t DIM = 1> struct LambdaWrapper {
+
+  static const size_t OUTPUT_DIM = DIM;
+
+  LambdaWrapper() = default;
+
+  /**
+   * @brief Constructor for LambdaWrapper.
+   *
+   * @param f The lambda function to wrap.
+   */
+  explicit LambdaWrapper(F &f) {
+
+    static_assert(
+        std::is_trivially_copyable<F>::value,
+        "LambdaWrapper template parameter must be trivially copyable");
+    static_assert(
+        std::is_trivially_destructible<F>::value,
+        "LambdaWrapper template parameter must be trivially destructible");
+    ::new (static_cast<void *>(this->buf)) F(std::forward<F>(f));
+  }
+
+  const F &get() const {
+    return *std::launder(reinterpret_cast<const F *>(this->buf));
+  }
+
+  /**
+   * @brief Overload of the call operator.
+   *
+   * @param args Arguments to pass to the wrapped lambda function.
+   */
+  template <class... Args>
+  auto operator()(Args &...args) const
+      -> decltype(std::declval<const F &>()(std::forward<Args>(args)...)) {
+    return this->get()(std::forward<Args>(args)...);
+  }
+
+private:
+  alignas(F) unsigned char buf[sizeof(F)];
+};
+
+/**
+ * @brief Helper function to construct a shared pointer to a NP::BufferDevice
+ * from a vector.
+ *
+ * @tparam T Arithmetic type template parameter
+ *
+ * @param sycl_target SYCL target shared pointer used for buffer allocation.
+ * @param vec Vector to be wrapped by NP::BufferDevice.
+ *
+ * @return Shared pointer to an allocated NP::BufferDevice.
+ */
+template <typename T>
+std::shared_ptr<NP::BufferDevice<T>>
+make_buffer_device_ptr(NP::SYCLTargetSharedPtr sycl_target,
+                       const std::vector<T> &vec) {
+  return std::make_shared<NP::BufferDevice<T>>(sycl_target, vec);
+}
+
+/**
+ * @brief Helper function to calculate the L2 norm of a vector of arithmetic
+ * types.
+ *
+ * @tparam T Arithmetic type template parameter
+ * @param vec Vector to take norm of
+ * @return T sqrt(sum(x^2)) for x in vec
+ */
+template <typename T> T norm2(const std::vector<T> &vec) {
+  static_assert(std::is_arithmetic<T>(),
+                "Template type in norm2 must be arithmetic");
+  return std::sqrt(std::accumulate(vec.begin(), vec.end(), T(),
+                                   [](T a, T b) { return a + b * b; }));
+}
+
+/**
+ * @brief Helper function to compute vector cross product of two length 3
+ * vectors.
+ *
+ * @tparam T Arithmetic type template parameter
+ * @param a first cross product argument
+ * @param b second cross product argument
+ * @return std::vector<T> a x b
+ */
+template <typename T>
+std::vector<T> cross_product(const std::vector<T> &a, const std::vector<T> &b) {
+  static_assert(std::is_arithmetic<T>(),
+                "Template type in cross_product must be arithmetic");
+  if (a.size() != 3 || b.size() != 3) {
+    assert("cross_product called with vectors not of size 3");
+  }
+
+  std::vector<T> result(3);
+
+  result[0] = a[1] * b[2] - a[2] * b[1];
+  result[1] = a[2] * b[0] - a[0] * b[2];
+  result[2] = a[0] * b[1] - a[1] * b[0];
+
+  return result;
+}
+
+/**
+ * @brief Helper function to build a std::vector of Syms from a list of names.
+ *
+ * @tparam PROP_TYPE The property type associated with the syms that need to
+ * be stored in the resulting vector (either INT or REAL).
+ *
+ * @param required_properties A vector of strings that contains the required
+ * properties
+ *
+ * @return A std::vector of Syms of PROP_TYPE (ie.
+ * std::vector<Syms<PROP_TYPE>>)
+ */
+template <typename PROP_TYPE>
+std::vector<NP::Sym<PROP_TYPE>>
+build_sym_vector(std::vector<std::string> required_properties) {
+
+  std::vector<NP::Sym<PROP_TYPE>> syms = {};
+
+  for (auto req_prop : required_properties) {
+    syms.push_back(NP::Sym<PROP_TYPE>(req_prop));
+  }
+
+  return syms;
+}
+
+/**
+ * @brief Perform the standard deterministic Box-Muller transform and store the
+ * two normal variates into an array (to avoid use of tuples/pairs in order to
+ * maximise SYCL compatibility)
+ *
+ * @param u1 First uniformly distributed random number
+ * @param u2 Second uniformly distributed random number
+ *
+ * @return A REAL-valued array of size 2 containing the calculated two
+ * normal variates.
+ */
+inline std::array<REAL, 2> box_muller_transform(const REAL &u1,
+                                                const REAL &u2) {
+  constexpr REAL two_pi = 2 * M_PI;
+
+  auto magnitude = NP::Kernel::sqrt(-2 * NP::Kernel::log(u1));
+  REAL valuecos;
+  const REAL valuesin = NP::Kernel::sincos(two_pi * u2, &valuecos);
+  return std::array<REAL, 2>{magnitude * valuecos, magnitude * valuesin};
+};
+
+/**
+ * @brief Reflect an input array across a normalised reflection vector (e.g.
+ * surface normal). output = input - 2 * dot_product(input,ref_vector) *
+ * ref_vector
+ *
+ * @param input Input array to be reflected
+ * @param ref_vector Normalised vector to reflect through
+ * @return Reflected array
+ */
+template <size_t n_dim>
+inline std::array<REAL, n_dim>
+reflect_vector(const std::array<REAL, n_dim> &input,
+               const std::array<REAL, n_dim> &ref_vector) {
+
+  REAL proj_factor = 0.0;
+  std::array<REAL, n_dim> output;
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    proj_factor += 2 * input[dim] * ref_vector[dim];
+  }
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    output[dim] = input[dim] - proj_factor * ref_vector[dim];
+  }
+
+  return output;
+};
+
+/**
+ * @brief Return dot(input,proj_direction) * proj_direction. If proj_direction
+ * is a unit vector this will be a projection of input onto proj_direction.
+ *
+ * @param input The input vector
+ * @param proj_direction Direction onto which to project the input
+ * @return Projected vector.
+ */
+template <size_t n_dim>
+inline std::array<REAL, n_dim>
+project_vector(const std::array<REAL, n_dim> &input,
+               const std::array<REAL, n_dim> &proj_direction) {
+
+  REAL proj_factor = 0.0;
+  std::array<REAL, n_dim> output;
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    proj_factor += input[dim] * proj_direction[dim];
+  }
+
+  for (int dim = 0; dim < n_dim; dim++) {
+
+    output[dim] = proj_factor * proj_direction[dim];
+  }
+
+  return output;
+};
+
+/**
+ * @brief Returns the 3D basis for performing reflections based on an ingoing
+ * velocity vector and a normal vector. Handles both possible orientations of
+ * the normal and produces the following basis:
+ *
+ * result[6-8] - e3: Basis vector normal to the wall, oriented so that the dot
+ * product of it and the velocity is negative, i.e. into the domain
+ *
+ * result[0-2] - e1: Basis vector in the vel - vel dot normal direction
+ *
+ * result[3-5] - e2: e3 x e1
+ *
+ *
+ * @param vel Velocity vector (in standard Cartesian coordinates), assumed going
+ * into the surface
+ * @param normal Normal vector at the surface, assumed to be a unit vector, but
+ * can be either into or out of the surface
+ *
+ * @return Normal basis.
+ */
+inline std::array<REAL, 9> get_normal_basis(const std::array<REAL, 3> &vel,
+                                            const std::array<REAL, 3> &normal) {
+
+  REAL proj_factor = 0.0;
+
+  for (int i = 0; i < 3; i++) {
+
+    proj_factor += vel[i] * normal[i];
+  }
+
+  std::array<REAL, 9> result;
+
+  for (auto i = 0; i < 3; i++) {
+
+    result[i] = vel[i] - proj_factor * normal[i];
+  }
+
+  REAL norm = 0;
+
+  for (auto i = 0; i < 3; i++) {
+
+    norm += result[i] * result[i];
+  }
+
+  for (auto i = 0; i < 3; i++) {
+
+    result[i] = result[i] / NP::Kernel::sqrt(norm);
+  }
+
+  REAL sign = -sycl::copysign(1.0, proj_factor);
+  result[6] = sign * normal[0];
+  result[7] = sign * normal[1];
+  result[8] = sign * normal[2];
+
+  result[3] = result[7] * result[2] - result[8] * result[1];
+  result[4] = result[8] * result[0] - result[6] * result[2];
+  result[5] = result[6] * result[1] - result[7] * result[0];
+
+  return result;
+};
+
+/**
+ * @brief Given spherical coordinates r, theta, and phi, and an orthonormal
+ * basis (flattened in an array) with respect to which the coordinates are
+ * defines, gives the cartesian components of the vector
+ *
+ * @param coords r,theta, phi coordinates
+ * @param basis Flattened rotated cartesian basis with respect to which the
+ * coords are given
+ *
+ * @return Cartesian components of the input coords.
+ */
+inline std::array<REAL, 3>
+normal_basis_to_cartesian(const std::array<REAL, 3> &coords,
+                          const std::array<REAL, 9> &basis) {
+
+  REAL costheta;
+  REAL theta = coords[1];
+  const REAL sintheta = NP::Kernel::sincos(theta, &costheta);
+
+  REAL cosphi;
+  REAL phi = coords[2];
+  const REAL sinphi = NP::Kernel::sincos(phi, &cosphi);
+
+  std::array<REAL, 3> result;
+
+  for (auto i = 0; i < 3; i++) {
+
+    result[i] = coords[0] *
+                (sintheta * cosphi * basis[i] +
+                 sintheta * sinphi * basis[i + 3] + costheta * basis[i + 6]);
+  }
+  return result;
+}
+
+/**
+ * @brief Bin into equal sized cartesian 1D cells, assuming the following:
+ *
+ * 1. The Cartesian domain is (-L,L]
+ * 2. Particles with positions less than -L or greater than L are binned in
+ * guard cells, resulting in n_cells+2 bins (0 is the left guard cell, n_cells+1
+ * the right)
+ *
+ * @param inverse_2L 1/(2*total_length_of_domain)
+ * @param n_cells Number of cells on the 1D grid
+ * @param position The position of the point to be binned
+ * @return Index of the point being binned on 1D grid
+ */
+inline size_t bin_uniform_symmetric_guard_1d(const REAL &inverse_2L,
+                                             const INT &n_cells,
+                                             const REAL &position) {
+
+  return NP::Kernel::max(
+      NP::Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),
+                      n_cells + 1),
+      0);
+}
+
+} // namespace VANTAGE::Reactions::utils
+#endif

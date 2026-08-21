@@ -1,0 +1,203 @@
+#ifndef REACTIONS_PIPELINE_DATA_H
+#define REACTIONS_PIPELINE_DATA_H
+#include "composite_data.hpp"
+#include "reaction_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
+
+namespace VANTAGE::Reactions {
+
+/**
+ * @brief Recursive helper function to retrieve the DIM-value of
+ * the last ReactionData (or ReactionDataOnDevice) object in DATATYPE
+ * (specifically the size of the output of its on-device calc_data
+ * function).
+ *
+ * Use within PipelineData or PipelineDataOnDevice as: last_dim<DATATYPE...>();
+ */
+template <typename T> constexpr size_t last_dim() { return T::DIM; };
+template <typename T, typename U, typename... DATATYPE>
+constexpr size_t last_dim() {
+  return last_dim<U, DATATYPE...>();
+};
+
+/**
+ * @brief Helper function to retrieve the INPUT_DIM-value of the first
+ * ReactionData (or ReactionDataOnDevice) object in DATATYPE
+ *
+ * Use within PipelineData or PipelineDataOnDevice as:
+ * first_in_dim<DATATYPE...>();
+ */
+template <typename T, typename... DATATYPE> constexpr size_t first_in_dim() {
+  return T::INPUT_DIM;
+};
+
+/**
+ * @brief Helper function to check that the INPUT_DIM-value of a given
+ * ReactionData object in DATATYPE equals the DIM-value of
+ * the previous ReactionData (or ReactionDataOnDevice) object.
+ *
+ * Use within PipelineData or PipelineDataOnDevice as:
+ * check_consistency<DATATYPE...>();
+ */
+template <typename T> constexpr bool check_consistency() { return true; };
+template <typename T, typename U, typename... DATATYPE>
+constexpr bool check_consistency() {
+  return (U::INPUT_DIM == T::DIM &&
+          std::is_same<typename U::INPUT_TYPE,
+                       typename T::VALUE_TYPE>::value) &&
+         check_consistency<U, DATATYPE...>();
+};
+
+/**
+ * @brief On device recursive pipeline data - calc_data returns the
+ * composition of all contained ReactionDataOnDevice objects, passing on the
+ * output from left to right
+ *
+ * @tparam DATATYPE ReactionDataOnDevice variadic parameters whose calc_data is
+ * called from this object
+ */
+template <typename... DATATYPE>
+struct PipelineDataOnDevice
+    : public CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
+                                   DATATYPE...> {
+
+  PipelineDataOnDevice() = default;
+
+  /**
+   * @brief Constructor for PipelineDataOnDevice.
+   *
+   * @param data Variadic argument with all of the contained
+   * ReactionDataOnDevice objects
+   */
+  PipelineDataOnDevice(DATATYPE... data)
+      : CompositeDataOnDevice<last_dim<DATATYPE...>(), 0, REAL, REAL,
+                              DATATYPE...>(data...) {
+
+    static_assert(first_in_dim<DATATYPE...>() == 0 &&
+                      check_consistency<DATATYPE...>(),
+                  "Inconsistent input/output dimensions in pipeline data");
+  };
+
+  static const size_t DIM = last_dim<DATATYPE...>();
+
+  /**
+   * @brief Function to calculate the composed data
+   *
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called. NP::Access using either
+   * index.get_loop_linear_index(), index.get_local_linear_index(),
+   * index.get_sub_linear_index() as required.
+   * @param req_int_props Vector of symbols for integer-valued properties
+   * that need to be used for the reaction rate calculation.
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for the reaction rate calculation.
+   * @param kernel The random number generator kernels used in the
+   * calculation, a NP::TupleRNG accessor
+   *
+   * @return A return array containing the result of the calc_data of the last
+   * ReactionDataOnDevice object in DATATYPE.
+   */
+  std::array<REAL, DIM> calc_data(
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      typename NP::TupleRNG<
+          std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
+          &rng_kernel) const {
+
+    return calc_data_recurse<0, DATATYPE...>(std::array<REAL, 0>{}, index,
+                                             req_int_props, req_real_props,
+                                             rng_kernel);
+  }
+
+  template <size_t I, typename T, typename... ARGS>
+  std::array<REAL, DIM> calc_data_recurse(
+      const std::array<typename T::INPUT_TYPE, T::INPUT_DIM> input,
+      const NP::Access::LoopIndex::Read &index,
+      const NP::Access::SymVector::Write<INT> &req_int_props,
+      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      typename NP::TupleRNG<
+          std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
+          &rng_kernel) const {
+
+    const auto arg = NP::Tuple::get<I>(this->data);
+    if constexpr (I < (sizeof...(DATATYPE)) - 1) {
+      if constexpr (T::INPUT_DIM > 0) {
+        return this->calc_data_recurse<I + 1, ARGS...>(
+            arg.calc_data(input, index, req_int_props, req_real_props,
+                          rng_kernel.template get<I>()),
+            index, req_int_props, req_real_props, rng_kernel);
+      } else {
+
+        return this->calc_data_recurse<I + 1, ARGS...>(
+            arg.calc_data(index, req_int_props, req_real_props,
+                          rng_kernel.template get<I>()),
+            index, req_int_props, req_real_props, rng_kernel);
+      }
+    } else {
+
+      if constexpr (T::INPUT_DIM > 0) {
+        return arg.calc_data(input, index, req_int_props, req_real_props,
+                             rng_kernel.template get<I>());
+      } else {
+
+        return arg.calc_data(index, req_int_props, req_real_props,
+                             rng_kernel.template get<I>());
+      }
+    }
+  }
+};
+
+/**
+ * @brief Composite ReactionData object containing multiple other ReactionData
+ * objects. On calculation of the data, passes the output of each data object to
+ * the next in the template order, returning the final result.
+ *
+ * @tparam DATATYPE ReactionData derived types contained within this composite
+ * object
+ */
+template <typename... DATATYPE>
+struct PipelineData
+    : public CompositeData<
+          PipelineDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
+          last_dim<DATATYPE...>(), 0, DATATYPE...> {
+
+  /**
+   * @brief Constructor for PipelineData
+   *
+   * @param data Variadic argument with all of the contained ReactionData
+   * objects
+   */
+  PipelineData(DATATYPE... data)
+      : CompositeData<
+            PipelineDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>,
+            last_dim<DATATYPE...>(), 0, DATATYPE...>(data...) {
+    this->post_init();
+  };
+
+  /**
+   * @brief Reconstruct the composite on-device object (assuming the individual
+   * on-device objects have been modified/re-indexed)
+   */
+  void index_on_device_object() override {
+
+    this->on_device_obj = std::make_from_tuple<
+        PipelineDataOnDevice<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>>(
+        get_on_device_objs(this->data));
+  };
+};
+
+/**
+ * @brief Helper function to construct a PipelineData object.
+ *
+ * @param data Variadic argument with all of the contained ReactionData
+ * objects
+ *
+ * @return PipelineData object.
+ */
+template <typename... DATATYPE> inline auto pipe(DATATYPE... data) {
+
+  return PipelineData(data...);
+}
+}; // namespace VANTAGE::Reactions
+#endif

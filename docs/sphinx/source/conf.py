@@ -13,11 +13,15 @@ author = 'Stefan Mijin, Sanket Gadgil'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = ["breathe"]
+
+breathe_projects = {"reactions": "../../build/doxygen/xml"}
+breathe_default_project = "reactions"
+breathe_default_members = ()
 
 templates_path = ['_templates']
 exclude_patterns = []
-
+numfig=True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -33,5 +37,8 @@ html_theme_options = {
     "navbar_align": "left",
     "primary_sidebar_end": [],
     "navigation_depth": 0,
-    "show_nav_level": 3
+    "show_nav_level": 3,
+    "external_links": [
+        {"name": "Doxygen (class graphs)", "url": "../../doxygen/html/index.html"},
+    ],
 }

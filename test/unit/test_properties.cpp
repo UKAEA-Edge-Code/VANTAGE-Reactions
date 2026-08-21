@@ -1,11 +1,8 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_particle_properties.hpp"
 #include "include/mock_reactions.hpp"
-#include "reactions_lib/particle_properties_map.hpp"
-#include "reactions_lib/reaction_kernel_pre_reqs.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(Properties, property_constructor) {
@@ -364,7 +361,7 @@ TEST(Properties, properties_map_setting) {
   std::map<int, std::string> test_property_map = {
       {0, "TEST_PROP1"}, {1, "TEST_PROP2"}, {2, "TEST_PROP3"}};
 
-  struct test_reaction_data : ReactionDataBase<> {
+  struct test_reaction_data : ReactionDataBase<TestEphemeralVarDataOnDevice> {
     test_reaction_data(std::map<int, std::string> property_map_)
         : ReactionDataBase(property_map_) {}
 
@@ -381,7 +378,7 @@ TEST(Properties, properties_map_setting) {
   for (auto prop : returned_property_map) {
     EXPECT_EQ(count, prop.first);
     count++;
-    char test_prop[11];
+    char test_prop[20];
     std::sprintf(test_prop, "TEST_PROP%d", count);
     EXPECT_STREQ(test_prop, prop.second.c_str());
   }
@@ -393,13 +390,13 @@ TEST(Properties, full_use_properties_map) {
   auto particle_group = create_test_particle_group(N_total);
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto test_prop1 = ParticleProp(Sym<REAL>("TEST_PROP1"), 1);
-  auto test_prop2 = ParticleProp(Sym<REAL>("TEST_PROP2"), 1);
+  auto test_prop1 = NP::ParticleProp(NP::Sym<REAL>("TEST_PROP1"), 1);
+  auto test_prop2 = NP::ParticleProp(NP::Sym<REAL>("TEST_PROP2"), 1);
 
-  auto test_prop1_dat = ParticleDat<REAL>(
-      particle_group->sycl_target, Sym<REAL>("TEST_PROP1"), 1, cell_count);
-  auto test_prop2_dat = ParticleDat<REAL>(
-      particle_group->sycl_target, Sym<REAL>("TEST_PROP2"), 1, cell_count);
+  auto test_prop1_dat = NP::ParticleDat<REAL>(
+      particle_group->sycl_target, NP::Sym<REAL>("TEST_PROP1"), 1, cell_count);
+  auto test_prop2_dat = NP::ParticleDat<REAL>(
+      particle_group->sycl_target, NP::Sym<REAL>("TEST_PROP2"), 1, cell_count);
 
   particle_group->add_particle_dat(test_prop1_dat);
   particle_group->add_particle_dat(test_prop2_dat);
@@ -410,18 +407,19 @@ TEST(Properties, full_use_properties_map) {
         test_prop1_write[0] = 3.0e18;
         test_prop2_write[0] = 2.0;
       },
-      Access::write(Sym<REAL>("TEST_PROP1")),
-      Access::write(Sym<REAL>("TEST_PROP2")))
+      NP::Access::write(NP::Sym<REAL>("TEST_PROP1")),
+      NP::Access::write(NP::Sym<REAL>("TEST_PROP2")))
       ->execute();
 
-  particle_group->remove_particle_dat(Sym<REAL>("FLUID_DENSITY"));
-  particle_group->remove_particle_dat(Sym<REAL>("FLUID_TEMPERATURE"));
+  particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_DENSITY"));
+  particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_TEMPERATURE"));
 
   auto test_prop_map = get_default_map();
   test_prop_map[default_properties.fluid_density] = "TEST_PROP1";
   test_prop_map[default_properties.fluid_temperature] = "TEST_PROP2";
 
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto amjuel_data = AMJUEL2DData<2, 2>(
       3e12, 1.0, 1.0, 1.0,
@@ -434,7 +432,7 @@ TEST(Properties, full_use_properties_map) {
           particle_group->sycl_target, 0, std::array<int, 0>{}, amjuel_data,
           TestReactionKernels<0>(test_prop_map));
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -444,7 +442,7 @@ TEST(Properties, full_use_properties_map) {
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -452,5 +450,39 @@ TEST(Properties, full_use_properties_map) {
     }
   }
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
+}
+
+// ArgumentNameSet basic tests
+TEST(ArgumentNameSet, indexing) {
+
+  auto int_props_obj = PropertiesTest::int_props;
+
+  auto arg_name_set = ArgumentNameSet(int_props_obj);
+
+  auto int_prop_names = arg_name_set.to_string_vector();
+  for (int i = 0; i < int_prop_names.size(); i++) {
+    auto int_prop_index = arg_name_set.find_index(int_prop_names[i]);
+    EXPECT_EQ(int_prop_index, i);
+  }
+}
+
+// ArgumentNameSet merging tests
+TEST(ArgumentNameSet, merging) {
+
+  auto int_props_obj = PropertiesTest::int_props;
+
+  auto arg_name_set = ArgumentNameSet(int_props_obj);
+
+  auto arg_name_set_2 = arg_name_set;
+
+  arg_name_set.add("test");
+
+  auto merge_set = arg_name_set.merge_with(arg_name_set_2);
+
+  auto names = arg_name_set.to_string_vector();
+  EXPECT_EQ(names.size(), 4);
+
+  EXPECT_NE(std::find(names.begin(), names.end(), "test"), names.end());
 }

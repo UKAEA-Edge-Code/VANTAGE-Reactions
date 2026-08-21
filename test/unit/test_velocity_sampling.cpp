@@ -1,7 +1,6 @@
 #include "include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(VelocitySampling, FilteredMaxwellianFailure) {
@@ -30,7 +29,7 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
     return rng_sample;
   };
 
-  auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 4);
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 4);
 
   const int ndim = 2;
   auto sampler =
@@ -40,11 +39,9 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
 
   auto particle_group = create_test_particle_group(1000);
 
-  auto req_int_props_ =
-      utils::build_sym_vector<INT>(sampler.get_required_int_props());
+  auto req_int_props_ = sampler.get_required_int_sym_vector();
 
-  auto req_real_props_ =
-      utils::build_sym_vector<REAL>(sampler.get_required_real_props());
+  auto req_real_props_ = sampler.get_required_real_sym_vector();
 
   particle_loop(
       "vel_sampling_fail_loop", particle_group,
@@ -53,13 +50,14 @@ TEST(VelocitySampling, FilteredMaxwellianFailure) {
         auto test = sampler_on_device.calc_data(particle_index, req_int_props,
                                                 req_real_props, kernel);
       },
-      Access::read(ParticleLoopIndex{}),
-      Access::write(sym_vector<INT>(particle_group, req_int_props_)),
-      Access::read(sym_vector<REAL>(particle_group, req_real_props_)),
-      Access::read(sampler.get_rng_kernel()))
+      NP::Access::read(NP::ParticleLoopIndex{}),
+      NP::Access::write(NP::sym_vector<INT>(particle_group, req_int_props_)),
+      NP::Access::read(NP::sym_vector<REAL>(particle_group, req_real_props_)),
+      NP::Access::read(sampler.get_rng_kernel()))
       ->execute();
 
   EXPECT_TRUE(panicked(particle_sub_group(particle_group)));
 
+  particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }

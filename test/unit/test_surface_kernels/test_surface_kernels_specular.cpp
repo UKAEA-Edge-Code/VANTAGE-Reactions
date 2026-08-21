@@ -1,0 +1,63 @@
+#include "../include/mock_particle_group.hpp"
+#include "../include/mock_reactions.hpp"
+#include "../include/test_common.hpp"
+#include <cmath>
+
+using namespace VANTAGE::Reactions;
+
+TEST(SurfaceKernels, SpecularReflection) {
+
+  const int N_total = 1000;
+
+  auto particle_group = create_test_particle_group(N_total);
+  particle_group->add_particle_dat(
+      NP::BoundaryInteractionSpecification::intersection_normal, 2);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
+
+  auto test_data = FixedRateData(1.0);
+
+  auto test_kernels = SpecularReflectionKernels<2>();
+
+  auto test_reaction =
+      LinearReactionBase<0, FixedRateData, SpecularReflectionKernels<2>>(
+          particle_group->sycl_target, 0, std::array<int, 0>{}, test_data,
+          test_kernels);
+
+  int cell_count = particle_group->domain->mesh->get_cell_count();
+
+  particle_loop(
+      "set__data_specular_reflection", particle_sub_group,
+      [=](auto normal, auto velocity) {
+        normal.at(0) = 1.0;
+        normal.at(1) = 0.0;
+        velocity.at(0) = -1.0;
+        velocity.at(1) = 1.0;
+      },
+      NP::Access::write(
+          NP::BoundaryInteractionSpecification::intersection_normal),
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
+      ->execute();
+
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
+      particle_group->domain, particle_group->get_particle_spec(),
+      particle_group->sycl_target);
+
+  for (int i = 0; i < cell_count; i++) {
+
+    test_reaction.calculate_rates(particle_sub_group, i, i + 1);
+    test_reaction.apply(particle_sub_group, i, i + 1, 0.1, descendant_particles,
+                        true); // Apply to all of weight, the same way a surface
+                               // reaction controller would
+    auto velocity = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
+    const int nrow = velocity->nrow;
+
+    for (int rowx = 0; rowx < nrow; rowx++) {
+      EXPECT_DOUBLE_EQ(velocity->at(rowx, 0), 1.0);
+      EXPECT_DOUBLE_EQ(velocity->at(rowx, 1), 1.0);
+    }
+  }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}

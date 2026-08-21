@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - dev*
   pull_request:
     branches:
       - main
@@ -28,13 +27,22 @@ jobs:
         run: |
           docker build -t ci_image -f .devcontainer/Dockerfile .
       - name: unit-tests
+        # run_tests.sh builds + runs the unit tests, then runs the
+        # external-consumer smoke test against the installed
+        # libVANTAGE-Reactions.so (see the script's consumer block).
+        # generate_coverage.sh builds + runs the unit tests for Debug build_type and generates a
+        # coverage_lib.txt containing the coverage information.
         run: |
-          docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh"
+          docker run --name ci_test -v "$(pwd):/root/Reactions" ci_image:latest -c "cd /root/Reactions && source run_tests.sh && source generate_coverage.sh"
+      - name: check-coverage-file-exists
+        run: |
+          [ -f ${{ github.workspace }}/build-coverage/coverage_lib.txt ] && echo "coverage_lib.txt file exists and is a regular file" || echo "missing"
       - name: Upload code coverage
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ${{ github.workspace }}/coverage/lcov_src.txt
+          files: ${{ github.workspace }}/build-coverage/coverage_lib.txt
           fail_ci_if_error: true
           verbose: true
 
@@ -45,6 +53,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Install doxygen and graphviz
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
       - name: Build docs
         working-directory: ./docs/
         run: pip install -U -r sphinx/requirements.txt && make

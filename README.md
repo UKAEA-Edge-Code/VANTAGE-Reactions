@@ -3,7 +3,7 @@
 
 # Edge Code Reactions Library
 
-VANTAGE-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library.
+VANTAGE-Reactions is a scalable, flexible, and extensible library for adding reactions/particle transformations to particle codes built on top of the NESO-Particles library. It is built and installed as a compiled runtime library (`libVANTAGE-Reactions.so`) that ships pre-compiled template instantiations and SYCL device code.
 
 Features provided by the library are:
 - An extensible reaction abstraction, designed to be modular, separating the data and the actions on the parents/products 
@@ -25,7 +25,7 @@ See here for more details: <https://docs.docker.com/engine/install/linux-postins
 
 Clone the repo:
 ```
-git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/Reactions.git $HOME/VANTAGE_Reactions
+git clone --recurse-submodules git@github.com:UKAEA-Edge-Code/VANTAGE-Reactions.git $HOME/VANTAGE_Reactions
 ```
 
 Feel free to replace ``$HOME/VANTAGE_Reactions`` with a directory name of your choice.
@@ -43,7 +43,16 @@ spack install -j1
 ```
 and try the docker run command again.
 ## Documentation
-To build the documentation ensure the following pre-requisites are installed (via `pip`):
+To build the doxygen API reference, ensure `doxygen` and `graphviz` are installed. Either install them via the package manager on your Linux distro or via spack using the spec in `environment/spack_doxygen/spack.yaml`.
+
+```
+spack env activate -p -d environments/spack_doxygen
+spack install
+spack load doxygen
+```
+This might quite slow as all of the dependencies will likely be compiled from source by `spack`.
+
+To build the sphinx documentation ensure the following pre-requisites are installed (via `pip`):
 
 - sphinx (https://pypi.org/project/Sphinx/)
 - pydata-sphinx-theme (https://pypi.org/project/pydata-sphinx-theme/)
@@ -57,9 +66,15 @@ pip install -U -r $HOME/VANTAGE_Reactions/docs/sphinx/requirements.txt
 ```
 (replace `$HOME/VANTAGE_Reactions` with the name of the directory that the repo was cloned into.)
 
-Then simply run `make` inside the `docs` folder in the repo (make sure you're inside the python virtual environment `docs_venv`). The documentation should be contained within:
+Then simply run `make` inside the `docs` folder in the repo. Make sure you're inside the python virtual environment `docs_venv` and the `spack_doxygen` environment with `doxygen` loaded, if you've installed `doxygen` via spack. The documentation should be contained within for (sphinx):
 ```
 $HOME/VANTAGE_Reactions/docs/build/sphinx/html/
 ```
+
+and for (doxygen)
+```
+$HOME/VANTAGE_Reactions/docs/build/doxygen/html/
+```
+
 Start by opening `index.html` in a web browser of your choice.
-To exit the python virtual environment just run `deactivate` in the terminal.
+To exit the python virtual environment just run `deactivate` in the terminal. Run `spack unload --all && spack env deactivate` to exit the `spack` environment.

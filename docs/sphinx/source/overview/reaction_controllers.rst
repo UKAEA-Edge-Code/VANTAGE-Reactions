@@ -28,6 +28,7 @@ Currently implemented flags are:
 
 #. standard_mode - leads to deterministic application, where all reactions are applied to all particles in accordance to their rates
 #. semi_dsmc_mode - semi-deterministic Direct Simulation Monte Carlo (DSMC) mode application, where particles going through reactions are determined through random sampling, and all reactions are applied to them, completely consuming them
+#. surface_mode - deterministic application, where all reactions are applied with no unreacted channel
 
 Below are the explanations of how each mode is applied.
 
@@ -65,3 +66,16 @@ By passing :code:`ControllerMode:semi_dsmc_mode` to the controller the following
 #. Add the child group to the parent group, completing the application of reactions
 
 In order to use this mode, the :code:`set_rng_kernel()` method should be called on the controller before applying it, and the RNG kernel should produce uniform numbers between 0 and 1. For an example of such a kernel see filtered Maxwellian sampling examples.
+
+Surface mode reaction application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By passing :code:`ControllerMode:surface_mode` to the controller the following behaviour is obtained:
+
+#. Filter the passed group based on particle species/internal_state 
+#. Run the rate loop on all reactions, passing in the subgroups containing their respective ingoing states 
+#. Run the product loop using all of the particle  weights instead of allowing for some unreacted fraction. 
+   This is something in between standard_mode and semi_dsmc_mode, since all particles undergo reactions.
+#. Perform any transformations on the child group, making sure they are species-wise
+#. Perform any transformations on the post-reaction parents
+#. Add the child group to the parent group, completing the application of reactions

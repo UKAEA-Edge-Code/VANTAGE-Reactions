@@ -1,0 +1,183 @@
+#ifndef REACTIONS_GRID_EVAL_DATA_H
+#define REACTIONS_GRID_EVAL_DATA_H
+
+#include "../../reactions/neso_particles_namespace_alias.hpp"
+#include "../../reactions/neso_test_assert.hpp"
+#include "../interp_utils.hpp"
+#include "../reaction_data.hpp"
+#include "../utils.hpp"
+#include <array>
+#include <memory>
+
+#include "grid_descriptors.hpp"
+
+namespace VANTAGE::Reactions {
+
+/**
+ * @brief On device: Reaction rate data calculation evaluating a lookup grid by
+ * computing grid indices and returning the grid value at the flat index.
+ *
+ * An input coordinate is mapped to a flat grid index as follows. The
+ * coordinate vector for dimension idim begins at an offset:
+ * sum(d_dims[jdim] for jdim = 0 to idim-1) and contains d_dims[idim] elements.
+ * Given an input value (input[idim]), the index (grid_indices[idim]), is
+ * calculated. This is the largest index satisfying input[idim] >=
+ * d_coords[offset + grid_indices[idim]]. The per-dimension grid_indices are
+ * combined via row-major ordering into a single flat index, and the returned
+ * value is d_grid[grid_flat_index].
+ *
+ * @tparam input_ndim The number of input dimensions for the grid lookup.
+ */
+template <int input_ndim>
+struct CartesianGridDataOnDevice
+    : public ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, input_ndim> {
+
+  CartesianGridDataOnDevice() = default;
+
+  /**
+   * @brief Constructor for CartesianGridDataOnDevice.
+   *
+   * @param d_grid Shared pointer to a device buffer containing the tabulated
+   * data.
+   * @param d_coords Shared pointer to a device buffer containing coordinate
+   * boundaries for the interpolation dimensions.
+   * @param d_dims Shared pointer to a device buffer containing grid dimensions
+   * for the interpolation axes.
+   */
+  CartesianGridDataOnDevice(
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_grid,
+      const std::shared_ptr<NP::BufferDevice<REAL>> &d_coords,
+      const std::shared_ptr<NP::BufferDevice<size_t>> &d_dims) {
+    this->d_grid_ptr = d_grid->ptr;
+    this->d_coords_ptr = d_coords->ptr;
+    this->d_dims_ptr = d_dims->ptr;
+  }
+
+  /**
+   * @brief Function to compute grid indices from the input coordinate and
+   * return the grid value at the computed index.
+   *
+   * @param input The input coordinate array of size input_ndim.
+   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
+   * inside which calc_data is called (unused for this data type).
+   * @param req_int_props Vector of symbols for integer-valued properties that
+   * need to be used for the reaction rate calculation (unused for this data
+   * type).
+   * @param req_real_props Vector of symbols for real-valued properties that
+   * need to be used for the reaction rate calculation (unused for this data
+   * type).
+   * @param rng_kernel The random number generator kernel potentially used in
+   * the calculation (unused for this data type).
+   *
+   * @return A REAL-valued array of size 1 containing the grid value at the
+   * computed flat index.
+   */
+  std::array<REAL, 1> calc_data(
+      const std::array<REAL, input_ndim> &input,
+      [[maybe_unused]] const NP::Access::LoopIndex::Read &index,
+      [[maybe_unused]] const NP::Access::SymVector::Write<INT> &req_int_props,
+      [[maybe_unused]] const NP::Access::SymVector::Read<REAL> &req_real_props,
+      [[maybe_unused]] DEFAULT_RNG_KERNEL::KernelType &rng_kernel) const {
+    std::array<INT, input_ndim> grid_indices;
+    grid_indices[0] = interp_utils::calc_floor_point_index(
+        input[0], this->d_coords_ptr, this->d_dims_ptr[0]);
+    size_t aggregate_dims = 0;
+    for (size_t i = 1; i < input_ndim; i++) {
+      aggregate_dims += this->d_dims_ptr[i - 1];
+      grid_indices[i] = interp_utils::calc_floor_point_index(
+          input[i], this->d_coords_ptr + aggregate_dims, this->d_dims_ptr[i]);
+    }
+
+    auto grid_indices_ptr = grid_indices.data();
+    INT grid_flat_index = interp_utils::coeff_index_on_device(
+        grid_indices_ptr, this->d_dims_ptr, input_ndim);
+
+    return std::array<REAL, 1>{this->d_grid_ptr[grid_flat_index]};
+  }
+
+public:
+  size_t const *d_dims_ptr;
+  REAL const *d_coords_ptr;
+  REAL const *d_grid_ptr;
+};
+
+/**
+ * @brief Reaction rate data calculation managing buffers for grid, coords, and
+ * dims, enabling on-device grid evaluation.
+ *
+ * The grid evaluation works with the NP::BufferDevice objects that are
+ * constructed for the input vectors (grid, coords_vec, dims_vec). As such,
+ * there are constraints on the format of the vectors. All input vectors are 1D
+ * vectors and are accessed using the logic in the on-device calc_data(...). For
+ * a given input coordinate, the index in each dimension is found by locating
+ * the index of the closest point in the coordinates for that dimension that is
+ * less than the input coordinate value. These per-dimension indices are then
+ * flattened via row-major ordering into a single index, and the corresponding
+ * value is retrieved from d_grid_ptr (a pointer to a NP::BufferDevice that is
+ * constructed from std::vector<REAL> grid).
+ *
+ * @tparam input_ndim The number of input dimensions for the grid lookup.
+ */
+template <int input_ndim>
+struct CartesianGridData
+    : public ReactionDataBase<CartesianGridDataOnDevice<input_ndim>> {
+  /**
+   * @brief Constructor for CartesianGridData.
+   *
+   * @param grid Flat vector of grid values (tabulated data).
+   * @param coords_vec Coordinate boundaries for each dimension (used for
+   * index computation).
+   * @param dims_vec Grid dimensions (number of grid points per axis).
+   * @param sycl_target SYCL target shared pointer used for buffer
+   * allocation.
+   */
+  CartesianGridData(const std::vector<REAL> &grid,
+                    const std::vector<REAL> &coords_vec,
+                    const std::vector<size_t> &dims_vec,
+                    NP::SYCLTargetSharedPtr sycl_target) {
+
+    auto dims_size = dims_vec.size();
+    NESOASSERT((dims_size == input_ndim), "Invalid size of input dims vector.");
+
+    auto grid_size = grid.size();
+    auto coords_size = coords_vec.size();
+
+    auto expected_grid_size = 1;
+    auto expected_coords_size = 0;
+    for (auto &idim : dims_vec) {
+      expected_grid_size *= idim;
+      expected_coords_size += idim;
+    }
+
+    NESOASSERT((coords_size == expected_coords_size),
+               "Invalid size of input coords vector.");
+    NESOASSERT((grid_size == expected_grid_size),
+               "Invalid size of input grid.");
+
+    this->d_grid = utils::make_buffer_device_ptr(sycl_target, grid);
+    this->d_coords = utils::make_buffer_device_ptr(sycl_target, coords_vec);
+    this->d_dims = utils::make_buffer_device_ptr(sycl_target, dims_vec);
+
+    this->on_device_obj = CartesianGridDataOnDevice<input_ndim>(
+        this->d_grid, this->d_coords, this->d_dims);
+  };
+
+  /**
+   * \overload
+   * @brief Constructor using a GridDescriptor object.
+   */
+  CartesianGridData(const GridDescriptor<input_ndim> &grid_descriptor,
+                    NP::SYCLTargetSharedPtr sycl_target)
+      : CartesianGridData(grid_descriptor.get_flat_grid(),
+                          grid_descriptor.get_flat_coords(),
+                          grid_descriptor.get_interp_dims(), sycl_target) {}
+
+public:
+  std::shared_ptr<NP::BufferDevice<REAL>> d_grid;
+  std::shared_ptr<NP::BufferDevice<REAL>> d_coords;
+  std::shared_ptr<NP::BufferDevice<size_t>> d_dims;
+};
+
+} // namespace VANTAGE::Reactions
+
+#endif // REACTIONS_GRID_EVAL_DATA_H

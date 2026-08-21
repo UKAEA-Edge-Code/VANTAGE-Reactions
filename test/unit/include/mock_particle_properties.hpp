@@ -1,9 +1,8 @@
 #ifndef REACTIONS_MOCK_PARTICLE_PROPERTIES_H
 #define REACTIONS_MOCK_PARTICLE_PROPERTIES_H
-#include <neso_particles.hpp>
-#include <reactions/reactions.hpp>
 
-using namespace NESO::Particles;
+#include "test_common.hpp"
+
 using namespace VANTAGE::Reactions;
 
 namespace PropertiesTest {

@@ -1,4 +1,4 @@
-Find_package(Threads REQUIRED)
+# Find_package(Threads REQUIRED)
 find_package(GTest)
 
 if(NOT GTest_FOUND)
@@ -17,4 +17,3 @@ if(NOT GTest_FOUND)
 endif()
 
 add_subdirectory(unit)
-add_subdirectory(examples)
