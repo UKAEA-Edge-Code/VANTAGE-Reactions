@@ -45,8 +45,7 @@ struct SWPMDSMCSpecification
 
           weight_change_a[0] =
               (u <= rejection_threshold && is_kernel_valid) ? min_weight : 0.0;
-          weight_change_b[0] =
-              (u <= rejection_threshold && is_kernel_valid) ? min_weight : 0.0;
+          weight_change_b[0] = weight_change_a[0];
           if (!is_kernel_valid) {
             panic_a[0] += 1;
             panic_b[0] += 1;

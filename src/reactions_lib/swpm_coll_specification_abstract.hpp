@@ -71,6 +71,10 @@ struct AbstractSWPMSpecification {
    * calculate the number of pairs that need to be sampled in one timestep of a
    * given length (NTC).
    *
+   * NOTE: This assumes that sigma_v is based on the total collision
+   * cross-section, not the differential cross section as in the original
+   * Rjasanow paper
+   *
    * @param target Particle subgroup containing all particles of the two species
    * @param ccm Collision cell manager responsible for the two species
    * @param species_id_a Species ID of the first particle
@@ -111,7 +115,7 @@ struct AbstractSWPMSpecification {
                           sigma_v_bound, this->q_hat);
 
     REAL prefactor =
-        (species_id_a == species_id_b ? 2.0 : 4.0) * M_PI * this->norm_const;
+        (species_id_a == species_id_b ? 0.5 : 1.0) * this->norm_const;
 
     nd_local_array_loop_element_wise(
         result_buffer,
@@ -119,6 +123,7 @@ struct AbstractSWPMSpecification {
           REAL num_prefactor =
               prefactor *
               (species_id_a == species_id_b ? Na * (Nb - 1) : Na * Nb);
+
           return num_prefactor * sigmav * q / vol;
         },
         N_a, N_b, volumes, sigma_v_bound, q_hat);

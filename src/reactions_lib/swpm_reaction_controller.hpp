@@ -47,11 +47,14 @@ struct SWPMReactionController {
     this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
     this->tot_rate_buffer =
         Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+    this->weight_change =
+        Sym<REAL>(properties_map.at(default_properties.weight_change));
 
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
-        std::vector<std::string>{tot_rate_buffer.name});
+        std::vector<std::string>{this->tot_rate_buffer.name,
+                                 this->weight_change.name});
 
-    this->rate_buffer_zeroer = std::make_shared<TransformationWrapper>(
+    this->buffer_zeroer = std::make_shared<TransformationWrapper>(
         std::dynamic_pointer_cast<TransformationStrategy>(zeroer));
     this->setup_particle_group_temporary();
 
@@ -263,7 +266,7 @@ struct SWPMReactionController {
 
       // Ensure that the total rate buffer is flushed before the reactions are
       // applied
-      this->rate_buffer_zeroer->transform(reactant_subgroup);
+      this->buffer_zeroer->transform(reactant_subgroup);
       if (current_time > 0) {
         // TODO: add resolution control features
         this->coll_cell_manager->bin_particles(reactant_subgroup);
@@ -407,7 +410,8 @@ private:
   Sym<INT> reacted_flag;
   Sym<REAL> tot_rate_buffer;
   Sym<REAL> weight_sym;
-  std::shared_ptr<TransformationWrapper> rate_buffer_zeroer;
+  Sym<REAL> weight_change;
+  std::shared_ptr<TransformationWrapper> buffer_zeroer;
   size_t cell_block_size = 256;
   size_t max_pairs_per_cell = 16384;
   std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;
