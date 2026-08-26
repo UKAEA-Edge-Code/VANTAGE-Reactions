@@ -82,7 +82,7 @@ TEST(SWPMReactionController, single_reaction) {
             test_removal_wrapper});
 
     auto cs_data =
-        CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.0005, 1.0));
+        CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.0061, 1.0));
 
     auto rng_lambda_hs = [&]() -> REAL { return 0.125; };
 
@@ -149,7 +149,7 @@ TEST(SWPMReactionController, single_reaction) {
       A, [](auto IS) { return IS[0] == 2; },
       Access::read(Sym<INT>("INTERNAL_STATE")));
   // We expect 6-7 pairs per cell
-  // 50 * 50 (particles) * 4 * pi * 0.00005 (sigma_v) * 1.0 (q_hat) / 0.25
+  // 50 * 50 (particles) * 0.0061 (sigma_v) * 1.0 (q_hat) / 0.25
   // (volume)
   ASSERT_GE(child_subgroup->get_npart_local(), 6 * cell_count);
   ASSERT_LE(child_subgroup->get_npart_local(), 7 * cell_count);
@@ -250,7 +250,7 @@ TEST(SWPMReactionController, multi_reaction) {
             test_removal_wrapper});
 
     auto cs_data =
-        CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.0005, 1.0));
+        CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.0061, 1.0));
 
     auto rng_lambda_hs = [&]() -> REAL { return 0.125; };
 
@@ -309,7 +309,7 @@ TEST(SWPMReactionController, multi_reaction) {
       A, [](auto IS) { return IS[0] == 2; },
       Access::read(Sym<INT>("INTERNAL_STATE")));
   // We expect 12-13 pairs per cell
-  // 50 * 50 (particles) * 4 * pi * 0.0001 (sigma_v sum) * 1.0 (q_hat) / 0.25
+  // 50 * 50 (particles) *  0.00122 (sigma_v sum) * 1.0 (q_hat) / 0.25
   // (volume)
   ASSERT_GE(child_subgroup->get_npart_local(), 12 * cell_count);
   ASSERT_LE(child_subgroup->get_npart_local(), 13 * cell_count);
@@ -391,7 +391,7 @@ TEST(SWPMReactionController, double_step) {
             test_removal_wrapper});
 
     auto cs_data =
-        CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.0005, 1.0));
+        CSPairData<2, ConstantCrossSection>(ConstantCrossSection(0.0061, 1.0));
 
     auto rng_lambda_hs = [&]() -> REAL { return 0.125; };
 
@@ -425,10 +425,10 @@ TEST(SWPMReactionController, double_step) {
       A, [](auto IS) { return IS[0] == 2; },
       Access::read(Sym<INT>("INTERNAL_STATE")));
   // We expect 6-7 pairs per cell in the first step
-  // 50 * 50 (particles) * 4 * pi * 0.00005 (sigma_v) * 1.0 (q_hat) / 0.25
+  // 50 * 50 (particles) *  0.0061 (sigma_v) * 1.0 (q_hat) / 0.25
   // (volume)
   // We expect 9-10 pairs per cell in the second step
-  // (44 or 43) * (44 or 43) (particles) * 4 * pi * 0.0001 (sigma_v now updated)
+  // (44 or 43) * (44 or 43) (particles) *  0.0061 (sigma_v now updated)
   // * 1.0 (q_hat) / 0.25 (volume)
   ASSERT_GE(child_subgroup->get_npart_local(), 15 * cell_count);
   ASSERT_LE(child_subgroup->get_npart_local(), 17 * cell_count);
