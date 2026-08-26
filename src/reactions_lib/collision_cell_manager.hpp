@@ -72,6 +72,8 @@ make_coll_cell_hierarchy(ARGS &&...args) {
 /**
  * @brief Manager class for collision cell binning and partition construction.
  *
+ * Also handles reaction rate reduction across multiple reactions.
+ *
  */
 struct CollisionCellManager {
 
@@ -245,11 +247,33 @@ struct CollisionCellManager {
     }
   }
 
+  /**
+   * @brief Update the rate reduction object with a fixed value for a given
+   * reaction index
+   *
+   * @param reaction_index Reaction index for which to update the rate reduction
+   * buffer
+   * @param default_value The default value to update with
+   */
   void update_rate_reduction(int reaction_index, REAL default_value) {
     this->reduction_obj->update(reaction_index, this->cell_change_mask,
                                 default_value);
   };
 
+  /**
+   * @brief Update the rate reduction object for a given reaction index by
+   * applying a collision-cell-wise max based on the device rate buffer
+   *
+   * @param pair_list Pair list corresponding to the pairs used to calculate the
+   * device rate buffer
+   * @param cell_start Starting cell index for the update (for blockwise
+   * updates)
+   * @param cell_end Final cell index for the update (for blockwise updates)
+   * @param device_rate_buffer LocalArraySharedPtr for the pairwise reaction
+   * rate buffer for the given reactions
+   * @param reaction_index Reaction index for which to update the rate reduction
+   * buffer
+   */
   void update_rate_reduction(
       CellwisePairListAbsolute<ParticleGroup, CellwisePairList> &pair_list,
       int cell_start, int cell_end,
@@ -258,10 +282,22 @@ struct CollisionCellManager {
                                 this->coll_cell_sym, 0, device_rate_buffer);
   };
 
+  /**
+   * @brief Set up the rate reduction buffers
+   *
+   * @param n_reactions The number of reactions controlled by the reaction
+   * controller using this collision cell manager
+   */
   void setup_rate_reduction(int n_reactions) {
     this->reduction_obj->setup(n_reactions);
   };
 
+  /**
+   * @brief Perform a reaction-wise addition reduction on the max rate buffers
+   * providing <sigma*v_r>_max per collision cell
+   *
+   * @param accumulated_rates Buffer into which to save the reduction result
+   */
   void get_rate_reduction(NDLocalArraySharedPtr<REAL, 2> &accumulated_rates) {
     this->reduction_obj->get(accumulated_rates);
   }
@@ -294,6 +330,8 @@ struct CollisionCellManager {
       this->reduction_obj->resize();
     }
   };
+
+  std::vector<INT> get_species_ids() { return this->species_ids; }
 
 private:
   std::shared_ptr<DSMC::CollisionCellPartition> coll_cell_partition;

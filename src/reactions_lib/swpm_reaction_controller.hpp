@@ -6,6 +6,7 @@
 #include "swpm_coll_specification_abstract.hpp"
 #include "swpm_reaction.hpp"
 #include "transformation_wrapper.hpp"
+#include <algorithm>
 #include <memory>
 #include <neso_particles.hpp>
 #include <tuple>
@@ -41,7 +42,16 @@ struct SWPMReactionController {
 
     this->reactant_set = std::make_tuple(species_a_id, species_b_id);
 
-    // TODO: add consistency check with species in ccm
+    auto ccm_species = coll_cell_manager->get_species_ids();
+    NESOASSERT(std::find(ccm_species.begin(), ccm_species.end(),
+                         species_a_id) != ccm_species.end(),
+               "Species A in SWPM reaction controller not found in passed "
+               "collision cell manager species");
+
+    NESOASSERT(std::find(ccm_species.begin(), ccm_species.end(),
+                         species_b_id) != ccm_species.end(),
+               "Species B in SWPM reaction controller not found in passed "
+               "collision cell manager species");
     this->id_sym =
         Sym<INT>(properties_map.at(default_properties.internal_state));
     this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
@@ -297,7 +307,6 @@ struct SWPMReactionController {
         noise->fill(this->rng_generation_fun);
       }
 
-      // TODO: add random noise to floored value to avoid systematic bias
       nd_local_array_loop_element_wise(
           num_pairs,
           [=](REAL rate_bound, REAL R) {
