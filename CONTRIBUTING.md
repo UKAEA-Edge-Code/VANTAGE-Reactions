@@ -1,4 +1,5 @@
 # Contributing to VANTAGE-Reactions
+Disclaimer: These instructions are work-in-progress
 1. If an issue for the contribution does not exist then create one, otherwise either refer to one that has been assigned to you or assign yourself to an open one.
 2. Create a fork of the repo. Do not do this for every issue addresed only the first issue you want to work on, any work on subsequent issues can be conducted on this forked repo (with a branch per issue as outlined in the next step).
 3. Clone the forked repo to your local machine if you haven't already. Create a branch from `main` with the following naming scheme: `${developer_name}/${issue_number}_${short_issue_description}`. Here, `${developer_name}` can be any identifier but for consistency please choose your GitHub username, `${issue_number}` is just the issue number(without `#`). Please keep `${short_issue_description}` brief but clear to avoid excessively long branch names.

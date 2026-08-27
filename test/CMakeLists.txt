@@ -17,4 +17,3 @@ if(NOT GTest_FOUND)
 endif()
 
 add_subdirectory(unit)
-

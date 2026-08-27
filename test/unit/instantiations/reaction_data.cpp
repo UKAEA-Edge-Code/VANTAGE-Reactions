@@ -27,5 +27,6 @@ template class ArrayLookupData<1, false>;
 template class ArrayLookupData<1, true>;
 template class ExtractorData<1>;
 template class ExtractorData<2>;
+template class ExtractorData<3>;
 
 } // namespace VANTAGE::Reactions

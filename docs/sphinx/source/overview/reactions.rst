@@ -270,7 +270,7 @@ Extractor data
 
 #. Dimensionality: variable (up to the dimensionality of the extracted property)
 #. Required properties: Simple props: custom key (specified by :class:`Sym`); Species props: none
-#. Details: Returns the first N components of a given REAL particle property. Useful for providing inputs into composite data objects.
+#. Details: Returns N components of a given REAL particle property starting from an optional component offset (default 0). Useful for providing inputs into composite data objects.
 #. Example: 
 
 .. literalinclude:: ../example_sources/example_extractor.hpp

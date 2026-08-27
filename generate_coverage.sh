@@ -36,10 +36,10 @@ lcov --remove \
   "*/$BUILD/*" \
   '/usr/*' \
   '/opt/spack/*' \
-  -o "$BUILD/coverage_lib.info" --ignore-errors inconsistent,inconsistent,mismatch,mismatch,unused,unused -j "$MAX_JOBS"
+  -o "$BUILD/coverage_lib.txt" --ignore-errors inconsistent,inconsistent,mismatch,mismatch,unused,unused -j "$MAX_JOBS"
 
 
 if [ "$HTML" != "OFF" ]; then
-  genhtml "$BUILD/coverage_lib.info" -o "$BUILD/coverage_html" --ignore-errors inconsistent,inconsistent,mismatch,mismatch -j "$MAX_JOBS"
+  genhtml "$BUILD/coverage_lib.txt" -o "$BUILD/coverage_html" --ignore-errors inconsistent,inconsistent,mismatch,mismatch -j "$MAX_JOBS"
   echo "Report: $BUILD/coverage_html/index.html"
 fi

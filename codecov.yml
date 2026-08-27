@@ -8,3 +8,14 @@ coverage:
         enabled: yes
         target: auto
         threshold: "5%"
+        paths:
+          - "src"
+          - "include"
+    patch:
+      default:
+        enabled: yes
+        target: auto
+        threshold: "5%"
+        paths:
+          - "src"
+          - "include"
