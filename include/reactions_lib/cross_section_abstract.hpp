@@ -1,9 +1,8 @@
 #ifndef REACTIONS_CROSS_SECTION_ABSTRACT_H
 #define REACTIONS_CROSS_SECTION_ABSTRACT_H
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <limits>
-#include <neso_particles.hpp>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**

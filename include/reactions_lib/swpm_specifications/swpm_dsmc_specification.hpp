@@ -1,9 +1,8 @@
 #ifndef REACTIONS_SWPM_DSMC_COLL_SPECIFICATION_H
 #define REACTIONS_SWPM_DSMC_COLL_SPECIFICATION_H
 #include "../swpm_coll_specification_abstract.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -13,10 +12,10 @@ namespace VANTAGE::Reactions {
  *
  */
 struct SWPMDSMCSpecification
-    : AbstractSWPMSpecification<HostAtomicBlockKernelRNG<REAL>> {
+    : AbstractSWPMSpecification<NP::HostAtomicBlockKernelRNG<REAL>> {
 
   SWPMDSMCSpecification(
-      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
+      std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       REAL rate_norm_const = 1.0,
       const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractSWPMSpecification(rng_kernel, rate_norm_const, properties_map) {
@@ -24,17 +23,17 @@ struct SWPMDSMCSpecification
 
   template <typename TARGET, typename PAIR_LIST>
   void calculate_weight_transfer(
-      CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list, INT cell_idx_start,
-      INT cell_idx_end) {
+      NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list,
+      INT cell_idx_start, INT cell_idx_end) {
 
-    particle_pair_loop(
+    NP::particle_pair_loop(
         "DSMC_weight_transfer", pair_list,
         [](auto index, auto weight_change_a, auto weight_change_b,
            auto max_sigma_v, auto sigma_v, auto weight_a, auto weight_b,
            auto coll_cell, auto cell, auto w_max, auto rng, auto panic_a,
            auto panic_b) {
-          REAL min_weight = Kernel::min(weight_a[0], weight_b[0]);
-          REAL max_weight = Kernel::max(weight_a[0], weight_b[0]);
+          REAL min_weight = NP::Kernel::min(weight_a[0], weight_b[0]);
+          REAL max_weight = NP::Kernel::max(weight_a[0], weight_b[0]);
 
           REAL rejection_threshold =
               sigma_v[0] / max_sigma_v.at(cell[0], coll_cell[0]) * max_weight /
@@ -52,37 +51,38 @@ struct SWPMDSMCSpecification
           }
         },
 
-        Access::read(ParticlePairLoopIndex{}),
-        Access::A(Access::write(this->weight_change_sym)),
-        Access::B(Access::write(this->weight_change_sym)),
-        Access::read(this->sigma_v_bound),
-        Access::A(Access::read(this->total_reaction_rate_sym)),
-        Access::A(Access::read(this->weight_sym)),
-        Access::B(Access::read(this->weight_sym)),
-        Access::A(Access::read(this->coll_cell_sym)),
-        Access::A(Access::read(this->cell_id_sym)), Access::read(this->max_w),
-        Access::read(this->rng_kernel),
-        Access::A(Access::write(this->panic_sym)),
-        Access::B(Access::write(this->panic_sym)))
+        NP::Access::read(NP::ParticlePairLoopIndex{}),
+        NP::Access::A(NP::Access::write(this->weight_change_sym)),
+        NP::Access::B(NP::Access::write(this->weight_change_sym)),
+        NP::Access::read(this->sigma_v_bound),
+        NP::Access::A(NP::Access::read(this->total_reaction_rate_sym)),
+        NP::Access::A(NP::Access::read(this->weight_sym)),
+        NP::Access::B(NP::Access::read(this->weight_sym)),
+        NP::Access::A(NP::Access::read(this->coll_cell_sym)),
+        NP::Access::A(NP::Access::read(this->cell_id_sym)),
+        NP::Access::read(this->max_w), NP::Access::read(this->rng_kernel),
+        NP::Access::A(NP::Access::write(this->panic_sym)),
+        NP::Access::B(NP::Access::write(this->panic_sym)))
         ->execute(cell_idx_start, cell_idx_end);
   };
 
-  void calculate_q_hat(ParticleSubGroupSharedPtr target,
-                       std::shared_ptr<CollisionCellManager> &ccm,
-                       int species_id_a, int species_id_b,
-                       NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
-                       NDLocalArraySharedPtr<REAL, 2> &result_buffer) override {
+  void
+  calculate_q_hat(NP::ParticleSubGroupSharedPtr target,
+                  std::shared_ptr<CollisionCellManager> &ccm, int species_id_a,
+                  int species_id_b,
+                  NP::NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
+                  NP::NDLocalArraySharedPtr<REAL, 2> &result_buffer) override {
 
     ccm->resize_coll_cellwise_data(target->get_particle_group()->sycl_target,
                                    this->max_w);
     ccm->coll_cellwise_max(target, this->weight_sym, 0, this->max_w);
 
-    nd_local_array_loop_element_wise(
+    NP::nd_local_array_loop_element_wise(
         result_buffer, [=](REAL w_max) { return w_max; }, this->max_w);
   }
 
 private:
-  NDLocalArraySharedPtr<REAL, 2> max_w;
+  NP::NDLocalArraySharedPtr<REAL, 2> max_w;
 };
 
 }; // namespace VANTAGE::Reactions

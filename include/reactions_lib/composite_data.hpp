@@ -23,7 +23,8 @@ struct CompositeDataOnDevice
     : public AbstractReactionDataOnDevice<
           typename std::tuple_element_t<
               0, std::tuple<DATATYPE...>>::ACCESSOR_PACK_TYPE,
-          dim, TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+          dim,
+          NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
           input_dim, VAL_TYPE, IN_TYPE> {
 
   static_assert(
@@ -79,7 +80,8 @@ struct CompositeData
           ON_DEVICE_TYPE,
           typename std::tuple_element_t<
               0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE,
-          dim, TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+          dim,
+          NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
           input_dim> {
 
   using ARGUMENT_PACK_TYPE = typename std::tuple_element_t<
@@ -99,10 +101,11 @@ struct CompositeData
    * objects
    */
   CompositeData(DATATYPE... data)
-      : AbstractReactionData<
-            ON_DEVICE_TYPE, ARGUMENT_PACK_TYPE, dim,
-            TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
-            input_dim>(ARGUMENT_PACK_TYPE(), get_default_map()),
+      : AbstractReactionData<ON_DEVICE_TYPE, ARGUMENT_PACK_TYPE, dim,
+                             NP::TupleRNG<std::shared_ptr<
+                                 typename DATATYPE::RNG_KERNEL_TYPE>...>,
+                             input_dim>(ARGUMENT_PACK_TYPE(),
+                                        get_default_map()),
         data(std::make_tuple(data...)) {};
 
   /**

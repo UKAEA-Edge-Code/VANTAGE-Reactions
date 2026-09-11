@@ -87,14 +87,15 @@ struct BinaryArrayTransformDataOnDevice
       const typename CompositeDataOnDevice<
           TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
           DATATYPE2>::ACCESSOR_PACK_TYPE &accessors,
-      typename TupleRNG<std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
-                        std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::
-          KernelType &rng_kernel) const {
+      typename NP::TupleRNG<
+          std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
+          std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::KernelType
+          &rng_kernel) const {
 
     return this->transform.apply(
-        Tuple::get<0>(this->data)
+        NP::Tuple::get<0>(this->data)
             .calc_data(accessors, rng_kernel.template get<0>()),
-        Tuple::get<1>(this->data)
+        NP::Tuple::get<1>(this->data)
             .calc_data(accessors, rng_kernel.template get<1>()));
   }
 

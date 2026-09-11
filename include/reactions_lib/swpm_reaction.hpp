@@ -4,14 +4,11 @@
 #include "pair_reaction_data/cs_pair_reaction_data.hpp"
 #include "pair_reaction_kernels.hpp"
 #include "profiling_base.hpp"
-#include "reaction_base.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <array>
 #include <cstring>
-#include <neso_particles.hpp>
 #include <type_traits>
 #include <vector>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -22,15 +19,17 @@ struct AbstractPairReaction : ProfilingBase {
 
 public:
   virtual void calculate_rates(
-      CellwisePairListAbsolute<ParticleGroup, CellwisePairList> &pair_list,
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
+          &pair_list,
       INT cell_idx_start, INT cell_idx_end) {}
 
   virtual void
-  apply(CellwisePairListAbsolute<ParticleGroup, CellwisePairList> &pair_list,
+  apply(NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
+            &pair_list,
         INT cell_idx_start, INT cell_idx_end, double dt,
-        ParticleGroupSharedPtr child_group) {}
+        NP::ParticleGroupSharedPtr child_group) {}
 
-  virtual const LocalArraySharedPtr<REAL> &get_device_rate_buffer() = 0;
+  virtual const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() = 0;
   virtual REAL get_sigma_v_bound(REAL relative_vel) = 0;
   virtual std::vector<int> get_in_states() = 0;
 
@@ -77,7 +76,7 @@ struct SWPMReaction : AbstractPairReaction {
    * when remapping property names (tot_reaction_rate,weight_change)
    */
   SWPMReaction(
-      SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
       std::array<int, num_products> products, ReactionData reaction_data,
       ReactionKernels reaction_kernels, DataCalc data_calculator,
       const std::map<int, std::string> &properties_map = get_default_map())
@@ -85,11 +84,11 @@ struct SWPMReaction : AbstractPairReaction {
         reaction_kernels(reaction_kernels), data_calculator(data_calculator),
         sycl_target_stored(sycl_target),
         device_rate_buffer(
-            std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
+            std::make_shared<NP::LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
-            std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
+            std::make_shared<NP::NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
         max_buffer_size(16384 *
-                        get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
+                        NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
 
     NESOWARN(
         map_subset_check(properties_map),
@@ -98,9 +97,9 @@ struct SWPMReaction : AbstractPairReaction {
         may be inconsistencies with indexing of properties.");
 
     this->total_reaction_rate =
-        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+        NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->weight_change_sym =
-        Sym<REAL>(properties_map.at(default_properties.weight_change));
+        NP::Sym<REAL>(properties_map.at(default_properties.weight_change));
 
     // These assertions are necessary since the typenames for ReactionData and
     // ReactionKernels could be any type and for calculate_rates and
@@ -163,15 +162,15 @@ struct SWPMReaction : AbstractPairReaction {
     auto descendant_matrix_spec_b =
         reaction_kernel_buffer.get_descendant_matrix_spec_b();
 
-    this->descendant_particles_a = std::make_shared<DescendantProducts>(
+    this->descendant_particles_a = std::make_shared<NP::DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec_a,
         reaction_kernel_buffer.get_num_products_a());
 
-    this->descendant_particles_b = std::make_shared<DescendantProducts>(
+    this->descendant_particles_b = std::make_shared<NP::DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec_b,
         reaction_kernel_buffer.get_num_products_b());
 
-    auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         SWPMReaction::get_sycl_target(), 0,
         this->data_calculator.get_data_size());
     empty_pre_req_data->fill(0);
@@ -200,7 +199,7 @@ struct SWPMReaction : AbstractPairReaction {
        * used when remapping property names (tot_reaction_rate,weight_change,
        * collision_cell_id, cell_id)
        */
-      SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
       std::array<int, num_products> products, ReactionData reaction_data,
       ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
@@ -208,11 +207,11 @@ struct SWPMReaction : AbstractPairReaction {
         reaction_kernels(reaction_kernels), data_calculator(DataCalc()),
         sycl_target_stored(sycl_target),
         device_rate_buffer(
-            std::make_shared<LocalArray<REAL>>(sycl_target, 0, 0.0)),
+            std::make_shared<NP::LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
-            std::make_shared<NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
+            std::make_shared<NP::NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
         max_buffer_size(16384 *
-                        get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {}
+                        NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {}
 
   virtual ~SWPMReaction() = default;
 
@@ -229,8 +228,9 @@ public:
    * @param cell_idx_end The index up to which to run the loop over
    */
   template <typename TARGET, typename PAIR_LIST>
-  void calculate_rates_v(CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
-                         INT cell_idx_start, INT cell_idx_end) {
+  void
+  calculate_rates_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+                    INT cell_idx_start, INT cell_idx_end) {
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
@@ -243,7 +243,7 @@ public:
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");
 
-    auto calc_rate_loop = particle_pair_loop(
+    auto calc_rate_loop = NP::particle_pair_loop(
         "pair_data_calc_loop", pair_list,
         [=](auto pair_index, auto req_int_props_a, auto req_real_props_a,
             auto req_int_props_b, auto req_real_props_b, auto tot_rate,
@@ -257,24 +257,25 @@ public:
           buffer[current_count] = rate[0];
           tot_rate[0] += rate[0];
         },
-        Access::read(ParticlePairLoopIndex{}),
-        Access::A(Access::write(
-            sym_vector<INT>(pair_list.A, this->calculate_rates_int_syms_a))),
-        Access::A(Access::read(
-            sym_vector<REAL>(pair_list.A, this->calculate_rates_real_syms_a))),
-        Access::B(Access::write(
-            sym_vector<INT>(pair_list.B, this->calculate_rates_int_syms_b))),
-        Access::B(Access::read(
-            sym_vector<REAL>(pair_list.B, this->calculate_rates_real_syms_b))),
-        Access::write(this->total_reaction_rate),
-        Access::write(this->device_rate_buffer),
-        Access::read(reaction_data.get_rng_kernel()));
+        NP::Access::read(NP::ParticlePairLoopIndex{}),
+        NP::Access::A(NP::Access::write(NP::sym_vector<INT>(
+            pair_list.A, this->calculate_rates_int_syms_a))),
+        NP::Access::A(NP::Access::read(NP::sym_vector<REAL>(
+            pair_list.A, this->calculate_rates_real_syms_a))),
+        NP::Access::B(NP::Access::write(NP::sym_vector<INT>(
+            pair_list.B, this->calculate_rates_int_syms_b))),
+        NP::Access::B(NP::Access::read(NP::sym_vector<REAL>(
+            pair_list.B, this->calculate_rates_real_syms_b))),
+        NP::Access::write(this->total_reaction_rate),
+        NP::Access::write(this->device_rate_buffer),
+        NP::Access::read(reaction_data.get_rng_kernel()));
 
     calc_rate_loop->execute(cell_idx_start, cell_idx_end);
   }
 
   void calculate_rates(
-      CellwisePairListAbsolute<ParticleGroup, CellwisePairList> &pair_list,
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
+          &pair_list,
       INT cell_idx_start, INT cell_idx_end) override {
     // auto r0 = this->start_profiling_region(this->sycl_target_stored,
     //                                        "calculate_rates_SWPM");
@@ -297,13 +298,13 @@ public:
    * pair loop
    * @param cell_idx_end The index up to which to run the loop over
    * @param dt The current time step size.
-   * @param child_group ParticleGroupSharedPtr that contains a particle group
-   * into which descendants are placed after generation.
+   * @param child_group NP::ParticleGroupSharedPtr that contains a particle
+   * group into which descendants are placed after generation.
    */
   template <typename TARGET, typename PAIR_LIST>
-  void apply_v(CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+  void apply_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                INT cell_idx_start, INT cell_idx_end, double dt,
-               ParticleGroupSharedPtr child_group) {
+               NP::ParticleGroupSharedPtr child_group) {
 
     auto reaction_kernel_buffer = this->reaction_kernels;
     auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
@@ -319,7 +320,7 @@ public:
 
     this->data_calculator.fill_buffer(this->pre_req_data, pair_list,
                                       cell_idx_start, cell_idx_end);
-    auto application_loop = particle_pair_loop(
+    auto application_loop = NP::particle_pair_loop(
         "descendant_products_loop", pair_list,
         [=](auto weight_change, auto descendant_particles_a,
             auto descendant_particles_b, auto particle_index_a,
@@ -364,22 +365,23 @@ public:
                 pre_req_data, dt);
           }
         },
-        Access::read(this->weight_change_sym),
-        Access::write(this->descendant_particles_a),
-        Access::write(this->descendant_particles_b),
-        Access::A(Access::read(ParticlePairLoopIndex{})),
-        Access::B(Access::read(ParticlePairLoopIndex{})),
-        Access::read(ParticlePairLoopIndex{}),
-        Access::A(Access::write(
-            sym_vector<INT>(pair_list.A, this->apply_int_syms_a))),
-        Access::A(Access::write(
-            sym_vector<REAL>(pair_list.A, this->apply_real_syms_a))),
-        Access::B(Access::write(
-            sym_vector<INT>(pair_list.B, this->apply_int_syms_b))),
-        Access::B(Access::write(
-            sym_vector<REAL>(pair_list.B, this->apply_real_syms_b))),
-        Access::read(device_rate_buffer), Access::read(this->pre_req_data),
-        Access::write(this->total_reaction_rate));
+        NP::Access::read(this->weight_change_sym),
+        NP::Access::write(this->descendant_particles_a),
+        NP::Access::write(this->descendant_particles_b),
+        NP::Access::A(NP::Access::read(NP::ParticlePairLoopIndex{})),
+        NP::Access::B(NP::Access::read(NP::ParticlePairLoopIndex{})),
+        NP::Access::read(NP::ParticlePairLoopIndex{}),
+        NP::Access::A(NP::Access::write(
+            NP::sym_vector<INT>(pair_list.A, this->apply_int_syms_a))),
+        NP::Access::A(NP::Access::write(
+            NP::sym_vector<REAL>(pair_list.A, this->apply_real_syms_a))),
+        NP::Access::B(NP::Access::write(
+            NP::sym_vector<INT>(pair_list.B, this->apply_int_syms_b))),
+        NP::Access::B(NP::Access::write(
+            NP::sym_vector<REAL>(pair_list.B, this->apply_real_syms_b))),
+        NP::Access::read(device_rate_buffer),
+        NP::Access::read(this->pre_req_data),
+        NP::Access::write(this->total_reaction_rate));
 
     this->descendant_particles_a->reset(npart_block);
     this->descendant_particles_b->reset(npart_block);
@@ -392,10 +394,10 @@ public:
     return;
   }
 
-  void
-  apply(CellwisePairListAbsolute<ParticleGroup, CellwisePairList> &pair_list,
-        INT cell_idx_start, INT cell_idx_end, double dt,
-        ParticleGroupSharedPtr child_group) override {
+  void apply(NP::CellwisePairListAbsolute<NP::ParticleGroup,
+                                          NP::CellwisePairList> &pair_list,
+             INT cell_idx_start, INT cell_idx_end, double dt,
+             NP::ParticleGroupSharedPtr child_group) override {
 
     // auto r0 =
     //     this->start_profiling_region(this->sycl_target_stored, "apply_SWPM");
@@ -420,7 +422,7 @@ public:
    * stored.
    */
   void flush_buffer(size_t buffer_size) {
-    auto empty_device_rate_buffer = std::make_shared<LocalArray<REAL>>(
+    auto empty_device_rate_buffer = std::make_shared<NP::LocalArray<REAL>>(
         this->sycl_target_stored, buffer_size, 0);
     this->device_rate_buffer = empty_device_rate_buffer;
   }
@@ -462,7 +464,7 @@ public:
    */
   void flush_pre_req_data(size_t buffer_size) {
     auto shape = this->pre_req_data->index.shape;
-    auto empty_pre_req_data = std::make_shared<NDLocalArray<REAL, 2>>(
+    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
         this->sycl_target_stored, buffer_size, shape[1]);
     empty_pre_req_data->fill(0);
     this->pre_req_data = empty_pre_req_data;
@@ -499,7 +501,7 @@ public:
     return std::vector<int>(this->reactants.begin(), this->reactants.end());
   }
 
-  LocalArraySharedPtr<REAL> &get_device_rate_buffer() override {
+  NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() override {
     return this->device_rate_buffer;
   }
 
@@ -508,41 +510,43 @@ public:
   }
 
 protected:
-  const SYCLTargetSharedPtr &get_sycl_target() { return sycl_target_stored; }
+  const NP::SYCLTargetSharedPtr &get_sycl_target() {
+    return sycl_target_stored;
+  }
 
-  const NDLocalArraySharedPtr<REAL, 2> &get_pre_req_data() {
+  const NP::NDLocalArraySharedPtr<REAL, 2> &get_pre_req_data() {
     return pre_req_data;
   }
 
   size_t get_max_buffer_size() { return this->max_buffer_size; }
 
 private:
-  Sym<REAL> total_reaction_rate;
-  LocalArraySharedPtr<REAL> device_rate_buffer;
-  SYCLTargetSharedPtr sycl_target_stored;
-  NDLocalArraySharedPtr<REAL, 2>
+  NP::Sym<REAL> total_reaction_rate;
+  NP::LocalArraySharedPtr<REAL> device_rate_buffer;
+  NP::SYCLTargetSharedPtr sycl_target_stored;
+  NP::NDLocalArraySharedPtr<REAL, 2>
       pre_req_data; //!< Real-valued local matrix for storing
                     //!< any pre-requisite data relating to a
                     //!< derived reaction.
-  Sym<REAL> weight_change_sym;
+  NP::Sym<REAL> weight_change_sym;
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
                           //
   std::array<int, 2> reactants;
   std::array<int, num_products> products;
   ReactionData reaction_data;
   ReactionKernels reaction_kernels;
-  std::shared_ptr<DescendantProducts> descendant_particles_a;
-  std::shared_ptr<DescendantProducts> descendant_particles_b;
+  std::shared_ptr<NP::DescendantProducts> descendant_particles_a;
+  std::shared_ptr<NP::DescendantProducts> descendant_particles_b;
 
-  std::vector<Sym<INT>> calculate_rates_int_syms_a;
-  std::vector<Sym<REAL>> calculate_rates_real_syms_a;
-  std::vector<Sym<INT>> calculate_rates_int_syms_b;
-  std::vector<Sym<REAL>> calculate_rates_real_syms_b;
+  std::vector<NP::Sym<INT>> calculate_rates_int_syms_a;
+  std::vector<NP::Sym<REAL>> calculate_rates_real_syms_a;
+  std::vector<NP::Sym<INT>> calculate_rates_int_syms_b;
+  std::vector<NP::Sym<REAL>> calculate_rates_real_syms_b;
 
-  std::vector<Sym<INT>> apply_int_syms_a;
-  std::vector<Sym<REAL>> apply_real_syms_a;
-  std::vector<Sym<INT>> apply_int_syms_b;
-  std::vector<Sym<REAL>> apply_real_syms_b;
+  std::vector<NP::Sym<INT>> apply_int_syms_a;
+  std::vector<NP::Sym<REAL>> apply_real_syms_a;
+  std::vector<NP::Sym<INT>> apply_int_syms_b;
+  std::vector<NP::Sym<REAL>> apply_real_syms_b;
 
   DataCalc data_calculator;
 };

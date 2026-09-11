@@ -2,29 +2,25 @@
 #define REACTIONS_PAIR_REACTION_DATA_H
 #include "reaction_data_abstract.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include <memory>
-#include <neso_particles.hpp>
-#include <type_traits>
-#include <utility>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 struct PairReactionDataAccessors {
 
-  PairReactionDataAccessors(Access::PairLoopIndex::Read index,
-                            Access::SymVector::Write<INT> req_int_props_a,
-                            Access::SymVector::Read<REAL> req_real_props_a,
-                            Access::SymVector::Write<INT> req_int_props_b,
-                            Access::SymVector::Read<REAL> req_real_props_b)
+  PairReactionDataAccessors(NP::Access::PairLoopIndex::Read index,
+                            NP::Access::SymVector::Write<INT> req_int_props_a,
+                            NP::Access::SymVector::Read<REAL> req_real_props_a,
+                            NP::Access::SymVector::Write<INT> req_int_props_b,
+                            NP::Access::SymVector::Read<REAL> req_real_props_b)
       : index(index), req_int_props_a(req_int_props_a),
         req_real_props_a(req_real_props_a), req_int_props_b(req_int_props_b),
         req_real_props_b(req_real_props_b) {};
-  Access::PairLoopIndex::Read index;
-  Access::SymVector::Write<INT> req_int_props_a;
-  Access::SymVector::Read<REAL> req_real_props_a;
-  Access::SymVector::Write<INT> req_int_props_b;
-  Access::SymVector::Read<REAL> req_real_props_b;
+  NP::Access::PairLoopIndex::Read index;
+  NP::Access::SymVector::Write<INT> req_int_props_a;
+  NP::Access::SymVector::Read<REAL> req_real_props_a;
+  NP::Access::SymVector::Write<INT> req_int_props_b;
+  NP::Access::SymVector::Read<REAL> req_real_props_b;
 };
 
 struct PairReactionDataArgumentPack
@@ -70,7 +66,7 @@ template <> struct accessor_pack_for<PairReactionDataArgumentPack> {
   using type = PairReactionDataAccessors;
 };
 
-using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
+using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
 /**
  * @brief Base pair reaction data object.

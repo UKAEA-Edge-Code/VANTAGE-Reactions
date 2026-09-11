@@ -2,9 +2,8 @@
 #define REACTIONS_PAIR_REACTION_KERNELS_H
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -186,11 +185,11 @@ struct PairReactionKernelsBase {
   const Properties<REAL> &get_required_descendant_real_props_b() {
     return this->required_descendant_real_props_b;
   }
-  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec_a() {
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_a() {
     return this->descendant_matrix_spec_a;
   }
 
-  std::shared_ptr<ProductMatrixSpec> get_descendant_matrix_spec_b() {
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_b() {
     return this->descendant_matrix_spec_b;
   }
   const INT &get_pre_ndims() const { return this->pre_req_ndims; }
@@ -231,28 +230,28 @@ protected:
           "descendant properties are set. This will result in an empty "
           "descendant_matrix_spec.")
 
-      auto descendant_particles_spec = ParticleSpec();
+      auto descendant_particles_spec = NP::ParticleSpec();
 
       for (auto prop : this->required_descendant_int_props_a.get_props()) {
-        auto descendant_prop =
-            ParticleProp<INT>(Sym<INT>(this->properties_map.at(prop)), 1);
+        auto descendant_prop = NP::ParticleProp<INT>(
+            NP::Sym<INT>(this->properties_map.at(prop)), 1);
         descendant_particles_spec.push(descendant_prop);
       }
 
       for (auto prop : this->required_descendant_real_props_a.get_props()) {
         if (prop == default_properties.velocity) {
-          auto descendant_prop = ParticleProp<REAL>(
-              Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
+          auto descendant_prop = NP::ParticleProp<REAL>(
+              NP::Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
           descendant_particles_spec.push(descendant_prop);
         } else {
-          auto descendant_prop =
-              ParticleProp<REAL>(Sym<REAL>(this->properties_map.at(prop)), 1);
+          auto descendant_prop = NP::ParticleProp<REAL>(
+              NP::Sym<REAL>(this->properties_map.at(prop)), 1);
           descendant_particles_spec.push(descendant_prop);
         }
       }
 
       this->descendant_matrix_spec_a =
-          product_matrix_spec(descendant_particles_spec);
+          NP::product_matrix_spec(descendant_particles_spec);
     }
   }
 
@@ -269,28 +268,28 @@ protected:
           "descendant properties are set. This will result in an empty "
           "descendant_matrix_spec.")
 
-      auto descendant_particles_spec = ParticleSpec();
+      auto descendant_particles_spec = NP::ParticleSpec();
 
       for (auto prop : this->required_descendant_int_props_b.get_props()) {
-        auto descendant_prop =
-            ParticleProp<INT>(Sym<INT>(this->properties_map.at(prop)), 1);
+        auto descendant_prop = NP::ParticleProp<INT>(
+            NP::Sym<INT>(this->properties_map.at(prop)), 1);
         descendant_particles_spec.push(descendant_prop);
       }
 
       for (auto prop : this->required_descendant_real_props_b.get_props()) {
         if (prop == default_properties.velocity) {
-          auto descendant_prop = ParticleProp<REAL>(
-              Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
+          auto descendant_prop = NP::ParticleProp<REAL>(
+              NP::Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
           descendant_particles_spec.push(descendant_prop);
         } else {
-          auto descendant_prop =
-              ParticleProp<REAL>(Sym<REAL>(this->properties_map.at(prop)), 1);
+          auto descendant_prop = NP::ParticleProp<REAL>(
+              NP::Sym<REAL>(this->properties_map.at(prop)), 1);
           descendant_particles_spec.push(descendant_prop);
         }
       }
 
       this->descendant_matrix_spec_b =
-          product_matrix_spec(descendant_particles_spec);
+          NP::product_matrix_spec(descendant_particles_spec);
     }
   }
   Properties<INT> required_int_props_a;
@@ -304,11 +303,11 @@ protected:
   Properties<INT> required_descendant_int_props_b;
   Properties<REAL> required_descendant_real_props_b;
 
-  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec_a =
-      std::make_shared<ProductMatrixSpec>();
+  std::shared_ptr<NP::ProductMatrixSpec> descendant_matrix_spec_a =
+      std::make_shared<NP::ProductMatrixSpec>();
 
-  std::shared_ptr<ProductMatrixSpec> descendant_matrix_spec_b =
-      std::make_shared<ProductMatrixSpec>();
+  std::shared_ptr<NP::ProductMatrixSpec> descendant_matrix_spec_b =
+      std::make_shared<NP::ProductMatrixSpec>();
 
   INT pre_req_ndims;
   INT num_products_a;
@@ -339,10 +338,10 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param out_states Array defining the IDs of descendant particles
    */
   void parent_kernel(
-      Access::PairLoopIndex::Read &index_a,
-      Access::PairLoopIndex::Read &index_b,
-      Access::DescendantProducts::Write &descendant_products_a,
-      Access::DescendantProducts::Write &descendant_products_b,
+      NP::Access::PairLoopIndex::Read &index_a,
+      NP::Access::PairLoopIndex::Read &index_b,
+      NP::Access::DescendantProducts::Write &descendant_products_a,
+      NP::Access::DescendantProducts::Write &descendant_products_b,
       const std::array<int, num_products_per_parent> &out_states) const {
     return;
   }
@@ -356,7 +355,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param index_a Read-only accessor to a loop index for the first particle
    * @param index_b Read-only accessor to a loop index for the second particle
    * @param pair_index Read-only accessor to a pair loop index for a
-   * ParticlePairLoop inside which apply is called. Access using
+   * NP::ParticlePairLoop inside which apply is called. NP::Access using
    * pair_index.get_loop_linear_index().
    * @param descendant_products_a Write accessor to descendant products of the
    * first particle
@@ -375,19 +374,18 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void
-  scattering_kernel(REAL &modified_weight, Access::PairLoopIndex::Read &index_a,
-                    Access::PairLoopIndex::Read &index_b,
-                    Access::PairLoopIndex::Read &pair_index,
-                    Access::DescendantProducts::Write &descendant_products_a,
-                    Access::DescendantProducts::Write &descendant_products_b,
-                    Access::SymVector::Write<INT> &req_int_props_a,
-                    Access::SymVector::Write<REAL> &req_real_props_a,
-                    Access::SymVector::Write<INT> &req_int_props_b,
-                    Access::SymVector::Write<REAL> &req_real_props_b,
-                    const std::array<int, num_products_per_parent> &out_states,
-                    Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                    double dt) const {
+  void scattering_kernel(
+      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
+      NP::Access::PairLoopIndex::Read &index_b,
+      NP::Access::PairLoopIndex::Read &pair_index,
+      NP::Access::DescendantProducts::Write &descendant_products_a,
+      NP::Access::DescendantProducts::Write &descendant_products_b,
+      NP::Access::SymVector::Write<INT> &req_int_props_a,
+      NP::Access::SymVector::Write<REAL> &req_real_props_a,
+      NP::Access::SymVector::Write<INT> &req_int_props_b,
+      NP::Access::SymVector::Write<REAL> &req_real_props_b,
+      const std::array<int, num_products_per_parent> &out_states,
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
   /**
@@ -399,7 +397,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param index_a Read-only accessor to a loop index for the first particle
    * @param index_b Read-only accessor to a loop index for the second particle
    * @param pair_index Read-only accessor to a pair loop index for a
-   * ParticlePairLoop inside which apply is called. Access using
+   * NP::ParticlePairLoop inside which apply is called. NP::Access using
    * pair_index.get_loop_linear_index().
    * @param descendant_products_a Write accessor to descendant products of the
    * first particle
@@ -418,19 +416,18 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * data relating to a derived reaction.
    * @param dt The current time step size.
    */
-  void
-  feedback_kernel(REAL &modified_weight, Access::PairLoopIndex::Read &index_a,
-                  Access::PairLoopIndex::Read &index_b,
-                  Access::PairLoopIndex::Read &pair_index,
-                  Access::DescendantProducts::Write &descendant_products_a,
-                  Access::DescendantProducts::Write &descendant_products_b,
-                  Access::SymVector::Write<INT> &req_int_props_a,
-                  Access::SymVector::Write<REAL> &req_real_props_a,
-                  Access::SymVector::Write<INT> &req_int_props_b,
-                  Access::SymVector::Write<REAL> &req_real_props_b,
-                  const std::array<int, num_products_per_parent> &out_states,
-                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                  double dt) const {
+  void feedback_kernel(
+      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
+      NP::Access::PairLoopIndex::Read &index_b,
+      NP::Access::PairLoopIndex::Read &pair_index,
+      NP::Access::DescendantProducts::Write &descendant_products_a,
+      NP::Access::DescendantProducts::Write &descendant_products_b,
+      NP::Access::SymVector::Write<INT> &req_int_props_a,
+      NP::Access::SymVector::Write<REAL> &req_real_props_a,
+      NP::Access::SymVector::Write<INT> &req_int_props_b,
+      NP::Access::SymVector::Write<REAL> &req_real_props_b,
+      const std::array<int, num_products_per_parent> &out_states,
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
 
@@ -443,7 +440,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param index_a Read-only accessor to a loop index for the first particle
    * @param index_b Read-only accessor to a loop index for the second particle
    * @param pair_index Read-only accessor to a pair loop index for a
-   * ParticlePairLoop inside which apply is called. Access using
+   * NP::ParticlePairLoop inside which apply is called. NP::Access using
    * pair_index.get_loop_linear_index().
    * @param descendant_products_a Write accessor to descendant products of the
    * first particle
@@ -464,17 +461,17 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    *
    */
   void transformation_kernel(
-      REAL &modified_weight, Access::PairLoopIndex::Read &index_a,
-      Access::PairLoopIndex::Read &index_b,
-      Access::PairLoopIndex::Read &pair_index,
-      Access::DescendantProducts::Write &descendant_products_a,
-      Access::DescendantProducts::Write &descendant_products_b,
-      Access::SymVector::Write<INT> &req_int_props_a,
-      Access::SymVector::Write<REAL> &req_real_props_a,
-      Access::SymVector::Write<INT> &req_int_props_b,
-      Access::SymVector::Write<REAL> &req_real_props_b,
+      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
+      NP::Access::PairLoopIndex::Read &index_b,
+      NP::Access::PairLoopIndex::Read &pair_index,
+      NP::Access::DescendantProducts::Write &descendant_products_a,
+      NP::Access::DescendantProducts::Write &descendant_products_b,
+      NP::Access::SymVector::Write<INT> &req_int_props_a,
+      NP::Access::SymVector::Write<REAL> &req_real_props_a,
+      NP::Access::SymVector::Write<INT> &req_int_props_b,
+      NP::Access::SymVector::Write<REAL> &req_real_props_b,
       const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
   /**
@@ -486,7 +483,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param index_a Read-only accessor to a loop index for the first particle
    * @param index_b Read-only accessor to a loop index for the second particle
    * @param pair_index Read-only accessor to a pair loop index for a
-   * ParticlePairLoop inside which apply is called. Access using
+   * NP::ParticlePairLoop inside which apply is called. NP::Access using
    * pair_index.get_loop_linear_index().
    * @param descendant_products_a Write accessor to descendant products of the
    * first particle
@@ -506,19 +503,19 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
    * @param dt The current time step size.
    *
    */
-  void weight_kernel(REAL &modified_weight,
-                     Access::PairLoopIndex::Read &index_a,
-                     Access::PairLoopIndex::Read &index_b,
-                     Access::PairLoopIndex::Read &pair_index,
-                     Access::DescendantProducts::Write &descendant_products_a,
-                     Access::DescendantProducts::Write &descendant_products_b,
-                     Access::SymVector::Write<INT> &req_int_props_a,
-                     Access::SymVector::Write<REAL> &req_real_props_a,
-                     Access::SymVector::Write<INT> &req_int_props_b,
-                     Access::SymVector::Write<REAL> &req_real_props_b,
-                     const std::array<int, num_products_per_parent> &out_states,
-                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                     double dt) const {
+  void
+  weight_kernel(REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
+                NP::Access::PairLoopIndex::Read &index_b,
+                NP::Access::PairLoopIndex::Read &pair_index,
+                NP::Access::DescendantProducts::Write &descendant_products_a,
+                NP::Access::DescendantProducts::Write &descendant_products_b,
+                NP::Access::SymVector::Write<INT> &req_int_props_a,
+                NP::Access::SymVector::Write<REAL> &req_real_props_a,
+                NP::Access::SymVector::Write<INT> &req_int_props_b,
+                NP::Access::SymVector::Write<REAL> &req_real_props_b,
+                const std::array<int, num_products_per_parent> &out_states,
+                NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                double dt) const {
     return;
   }
 };

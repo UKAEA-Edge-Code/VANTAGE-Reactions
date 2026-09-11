@@ -58,7 +58,7 @@ struct ConcatenatorDataOnDevice
       const typename CompositeDataOnDevice<
           total_dim<DATATYPE...>(), 0, REAL, REAL,
           DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
-      typename TupleRNG<
+      typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
@@ -73,7 +73,7 @@ struct ConcatenatorDataOnDevice
       const typename CompositeDataOnDevice<
           total_dim<DATATYPE...>(), 0, REAL, REAL,
           DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
-      typename TupleRNG<
+      typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel,
       std::array<REAL, DIM> &result, size_t dat_dim_idx) const {

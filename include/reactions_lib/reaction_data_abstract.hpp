@@ -1,15 +1,14 @@
 #ifndef REACTIONS_REACTION_DATA_ABSTRACT_H
 #define REACTIONS_REACTION_DATA_ABSTRACT_H
 #include "reaction_kernel_pre_reqs.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <memory>
-#include <neso_particles.hpp>
 #include <type_traits>
 #include <utility>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
-using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
+using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
 /**
  * @brief Compile-time helpers for checking that a derived on-device

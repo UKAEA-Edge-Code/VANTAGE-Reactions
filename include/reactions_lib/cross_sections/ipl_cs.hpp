@@ -1,9 +1,8 @@
 #ifndef REACTIONS_IPL_CS_H
 #define REACTIONS_IPL_CS_H
 #include "../cross_section_abstract.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -35,7 +34,7 @@ struct IPLCrossSection : public AbstractCrossSection {
    * @return REAL-valued cross-section
    */
   REAL get_value_at(const REAL &relative_vel) const {
-    return this->mult_const / Kernel::pow(relative_vel, this->power);
+    return this->mult_const / NP::Kernel::pow(relative_vel, this->power);
   };
 
   /**
@@ -45,7 +44,7 @@ struct IPLCrossSection : public AbstractCrossSection {
    */
   REAL get_max_rate_val() const {
     return this->mult_const /
-           Kernel::pow(this->default_max_vel, 1 - this->power);
+           NP::Kernel::pow(this->default_max_vel, 1 - this->power);
   };
 
   /**
@@ -59,7 +58,7 @@ struct IPLCrossSection : public AbstractCrossSection {
    * @return REAL-valued maximum rate
    */
   REAL get_max_rate_val_greedy(const REAL &relative_vel) const {
-    return this->mult_const / Kernel::pow(relative_vel, 1 - this->power);
+    return this->mult_const / NP::Kernel::pow(relative_vel, 1 - this->power);
   };
 
 private:

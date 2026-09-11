@@ -1,13 +1,10 @@
 #ifndef REACTIONS_PAIR_DATA_CALCULATOR_H
 #define REACTIONS_PAIR_DATA_CALCULATOR_H
 #include "pair_reaction_data.hpp"
-#include "utils.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <tuple>
 #include <type_traits>
 #include <vector>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -75,10 +72,10 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
   }
 
   /**
-   * @brief Fills an NDLocalArray buffer by invoking the stored PairReactionData
-   * objects for a given cell index
+   * @brief Fills an NP::NDLocalArray buffer by invoking the stored
+   * PairReactionData objects for a given cell index
    *
-   * @param buffer NDLocalArray buffer - size should conform to the stored
+   * @param buffer NP::NDLocalArray buffer - size should conform to the stored
    * PairReactionData tuple size
    * @param pair_list Particle pair list used to fill out the buffer
    * @param cell_idx_start Cell index from which to invoke the corresponding
@@ -87,8 +84,8 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
    * particle loops
    */
   template <typename TARGET, typename PAIR_LIST>
-  void fill_buffer(const NDLocalArraySharedPtr<REAL, 2> &buffer,
-                   CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+  void fill_buffer(const NP::NDLocalArraySharedPtr<REAL, 2> &buffer,
+                   NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                    INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
@@ -103,7 +100,7 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
                 // Maybe make into a vector of loop shared_ptrs and use submit
                 // instead of execute
                 constexpr auto data_dim = reaction_data_on_device.get_dim();
-                auto loop = particle_pair_loop(
+                auto loop = NP::particle_pair_loop(
                     "pair_data_calc_loop", pair_list,
                     [=](auto pair_index, auto req_int_props_a,
                         auto req_real_props_a, auto req_int_props_b,
@@ -118,16 +115,17 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
                         buffer.at(current_count, dat_dim_idx + i) = rate[i];
                       }
                     },
-                    Access::read(ParticlePairLoopIndex{}),
-                    Access::A(Access::write(sym_vector<INT>(
+                    NP::Access::read(NP::ParticlePairLoopIndex{}),
+                    NP::Access::A(NP::Access::write(NP::sym_vector<INT>(
                         pair_list.A, this->data_loop_int_syms_a[dat_idx]))),
-                    Access::A(Access::read(sym_vector<REAL>(
+                    NP::Access::A(NP::Access::read(NP::sym_vector<REAL>(
                         pair_list.A, this->data_loop_real_syms_a[dat_idx]))),
-                    Access::B(Access::write(sym_vector<INT>(
+                    NP::Access::B(NP::Access::write(NP::sym_vector<INT>(
                         pair_list.B, this->data_loop_int_syms_b[dat_idx]))),
-                    Access::B(Access::read(sym_vector<REAL>(
+                    NP::Access::B(NP::Access::read(NP::sym_vector<REAL>(
                         pair_list.B, this->data_loop_real_syms_b[dat_idx]))),
-                    Access::write(buffer), Access::read(args.get_rng_kernel()));
+                    NP::Access::write(buffer),
+                    NP::Access::read(args.get_rng_kernel()));
 
                 loop->execute(cell_idx_start, cell_idx_end);
                 dat_idx++;
@@ -164,10 +162,10 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
 
 private:
   std::tuple<DATATYPE...> data;
-  std::vector<std::vector<Sym<INT>>> data_loop_int_syms_a;
-  std::vector<std::vector<Sym<REAL>>> data_loop_real_syms_a;
-  std::vector<std::vector<Sym<INT>>> data_loop_int_syms_b;
-  std::vector<std::vector<Sym<REAL>>> data_loop_real_syms_b;
+  std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms_a;
+  std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms_a;
+  std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms_b;
+  std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms_b;
 };
 } // namespace VANTAGE::Reactions
 #endif

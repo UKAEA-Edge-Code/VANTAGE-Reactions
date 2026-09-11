@@ -2,11 +2,8 @@
 #define REACTIONS_SOFT_SPHERE_SCATTERING_DATA_H
 #include "../pair_reaction_data.hpp"
 #include "../particle_properties_map.hpp"
-#include <iostream>
-#include <neso_particles.hpp>
-#include <vector>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -21,13 +18,14 @@ namespace VANTAGE::Reactions {
 template <size_t vel_ndim>
 struct SSScatteringDataOnDevice
     : public PairReactionDataBaseOnDevice<2 * vel_ndim,
-                                          HostAtomicBlockKernelRNG<REAL>> {
+                                          NP::HostAtomicBlockKernelRNG<REAL>> {
 
   SSScatteringDataOnDevice() = default;
 
-  std::array<REAL, 2 * vel_ndim> calc_data(
-      const PairReactionDataAccessors &accessor_pack,
-      typename HostAtomicBlockKernelRNG<REAL>::KernelType &rng_kernel) const {
+  std::array<REAL, 2 * vel_ndim>
+  calc_data(const PairReactionDataAccessors &accessor_pack,
+            typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &rng_kernel)
+      const {
 
     REAL rel_speed = 0;
     std::array<REAL, vel_ndim> random_dir;
@@ -48,9 +46,11 @@ struct SSScatteringDataOnDevice
     random_nums[1] = rng_kernel.at(accessor_pack.index, 1, &is_kernel_valid);
 
     REAL valuecos;
-    const REAL valuesin = Kernel::sincos(two_pi * random_nums[0], &valuecos);
-    REAL valuecos_theta = 2 * Kernel::pow(random_nums[1], this->alpha_inv) - 1;
-    REAL valuesin_theta = Kernel::sqrt(1 - valuecos_theta * valuecos_theta);
+    const REAL valuesin =
+        NP::Kernel::sincos(two_pi * random_nums[0], &valuecos);
+    REAL valuecos_theta =
+        2 * NP::Kernel::pow(random_nums[1], this->alpha_inv) - 1;
+    REAL valuesin_theta = NP::Kernel::sqrt(1 - valuecos_theta * valuecos_theta);
     random_dir[0] = valuecos * valuesin_theta;
     random_dir[1] = valuesin * valuesin_theta;
     random_dir[2] = valuecos_theta;
@@ -61,7 +61,7 @@ struct SSScatteringDataOnDevice
 
       com_vel[i] = vel_a[i] * this->mass_a + vel_b[i] * this->mass_b;
     }
-    rel_speed = Kernel::sqrt(rel_speed);
+    rel_speed = NP::Kernel::sqrt(rel_speed);
     if (!is_kernel_valid) {
       accessor_pack.req_int_props_a.at(this->panic_ind_a, 0) += 1;
       accessor_pack.req_int_props_b.at(this->panic_ind_b, 0) += 1;
@@ -92,7 +92,7 @@ template <size_t vel_ndim>
 struct SSScatteringData
     : public PairReactionDataBase<SSScatteringDataOnDevice<vel_ndim>,
                                   2 * vel_ndim,
-                                  HostAtomicBlockKernelRNG<REAL>> {
+                                  NP::HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
 
@@ -114,10 +114,10 @@ struct SSScatteringData
    */
   SSScatteringData(
       const Species &species_a, const Species &species_b, REAL alpha,
-      std::shared_ptr<HostAtomicBlockKernelRNG<REAL>> rng_kernel,
+      std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
       : PairReactionDataBase<SSScatteringDataOnDevice<vel_ndim>, 2 * vel_ndim,
-                             HostAtomicBlockKernelRNG<REAL>>(
+                             NP::HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
 

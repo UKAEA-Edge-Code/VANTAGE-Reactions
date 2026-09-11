@@ -62,8 +62,8 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
         this->fluid_density_ind, accessors.index, 0);
     auto fluid_temperature_dat = accessors.req_real_props.at(
         this->fluid_temperature_ind, accessors.index, 0);
-    REAL log_temp =
-        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
+    REAL log_temp = NP::Kernel::log(fluid_temperature_dat *
+                                    this->temperature_normalisation);
 
     std::array<REAL, num_coeffs_T> log_temp_arr;
     log_temp_arr[0] = 1.0;

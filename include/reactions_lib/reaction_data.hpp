@@ -1,15 +1,8 @@
 #ifndef REACTIONS_REACTION_DATA_H
 #define REACTIONS_REACTION_DATA_H
 #include "reaction_data_abstract.hpp"
-// #include "../reactions/neso_particles_namespace_alias.hpp"
-#include "../reactions/neso_test_assert.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
-#include <memory>
-
-#include <type_traits>
-#include <utility>
-
-using namespace NESO::Particles;
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -20,9 +13,9 @@ using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
  * (non-pair) reaction data.
  */
 struct SingleReactionDataAccessors {
-  Access::LoopIndex::Read index;
-  Access::SymVector::Write<INT> req_int_props;
-  Access::SymVector::Read<REAL> req_real_props;
+  NP::Access::LoopIndex::Read index;
+  NP::Access::SymVector::Write<INT> req_int_props;
+  NP::Access::SymVector::Read<REAL> req_real_props;
 };
 
 /**
@@ -41,10 +34,10 @@ struct SingleReactionDataArgumentPack
       : required_int_props(required_int_props),
         required_real_props(required_real_props) {}
 
-  std::vector<Sym<INT>> int_sym_vector() {
+  std::vector<NP::Sym<INT>> int_sym_vector() {
     return required_int_props.to_sym_vector();
   }
-  std::vector<Sym<REAL>> real_sym_vector() {
+  std::vector<NP::Sym<REAL>> real_sym_vector() {
     return required_real_props.to_sym_vector();
   }
 

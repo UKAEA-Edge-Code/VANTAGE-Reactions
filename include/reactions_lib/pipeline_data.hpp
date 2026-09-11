@@ -2,9 +2,8 @@
 #define REACTIONS_PIPELINE_DATA_H
 #include "composite_data.hpp"
 #include "reaction_data.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 template <typename T> constexpr size_t last_dim() { return T::DIM; };
@@ -64,7 +63,7 @@ struct PipelineDataOnDevice
       const typename CompositeDataOnDevice<
           last_dim<DATATYPE...>(), 0, REAL, REAL,
           DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
-      typename TupleRNG<
+      typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
@@ -78,11 +77,11 @@ struct PipelineDataOnDevice
       const typename CompositeDataOnDevice<
           last_dim<DATATYPE...>(), 0, REAL, REAL,
           DATATYPE...>::ACCESSOR_PACK_TYPE &accessors,
-      typename TupleRNG<
+      typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>::KernelType
           &rng_kernel) const {
 
-    const auto arg = Tuple::get<I>(this->data);
+    const auto arg = NP::Tuple::get<I>(this->data);
     if constexpr (I < (sizeof...(DATATYPE)) - 1) {
       if constexpr (T::INPUT_DIM > 0) {
         return this->calc_data_recurse<I + 1, ARGS...>(

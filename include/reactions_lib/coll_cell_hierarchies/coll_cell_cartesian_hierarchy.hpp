@@ -1,12 +1,11 @@
 #ifndef REACTIONS_CARTESIAN_COLL_CELL_H_H
 #define REACTIONS_CARTESIAN_COLL_CELL_H_H
 #include "../collision_cell_manager.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <algorithm>
 #include <cmath>
-#include <neso_particles.hpp>
 #include <vector>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -27,19 +26,19 @@ struct CartesianCollCellH : AbstractCollCellHierarchy {
    * collision cells per mesh cell will be the number of divisions to the power
    * of the mesh dimension.
    */
-  CartesianCollCellH(SYCLTargetSharedPtr sycl_target,
-                     CartesianHMeshSharedPtr mesh,
+  CartesianCollCellH(NP::SYCLTargetSharedPtr sycl_target,
+                     NP::CartesianHMeshSharedPtr mesh,
                      std::vector<int> &subcell_divisions)
       : subdivision(
-            SubdivideCartesianCells(sycl_target, mesh, subcell_divisions)),
+            NP::SubdivideCartesianCells(sycl_target, mesh, subcell_divisions)),
         division_order(subcell_divisions) {
 
     this->mesh_ndim = mesh->ndim;
     this->update();
   };
 
-  void bin_particles(ParticleSubGroupSharedPtr target,
-                     Sym<INT> coll_cell_sym) override {
+  void bin_particles(NP::ParticleSubGroupSharedPtr target,
+                     NP::Sym<INT> coll_cell_sym) override {
     this->subdivision.map(target, coll_cell_sym, 0);
   }
 
@@ -47,7 +46,7 @@ struct CartesianCollCellH : AbstractCollCellHierarchy {
     return this->num_coll_cells;
   }
 
-  NDHostArraySharedPtr<REAL, 2> get_coll_cell_volumes() override {
+  NP::NDHostArraySharedPtr<REAL, 2> get_coll_cell_volumes() override {
     return this->coll_cell_volumes;
   }
 
@@ -63,7 +62,7 @@ struct CartesianCollCellH : AbstractCollCellHierarchy {
           static_cast<int>(std::ceil(this->cell_width / resolutions[i])), 1);
     }
 
-    this->subdivision = SubdivideCartesianCells(
+    this->subdivision = NP::SubdivideCartesianCells(
         subdivision.sycl_target, subdivision.mesh, this->division_order);
 
     this->update();
@@ -79,7 +78,7 @@ private:
     this->num_coll_cells = this->subdivision.get_num_subdivision_cells();
     auto max_num_coll_cells = *std::max_element(this->num_coll_cells.begin(),
                                                 this->num_coll_cells.end());
-    this->coll_cell_volumes = std::make_shared<NDHostArray<REAL, 2>>(
+    this->coll_cell_volumes = std::make_shared<NP::NDHostArray<REAL, 2>>(
         this->subdivision.sycl_target, this->num_coll_cells.size(),
         max_num_coll_cells);
     this->current_shape =
@@ -96,8 +95,8 @@ private:
       }
     }
   }
-  SubdivideCartesianCells subdivision;
-  NDHostArraySharedPtr<REAL, 2> coll_cell_volumes;
+  NP::SubdivideCartesianCells subdivision;
+  NP::NDHostArraySharedPtr<REAL, 2> coll_cell_volumes;
 
   REAL cell_width;
   int mesh_ndim;

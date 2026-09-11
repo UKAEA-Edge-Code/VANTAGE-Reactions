@@ -51,9 +51,9 @@ struct FilteredMaxwellianOnDevice
    * @return A REAL-valued array of size ndim that contains the calculated
    * sampled ion velocities.
    */
-  std::array<REAL, ndim>
-  calc_data(const SingleReactionDataAccessors &accessors,
-            typename HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
+  std::array<REAL, ndim> calc_data(
+      const SingleReactionDataAccessors &accessors,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
     auto fluid_temperature_dat = accessors.req_real_props.at(
         this->fluid_temperature_ind, accessors.index, 0);
 

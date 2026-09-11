@@ -70,8 +70,8 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
         this->fluid_density_ind, accessors.index, 0);
     auto fluid_temperature_dat = accessors.req_real_props.at(
         this->fluid_temperature_ind, accessors.index, 0);
-    REAL log_temp =
-        Kernel::log(fluid_temperature_dat * this->temperature_normalisation);
+    REAL log_temp = NP::Kernel::log(fluid_temperature_dat *
+                                    this->temperature_normalisation);
 
     REAL E = 0;
     for (int i = 0; i < dim; i++) {

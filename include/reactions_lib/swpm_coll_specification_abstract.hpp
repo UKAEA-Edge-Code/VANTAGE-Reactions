@@ -1,13 +1,12 @@
 #ifndef REACTIONS_SWPM_COLL_SPECIFICATION_H
 #define REACTIONS_SWPM_COLL_SPECIFICATION_H
 #include "collision_cell_manager.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include <limits>
-#include <neso_particles.hpp>
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
-using DEFAULT_RNG_KERNEL = NullKernelRNG<REAL>;
+using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
 /**
  * @brief Abstract base class for SWPM collision specification, defining
@@ -22,15 +21,17 @@ struct AbstractSWPMSpecification {
       const std::map<int, std::string> &properties_map = get_default_map())
       : rng_kernel(rng_kernel), norm_const(rate_norm_const) {
 
-    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
+    this->weight_sym =
+        NP::Sym<REAL>(properties_map.at(default_properties.weight));
     this->total_reaction_rate_sym =
-        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+        NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->coll_cell_sym =
-        Sym<INT>(properties_map.at(default_properties.collision_cell_id));
-    this->cell_id_sym = Sym<INT>(properties_map.at(default_properties.cell_id));
-    this->panic_sym = Sym<INT>(properties_map.at(default_properties.panic));
+        NP::Sym<INT>(properties_map.at(default_properties.collision_cell_id));
+    this->cell_id_sym =
+        NP::Sym<INT>(properties_map.at(default_properties.cell_id));
+    this->panic_sym = NP::Sym<INT>(properties_map.at(default_properties.panic));
     this->weight_change_sym =
-        Sym<REAL>(properties_map.at(default_properties.weight_change));
+        NP::Sym<REAL>(properties_map.at(default_properties.weight_change));
   }
 
   /**
@@ -44,8 +45,8 @@ struct AbstractSWPMSpecification {
    */
   template <typename TARGET, typename PAIR_LIST>
   void calculate_weight_transfer(
-      CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list, INT cell_idx_start,
-      INT cell_idx_end) {};
+      NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list,
+      INT cell_idx_start, INT cell_idx_end) {};
 
   /**
    * @brief Calculate the intensity bound component without the volume of
@@ -59,11 +60,12 @@ struct AbstractSWPMSpecification {
    * on sigma*v
    * @param result_buffer Buffer to store the q_hat result in
    */
-  virtual void calculate_q_hat(ParticleSubGroupSharedPtr target,
-                               std::shared_ptr<CollisionCellManager> &ccm,
-                               int species_id_a, int species_id_b,
-                               NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
-                               NDLocalArraySharedPtr<REAL, 2> &result_buffer) {}
+  virtual void
+  calculate_q_hat(NP::ParticleSubGroupSharedPtr target,
+                  std::shared_ptr<CollisionCellManager> &ccm, int species_id_a,
+                  int species_id_b,
+                  NP::NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
+                  NP::NDLocalArraySharedPtr<REAL, 2> &result_buffer) {}
 
   /**
    * @brief Calculate the exponential parameter for the Markov process of the
@@ -84,11 +86,11 @@ struct AbstractSWPMSpecification {
    * @param result_buffer Buffer to store the result in
    */
   void calculate_exponential_parameter(
-      ParticleSubGroupSharedPtr target,
+      NP::ParticleSubGroupSharedPtr target,
       std::shared_ptr<CollisionCellManager> &ccm, int species_id_a,
-      int species_id_b, NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
-      NDLocalArraySharedPtr<REAL, 2> &result_buffer,
-      NDLocalArraySharedPtr<REAL, 2> &timestep_bounds) {
+      int species_id_b, NP::NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
+      NP::NDLocalArraySharedPtr<REAL, 2> &result_buffer,
+      NP::NDLocalArraySharedPtr<REAL, 2> &timestep_bounds) {
 
     auto Na = ccm->get_npart_coll_cell(target, species_id_a);
     auto Nb = ccm->get_npart_coll_cell(target, species_id_b);
@@ -117,7 +119,7 @@ struct AbstractSWPMSpecification {
     REAL prefactor =
         (species_id_a == species_id_b ? 0.5 : 1.0) * this->norm_const;
 
-    nd_local_array_loop_element_wise(
+    NP::nd_local_array_loop_element_wise(
         result_buffer,
         [=](int Na, int Nb, REAL vol, REAL sigmav, REAL q) {
           REAL num_prefactor =
@@ -129,33 +131,33 @@ struct AbstractSWPMSpecification {
         N_a, N_b, volumes, sigma_v_bound, q_hat);
 
     REAL limit = std::numeric_limits<REAL>::max();
-    nd_local_array_loop_element_wise(
+    NP::nd_local_array_loop_element_wise(
         timestep_bounds,
         [=](int Na, int Nb, REAL rate_bound) {
           REAL prefactor = (species_id_a == species_id_b ? 0.5 : 1.0);
           INT offset = (species_id_a == species_id_b ? Na % 2 : 0);
           return rate_bound > 0
-                     ? prefactor * Kernel::min((Na - offset) / rate_bound,
-                                               Nb / rate_bound)
+                     ? prefactor * NP::Kernel::min((Na - offset) / rate_bound,
+                                                   Nb / rate_bound)
                      : limit;
         },
         N_a, N_b, result_buffer);
   };
 
 protected:
-  NDLocalArraySharedPtr<int, 2> N_a;
-  NDLocalArraySharedPtr<int, 2> N_b;
-  NDLocalArraySharedPtr<REAL, 2> volumes;
-  NDLocalArraySharedPtr<REAL, 2> sigma_v_bound;
-  NDLocalArraySharedPtr<REAL, 2> q_hat;
+  NP::NDLocalArraySharedPtr<int, 2> N_a;
+  NP::NDLocalArraySharedPtr<int, 2> N_b;
+  NP::NDLocalArraySharedPtr<REAL, 2> volumes;
+  NP::NDLocalArraySharedPtr<REAL, 2> sigma_v_bound;
+  NP::NDLocalArraySharedPtr<REAL, 2> q_hat;
   std::shared_ptr<RNG_KERNEL_T> rng_kernel;
 
-  Sym<REAL> weight_sym;
-  Sym<REAL> weight_change_sym;
-  Sym<REAL> total_reaction_rate_sym;
-  Sym<INT> coll_cell_sym;
-  Sym<INT> cell_id_sym;
-  Sym<INT> panic_sym;
+  NP::Sym<REAL> weight_sym;
+  NP::Sym<REAL> weight_change_sym;
+  NP::Sym<REAL> total_reaction_rate_sym;
+  NP::Sym<INT> coll_cell_sym;
+  NP::Sym<INT> cell_id_sym;
+  NP::Sym<INT> panic_sym;
 
   REAL norm_const;
 };

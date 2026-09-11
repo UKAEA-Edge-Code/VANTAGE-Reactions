@@ -3,11 +3,8 @@
 #include "../cross_sections/constant_rate_cs.hpp"
 #include "../pair_reaction_data.hpp"
 #include "../particle_properties_map.hpp"
-#include <iostream>
-#include <neso_particles.hpp>
-#include <vector>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
-using namespace NESO::Particles;
 namespace VANTAGE::Reactions {
 
 /**
@@ -43,7 +40,7 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
                 accessor_pack.req_real_props_b.at(this->velocity_ind_b, i);
       rel_speed += rel_vel * rel_vel;
     }
-    rel_speed = Kernel::sqrt(rel_speed);
+    rel_speed = NP::Kernel::sqrt(rel_speed);
 
     return std::array<REAL, 1>{this->cross_section.get_value_at(rel_speed) *
                                rel_speed};

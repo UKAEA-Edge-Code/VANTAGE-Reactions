@@ -166,13 +166,14 @@ struct InterpolateDataOnDevice
    * @return A REAL-valued array of size output_ndim that contains the
    * interpolated function evaluation at the given interpolation points.
    */
-  std::array<REAL, output_ndim> calc_data(
-      const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
-      const typename CompositeDataOnDevice<
-          output_ndim, interp_ndim + non_interp_ndim, REAL, REAL,
-          DATATYPE>::ACCESSOR_PACK_TYPE &accessors,
-      typename TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
-          KernelType &kernel) const {
+  std::array<REAL, output_ndim>
+  calc_data(const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
+            const typename CompositeDataOnDevice<
+                output_ndim, interp_ndim + non_interp_ndim, REAL, REAL,
+                DATATYPE>::ACCESSOR_PACK_TYPE &accessors,
+            typename NP::TupleRNG<
+                std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::KernelType
+                &kernel) const {
 
     std::array<REAL, interp_ndim> mut_interpolation_points;
     for (size_t i = 0; i < interp_ndim; i++) {

@@ -3,15 +3,12 @@
 #include "collision_cell_manager.hpp"
 #include "common_transformations.hpp"
 #include "particle_properties_map.hpp"
-#include "swpm_coll_specification_abstract.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
 #include "swpm_reaction.hpp"
 #include "transformation_wrapper.hpp"
 #include <algorithm>
 #include <memory>
-#include <neso_particles.hpp>
 #include <tuple>
-
-using namespace NESO::Particles;
 
 namespace VANTAGE::Reactions {
 
@@ -27,7 +24,7 @@ struct SWPMReactionController {
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
       bool add_noise_to_partial_collisions = true,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : cell_block_size(get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
+      : cell_block_size(NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
         parent_transform(parent_transform), child_transform(child_transform),
         add_noise_to_partial_collisions(add_noise_to_partial_collisions),
         rng_generation_fun(rng_generation_fun),
@@ -53,12 +50,13 @@ struct SWPMReactionController {
                "Species B in SWPM reaction controller not found in passed "
                "collision cell manager species");
     this->id_sym =
-        Sym<INT>(properties_map.at(default_properties.internal_state));
-    this->weight_sym = Sym<REAL>(properties_map.at(default_properties.weight));
+        NP::Sym<INT>(properties_map.at(default_properties.internal_state));
+    this->weight_sym =
+        NP::Sym<REAL>(properties_map.at(default_properties.weight));
     this->tot_rate_buffer =
-        Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+        NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->weight_change =
-        Sym<REAL>(properties_map.at(default_properties.weight_change));
+        NP::Sym<REAL>(properties_map.at(default_properties.weight_change));
 
     auto zeroer = make_transformation_strategy<ParticleDatZeroer<REAL>>(
         std::vector<std::string>{this->tot_rate_buffer.name,
@@ -71,7 +69,7 @@ struct SWPMReactionController {
     this->reactant_selector = make_direct_marking_strategy(
         "reactant_selector",
         [=](auto id) { return id[0] == species_a_id || id[0] == species_b_id; },
-        Access::read(this->id_sym));
+        NP::Access::read(this->id_sym));
   }
 
   void controller_pre_process() {
@@ -89,7 +87,7 @@ struct SWPMReactionController {
               in_state, make_direct_marking_strategy(
                             "species_selector_" + std::to_string(in_state),
                             [=](auto id) { return id[0] == in_state; },
-                            Access::read(this->id_sym))));
+                            NP::Access::read(this->id_sym))));
         }
       }
 
@@ -103,7 +101,7 @@ struct SWPMReactionController {
               out_state, make_direct_marking_strategy(
                              "species_selector_" + std::to_string(out_state),
                              [=](auto id) { return id[0] == out_state; },
-                             Access::read(this->id_sym))));
+                             NP::Access::read(this->id_sym))));
         }
       }
     }
@@ -160,7 +158,7 @@ struct SWPMReactionController {
   template <typename PARENT>
   void apply_parent_transforms(std::shared_ptr<PARENT> target) {
 
-    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+    NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
 
     if (this->reference_particle_group == nullptr) {
       this->reference_particle_group = particle_group;
@@ -200,9 +198,9 @@ struct SWPMReactionController {
    */
   template <typename PARENT>
   void apply(std::shared_ptr<PARENT> target, double dt,
-             ParticleGroupSharedPtr product_group) {
+             NP::ParticleGroupSharedPtr product_group) {
 
-    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+    NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
 
     if (this->reference_particle_group == nullptr) {
       this->reference_particle_group = particle_group;
@@ -227,7 +225,7 @@ struct SWPMReactionController {
                "SWPMReactionController.add_reaction(...)).");
 
     auto reactant_subgroup = this->reactant_selector->make_marker_subgroup(
-        particle_sub_group(target));
+        NP::particle_sub_group(target));
 
     this->coll_cell_manager->bin_particles(reactant_subgroup);
     this->coll_cell_manager->construct_cell_partition(reactant_subgroup);
@@ -246,7 +244,7 @@ struct SWPMReactionController {
         this->sigma_v_bound, this->exponential_parameter,
         this->timestep_bounds);
 
-    NDHostArraySharedPtr<REAL, 2> h_timestep_bounds;
+    NP::NDHostArraySharedPtr<REAL, 2> h_timestep_bounds;
     this->timestep_bounds->get(h_timestep_bounds);
     std::vector<REAL> timestep_bounds_vec;
     h_timestep_bounds->get(timestep_bounds_vec);
@@ -265,12 +263,13 @@ struct SWPMReactionController {
     REAL used_dt;
 
     if (this->sampler == nullptr) {
-      this->sampler = std::make_shared<DSMC::PairSamplerNoReplacement>(
+      this->sampler = std::make_shared<NP::DSMC::PairSamplerNoReplacement>(
           particle_group->sycl_target, cell_count, this->rng_generation_fun);
     };
 
-    auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
-        particle_group, particle_group, this->sampler);
+    auto pair_list =
+        NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+            particle_group, particle_group, this->sampler);
 
     while (current_time < dt) {
 
@@ -307,7 +306,7 @@ struct SWPMReactionController {
         noise->fill(this->rng_generation_fun);
       }
 
-      nd_local_array_loop_element_wise(
+      NP::nd_local_array_loop_element_wise(
           num_pairs,
           [=](REAL rate_bound, REAL R) {
             return rate_bound > 0 ? sycl::floor(rate_bound * used_dt + R) : 0;
@@ -388,22 +387,22 @@ struct SWPMReactionController {
   template <typename PARENT>
   void apply(std::shared_ptr<PARENT> target, double dt) {
 
-    ParticleGroupSharedPtr particle_group = get_particle_group(target);
+    NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
 
     this->apply(target, dt, particle_group);
   }
 
 private:
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
-  std::map<int, ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, ParticleSubGroupSharedPtr> reacted_species_groups;
-  ParticleGroupSharedPtr reference_particle_group = nullptr;
+  std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
+  std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
+  NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::tuple<int, int> reactant_set;
 
   std::shared_ptr<SWPM_SPEC_T> swpm_specification;
   std::shared_ptr<RNG_GEN_T> rng_generation_fun;
-  std::shared_ptr<DSMC::PairSamplerNoReplacement> sampler;
+  std::shared_ptr<NP::DSMC::PairSamplerNoReplacement> sampler;
   std::shared_ptr<CollisionCellManager> coll_cell_manager;
   std::set<int> parent_ids;
   std::set<int> child_ids;
@@ -414,20 +413,20 @@ private:
 
   std::shared_ptr<MarkingStrategy> reactant_selector;
 
-  Sym<INT> id_sym;
-  Sym<INT> panic_flag;
-  Sym<INT> reacted_flag;
-  Sym<REAL> tot_rate_buffer;
-  Sym<REAL> weight_sym;
-  Sym<REAL> weight_change;
+  NP::Sym<INT> id_sym;
+  NP::Sym<INT> panic_flag;
+  NP::Sym<INT> reacted_flag;
+  NP::Sym<REAL> tot_rate_buffer;
+  NP::Sym<REAL> weight_sym;
+  NP::Sym<REAL> weight_change;
   std::shared_ptr<TransformationWrapper> buffer_zeroer;
   size_t cell_block_size = 256;
   size_t max_pairs_per_cell = 16384;
-  std::shared_ptr<ParticleGroupTemporary> particle_group_temporary;
+  std::shared_ptr<NP::ParticleGroupTemporary> particle_group_temporary;
 
-  NDLocalArraySharedPtr<REAL, 2> sigma_v_bound;
-  NDLocalArraySharedPtr<REAL, 2> exponential_parameter;
-  NDLocalArraySharedPtr<REAL, 2> timestep_bounds;
+  NP::NDLocalArraySharedPtr<REAL, 2> sigma_v_bound;
+  NP::NDLocalArraySharedPtr<REAL, 2> exponential_parameter;
+  NP::NDLocalArraySharedPtr<REAL, 2> timestep_bounds;
 
   REAL default_rel_vel = 1.0;
   REAL max_pair_fraction_per_cycle = 0.8;
@@ -435,7 +434,8 @@ private:
   bool add_noise_to_partial_collisions;
 
   inline void setup_particle_group_temporary() {
-    this->particle_group_temporary = std::make_shared<ParticleGroupTemporary>();
+    this->particle_group_temporary =
+        std::make_shared<NP::ParticleGroupTemporary>();
   }
 };
 } // namespace VANTAGE::Reactions
