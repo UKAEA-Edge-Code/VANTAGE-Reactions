@@ -1,4 +1,4 @@
-inline void cartesian_basis_reflection_example() {
+void cartesian_basis_reflection_example() {
 
   // In case we wish to remap the default boundary normal or velocity name
   auto used_map = get_default_map();

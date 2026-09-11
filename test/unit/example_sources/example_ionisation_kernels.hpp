@@ -1,4 +1,4 @@
-inline void ionisation_kernels_example() {
+void ionisation_kernels_example() {
 
   // In case we would like to remap the used Syms
   auto used_map = get_default_map();

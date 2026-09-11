@@ -1,0 +1,157 @@
+#ifndef REACTIONS_BINARY_ARRAY_TRANSFORM_DATA_H
+#define REACTIONS_BINARY_ARRAY_TRANSFORM_DATA_H
+#include "composite_data.hpp"
+#include "reactions/neso_particles_namespace_alias.hpp"
+
+namespace VANTAGE::Reactions {
+
+/**
+ * @brief Abstract base class encapsulating a binary transformation of two
+ * std::arrays
+ *
+ * @tparam INPUT_DIM_1 Size of the first (lhs) array
+ * @tparam INPUT_DIM_2 Size of the second (lhs) array
+ * @tparam OUTPUT_DIM Size of the output (rhs) array
+ */
+template <size_t INPUT_DIM_1, size_t INPUT_DIM_2, size_t OUTPUT_DIM>
+struct AbstractBinaryArrayTransform {
+
+  static const size_t IN_DIM_1 = INPUT_DIM_1;
+  static const size_t IN_DIM_2 = INPUT_DIM_2;
+  static const size_t OUT_DIM = OUTPUT_DIM;
+
+  /**
+   * @brief Function to apply a binary transform to two arrays.
+   *
+   * @input_1 First (lhs) REAL-valued array
+   * @input_2 Second (lhs) REAL-valued array
+   *
+   * @return REAL-valued array of size OUT_DIM that's the result of the binary
+   * transformation on the two input arrays.
+   */
+  std::array<REAL, OUT_DIM>
+  apply(const std::array<REAL, IN_DIM_1> &input_1,
+        const std::array<REAL, IN_DIM_2> &input_2) const {
+    return {};
+  };
+};
+
+/**
+ * @brief Binary array transform data on device, applying a binary
+ * transformation on the outputs of two reaction data objects
+ *
+ * @tparam TRANSFORM The binary transform type
+ * @tparam DATATYPE1 The first (lhs) operand type
+ * @tparam DATATYPE2 The second (rhs) operand type
+ */
+template <typename TRANSFORM, typename DATATYPE1, typename DATATYPE2>
+struct BinaryArrayTransformDataOnDevice
+    : public CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+                                   DATATYPE2> {
+
+  BinaryArrayTransformDataOnDevice() = default;
+
+  /**
+   * @brief BinaryArrayTransformDataOnDevice constructor
+   *
+   * @param transform Transformation object to be applied to the results of the
+   * two contained data objects
+   * @param data1 The first (lhs) contained data object
+   * @param data2 The second (rhs) contained data object
+   */
+  BinaryArrayTransformDataOnDevice(TRANSFORM transform, DATATYPE1 data1,
+                                   DATATYPE2 data2)
+      : CompositeDataOnDevice<TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+                              DATATYPE2>(data1, data2),
+        transform(transform) {
+
+    static_assert(
+        TRANSFORM::IN_DIM_1 == DATATYPE1::DIM &&
+            TRANSFORM::IN_DIM_2 == DATATYPE2::DIM,
+        "BinaryArrayTransformDataOnDevice input dimensions do not conform "
+        "between the supplied transform and the contained data objects");
+  };
+
+  /**
+   * @brief Return the result of applying the binary transform on the results of
+   * the two contained objects
+   *
+   * @param accessors Bundled accessors for the ParticleLoop.
+   * @param kernel The random number generator kernels used in the
+   * calculation, a NP::TupleRNG accessor
+   *
+   * @return The result of applying the transform on the results of the two
+   * contained data objects. REAL-valued array of size TRANSFORM::OUT_DIM
+   */
+  std::array<REAL, TRANSFORM::OUT_DIM> calc_data(
+      const typename CompositeDataOnDevice<
+          TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+          DATATYPE2>::ACCESSOR_PACK_TYPE &accessors,
+      typename TupleRNG<std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
+                        std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::
+          KernelType &rng_kernel) const {
+
+    return this->transform.apply(
+        Tuple::get<0>(this->data)
+            .calc_data(accessors, rng_kernel.template get<0>()),
+        Tuple::get<1>(this->data)
+            .calc_data(accessors, rng_kernel.template get<1>()));
+  }
+
+private:
+  TRANSFORM transform;
+};
+
+/**
+ * @brief Composite ReactionData object containing two other ReactionData
+ * objects. On calculation of the data, passes the output of the objects to
+ * a binary transformation object which is then applied to the two arrays
+ *
+ * @tparam TRANSFORM The binary transformation object to be applied to the
+ * results of the contained data objects
+ * @tparam DATATYPE1 The host type of the first (lhs) contained object
+ * @tparam DATATYPE2 The host type of the second (rhs) contained object
+ */
+template <typename TRANSFORM, typename DATATYPE1, typename DATATYPE2>
+struct BinaryArrayTransformData
+    : public CompositeData<
+          BinaryArrayTransformDataOnDevice<
+              TRANSFORM, typename DATATYPE1::ON_DEVICE_OBJ_TYPE,
+              typename DATATYPE2::ON_DEVICE_OBJ_TYPE>,
+          TRANSFORM::OUT_DIM, 0, DATATYPE1, DATATYPE2> {
+
+  /**
+   * @brief Constructor for BinaryArrayTransformData
+   *
+   * @param transform The binary transformation object to be applied to the
+   * results of the two data objects
+   * @param data1 The first (lhs) data object
+   * @param data2 The secon (rhs) data object
+   */
+  BinaryArrayTransformData(TRANSFORM transform, DATATYPE1 data1,
+                           DATATYPE2 data2)
+      : CompositeData<BinaryArrayTransformDataOnDevice<
+                          TRANSFORM, typename DATATYPE1::ON_DEVICE_OBJ_TYPE,
+                          typename DATATYPE2::ON_DEVICE_OBJ_TYPE>,
+                      TRANSFORM::OUT_DIM, 0, DATATYPE1, DATATYPE2>(data1,
+                                                                   data2),
+        transform(transform) {
+    this->post_init();
+  };
+
+  /**
+   * @brief Reconstruct the composite on-device object (assuming the individual
+   * on-device objects have been modified/re-indexed)
+   */
+  void index_on_device_object() {
+
+    this->on_device_obj = BinaryArrayTransformDataOnDevice(
+        this->transform, std::get<0>(this->data).get_on_device_obj(),
+        std::get<1>(this->data).get_on_device_obj());
+  };
+
+private:
+  TRANSFORM transform;
+};
+}; // namespace VANTAGE::Reactions
+#endif

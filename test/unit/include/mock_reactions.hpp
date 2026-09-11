@@ -1,9 +1,8 @@
 #ifndef REACTIONS_MOCK_REACTIONS_H
 #define REACTIONS_MOCK_REACTIONS_H
-#include <neso_particles.hpp>
-#include <reactions/reactions.hpp>
 
-using namespace NESO::Particles;
+#include "test_common.hpp"
+
 using namespace VANTAGE::Reactions;
 
 struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
@@ -41,12 +40,12 @@ struct TestReactionKernelsOnDevice
   TestReactionKernelsOnDevice() = default;
 
   void
-  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                    Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Write<INT> &req_int_props,
-                    Access::SymVector::Write<REAL> &req_real_props,
+  scattering_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                    NP::Access::DescendantProducts::Write &descendant_products,
+                    NP::Access::SymVector::Write<INT> &req_int_props,
+                    NP::Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
-                    Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                    NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                     double dt) const {
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       for (int dimx = 0; dimx < 2; dimx++) {
@@ -57,12 +56,12 @@ struct TestReactionKernelsOnDevice
     }
   }
 
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Write<INT> &req_int_props,
-                     Access::SymVector::Write<REAL> &req_real_props,
+  void weight_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                     NP::Access::DescendantProducts::Write &descendant_products,
+                     NP::Access::SymVector::Write<INT> &req_int_props,
+                     NP::Access::SymVector::Write<REAL> &req_real_props,
                      const std::array<int, num_products_per_parent> &out_states,
-                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       descendant_products.at_real(index, childx, descendant_weight_ind, 0) =
@@ -71,12 +70,12 @@ struct TestReactionKernelsOnDevice
   }
 
   void transformation_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
+      REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      NP::Access::DescendantProducts::Write &descendant_products,
+      NP::Access::SymVector::Write<INT> &req_int_props,
+      NP::Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       descendant_products.at_int(index, childx, descendant_internal_state_ind,
                                  0) = out_states[childx];
@@ -84,12 +83,12 @@ struct TestReactionKernelsOnDevice
   }
 
   void
-  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                  Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Write<INT> &req_int_props,
-                  Access::SymVector::Write<REAL> &req_real_props,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                  NP::Access::DescendantProducts::Write &descendant_products,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
-                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
     req_real_props.at(weight_ind, index, 0) -= modified_weight;
   }
@@ -159,12 +158,12 @@ struct TestReactionKernelsDataCalcOnDevice
   TestReactionKernelsDataCalcOnDevice() = default;
 
   void
-  scattering_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                    Access::DescendantProducts::Write &descendant_products,
-                    Access::SymVector::Write<INT> &req_int_props,
-                    Access::SymVector::Write<REAL> &req_real_props,
+  scattering_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                    NP::Access::DescendantProducts::Write &descendant_products,
+                    NP::Access::SymVector::Write<INT> &req_int_props,
+                    NP::Access::SymVector::Write<REAL> &req_real_props,
                     const std::array<int, num_products_per_parent> &out_states,
-                    Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                    NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                     double dt) const {
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       for (int dimx = 0; dimx < 2; dimx++) {
@@ -174,12 +173,12 @@ struct TestReactionKernelsDataCalcOnDevice
     }
   }
 
-  void weight_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                     Access::DescendantProducts::Write &descendant_products,
-                     Access::SymVector::Write<INT> &req_int_props,
-                     Access::SymVector::Write<REAL> &req_real_props,
+  void weight_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                     NP::Access::DescendantProducts::Write &descendant_products,
+                     NP::Access::SymVector::Write<INT> &req_int_props,
+                     NP::Access::SymVector::Write<REAL> &req_real_props,
                      const std::array<int, num_products_per_parent> &out_states,
-                     Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       descendant_products.at_real(index, childx, 1, 0) =
@@ -188,24 +187,24 @@ struct TestReactionKernelsDataCalcOnDevice
   }
 
   void transformation_kernel(
-      REAL &modified_weight, Access::LoopIndex::Read &index,
-      Access::DescendantProducts::Write &descendant_products,
-      Access::SymVector::Write<INT> &req_int_props,
-      Access::SymVector::Write<REAL> &req_real_props,
+      REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+      NP::Access::DescendantProducts::Write &descendant_products,
+      NP::Access::SymVector::Write<INT> &req_int_props,
+      NP::Access::SymVector::Write<REAL> &req_real_props,
       const std::array<int, num_products_per_parent> &out_states,
-      Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     for (int childx = 0; childx < num_products_per_parent; childx++) {
       descendant_products.at_int(index, childx, 0, 0) = out_states[childx];
     }
   }
 
   void
-  feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                  Access::DescendantProducts::Write &descendant_products,
-                  Access::SymVector::Write<INT> &req_int_props,
-                  Access::SymVector::Write<REAL> &req_real_props,
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                  NP::Access::DescendantProducts::Write &descendant_products,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
                   const std::array<int, num_products_per_parent> &out_states,
-                  Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
     req_real_props.at(weight_ind, index, 0) -= modified_weight;
     req_real_props.at(source_ind, index, 0) +=
@@ -267,7 +266,7 @@ struct TestReaction
 
   TestReaction() = default;
 
-  TestReaction(SYCLTargetSharedPtr sycl_target, REAL rate, int in_states,
+  TestReaction(NP::SYCLTargetSharedPtr sycl_target, REAL rate, int in_states,
                const std::array<int, num_products_per_parent> out_states)
       : LinearReactionBase<num_products_per_parent, TestReactionData,
                            TestReactionKernels<num_products_per_parent>>(
@@ -316,13 +315,14 @@ struct TestReactionVarData
 };
 
 struct TestReactionVarKernelsOnDevice : public ReactionKernelsBaseOnDevice<0> {
-  void feedback_kernel(REAL &modified_weight, Access::LoopIndex::Read &index,
-                       Access::DescendantProducts::Write &descendant_products,
-                       Access::SymVector::Write<INT> &req_int_props,
-                       Access::SymVector::Write<REAL> &req_real_props,
-                       const std::array<int, 0> &out_states,
-                       Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                       double dt) const {
+  void
+  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
+                  NP::Access::DescendantProducts::Write &descendant_products,
+                  NP::Access::SymVector::Write<INT> &req_int_props,
+                  NP::Access::SymVector::Write<REAL> &req_real_props,
+                  const std::array<int, 0> &out_states,
+                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
+                  double dt) const {
     req_real_props.at(weight_ind, index, 0) -= modified_weight;
   }
 
@@ -357,7 +357,7 @@ public:
 struct TestReactionVarRate : public LinearReactionBase<0, TestReactionVarData,
                                                        TestReactionVarKernels> {
 
-  TestReactionVarRate(SYCLTargetSharedPtr sycl_target_, int in_states_)
+  TestReactionVarRate(NP::SYCLTargetSharedPtr sycl_target_, int in_states_)
       : LinearReactionBase<0, TestReactionVarData, TestReactionVarKernels>(
             sycl_target_, in_states_, std::array<int, 0>{},
             TestReactionVarData(), TestReactionVarKernels()) {}

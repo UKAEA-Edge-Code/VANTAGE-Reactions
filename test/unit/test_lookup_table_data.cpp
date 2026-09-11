@@ -1,17 +1,17 @@
 #include "include/mock_particle_group.hpp"
 #include "include/mock_reactions.hpp"
+#include "include/test_common.hpp"
 #include <array>
 #include <cmath>
-#include <gtest/gtest.h>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(LookupTableData, ArrayLookupTable) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto default_array = std::array<REAL, 1>{1.0};
   std::map<int, std::array<REAL, 1>> lookup_table_map;
@@ -22,22 +22,24 @@ TEST(LookupTableData, ArrayLookupTable) {
   particle_loop(
       "set_array_lookup_table_test_ids", particle_sub_group,
       [=](auto ID, auto IS) { IS.at(0) = ID.at(0) % 3; },
-      Access::read(Sym<INT>("ID")), Access::write(Sym<INT>("INTERNAL_STATE")))
+      NP::Access::read(NP::Sym<INT>("ID")),
+      NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")))
       ->execute();
 
   auto test_reaction =
       LinearReactionBase<0, ArrayLookupData<1>, TestReactionKernels<0>>(
           particle_group->sycl_target, 0, std::array<int, 0>{},
-          ArrayLookupData<1>(Sym<INT>("INTERNAL_STATE"), 0, lookup_table_map,
-                             default_array, particle_group->sycl_target),
+          ArrayLookupData<1>(NP::Sym<INT>("INTERNAL_STATE"), 0,
+                             lookup_table_map, default_array,
+                             particle_group->sycl_target),
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
-    auto is = particle_group->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto is = particle_group->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {
@@ -64,7 +66,8 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto default_array = std::array<REAL, 1>{1.0};
   std::map<int, std::array<REAL, 1>> lookup_table_map;
@@ -76,8 +79,8 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
 
   // Add data to subgroup
   particle_sub_group->add_ephemeral_dat(
-      BoundaryInteractionSpecification::intersection_metadata,
-      BoundaryInteractionSpecification::intersection_metadata_ncomp);
+      NP::BoundaryInteractionSpecification::intersection_metadata,
+      NP::BoundaryInteractionSpecification::intersection_metadata_ncomp);
 
   particle_loop(
       "set_array_lookup_table_test_metadaat", particle_sub_group,
@@ -85,23 +88,24 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
         metadata.at(1) = ID.at(0) % 3;
         metadata.at(0) = -1;
       },
-      Access::read(Sym<INT>("ID")),
-      Access::write(BoundaryInteractionSpecification::intersection_metadata))
+      NP::Access::read(NP::Sym<INT>("ID")),
+      NP::Access::write(
+          NP::BoundaryInteractionSpecification::intersection_metadata))
       ->execute();
 
   auto test_reaction =
       LinearReactionBase<0, ArrayLookupData<1, true>, TestReactionKernels<0>>(
           particle_group->sycl_target, 0, std::array<int, 0>{},
           ArrayLookupData<1, true>(
-              BoundaryInteractionSpecification::intersection_metadata, 1,
+              NP::BoundaryInteractionSpecification::intersection_metadata, 1,
               lookup_table_map, default_array, particle_group->sycl_target),
           TestReactionKernels<0>());
 
   for (int i = 0; i < cell_count; i++) {
 
     test_reaction.calculate_rates(particle_sub_group, i, i + 1);
-    auto rate = particle_group->get_cell(Sym<REAL>("TOT_REACTION_RATE"), i);
-    auto id = particle_group->get_cell(Sym<INT>("ID"), i);
+    auto rate = particle_group->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), i);
+    auto id = particle_group->get_cell(NP::Sym<INT>("ID"), i);
     const int nrow = rate->nrow;
 
     for (int rowx = 0; rowx < nrow; rowx++) {

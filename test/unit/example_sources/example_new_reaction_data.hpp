@@ -1,9 +1,9 @@
 // This is the on-device type
 //
 // The function calc_data must be callable from a NESO-Particles
-// ParticleLoop
+// NP::ParticleLoop
 //
-// See NESO-Particles ParticleLoop documentation for details
+// See NESO-Particles NP::ParticleLoop documentation for details
 struct DummyDataOnDevice
     : public ReactionDataBaseOnDevice<1 // This is the dimensionality of the
                                         // data In general, you would also

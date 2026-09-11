@@ -1,4 +1,5 @@
 # Contributing to VANTAGE-Reactions
+Disclaimer: These instructions are work-in-progress
 1. If an issue for the contribution does not exist then create one, otherwise either refer to one that has been assigned to you or assign yourself to an open one.
 2. Create a fork of the repo. Do not do this for every issue addresed only the first issue you want to work on, any work on subsequent issues can be conducted on this forked repo (with a branch per issue as outlined in the next step).
 3. Clone the forked repo to your local machine if you haven't already. Create a branch from `main` with the following naming scheme: `${developer_name}/${issue_number}_${short_issue_description}`. Here, `${developer_name}` can be any identifier but for consistency please choose your GitHub username, `${issue_number}` is just the issue number(without `#`). Please keep `${short_issue_description}` brief but clear to avoid excessively long branch names.
@@ -8,3 +9,5 @@
 7. NOTE: When creating a pull request to the original repo be mindful of the source-destination for the pull request (ie. double check the `base_repository`(the original repo) and the `head_repository`(forked repo) are set correctly).
 8. The options on the pull request will need to be decided on a per-case basis in terms of whether to delete the source branch and/or squash the commits upon merging.
 9. Assign a reviewer (someone other than yourself) to review and merge the pull request. Note that merging will be disabled by default if any tests fail.
+
+> **Build-configuration coverage:** `VANTAGE-Reactions` is built as a compiled runtime library (it ships pre-compiled function definitions, template instantiations and SYCL device code in `libVANTAGE-Reactions.so`). For any change that touches the public headers, the public symbol surface, the explicit instantiations under `src/`, or the `extern template` declarations in the public headers, the local `unit_tests` run must pass.

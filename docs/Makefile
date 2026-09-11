@@ -1,5 +1,5 @@
 all:
 	rm -rf ./build
-	mkdir ./build	
-	bash get_example_sources.sh
+	mkdir ./build
+	$(MAKE) -C Doxygen docs_doxygen
 	cd sphinx && make html
