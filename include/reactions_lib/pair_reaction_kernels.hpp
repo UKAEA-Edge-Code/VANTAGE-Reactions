@@ -36,19 +36,7 @@ struct PairReactionKernelsBase {
       Properties<INT> req_int_props_a, Properties<REAL> req_real_props_a,
       Properties<INT> req_int_props_b, Properties<REAL> req_real_props_b,
       INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : required_int_props_a(req_int_props_a),
-        required_real_props_a(req_real_props_a),
-        required_int_props_b(req_int_props_b),
-        required_real_props_b(req_real_props_b), pre_req_ndims(pre_req_ndims) {
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
-    this->properties_map = properties_map;
-  }
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -60,10 +48,7 @@ struct PairReactionKernelsBase {
    * get_required_int_props(...)).
    */
   PairReactionKernelsBase(
-      std::map<int, std::string> properties_map = get_default_map())
-      : PairReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
-                                Properties<INT>(), Properties<REAL>(), 0,
-                                properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -83,10 +68,7 @@ struct PairReactionKernelsBase {
    */
   PairReactionKernelsBase(
       Properties<INT> required_int_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : PairReactionKernelsBase(required_int_props, Properties<REAL>(),
-                                required_int_props, Properties<REAL>(),
-                                pre_req_ndims, properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -106,10 +88,7 @@ struct PairReactionKernelsBase {
    */
   PairReactionKernelsBase(
       Properties<REAL> required_real_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : PairReactionKernelsBase(Properties<INT>(), required_real_props,
-                                Properties<INT>(), required_real_props,
-                                pre_req_ndims, properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   /**
    * \overload
@@ -132,10 +111,7 @@ struct PairReactionKernelsBase {
   PairReactionKernelsBase(
       Properties<INT> required_int_props, Properties<REAL> required_real_props,
       INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map())
-      : PairReactionKernelsBase(required_int_props, required_real_props,
-                                required_int_props, required_real_props,
-                                pre_req_ndims, properties_map) {}
+      std::map<int, std::string> properties_map = get_default_map());
 
   virtual ~PairReactionKernelsBase() = default;
 
@@ -143,79 +119,51 @@ struct PairReactionKernelsBase {
    * @brief Return all required integer property names for the first particle
    *
    */
-  std::vector<std::string> get_required_int_props_a() {
-    return this->required_int_props_a.get_prop_names(this->properties_map);
-  }
+  std::vector<std::string> get_required_int_props_a();
 
   /**
    * @brief Return all required integer property names for the second particle
    *
    */
-  std::vector<std::string> get_required_int_props_b() {
-    return this->required_int_props_b.get_prop_names(this->properties_map);
-  }
+  std::vector<std::string> get_required_int_props_b();
   /**
    * @brief Return all required real property names for the first particle
    *
    */
-  std::vector<std::string> get_required_real_props_a() {
-    return this->required_real_props_a.get_prop_names(this->properties_map);
-  }
+  std::vector<std::string> get_required_real_props_a();
 
   /**
    * @brief Return all required real property names for the second particle
    *
    */
-  std::vector<std::string> get_required_real_props_b() {
-    return this->required_real_props_b.get_prop_names(this->properties_map);
-  }
+  std::vector<std::string> get_required_real_props_b();
 
-  const Properties<INT> &get_required_descendant_int_props_a() {
-    return this->required_descendant_int_props_a;
-  }
+  const Properties<INT> &get_required_descendant_int_props_a();
 
-  const Properties<REAL> &get_required_descendant_real_props_a() {
-    return this->required_descendant_real_props_a;
-  }
+  const Properties<REAL> &get_required_descendant_real_props_a();
 
-  const Properties<INT> &get_required_descendant_int_props_b() {
-    return this->required_descendant_int_props_b;
-  }
+  const Properties<INT> &get_required_descendant_int_props_b();
 
-  const Properties<REAL> &get_required_descendant_real_props_b() {
-    return this->required_descendant_real_props_b;
-  }
-  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_a() {
-    return this->descendant_matrix_spec_a;
-  }
+  const Properties<REAL> &get_required_descendant_real_props_b();
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_a();
 
-  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_b() {
-    return this->descendant_matrix_spec_b;
-  }
-  const INT &get_pre_ndims() const { return this->pre_req_ndims; }
-  const INT &get_num_products_a() const { return this->num_products_a; }
-  const INT &get_num_products_b() const { return this->num_products_b; }
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_b();
+  const INT &get_pre_ndims() const;
+  const INT &get_num_products_a() const;
+  const INT &get_num_products_b() const;
 
 protected:
   void set_required_descendant_int_props_a(
-      const Properties<INT> &required_descendant_int_props) {
-    this->required_descendant_int_props_a = required_descendant_int_props;
-  }
+      const Properties<INT> &required_descendant_int_props);
 
   void set_required_descendant_real_props_a(
-      const Properties<REAL> &required_descendant_real_props) {
-    this->required_descendant_real_props_a = required_descendant_real_props;
-  }
+      const Properties<REAL> &required_descendant_real_props);
 
   void set_required_descendant_int_props_b(
-      const Properties<INT> &required_descendant_int_props) {
-    this->required_descendant_int_props_b = required_descendant_int_props;
-  }
+      const Properties<INT> &required_descendant_int_props);
 
   void set_required_descendant_real_props_b(
-      const Properties<REAL> &required_descendant_real_props) {
-    this->required_descendant_real_props_b = required_descendant_real_props;
-  }
+      const Properties<REAL> &required_descendant_real_props);
 
   template <int ndim_velocity = 2, int num_products_per_parent = 0>
   void set_descendant_matrix_spec_a() {

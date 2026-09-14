@@ -95,31 +95,7 @@ struct CollisionCellManager {
       NP::SYCLTargetSharedPtr sycl_target,
       std::shared_ptr<AbstractCollCellHierarchy> coll_cell_hierarchy,
       std::vector<INT> species_ids,
-      const std::map<int, std::string> &properties_map = get_default_map())
-      : coll_cell_hierarchy(coll_cell_hierarchy), species_ids(species_ids) {
-
-    this->coll_cell_partition =
-        std::make_shared<NP::DSMC::CollisionCellPartition>(
-            sycl_target, coll_cell_hierarchy->get_num_coll_cells().size(),
-            species_ids);
-
-    this->reduction_obj =
-        std::make_shared<NP::DSMC::CollisionCellRateReduction>(
-            this->coll_cell_partition);
-    this->reduction_obj->setup(0);
-
-    this->num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
-    // This makes sure that the first construct call marks all cells as having
-    // been resized for reduction purposes
-    std::fill(this->num_coll_cells.begin(), this->num_coll_cells.end(), 0);
-    this->cell_change_mask = std::vector<int>(this->num_coll_cells.size(), 1);
-    this->species_id_sym =
-        NP::Sym<INT>(properties_map.at(default_properties.internal_state));
-    this->coll_cell_sym =
-        NP::Sym<INT>(properties_map.at(default_properties.collision_cell_id));
-    this->cell_id_sym =
-        NP::Sym<INT>(properties_map.at(default_properties.cell_id));
-  };
+      const std::map<int, std::string> &properties_map = get_default_map());
 
   /**
    * @brief Get the current CollisionCellPartition object or construct it if
@@ -127,10 +103,7 @@ struct CollisionCellManager {
    *
    * @param target Particle subgroup for which the partition is constructed
    */
-  std::shared_ptr<NP::DSMC::CollisionCellPartition> get_cell_partition() {
-
-    return this->coll_cell_partition;
-  };
+  std::shared_ptr<NP::DSMC::CollisionCellPartition> get_cell_partition();
 
   /**
    * @brief Get the number of particles per mesh and collision cell.
@@ -139,55 +112,39 @@ struct CollisionCellManager {
    * @param species_id Species for which to get the number of particles
    */
   NP::NDHostArraySharedPtr<int, 2>
-  get_npart_coll_cell(NP::ParticleSubGroupSharedPtr target, INT species_id) {
-
-    this->coll_cell_partition->get_num_unmasked_particles(species_id,
-                                                          this->num_particles);
-    return this->num_particles;
-  };
+  get_npart_coll_cell(NP::ParticleSubGroupSharedPtr target, INT species_id);
 
   /**
    * @brief Bin particles in collision cells
    *
    * @param target Particle subgroup containing particles to be binned
    */
-  void bin_particles(NP::ParticleSubGroupSharedPtr target) {
-
-    if (!this->partition_valid) {
-      this->coll_cell_hierarchy->bin_particles(target, this->coll_cell_sym);
-    }
-  }
+  void bin_particles(NP::ParticleSubGroupSharedPtr target);
 
   /**
    * @brief Get the number of collision cells per mesh cell
    *
    */
-  std::vector<int> get_num_coll_cells() { return this->num_coll_cells; }
+  std::vector<int> get_num_coll_cells();
 
   /**
    * @brief Get cell volumes per mesh and collision cell
    */
-  NP::NDHostArraySharedPtr<REAL, 2> get_coll_cell_volumes() {
-
-    return this->coll_cell_hierarchy->get_coll_cell_volumes();
-  }
+  NP::NDHostArraySharedPtr<REAL, 2> get_coll_cell_volumes();
 
   /**
    * @brief Set the maximum linear extent for collision cells per mesh cell.
    *
    * @param resolutions Maximum linear extent for collision cells per mesh cell.
    */
-  void set_coll_cell_linear_resolution(std::vector<REAL> resolutions) {
-
-    this->coll_cell_hierarchy->set_coll_cell_linear_resolution(resolutions);
-  }
+  void set_coll_cell_linear_resolution(std::vector<REAL> resolutions);
 
   /**
    * @brief Invalidate the collision cell partition. Should be called whenever
    * particles are added or removed or the particle to collision cell map is
    * otherwise invalidated.
    */
-  void invalidate_partition() { this->partition_valid = false; }
+  void invalidate_partition();
 
   template <typename T>
   void coll_cellwise_max(NP::ParticleSubGroupSharedPtr target, NP::Sym<T> sym,
@@ -259,10 +216,7 @@ struct CollisionCellManager {
    * buffer
    * @param default_value The default value to update with
    */
-  void update_rate_reduction(int reaction_index, REAL default_value) {
-    this->reduction_obj->update(reaction_index, this->cell_change_mask,
-                                default_value);
-  };
+  void update_rate_reduction(int reaction_index, REAL default_value);
 
   /**
    * @brief Update the rate reduction object for a given reaction index by
@@ -282,10 +236,7 @@ struct CollisionCellManager {
       NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
           &pair_list,
       int cell_start, int cell_end,
-      NP::LocalArraySharedPtr<REAL> &device_rate_buffer, int reaction_index) {
-    this->reduction_obj->update(reaction_index, pair_list, cell_start, cell_end,
-                                this->coll_cell_sym, 0, device_rate_buffer);
-  };
+      NP::LocalArraySharedPtr<REAL> &device_rate_buffer, int reaction_index);
 
   /**
    * @brief Set up the rate reduction buffers
@@ -293,9 +244,7 @@ struct CollisionCellManager {
    * @param n_reactions The number of reactions controlled by the reaction
    * controller using this collision cell manager
    */
-  void setup_rate_reduction(int n_reactions) {
-    this->reduction_obj->setup(n_reactions);
-  };
+  void setup_rate_reduction(int n_reactions);
 
   /**
    * @brief Perform a reaction-wise addition reduction on the max rate buffers
@@ -304,9 +253,7 @@ struct CollisionCellManager {
    * @param accumulated_rates Buffer into which to save the reduction result
    */
   void
-  get_rate_reduction(NP::NDLocalArraySharedPtr<REAL, 2> &accumulated_rates) {
-    this->reduction_obj->get(accumulated_rates);
-  }
+  get_rate_reduction(NP::NDLocalArraySharedPtr<REAL, 2> &accumulated_rates);
 
   /**
    * @brief Construct the collision cell partition for a given group if the
@@ -314,30 +261,9 @@ struct CollisionCellManager {
    *
    * @param target Particle subgroup for which to construct the partition
    */
-  void construct_cell_partition(NP::ParticleSubGroupSharedPtr target) {
-    auto new_num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
+  void construct_cell_partition(NP::ParticleSubGroupSharedPtr target);
 
-    std::transform(new_num_coll_cells.begin(), new_num_coll_cells.end(),
-                   this->num_coll_cells.begin(), this->cell_change_mask.begin(),
-                   [](int x, int y) { return x != y; });
-
-    if (std::any_of(this->cell_change_mask.begin(),
-                    this->cell_change_mask.end(),
-                    [](int x) { return x > 0; })) {
-      this->partition_valid = false;
-    }
-    this->num_coll_cells = new_num_coll_cells;
-    if (!this->partition_valid) {
-
-      this->partition_valid = true;
-      this->coll_cell_partition->construct(target, this->num_coll_cells,
-                                           this->species_id_sym, 0,
-                                           this->coll_cell_sym, 0);
-      this->reduction_obj->resize();
-    }
-  };
-
-  std::vector<INT> get_species_ids() { return this->species_ids; }
+  std::vector<INT> get_species_ids();
 
 private:
   std::shared_ptr<NP::DSMC::CollisionCellPartition> coll_cell_partition;
