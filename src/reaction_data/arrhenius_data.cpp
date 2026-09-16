@@ -17,11 +17,11 @@ ArrheniusData::ArrheniusData(REAL a_coeff, REAL b_coeff,
 void ArrheniusData::index_on_device_object() {
   this->on_device_obj->weight_ind =
       this->argument_pack.required_real_props.find_index(
-          this->properties_map.at(props.weight));
+          this->get_properties_map().at(props.weight));
 
   this->on_device_obj->temperature_ind =
       this->argument_pack.required_real_props.find_index(
-          this->properties_map.at(props.fluid_temperature));
+          this->get_properties_map().at(props.fluid_temperature));
 }
 
 } // namespace VANTAGE::Reactions

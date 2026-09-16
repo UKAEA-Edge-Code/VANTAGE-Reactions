@@ -81,6 +81,16 @@ struct ReactionDataBase
                            RNG_TYPE, input_dim>;
 
   /**
+   * @brief Constructor for ReactionDataBase from an already-merged
+   * ReactionDataStorage. Builds the single-reaction-data argument pack from
+   * the storage's required property sets.
+   */
+  ReactionDataBase(ReactionDataStorage storage)
+      : Base(SingleReactionDataArgumentPack(storage.get_required_int_props(),
+                                            storage.get_required_real_props()),
+             storage) {}
+
+  /**
    * @brief Constructor for ReactionDataBase.
    *
    * @param required_int_props Properties<INT> object containing information
@@ -102,14 +112,10 @@ struct ReactionDataBase
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral,
       std::map<int, std::string> properties_map = get_default_map())
-      : Base(SingleReactionDataArgumentPack(
-                 ArgumentNameSet(required_int_props, properties_map)
-                     .merge_with(ArgumentNameSet(required_int_props_ephemeral,
-                                                 properties_map)),
-                 ArgumentNameSet(required_real_props, properties_map)
-                     .merge_with(ArgumentNameSet(required_real_props_ephemeral,
-                                                 properties_map))),
-             properties_map) {}
+      : ReactionDataBase(ReactionDataStorage(
+            required_int_props, required_real_props,
+            required_int_props_ephemeral, required_real_props_ephemeral,
+            properties_map)) {}
 
   /**
    * \overload

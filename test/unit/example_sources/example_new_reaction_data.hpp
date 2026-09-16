@@ -83,7 +83,7 @@ struct DummyData
     // data base classes
     this->on_device_obj->weight_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.weight)); // Use the contained
-                                                    // map to get the name
+            this->get_properties_map().at(props.weight)); // Use the contained
+                                                          // map to get the name
   }
 };

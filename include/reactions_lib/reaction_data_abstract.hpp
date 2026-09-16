@@ -103,6 +103,141 @@ template <typename Derived> struct AbstractArgumentPack {
   }
 };
 
+/**
+ * @brief Non-template storage for the reaction-data property bookkeeping.
+ *
+ * Owns the required INT/REAL property sets and the property-name map that do
+ * not depend on the on-device type, dimension or RNG type. It is composed (not
+ * inherited) by AbstractReactionData so that AbstractReactionData remains the
+ * root of the reaction-data hierarchy, while the non-template methods here are
+ * compiled once into the shared library (src/reaction_data.cpp).
+ */
+struct ReactionDataStorage {
+
+  /**
+   * @brief Constructor for ReactionDataStorage.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param required_int_props_ephemeral Properties<INT> object containing
+   * information regarding the required INT-based ephemeral properties for the
+   * reaction data.
+   * @param required_real_props_ephemeral Properties<REAL> object containing
+   * information regarding the required REAL-based ephemeral properties for the
+   * reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
+   */
+  ReactionDataStorage(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      Properties<INT> required_int_props_ephemeral,
+      Properties<REAL> required_real_props_ephemeral,
+      std::map<int, std::string> properties_map = get_default_map());
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataStorage that sets no required
+   * properties.
+   *
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
+   */
+  ReactionDataStorage(
+      std::map<int, std::string> properties_map = get_default_map());
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataStorage that sets only required int
+   * properties.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
+   */
+  ReactionDataStorage(
+      Properties<INT> required_int_props,
+      std::map<int, std::string> properties_map = get_default_map());
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataStorage that sets only required real
+   * properties.
+   *
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
+   */
+  ReactionDataStorage(
+      Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map());
+
+  /**
+   * \overload
+   * @brief Constructor for ReactionDataStorage that sets only required int and
+   * real properties.
+   *
+   * @param required_int_props Properties<INT> object containing information
+   * regarding the required INT-based properties for the reaction data.
+   * @param required_real_props Properties<REAL> object containing information
+   * regarding the required REAL-based properties for the reaction data.
+   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * used when remapping property names.
+   */
+  ReactionDataStorage(
+      Properties<INT> required_int_props, Properties<REAL> required_real_props,
+      std::map<int, std::string> properties_map = get_default_map());
+
+  ~ReactionDataStorage();
+
+  /**
+   * @brief Return all required integer properties, including ephemeral.
+   */
+  ArgumentNameSet<INT> get_required_int_props() const;
+
+  /**
+   * @brief Setter for required integer properties.
+   *
+   * @param props ArgumentNameSet to use.
+   */
+  void set_required_int_props(const ArgumentNameSet<INT> &props);
+
+  /**
+   * @brief Return all required integer properties as a vector of Syms.
+   */
+  std::vector<NP::Sym<INT>> get_required_int_sym_vector();
+
+  /**
+   * @brief Return all required real properties, including ephemeral.
+   */
+  ArgumentNameSet<REAL> get_required_real_props() const;
+
+  /**
+   * @brief Setter for required real properties.
+   *
+   * @param props ArgumentNameSet to use.
+   */
+  void set_required_real_props(const ArgumentNameSet<REAL> &props);
+
+  /**
+   * @brief Return all required real properties as a vector of Syms.
+   */
+  std::vector<NP::Sym<REAL>> get_required_real_sym_vector();
+
+  /**
+   * @brief Return the property remapping map.
+   */
+  const std::map<int, std::string> &get_properties_map() const;
+
+protected:
+  ArgumentNameSet<INT> required_int_props;
+  ArgumentNameSet<REAL> required_real_props;
+  std::map<int, std::string> properties_map;
+};
+
 template <typename ON_DEVICE_T, typename ARGUMENT_PACK_T, size_t dim = 1,
           typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
 struct AbstractReactionData {
@@ -144,14 +279,19 @@ struct AbstractReactionData {
     return true;
   }
 
-  AbstractReactionData(
-      ARGUMENT_PACK_T argument_pack,
-      std::map<int, std::string> properties_map = get_default_map())
-      : argument_pack(argument_pack), properties_map(properties_map) {
+  AbstractReactionData(ARGUMENT_PACK_T argument_pack,
+                       ReactionDataStorage storage)
+      : argument_pack(argument_pack), storage(storage) {
 
     static_assert(validate_on_device_type());
     this->rng_kernel = std::make_shared<RNG_KERNEL_T>();
   }
+
+  AbstractReactionData(
+      ARGUMENT_PACK_T argument_pack,
+      std::map<int, std::string> properties_map = get_default_map())
+      : AbstractReactionData(argument_pack,
+                             ReactionDataStorage(properties_map)) {}
 
   ARGUMENT_PACK_T get_arg_pack() { return this->argument_pack; }
   void set_arg_pack(const ARGUMENT_PACK_T &argument_pack) {
@@ -166,6 +306,32 @@ struct AbstractReactionData {
   std::shared_ptr<RNG_KERNEL_T> get_rng_kernel() { return this->rng_kernel; }
 
   static constexpr size_t get_dim() { return dim; }
+
+  ArgumentNameSet<INT> get_required_int_props() {
+    return this->storage.get_required_int_props();
+  }
+
+  void set_required_int_props(const ArgumentNameSet<INT> &props) {
+    this->storage.set_required_int_props(props);
+    this->index_on_device_object();
+  }
+
+  std::vector<NP::Sym<INT>> get_required_int_sym_vector() {
+    return this->storage.get_required_int_sym_vector();
+  }
+
+  ArgumentNameSet<REAL> get_required_real_props() {
+    return this->storage.get_required_real_props();
+  }
+
+  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
+    this->storage.set_required_real_props(props);
+    this->index_on_device_object();
+  }
+
+  std::vector<NP::Sym<REAL>> get_required_real_sym_vector() {
+    return this->storage.get_required_real_sym_vector();
+  }
 
   virtual ~AbstractReactionData() = default;
 
@@ -187,12 +353,14 @@ struct AbstractReactionData {
   }
 
 protected:
+  const std::map<int, std::string> &get_properties_map() const {
+    return this->storage.get_properties_map();
+  }
+
   std::optional<ON_DEVICE_T> on_device_obj;
   ARGUMENT_PACK_T argument_pack;
+  ReactionDataStorage storage;
   std::shared_ptr<RNG_KERNEL_T> rng_kernel;
-  std::map<int, std::string> properties_map;
-  ArgumentNameSet<INT> required_int_props;
-  ArgumentNameSet<REAL> required_real_props;
 };
 
 template <typename ACCESSOR_PACK_T, size_t dim = 1,

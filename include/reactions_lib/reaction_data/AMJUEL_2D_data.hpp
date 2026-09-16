@@ -163,15 +163,15 @@ struct AMJUEL2DData : public ReactionDataBase<
 
     this->on_device_obj->fluid_density_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.fluid_density));
+            this->get_properties_map().at(props.fluid_density));
 
     this->on_device_obj->fluid_temperature_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.fluid_temperature));
+            this->get_properties_map().at(props.fluid_temperature));
 
     this->on_device_obj->weight_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.weight));
+            this->get_properties_map().at(props.weight));
   };
 };
 }; // namespace VANTAGE::Reactions

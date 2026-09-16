@@ -21,13 +21,13 @@ public:
   virtual void calculate_rates(
       NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
           &pair_list,
-      INT cell_idx_start, INT cell_idx_end) {}
+      INT cell_idx_start, INT cell_idx_end);
 
   virtual void
   apply(NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
             &pair_list,
         INT cell_idx_start, INT cell_idx_end, double dt,
-        NP::ParticleGroupSharedPtr child_group) {}
+        NP::ParticleGroupSharedPtr child_group);
 
   virtual const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() = 0;
   virtual REAL get_sigma_v_bound(REAL relative_vel) = 0;
@@ -41,23 +41,30 @@ public:
    * @param max_size Maximum size (per dimension) of data buffers on this
    * reaction
    */
-  virtual void set_max_buffer_size(size_t max_size) {}
+  virtual void set_max_buffer_size(size_t max_size);
 
-  virtual void set_max_num_coll_cells(size_t max_cells) {}
+  virtual void set_max_num_coll_cells(size_t max_cells);
 };
 
 /**
- * @brief Class for binary reactions based on the Stochastic Weighted Particle
- * Method
+ * @brief Non-template implementation base for binary reactions based on the
+ * Stochastic Weighted Particle Method.
  *
+ * A thinner implementation version of SWPMReaction (the open-ended DataCalc
+ * template parameter is omitted here.) Holds the DataCalc-independent members
+ * and behaviour.
+ *
+ * @tparam num_products The number of products produced per pair of reactants.
+ * @tparam ReactionData typename for reaction_data constructor argument
+ * @tparam ReactionKernels template class for reaction_kernels constructor
+ * argument
  */
-template <int num_products, typename ReactionData, typename ReactionKernels,
-          typename DataCalc = PairDataCalculator<>>
-struct SWPMReaction : AbstractPairReaction {
-  SWPMReaction() = default;
+template <int num_products, typename ReactionData, typename ReactionKernels>
+struct SWPMReactionImpl : AbstractPairReaction {
+  SWPMReactionImpl() = default;
 
   /**
-   * @brief Constructor for SWPMReaction
+   * @brief Constructor for SWPMReactionImpl.
    *
    * @param sycl_target  Compute device used by the instance. This must be the
    * same sycl_target that is assigned to the particle group(s) from which pairs
@@ -70,19 +77,16 @@ struct SWPMReaction : AbstractPairReaction {
    * pairs
    * @param reaction_kernels PairReactionKernels object defining the properties
    * of the products and the feedback on the parent particles and fields
-   * @param data_calculator PairDataCalculator object defining any additional
-   * required data for the kernels
    * @param properties_map (Optional) A std::map<int, std::string> object used
    * when remapping property names (tot_reaction_rate,weight_change)
    */
-  SWPMReaction(
+  SWPMReactionImpl(
       NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
       std::array<int, num_products> products, ReactionData reaction_data,
-      ReactionKernels reaction_kernels, DataCalc data_calculator,
+      ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
       : reactants(reactants), products(products), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), data_calculator(data_calculator),
-        sycl_target_stored(sycl_target),
+        reaction_kernels(reaction_kernels), sycl_target_stored(sycl_target),
         device_rate_buffer(
             std::make_shared<NP::LocalArray<REAL>>(sycl_target, 0, 0.0)),
         pre_req_data(
@@ -112,18 +116,9 @@ struct SWPMReaction : AbstractPairReaction {
                           ReactionData>,
         "Template parameter ReactionData is not derived from "
         "CSPairData...");
-    static_assert(std::is_base_of_v<AbstractPairDataCalculator, DataCalc>,
-                  "Template parameter DataCalc is not derived from "
-                  "AbstractPairDataCalculator...");
     static_assert(std::is_base_of_v<PairReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "PairReactionKernelsBase...");
-    NESOASSERT(
-        this->data_calculator.get_data_size() ==
-            this->reaction_kernels.get_pre_ndims(),
-        "The number of ReactionData-derived objects in PairDataCalculator "
-        "does not match the required number of dimensions for the "
-        "provided PairReactionKernels object.");
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
@@ -169,51 +164,9 @@ struct SWPMReaction : AbstractPairReaction {
     this->descendant_particles_b = std::make_shared<NP::DescendantProducts>(
         this->get_sycl_target(), descendant_matrix_spec_b,
         reaction_kernel_buffer.get_num_products_b());
-
-    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
-        SWPMReaction::get_sycl_target(), 0,
-        this->data_calculator.get_data_size());
-    empty_pre_req_data->fill(0);
-
-    this->pre_req_data = empty_pre_req_data;
   }
 
-  SWPMReaction(
-      /**
-       * \overload
-       * @brief Constructor for SWPMReaction with no explicit PairDataCalculator
-       *
-       * @param sycl_target  Compute device used by the instance. This must be
-       * the same sycl_target that is assigned to the particle group(s) from
-       * which pairs acted on by this reaction are derived.
-       * @param reactants The reactant species IDs
-       * @param products Product species IDs of the descendants produced by this
-       * reaction
-       * @param reaction_data Reaction data object derived from CSPairData, used
-       * to calculate the reaction rate (sigma * v_rel) associated with
-       * individual pairs
-       * @param reaction_kernels PairReactionKernels object defining the
-       * properties of the products and the feedback on the parent particles and
-       * fields
-       * @param properties_map (Optional) A std::map<int, std::string> object
-       * used when remapping property names (tot_reaction_rate,weight_change,
-       * collision_cell_id, cell_id)
-       */
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
-      ReactionKernels reaction_kernels,
-      const std::map<int, std::string> &properties_map = get_default_map())
-      : reactants(reactants), products(products), reaction_data(reaction_data),
-        reaction_kernels(reaction_kernels), data_calculator(DataCalc()),
-        sycl_target_stored(sycl_target),
-        device_rate_buffer(
-            std::make_shared<NP::LocalArray<REAL>>(sycl_target, 0, 0.0)),
-        pre_req_data(
-            std::make_shared<NP::NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
-        max_buffer_size(16384 *
-                        NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {}
-
-  virtual ~SWPMReaction() = default;
+  virtual ~SWPMReactionImpl() = default;
 
 public:
   /**
@@ -281,128 +234,6 @@ public:
     //                                        "calculate_rates_SWPM");
     this->calculate_rates_v(pair_list, cell_idx_start, cell_idx_end);
     // this->end_profiling_region(sycl_target_stored, r0);
-  }
-
-  /**
-   * @brief Creates and processes any descendant products from the reaction and
-   * modifies background fields and/or parent particles based on the reaction
-   * kernel object.
-   *
-   * Unlike linear reactions, the weight change for each particle is assumed to
-   * be calculated outside of the reaction, and the weight_change particle dat
-   * set to that value.
-   *
-   * @param pair_list Pair list containing the reactants to which this reaction
-   * should be applied
-   * @param cell_idx_start The index of the first cell over which to run the
-   * pair loop
-   * @param cell_idx_end The index up to which to run the loop over
-   * @param dt The current time step size.
-   * @param child_group NP::ParticleGroupSharedPtr that contains a particle
-   * group into which descendants are placed after generation.
-   */
-  template <typename TARGET, typename PAIR_LIST>
-  void apply_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
-               INT cell_idx_start, INT cell_idx_end, double dt,
-               NP::ParticleGroupSharedPtr child_group) {
-
-    auto reaction_kernel_buffer = this->reaction_kernels;
-    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
-
-    std::array<int, num_products> products = this->products;
-    NESOASSERT(pair_list.A->sycl_target == sycl_target_stored,
-               "sycl_target assigned to particle_group is not the same as "
-               "the sycl_target passed to Reaction object...");
-
-    INT npart_block =
-        pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
-    this->adaptive_flush_pre_req_data(npart_block);
-
-    this->data_calculator.fill_buffer(this->pre_req_data, pair_list,
-                                      cell_idx_start, cell_idx_end);
-    auto application_loop = NP::particle_pair_loop(
-        "descendant_products_loop", pair_list,
-        [=](auto weight_change, auto descendant_particles_a,
-            auto descendant_particles_b, auto particle_index_a,
-            auto particle_index_b, auto pair_index, auto req_int_props_a,
-            auto req_real_props_a, auto req_int_props_b, auto req_real_props_b,
-            auto rate_buffer, auto pre_req_data, auto total_reaction_rate) {
-          INT current_count = pair_index.get_loop_linear_index();
-          REAL rate = rate_buffer.at(current_count);
-          REAL total_rate = total_reaction_rate.at(0);
-
-          REAL deltaweight = weight_change.at(0);
-          if (deltaweight > 0) {
-
-            REAL modified_weight = deltaweight * rate / total_rate;
-
-            reaction_kernel_on_device.parent_kernel(
-                particle_index_a, particle_index_b, descendant_particles_a,
-                descendant_particles_b, products);
-
-            reaction_kernel_on_device.scattering_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
-
-            reaction_kernel_on_device.weight_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
-
-            reaction_kernel_on_device.transformation_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
-
-            reaction_kernel_on_device.feedback_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
-          }
-        },
-        NP::Access::read(this->weight_change_sym),
-        NP::Access::write(this->descendant_particles_a),
-        NP::Access::write(this->descendant_particles_b),
-        NP::Access::A(NP::Access::read(NP::ParticlePairLoopIndex{})),
-        NP::Access::B(NP::Access::read(NP::ParticlePairLoopIndex{})),
-        NP::Access::read(NP::ParticlePairLoopIndex{}),
-        NP::Access::A(NP::Access::write(
-            NP::sym_vector<INT>(pair_list.A, this->apply_int_syms_a))),
-        NP::Access::A(NP::Access::write(
-            NP::sym_vector<REAL>(pair_list.A, this->apply_real_syms_a))),
-        NP::Access::B(NP::Access::write(
-            NP::sym_vector<INT>(pair_list.B, this->apply_int_syms_b))),
-        NP::Access::B(NP::Access::write(
-            NP::sym_vector<REAL>(pair_list.B, this->apply_real_syms_b))),
-        NP::Access::read(device_rate_buffer),
-        NP::Access::read(this->pre_req_data),
-        NP::Access::write(this->total_reaction_rate));
-
-    this->descendant_particles_a->reset(npart_block);
-    this->descendant_particles_b->reset(npart_block);
-
-    application_loop->execute(cell_idx_start, cell_idx_end);
-
-    child_group->add_particles_local(this->descendant_particles_a, pair_list.A);
-    child_group->add_particles_local(this->descendant_particles_b, pair_list.B);
-
-    return;
-  }
-
-  void apply(NP::CellwisePairListAbsolute<NP::ParticleGroup,
-                                          NP::CellwisePairList> &pair_list,
-             INT cell_idx_start, INT cell_idx_end, double dt,
-             NP::ParticleGroupSharedPtr child_group) override {
-
-    // auto r0 =
-    //     this->start_profiling_region(this->sycl_target_stored, "apply_SWPM");
-    this->apply_v(pair_list, cell_idx_start, cell_idx_end, dt, child_group);
-    // this->end_profiling_region(this->sycl_target_stored, r0);
   }
 
   /**
@@ -520,7 +351,6 @@ protected:
 
   size_t get_max_buffer_size() { return this->max_buffer_size; }
 
-private:
   NP::Sym<REAL> total_reaction_rate;
   NP::LocalArraySharedPtr<REAL> device_rate_buffer;
   NP::SYCLTargetSharedPtr sycl_target_stored;
@@ -547,7 +377,221 @@ private:
   std::vector<NP::Sym<REAL>> apply_real_syms_a;
   std::vector<NP::Sym<INT>> apply_int_syms_b;
   std::vector<NP::Sym<REAL>> apply_real_syms_b;
+};
 
+/**
+ * @brief Class for binary reactions based on the Stochastic Weighted Particle
+ * Method
+ *
+ */
+template <int num_products, typename ReactionData, typename ReactionKernels,
+          typename DataCalc = PairDataCalculator<>>
+struct SWPMReaction
+    : SWPMReactionImpl<num_products, ReactionData, ReactionKernels> {
+  SWPMReaction() = default;
+
+  /**
+   * @brief Constructor for SWPMReaction
+   *
+   * @param sycl_target  Compute device used by the instance. This must be the
+   * same sycl_target that is assigned to the particle group(s) from which pairs
+   * acted on by this reaction are derived.
+   * @param reactants The reactant species IDs
+   * @param products Product species IDs of the descendants produced by this
+   * reaction
+   * @param reaction_data Reaction data object derived from CSPairData, used to
+   * calculate the reaction rate (sigma * v_rel) associated with individual
+   * pairs
+   * @param reaction_kernels PairReactionKernels object defining the properties
+   * of the products and the feedback on the parent particles and fields
+   * @param data_calculator PairDataCalculator object defining any additional
+   * required data for the kernels
+   * @param properties_map (Optional) A std::map<int, std::string> object used
+   * when remapping property names (tot_reaction_rate,weight_change)
+   */
+  SWPMReaction(
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      std::array<int, num_products> products, ReactionData reaction_data,
+      ReactionKernels reaction_kernels, DataCalc data_calculator,
+      const std::map<int, std::string> &properties_map = get_default_map())
+      : SWPMReactionImpl<num_products, ReactionData, ReactionKernels>(
+            sycl_target, reactants, products, reaction_data, reaction_kernels,
+            properties_map),
+        data_calculator(data_calculator) {
+
+    static_assert(std::is_base_of_v<AbstractPairDataCalculator, DataCalc>,
+                  "Template parameter DataCalc is not derived from "
+                  "AbstractPairDataCalculator...");
+    NESOASSERT(
+        this->data_calculator.get_data_size() ==
+            this->reaction_kernels.get_pre_ndims(),
+        "The number of ReactionData-derived objects in PairDataCalculator "
+        "does not match the required number of dimensions for the "
+        "provided PairReactionKernels object.");
+
+    auto empty_pre_req_data = std::make_shared<NP::NDLocalArray<REAL, 2>>(
+        this->get_sycl_target(), 0, this->data_calculator.get_data_size());
+    empty_pre_req_data->fill(0);
+
+    this->pre_req_data = empty_pre_req_data;
+  }
+
+  /**
+   * \overload
+   * @brief Constructor for SWPMReaction with no explicit PairDataCalculator
+   *
+   * @param sycl_target  Compute device used by the instance. This must be
+   * the same sycl_target that is assigned to the particle group(s) from
+   * which pairs acted on by this reaction are derived.
+   * @param reactants The reactant species IDs
+   * @param products Product species IDs of the descendants produced by this
+   * reaction
+   * @param reaction_data Reaction data object derived from CSPairData, used
+   * to calculate the reaction rate (sigma * v_rel) associated with
+   * individual pairs
+   * @param reaction_kernels PairReactionKernels object defining the
+   * properties of the products and the feedback on the parent particles and
+   * fields
+   * @param properties_map (Optional) A std::map<int, std::string> object
+   * used when remapping property names (tot_reaction_rate,weight_change,
+   * collision_cell_id, cell_id)
+   */
+  template <typename U = DataCalc,
+            std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
+  SWPMReaction(
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      std::array<int, num_products> products, ReactionData reaction_data,
+      ReactionKernels reaction_kernels,
+      const std::map<int, std::string> &properties_map = get_default_map())
+      : SWPMReaction(sycl_target, reactants, products, reaction_data,
+                     reaction_kernels, DataCalc(), properties_map) {}
+
+  virtual ~SWPMReaction() = default;
+
+public:
+  /**
+   * @brief Creates and processes any descendant products from the reaction and
+   * modifies background fields and/or parent particles based on the reaction
+   * kernel object.
+   *
+   * Unlike linear reactions, the weight change for each particle is assumed to
+   * be calculated outside of the reaction, and the weight_change particle dat
+   * set to that value.
+   *
+   * @param pair_list Pair list containing the reactants to which this reaction
+   * should be applied
+   * @param cell_idx_start The index of the first cell over which to run the
+   * pair loop
+   * @param cell_idx_end The index up to which to run the loop over
+   * @param dt The current time step size.
+   * @param child_group NP::ParticleGroupSharedPtr that contains a particle
+   * group into which descendants are placed after generation.
+   */
+  template <typename TARGET, typename PAIR_LIST>
+  void apply_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+               INT cell_idx_start, INT cell_idx_end, double dt,
+               NP::ParticleGroupSharedPtr child_group) {
+
+    auto reaction_kernel_buffer = this->reaction_kernels;
+    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
+
+    std::array<int, num_products> products = this->products;
+    NESOASSERT(pair_list.A->sycl_target == this->sycl_target_stored,
+               "sycl_target assigned to particle_group is not the same as "
+               "the sycl_target passed to Reaction object...");
+
+    INT npart_block =
+        pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
+    this->adaptive_flush_pre_req_data(npart_block);
+
+    this->data_calculator.fill_buffer(this->pre_req_data, pair_list,
+                                      cell_idx_start, cell_idx_end);
+    auto application_loop = NP::particle_pair_loop(
+        "descendant_products_loop", pair_list,
+        [=](auto weight_change, auto descendant_particles_a,
+            auto descendant_particles_b, auto particle_index_a,
+            auto particle_index_b, auto pair_index, auto req_int_props_a,
+            auto req_real_props_a, auto req_int_props_b, auto req_real_props_b,
+            auto rate_buffer, auto pre_req_data, auto total_reaction_rate) {
+          INT current_count = pair_index.get_loop_linear_index();
+          REAL rate = rate_buffer.at(current_count);
+          REAL total_rate = total_reaction_rate.at(0);
+
+          REAL deltaweight = weight_change.at(0);
+          if (deltaweight > 0) {
+
+            REAL modified_weight = deltaweight * rate / total_rate;
+
+            reaction_kernel_on_device.parent_kernel(
+                particle_index_a, particle_index_b, descendant_particles_a,
+                descendant_particles_b, products);
+
+            reaction_kernel_on_device.scattering_kernel(
+                modified_weight, particle_index_a, particle_index_b, pair_index,
+                descendant_particles_a, descendant_particles_b, req_int_props_a,
+                req_real_props_a, req_int_props_b, req_real_props_b, products,
+                pre_req_data, dt);
+
+            reaction_kernel_on_device.weight_kernel(
+                modified_weight, particle_index_a, particle_index_b, pair_index,
+                descendant_particles_a, descendant_particles_b, req_int_props_a,
+                req_real_props_a, req_int_props_b, req_real_props_b, products,
+                pre_req_data, dt);
+
+            reaction_kernel_on_device.transformation_kernel(
+                modified_weight, particle_index_a, particle_index_b, pair_index,
+                descendant_particles_a, descendant_particles_b, req_int_props_a,
+                req_real_props_a, req_int_props_b, req_real_props_b, products,
+                pre_req_data, dt);
+
+            reaction_kernel_on_device.feedback_kernel(
+                modified_weight, particle_index_a, particle_index_b, pair_index,
+                descendant_particles_a, descendant_particles_b, req_int_props_a,
+                req_real_props_a, req_int_props_b, req_real_props_b, products,
+                pre_req_data, dt);
+          }
+        },
+        NP::Access::read(this->weight_change_sym),
+        NP::Access::write(this->descendant_particles_a),
+        NP::Access::write(this->descendant_particles_b),
+        NP::Access::A(NP::Access::read(NP::ParticlePairLoopIndex{})),
+        NP::Access::B(NP::Access::read(NP::ParticlePairLoopIndex{})),
+        NP::Access::read(NP::ParticlePairLoopIndex{}),
+        NP::Access::A(NP::Access::write(
+            NP::sym_vector<INT>(pair_list.A, this->apply_int_syms_a))),
+        NP::Access::A(NP::Access::write(
+            NP::sym_vector<REAL>(pair_list.A, this->apply_real_syms_a))),
+        NP::Access::B(NP::Access::write(
+            NP::sym_vector<INT>(pair_list.B, this->apply_int_syms_b))),
+        NP::Access::B(NP::Access::write(
+            NP::sym_vector<REAL>(pair_list.B, this->apply_real_syms_b))),
+        NP::Access::read(this->device_rate_buffer),
+        NP::Access::read(this->pre_req_data),
+        NP::Access::write(this->total_reaction_rate));
+
+    this->descendant_particles_a->reset(npart_block);
+    this->descendant_particles_b->reset(npart_block);
+
+    application_loop->execute(cell_idx_start, cell_idx_end);
+
+    child_group->add_particles_local(this->descendant_particles_a, pair_list.A);
+    child_group->add_particles_local(this->descendant_particles_b, pair_list.B);
+
+    return;
+  }
+
+  void apply(NP::CellwisePairListAbsolute<NP::ParticleGroup,
+                                          NP::CellwisePairList> &pair_list,
+             INT cell_idx_start, INT cell_idx_end, double dt,
+             NP::ParticleGroupSharedPtr child_group) override {
+
+    // auto r0 =
+    //     this->start_profiling_region(this->sycl_target_stored, "apply_SWPM");
+    this->apply_v(pair_list, cell_idx_start, cell_idx_end, dt, child_group);
+    // this->end_profiling_region(this->sycl_target_stored, r0);
+  }
+
+private:
   DataCalc data_calculator;
 };
 }; // namespace VANTAGE::Reactions

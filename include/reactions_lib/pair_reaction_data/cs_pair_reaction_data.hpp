@@ -129,11 +129,11 @@ struct CSPairData : public PairReactionDataBase<
     auto arg_pack = this->get_arg_pack();
     this->on_device_obj->velocity_ind_a =
         arg_pack.required_real_props_a.find_index(
-            this->properties_map.at(props.velocity));
+            this->get_properties_map().at(props.velocity));
 
     this->on_device_obj->velocity_ind_b =
         arg_pack.required_real_props_b.find_index(
-            this->properties_map.at(props.velocity));
+            this->get_properties_map().at(props.velocity));
   };
 };
 }; // namespace VANTAGE::Reactions

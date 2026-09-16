@@ -125,4 +125,21 @@ std::vector<INT> CollisionCellManager::get_species_ids() {
   return this->species_ids;
 }
 
+// Explicit instantiations of the CollisionCellManager member function
+// templates. These are the only T used by the SWPM/pair path; see the matching
+// extern template declarations in collision_cell_manager.hpp.
+template void CollisionCellManager::coll_cellwise_max<REAL>(
+    NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>, int,
+    NP::NDLocalArraySharedPtr<REAL, 2> &);
+template NP::NDLocalArraySharedPtr<int, 2>
+    CollisionCellManager::get_empty_coll_cellwise_data<int>(
+        NP::SYCLTargetSharedPtr);
+template NP::NDLocalArraySharedPtr<REAL, 2>
+    CollisionCellManager::get_empty_coll_cellwise_data<REAL>(
+        NP::SYCLTargetSharedPtr);
+template void CollisionCellManager::resize_coll_cellwise_data<int>(
+    NP::SYCLTargetSharedPtr, NP::NDLocalArraySharedPtr<int, 2> &);
+template void CollisionCellManager::resize_coll_cellwise_data<REAL>(
+    NP::SYCLTargetSharedPtr, NP::NDLocalArraySharedPtr<REAL, 2> &);
+
 }; // namespace VANTAGE::Reactions

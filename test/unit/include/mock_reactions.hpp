@@ -310,7 +310,7 @@ struct TestReactionVarData
 
     this->on_device_obj->position_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.position));
+            this->get_properties_map().at(props.position));
   };
 };
 
@@ -407,11 +407,11 @@ struct TestEphemeralVarData
 
     this->on_device_obj->point_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.boundary_intersection_point));
+            this->get_properties_map().at(props.boundary_intersection_point));
 
     this->on_device_obj->normal_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.boundary_intersection_normal));
+            this->get_properties_map().at(props.boundary_intersection_normal));
   };
 };
 #endif

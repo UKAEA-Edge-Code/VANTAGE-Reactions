@@ -366,7 +366,7 @@ TEST(Properties, properties_map_setting) {
         : ReactionDataBase(property_map_) {}
 
     std::map<int, std::string> get_property_map() {
-      return this->properties_map;
+      return this->get_properties_map();
     }
   };
 

@@ -89,7 +89,7 @@ struct SpecularReflectionData
 
     this->on_device_obj->normal_ind =
         this->argument_pack.required_real_props.find_index(
-            this->properties_map.at(props.boundary_intersection_normal));
+            this->get_properties_map().at(props.boundary_intersection_normal));
   };
 };
 
