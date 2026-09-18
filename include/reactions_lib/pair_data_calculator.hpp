@@ -9,9 +9,9 @@
 namespace VANTAGE::Reactions {
 
 /**
- * @brief A dummy struct to derive PairDataCalculator froe
- * for the purposes of type-checking of PairDataCalculatoo (when it's passed as
- * a typename template parameter - see LinearReactionBase)
+ * @brief A dummy struct to derive PairDataCalculator for
+ * the purposes of type-checking of PairDataCalculator (when it's passed as
+ * a typename template parameter - see SWPMReaction)
  */
 struct AbstractPairDataCalculator {
   virtual ~AbstractPairDataCalculator() = default;
@@ -138,7 +138,7 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
 
   /**
    * @brief Getter for the total number of dimensions of the objects in the
-   * ReactionData tuple
+   * PairReactionData tuple
    */
   size_t get_data_size() const {
     size_t dat_idx = 0u;
@@ -156,7 +156,7 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
   }
 
   /**
-   * @brief Getter of the total number of objects in the ReactionData tuple
+   * @brief Getter of the total number of objects in the PairReactionData tuple
    */
   size_t get_data_tuple_size() const { return sizeof...(DATATYPE); }
 

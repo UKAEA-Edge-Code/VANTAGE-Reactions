@@ -49,8 +49,8 @@ struct ConcatenatorDataOnDevice
    * @brief Function to calculate the concatenated data
    *
    * @param accessors Bundled accessors for the ParticleLoop.
-   * @param kernel The random number generator kernels used in the
-   * calculation, a NP::TupleRNG accessor
+   * @param rng_kernel The random number generator kernels used in the
+   * calculation
    *
    * @return Concatenated return arrays of all the contained device types
    */

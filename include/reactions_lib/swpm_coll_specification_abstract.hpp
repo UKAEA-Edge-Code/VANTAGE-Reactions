@@ -35,7 +35,8 @@ struct AbstractSWPMSpecification {
   }
 
   /**
-   * @brief Populate the weight change sym on the particles based
+   * @brief Populate the weight change sym on the particles based on the
+   * sampled collision pairs
    *
    * @param pair_list Collision pair list
    * @param cell_idx_start Cell index from which to invoke the corresponding
@@ -84,6 +85,7 @@ struct AbstractSWPMSpecification {
    * @param sigma_v_bound Buffer containing the total collision cell-wise bound
    * on sigma*v
    * @param result_buffer Buffer to store the result in
+   * @param timestep_bounds Buffer to store the timestep bounds in
    */
   void calculate_exponential_parameter(
       NP::ParticleSubGroupSharedPtr target,

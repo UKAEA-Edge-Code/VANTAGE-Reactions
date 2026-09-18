@@ -376,6 +376,17 @@ struct AbstractReactionDataOnDevice {
 
   AbstractReactionDataOnDevice() = default;
 
+  /**
+   * @brief Function to calculate the reaction data (enabled
+   * when INPUT_DIM == 0).
+   *
+   * @param accessor_pack Bundled accessors for the ParticleLoop.
+   * @param rng_kernel The random number generator kernel potentially used in
+   * the calculation
+   *
+   * @return A REAL-valued array of size dim containing the calculated
+   * reaction rate.
+   */
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D == 0) && D == INPUT_DIM, int> = 0>
   std::array<VALUE_T, dim>
@@ -384,6 +395,17 @@ struct AbstractReactionDataOnDevice {
     return std::array<REAL, dim>{0.0};
   }
 
+  /**
+   * @brief Function to calculate the reaction data (enabled
+   * when INPUT_DIM > 0).
+   *
+   * @param accessor_pack Bundled accessors for the ParticleLoop.
+   * @param rng_kernel The random number generator kernel potentially used in
+   * the calculation
+   *
+   * @return A REAL-valued array of size dim containing the calculated
+   * reaction rate.
+   */
   template <std::size_t D = INPUT_DIM,
             std::enable_if_t<(D > 0) && D == INPUT_DIM, int> = 0>
   std::array<VALUE_T, dim>

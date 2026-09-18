@@ -32,7 +32,7 @@ void CartesianCollCellH::set_coll_cell_linear_resolution(
 
   NESOASSERT(resolutions.size() == this->division_order.size(),
              "resolutions passed to set_coll_cell_linear_resolution on "
-             "CartesionCollCellH does not conform to mesh cell number");
+             "CartesianCollCellH does not conform to mesh cell number");
 
   for (int i = 0; i < resolutions.size(); i++) {
 

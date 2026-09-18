@@ -8,7 +8,7 @@ namespace VANTAGE::Reactions {
 /**
  * @brief An inverse power law cross-section, proportional to v_rel^{-b}, with b
  * < 1. The rate is unbounded, so a default maximum velocity needs to be
- * suplied. NOTE: Ideally, the default maximum rate call wouldn't be used.
+ * supplied. NOTE: Ideally, the default maximum rate call wouldn't be used.
  */
 struct IPLCrossSection : public AbstractCrossSection {
 
@@ -38,7 +38,7 @@ struct IPLCrossSection : public AbstractCrossSection {
   };
 
   /**
-   * @brief Returns maximum value of the rate sigma*v of for this cross-section.
+   * @brief Returns maximum value of the rate sigma*v of this cross-section.
    *
    * @return REAL-valued constant
    */

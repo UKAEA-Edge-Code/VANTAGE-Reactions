@@ -8,8 +8,8 @@
 namespace VANTAGE::Reactions {
 
 /**
- * @brief On device:Reaction class computing the sigma * v_r value for each
- * particle pair
+ * @brief On device:Reaction data class computing the sigma * v_r value for
+ * each particle pair
  *
  * @tparam vel_ndim The velocity space dimensionality
  * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class
@@ -63,7 +63,8 @@ public:
 };
 
 /**
- * @brief Reaction class computing the sigma * v_r value for each particle pair
+ * @brief Reaction data class computing the sigma * v_r value for each particle
+ * pair
  *
  * @tparam vel_ndim The velocity space dimensionality
  * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class

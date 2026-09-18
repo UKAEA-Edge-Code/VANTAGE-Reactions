@@ -120,7 +120,7 @@ struct SWPMReactionController {
 
   /**
    * @brief Set the maximum number of particles per cell (used in determining
-   * the buffer size for reaction data
+   * the buffer size for reaction data)
    *
    * @param max_num_parts Maximum number of particles per cell
    */
@@ -145,7 +145,8 @@ struct SWPMReactionController {
   void set_max_pair_fraction(REAL fraction) {
     NESOASSERT(
         fraction <= 1.0 && fraction > 0,
-        "The maximum number of pairs must be a positive number less than 1");
+        "The maximum number of pairs must be a positive number less than or "
+        "equal to 1");
     this->max_pair_fraction_per_cycle = fraction;
   }
 
@@ -166,7 +167,7 @@ struct SWPMReactionController {
 
     NESOASSERT(
         particle_group == this->reference_particle_group,
-        "Particle group passed to apply_parent_transform is not the same as "
+        "Particle group passed to apply_parent_transforms is not the same as "
         "recorded reference group.");
 
     for (auto it = this->parent_ids.begin(); it != this->parent_ids.end();
@@ -193,8 +194,6 @@ struct SWPMReactionController {
    * @param dt The current time step size.
    * @param product_group The ParticleGroup into which to add the products,
    * should have the same spec as the parent.
-   * @param controller_mode The mode to run the controller in. Either
-   * standard_mode (default) or semi_dsmc_mode.
    */
   template <typename PARENT>
   void apply(std::shared_ptr<PARENT> target, double dt,
@@ -381,8 +380,6 @@ struct SWPMReactionController {
    * @param target The ParticleGroup or ParticleSubGroup to apply the
    * reactions to.
    * @param dt The current time step size.
-   * @param controller_mode The mode to run the controller in. Either
-   * standard_mode (default) or semi_dsmc_mode.
    */
   template <typename PARENT>
   void apply(std::shared_ptr<PARENT> target, double dt) {

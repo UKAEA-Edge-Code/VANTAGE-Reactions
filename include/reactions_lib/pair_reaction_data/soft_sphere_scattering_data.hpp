@@ -83,8 +83,8 @@ public:
 };
 
 /**
- * @brief Reaction class computing post-collision velocities for a soft-sphere
- * DSMC collision
+ * @brief Reaction data class computing post-collision velocities for a
+ * soft-sphere DSMC collision
  *
  * @tparam vel_ndim The velocity space dimensionality
  */
@@ -106,7 +106,7 @@ struct SSScatteringData
    *
    * @param species_a Species of the first scattering particle (needed for
    * species mass)
-   * @param species_b Species of the first scattering particle (needed for
+   * @param species_b Species of the second scattering particle (needed for
    * species mass)
    * @param alpha Soft scattering anisotropy constant
    * @param properties_map (Optional) A std::map<int, std::string> object to be

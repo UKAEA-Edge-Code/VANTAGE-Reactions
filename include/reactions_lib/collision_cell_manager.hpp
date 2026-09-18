@@ -98,10 +98,7 @@ struct CollisionCellManager {
       const std::map<int, std::string> &properties_map = get_default_map());
 
   /**
-   * @brief Get the current CollisionCellPartition object or construct it if
-   * needed
-   *
-   * @param target Particle subgroup for which the partition is constructed
+   * @brief Get the current CollisionCellPartition object
    */
   std::shared_ptr<NP::DSMC::CollisionCellPartition> get_cell_partition();
 
@@ -115,7 +112,8 @@ struct CollisionCellManager {
   get_npart_coll_cell(NP::ParticleSubGroupSharedPtr target, INT species_id);
 
   /**
-   * @brief Bin particles in collision cells
+   * @brief Bin particles in collision cells. Binning is a no-op if the
+   * partition is already valid.
    *
    * @param target Particle subgroup containing particles to be binned
    */
@@ -186,11 +184,13 @@ struct CollisionCellManager {
   }
 
   /**
-   * @brief Resize and existing (if nullptr) or construct a new
+   * @brief Resize an existing (if nullptr) or construct a new
    * NDLocalArraySharedPtr conforming to the expected mesh cell,collision cell
    * size
    *
    * @param sycl_target Device to use when constructing
+   * @param data The NDLocalArraySharedPtr to resize or replace with a buffer
+   * conforming to the expected mesh cell,collision cell size
    */
   template <typename T>
   void resize_coll_cellwise_data(NP::SYCLTargetSharedPtr sycl_target,

@@ -360,7 +360,6 @@ protected:
                     //!< derived reaction.
   NP::Sym<REAL> weight_change_sym;
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
-                          //
   std::array<int, 2> reactants;
   std::array<int, num_products> products;
   ReactionData reaction_data;
@@ -383,6 +382,11 @@ protected:
  * @brief Class for binary reactions based on the Stochastic Weighted Particle
  * Method
  *
+ * @tparam num_products The number of products produced per pair of reactants.
+ * @tparam ReactionData typename for reaction_data constructor argument
+ * @tparam ReactionKernels typename for reaction_kernels constructor
+ * argument
+ * @tparam DataCalc typename for data_calculator constructor argument
  */
 template <int num_products, typename ReactionData, typename ReactionKernels,
           typename DataCalc = PairDataCalculator<>>
@@ -453,8 +457,7 @@ struct SWPMReaction
    * properties of the products and the feedback on the parent particles and
    * fields
    * @param properties_map (Optional) A std::map<int, std::string> object
-   * used when remapping property names (tot_reaction_rate,weight_change,
-   * collision_cell_id, cell_id)
+   * used when remapping property names (tot_reaction_rate,weight_change)
    */
   template <typename U = DataCalc,
             std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>

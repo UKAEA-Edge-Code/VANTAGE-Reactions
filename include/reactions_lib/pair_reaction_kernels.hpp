@@ -22,7 +22,6 @@ struct PairReactionKernelsBase {
    * the second particle that need to be used for the reaction kernel.
    * @param req_real_props_b Vector of symbols for real-valued properties of the
    * second particle that need to be used for the reaction kernel.
-   * kernel.
    * @param pre_req_ndims (Optional) Integer defining the number of dimensions
    * required by a reaction kernel (this in turn matches the number of
    * ReactionData-derived objects that must be passed to the constructor of a

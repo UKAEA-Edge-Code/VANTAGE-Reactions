@@ -1,9 +1,7 @@
-#ifndef REACTIONS_CARTESIAN_COLL_CELL_H_H
-#define REACTIONS_CARTESIAN_COLL_CELL_H_H
+#ifndef REACTIONS_CARTESIAN_COLL_CELL_H
+#define REACTIONS_CARTESIAN_COLL_CELL_H
 #include "../collision_cell_manager.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include <algorithm>
-#include <cmath>
 #include <vector>
 
 namespace VANTAGE::Reactions {

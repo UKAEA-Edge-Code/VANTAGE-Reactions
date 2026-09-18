@@ -84,6 +84,9 @@ struct ReactionDataBase
    * @brief Constructor for ReactionDataBase from an already-merged
    * ReactionDataStorage. Builds the single-reaction-data argument pack from
    * the storage's required property sets.
+   *
+   * @param storage Storage containing the required property sets and
+   * any reaction data to be held by the object.
    */
   ReactionDataBase(ReactionDataStorage storage)
       : Base(SingleReactionDataArgumentPack(storage.get_required_int_props(),

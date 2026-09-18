@@ -2,13 +2,12 @@
 #define REACTIONS_CONSTANT_CS_H
 #include "../cross_section_abstract.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include <limits>
 
 namespace VANTAGE::Reactions {
 
 /**
  * @brief A constant cross section. The rate is unbounded, so a default maximum
- * velocity needs to be suplied. NOTE: Ideally, the default maximum rate call
+ * velocity needs to be supplied. NOTE: Ideally, the default maximum rate call
  * wouldn't be used.
  */
 struct ConstantCrossSection : public AbstractCrossSection {
@@ -35,9 +34,9 @@ struct ConstantCrossSection : public AbstractCrossSection {
   };
 
   /**
-   * @brief Returns maximum value of the rate sigma*v of for this cross-section.
+   * @brief Returns maximum value of the rate sigma*v of this cross-section.
    *
-   * @return REAL-valued constant
+   * @return REAL-valued maximum rate, i.e. constant_sigma * default_max_vel
    */
   REAL get_max_rate_val() const {
     return this->constant_sigma * this->default_max_vel;
