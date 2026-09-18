@@ -500,6 +500,21 @@ make_lambda_transformation_strategy(std::string &&name, LAMBDA &&lambda) {
       std::forward<std::string>(name), std::forward<LAMBDA>(lambda));
   return std::dynamic_pointer_cast<TransformationStrategy>(r);
 }
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+extern template void TransformationWrapper::transform<NP::ParticleGroup>(
+    std::shared_ptr<NP::ParticleGroup>);
+extern template void TransformationWrapper::transform<NP::ParticleGroup>(
+    std::shared_ptr<NP::ParticleGroup>, int);
+extern template void TransformationWrapper::transform<NP::ParticleGroup>(
+    std::shared_ptr<NP::ParticleGroup>, int, int);
+extern template void TransformationWrapper::transform<NP::ParticleSubGroup>(
+    std::shared_ptr<NP::ParticleSubGroup>);
+extern template void TransformationWrapper::transform<NP::ParticleSubGroup>(
+    std::shared_ptr<NP::ParticleSubGroup>, int);
+extern template void TransformationWrapper::transform<NP::ParticleSubGroup>(
+    std::shared_ptr<NP::ParticleSubGroup>, int, int);
 } // namespace VANTAGE::Reactions
 
 #endif

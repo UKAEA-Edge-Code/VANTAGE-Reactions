@@ -48,4 +48,18 @@ void TransformationWrapper::add_marking_strategy(
   this->marking_strat.push_back(marking_strategy);
 }
 
+// Template instantiations
+template void TransformationWrapper::transform<NP::ParticleGroup>(
+    std::shared_ptr<NP::ParticleGroup>);
+template void TransformationWrapper::transform<NP::ParticleGroup>(
+    std::shared_ptr<NP::ParticleGroup>, int);
+template void TransformationWrapper::transform<NP::ParticleGroup>(
+    std::shared_ptr<NP::ParticleGroup>, int, int);
+template void TransformationWrapper::transform<NP::ParticleSubGroup>(
+    std::shared_ptr<NP::ParticleSubGroup>);
+template void TransformationWrapper::transform<NP::ParticleSubGroup>(
+    std::shared_ptr<NP::ParticleSubGroup>, int);
+template void TransformationWrapper::transform<NP::ParticleSubGroup>(
+    std::shared_ptr<NP::ParticleSubGroup>, int, int);
+
 } // namespace VANTAGE::Reactions

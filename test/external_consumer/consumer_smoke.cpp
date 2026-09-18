@@ -10,13 +10,20 @@
 //
 // Every instantiation the library ships (see
 // src/ and the matching `extern template` declarations in
-// the corresponding header files) is named below. ODR-using the
-// type (even via a pointer) requires the class template to be complete, which
-// forces the consumer TU to respect the extern-template declaration and let the
-// library provide the definition. If the library did not ship a given
-// instantiation the link would fail with an unresolved symbol at the point of
-// ODR-use; the extern-template decl keeps that ODR-use from emitting the symbol
-// here.
+// the corresponding header files) is named below. There are two kinds:
+//
+//  * class-template instantiations (e.g. CXReactionKernels<2>), ODR-used via a
+//    class pointer, which requires the class template to be complete; and
+//  * member-function template instantiations of otherwise non-template classes
+//    (e.g. CollisionCellManager::coll_cellwise_max<REAL>), which cannot be
+//    ODR-used via a class pointer, so the address of each explicit
+//    specialisation is taken instead.
+//
+// In both cases naming the instantiation forces the consumer TU to respect the
+// extern-template declaration and let the library provide the definition. If
+// the library did not ship a given instantiation the link would fail with an
+// unresolved symbol at the point of ODR-use; the extern-template decl keeps
+// that ODR-use from emitting the symbol here.
 
 #include <reactions/reactions.hpp>
 
@@ -168,6 +175,71 @@ int main() {
   using P3 = ArgumentNameSet<REAL>;
   P3 *p3 = nullptr;
   (void)p3;
+
+  // --- CollisionCellManager member-function template instantiations ---------
+  void (CollisionCellManager::*m0)(NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>,
+                                   int, NP::NDLocalArraySharedPtr<REAL, 2> &) =
+      &CollisionCellManager::coll_cellwise_max<REAL>;
+  (void)m0;
+
+  NP::NDLocalArraySharedPtr<int, 2> (CollisionCellManager::*m1)(
+      NP::SYCLTargetSharedPtr) =
+      &CollisionCellManager::get_empty_coll_cellwise_data<int>;
+  (void)m1;
+
+  NP::NDLocalArraySharedPtr<REAL, 2> (CollisionCellManager::*m2)(
+      NP::SYCLTargetSharedPtr) =
+      &CollisionCellManager::get_empty_coll_cellwise_data<REAL>;
+  (void)m2;
+
+  void (CollisionCellManager::*m3)(NP::SYCLTargetSharedPtr,
+                                   NP::NDLocalArraySharedPtr<int, 2> &) =
+      &CollisionCellManager::resize_coll_cellwise_data<int>;
+  (void)m3;
+
+  void (CollisionCellManager::*m4)(NP::SYCLTargetSharedPtr,
+                                   NP::NDLocalArraySharedPtr<REAL, 2> &) =
+      &CollisionCellManager::resize_coll_cellwise_data<REAL>;
+  (void)m4;
+
+  // --- ParticleSpecBuilder member-function template instantiations ---------
+  void (ParticleSpecBuilder::*ps0)(Properties<INT>, int, bool,
+                                   const std::map<int, std::string> &) =
+      &ParticleSpecBuilder::add_particle_prop<INT>;
+  (void)ps0;
+
+  void (ParticleSpecBuilder::*ps1)(Properties<REAL>, int, bool,
+                                   const std::map<int, std::string> &) =
+      &ParticleSpecBuilder::add_particle_prop<REAL>;
+  (void)ps1;
+
+  // --- TransformationWrapper member-function template instantiations -------
+  void (TransformationWrapper::*tw0)(std::shared_ptr<NP::ParticleGroup>) =
+      &TransformationWrapper::transform<NP::ParticleGroup>;
+  (void)tw0;
+
+  void (TransformationWrapper::*tw1)(std::shared_ptr<NP::ParticleGroup>, int) =
+      &TransformationWrapper::transform<NP::ParticleGroup>;
+  (void)tw1;
+
+  void (TransformationWrapper::*tw2)(std::shared_ptr<NP::ParticleGroup>, int,
+                                     int) =
+      &TransformationWrapper::transform<NP::ParticleGroup>;
+  (void)tw2;
+
+  void (TransformationWrapper::*tw3)(std::shared_ptr<NP::ParticleSubGroup>) =
+      &TransformationWrapper::transform<NP::ParticleSubGroup>;
+  (void)tw3;
+
+  void (TransformationWrapper::*tw4)(std::shared_ptr<NP::ParticleSubGroup>,
+                                     int) =
+      &TransformationWrapper::transform<NP::ParticleSubGroup>;
+  (void)tw4;
+
+  void (TransformationWrapper::*tw5)(std::shared_ptr<NP::ParticleSubGroup>, int,
+                                     int) =
+      &TransformationWrapper::transform<NP::ParticleSubGroup>;
+  (void)tw5;
 
   std::cout << "consumer_smoke: linked against libVANTAGE-Reactions.so OK\n";
   return 0;

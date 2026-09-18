@@ -281,11 +281,8 @@ private:
   NP::NDHostArraySharedPtr<int, 2> num_particles;
 };
 
-// Explicit instantiations of the CollisionCellManager member function templates
-// above, shipped in the compiled library. T is only ever one of the two
-// collision-cell scalar types: 'int' (particle counts: N_a/N_b, q_hat input,
-// the pair counters in SWPMReactionController) and REAL (rates, volumes,
-// weights). 'INT' (int64_t) is not used with these helpers.
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
 extern template void CollisionCellManager::coll_cellwise_max<REAL>(
     NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>, int,
     NP::NDLocalArraySharedPtr<REAL, 2> &);
