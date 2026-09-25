@@ -230,10 +230,10 @@ public:
       NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
           &pair_list,
       INT cell_idx_start, INT cell_idx_end) override {
-    // auto r0 = this->start_profiling_region(this->sycl_target_stored,
-    //                                        "calculate_rates_SWPM");
+    auto r0 = this->start_profiling_region(this->sycl_target_stored,
+                                           "calculate_rates_SWPM");
     this->calculate_rates_v(pair_list, cell_idx_start, cell_idx_end);
-    // this->end_profiling_region(sycl_target_stored, r0);
+    this->end_profiling_region(sycl_target_stored, r0);
   }
 
   /**
@@ -588,10 +588,10 @@ public:
              INT cell_idx_start, INT cell_idx_end, double dt,
              NP::ParticleGroupSharedPtr child_group) override {
 
-    // auto r0 =
-    //     this->start_profiling_region(this->sycl_target_stored, "apply_SWPM");
+    auto r0 =
+        this->start_profiling_region(this->sycl_target_stored, "apply_SWPM");
     this->apply_v(pair_list, cell_idx_start, cell_idx_end, dt, child_group);
-    // this->end_profiling_region(this->sycl_target_stored, r0);
+    this->end_profiling_region(this->sycl_target_stored, r0);
   }
 
 private:
