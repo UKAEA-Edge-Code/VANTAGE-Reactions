@@ -19,3 +19,6 @@ coverage:
         paths:
           - "src"
           - "include"
+
+ignore:
+  - "test/"
