@@ -38,7 +38,7 @@ jobs:
         run: |
           [ -f ${{ github.workspace }}/build-coverage/coverage_lib.txt ] && echo "coverage_lib.txt file exists and is a regular file" || echo "missing"
       - name: Upload code coverage
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
