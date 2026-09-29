@@ -199,6 +199,16 @@ struct FilteredMaxwellianSampler
                   "Template parameter CROSS_SECITON is not derived from "
                   "AbstractCrossSection...");
 
+    constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
+    
+    NESOASSERT(
+        rng_kernel->num_components >= num_req_samples + 1,
+        "FilteredMaxwellianSampler requires at least "
+            + std::to_string(num_req_samples + 1) +
+            " RNG components ("
+            + std::to_string(num_req_samples)
+            + " for Box-Muller sampling and 1 for rejection sampling).");
+
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }
