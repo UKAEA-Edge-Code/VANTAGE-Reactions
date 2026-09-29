@@ -1,4 +1,4 @@
-inline void concatenator_example() {
+void concatenator_example() {
 
   auto data_1 = FixedRateData(1.0);
   auto data_2 = FixedRateData(2.0);

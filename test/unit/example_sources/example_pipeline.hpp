@@ -1,4 +1,4 @@
-inline void pipeline_example() {
+void pipeline_example() {
 
   // Here we will pipe particle velocities into a specular reflection data
   // object See the documentation of the specular reflection for more details

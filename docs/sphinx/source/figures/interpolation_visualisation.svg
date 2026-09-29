@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1000" width="100%" height="100%">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#000000" />
+    </marker>
+    <marker id="large-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#555555" />
+    </marker>
+    <style>
+      .label { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; fill: #000000; }
+      .bold-label { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #000000; }
+      .sub-label { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; fill: #333333; }
+      .vertex-text { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 15px; fill: #000000; }
+      .red-text { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; fill: #D11A1A; font-weight: 500; }
+      .axis-text { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 15px; font-style: italic; fill: #000000; }
+    </style>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#FFFFFF" />
+
+  <g id="section-3d">
+    <text x="50" y="210" class="bold-label">3D (Hypercube)</text>
+    <text x="75" y="240" class="sub-label">8 vertices</text>
+
+    <g transform="translate(50, 370)">
+      <line x1="0" y1="0" x2="60" y2="0" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)" />
+      <line x1="0" y1="0" x2="0" y2="-60" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)" />
+      <line x1="0" y1="0" x2="40" y2="-40" stroke="#000000" stroke-width="1.5" marker-end="url(#arrow)" />
+      <text x="70" y="5" class="axis-text">x</text>
+      <text x="45" y="-45" class="axis-text">y</text>
+      <text x="-5" y="-70" class="axis-text">z</text>
+    </g>
+
+    <g transform="translate(30, 0)">
+    <line x1="250" y1="350" x2="330" y2="290" stroke="#000000" stroke-width="1.5" stroke-dasharray="6,4" /> <line x1="530" y1="290" x2="330" y2="290" stroke="#000000" stroke-width="1.5" stroke-dasharray="6,4" /> <line x1="330" y1="90"  x2="330" y2="290" stroke="#000000" stroke-width="1.5" stroke-dasharray="6,4" /> <line x1="250" y1="350" x2="450" y2="350" stroke="#000000" stroke-width="1.7" /> <line x1="450" y1="350" x2="530" y2="290" stroke="#000000" stroke-width="1.7" /> <line x1="250" y1="350" x2="250" y2="150" stroke="#000000" stroke-width="1.7" /> <line x1="450" y1="350" x2="450" y2="150" stroke="#000000" stroke-width="1.7" /> <line x1="530" y1="290" x2="530" y2="90"  stroke="#000000" stroke-width="1.7" /> <line x1="250" y1="150" x2="450" y2="150" stroke="#000000" stroke-width="1.7" /> <line x1="450" y1="150" x2="530" y2="90"  stroke="#000000" stroke-width="1.7" /> <line x1="250" y1="150" x2="330" y2="90"  stroke="#000000" stroke-width="1.7" /> <line x1="330" y1="90"  x2="530" y2="90"  stroke="#000000" stroke-width="1.7" /> <circle cx="390" cy="220" r="5" fill="#D11A1A" />
+    <text x="402" y="225" class="red-text">(x)</text>
+
+    <circle cx="250" cy="350" r="4.5" fill="#000000" />
+    <text x="185" y="375" class="vertex-text">V1 (0,0,0)</text>
+
+    <circle cx="450" cy="350" r="4.5" fill="#000000" />
+    <text x="455" y="375" class="vertex-text">V2 (1,0,0)</text>
+
+    <circle cx="250" cy="150" r="4.5" fill="#000000" />
+    <text x="175" y="145" class="vertex-text">V5 (0,0,1)</text> <circle cx="450" cy="150" r="4.5" fill="#000000" />
+    <text x="465" y="155" class="vertex-text">V6 (1,0,1)</text>
+
+    <circle cx="330" cy="290" r="4.5" fill="#000000" />
+    <text x="255" y="285" class="vertex-text">V3 (0,1,0)</text>
+
+    <circle cx="530" cy="290" r="4.5" fill="#000000" />
+    <text x="540" y="300" class="vertex-text">V4 (1,1,0)</text>
+
+    <circle cx="330" cy="90" r="4.5" fill="#000000" />
+    <text x="260" y="80" class="vertex-text">V7 (0,1,1)</text>
+
+    <circle cx="530" cy="90" r="4.5" fill="#000000" />
+    <text x="540" y="85" class="vertex-text">V8 (1,1,1)</text>
+    </g>
+  </g>
+
+  <path d="M 420 395 L 420 445" stroke="#555555" stroke-width="8" marker-end="url(#large-arrow)" stroke-linecap="round" />
+
+  <g id="section-2d" transform="translate(0, 0)">
+    <text x="50" y="520" class="bold-label">2D (Quadrilateral)</text>
+    <text x="75" y="550" class="sub-label">4 vertices</text>
+
+    <polygon points="280,600 480,600 540,490 340,490" fill="none" stroke="#000000" stroke-width="1.7" />
+
+    <circle cx="420" cy="545" r="5" fill="#D11A1A" />
+    <text x="435" y="550" class="red-text">(x)</text>
+
+    <circle cx="280" cy="600" r="4.5" fill="#000000" />
+    <text x="240" y="625" class="vertex-text">P1 (0,0)</text>
+
+    <circle cx="480" cy="600" r="4.5" fill="#000000" />
+    <text x="485" y="625" class="vertex-text">P2 (1,0)</text>
+
+    <circle cx="540" cy="490" r="4.5" fill="#000000" />
+    <text x="550" y="485" class="vertex-text">P3 (1,1)</text>
+
+    <circle cx="340" cy="490" r="4.5" fill="#000000" />
+    <text x="280" y="485" class="vertex-text">P4 (0,1)</text>
+  </g>
+
+  <path d="M 420 635 L 420 675" stroke="#555555" stroke-width="8" marker-end="url(#large-arrow)" stroke-linecap="round" />
+
+  <g id="section-1d" transform="translate(0, 0)">
+    <text x="50" y="750" class="bold-label">1D (Line Segment)</text>
+    <text x="75" y="780" class="sub-label">2 vertices</text>
+
+    <line x1="320" y1="760" x2="520" y2="760" stroke="#000000" stroke-width="1.7" />
+
+    <circle cx="420" cy="760" r="5" fill="#D11A1A" />
+    <text x="410" y="780" class="red-text">(x)</text>
+
+    <circle cx="320" cy="760" r="4.5" fill="#000000" />
+    <text x="300" y="780" class="vertex-text">L1 (0)</text>
+
+    <circle cx="520" cy="760" r="4.5" fill="#000000" />
+    <text x="500" y="780" class="vertex-text">L2 (1)</text>
+  </g>
+
+  <path d="M 420 840 L 420 880" stroke="#555555" stroke-width="8" marker-end="url(#large-arrow)" stroke-linecap="round" />
+
+  <g id="section-0d" transform="translate(0, 0)">
+    <text x="50" y="940" class="bold-label">0D (Point)</text>
+    <text x="75" y="970" class="sub-label">1 vertex</text>
+
+    <circle cx="420" cy="955" r="5.5" fill="#D11A1A" />
+    <text x="435" y="960" class="red-text">(x)</text>
+  </g>
+
+</svg>

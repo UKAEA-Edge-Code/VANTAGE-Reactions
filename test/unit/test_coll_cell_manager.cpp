@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
@@ -12,14 +11,14 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
 
   auto A = create_test_particle_group(N_total);
 
-  auto particle_subgroup = particle_sub_group(A);
+  auto particle_subgroup = NP::particle_sub_group(A);
   int cell_count = A->domain->mesh->get_cell_count();
 
   std::vector<int> subdivision_order(cell_count, 1);
 
   auto coll_cell_h = make_coll_cell_hierarchy<CartesianCollCellH>(
       A->sycl_target,
-      std::dynamic_pointer_cast<CartesianHMesh>(A->domain->mesh),
+      std::dynamic_pointer_cast<NP::CartesianHMesh>(A->domain->mesh),
       subdivision_order);
 
   auto cc_manager =
@@ -31,7 +30,7 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
   cc_manager.construct_cell_partition(particle_subgroup);
   for (int i = 0; i < cell_count; i++) {
 
-    auto collision_cell = A->get_cell(Sym<INT>("COLLISION_CELL"), i);
+    auto collision_cell = A->get_cell(NP::Sym<INT>("COLLISION_CELL"), i);
 
     const int nrow = collision_cell->nrow;
 

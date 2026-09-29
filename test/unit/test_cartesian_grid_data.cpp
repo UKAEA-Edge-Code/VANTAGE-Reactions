@@ -1,9 +1,7 @@
 #include "include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
-#include <neso_particles/typedefs.hpp>
+#include "include/test_common.hpp"
 #include <random>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
@@ -22,18 +20,18 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
     invalid_dims_vec.push_back(uniform_dist_0(rng));
   }
 
-  std::vector<REAL> invalid_ranges_vec;
+  std::vector<REAL> invalid_coords_vec;
   for (int i = 0; i < ndim; i++) {
     // Deliberately over-allocating
     for (int j = 0; j < invalid_dims_vec[i] + 2; j++) {
-      invalid_ranges_vec.push_back(uniform_dist_1(rng));
+      invalid_coords_vec.push_back(uniform_dist_1(rng));
     }
   }
 
   auto num_grid_elems = 0;
   for (int i = 0; i < ndim; i++) {
     // Deliberately under-allocating
-    num_grid_elems += invalid_ranges_vec[i] - 2;
+    num_grid_elems += invalid_coords_vec[i] - 2;
   }
 
   std::vector<REAL> invalid_grid_vec;
@@ -43,7 +41,7 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
 
   // Test dims_size error
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, invalid_ranges_vec,
+    EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, invalid_coords_vec,
                                          invalid_dims_vec, sycl_target),
                  std::logic_error);
 
@@ -54,23 +52,23 @@ TEST(CartesianGridData, INVALID_BOUNDS_CHECK) {
   }
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, invalid_ranges_vec,
+    EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, invalid_coords_vec,
                                          dims_vec, sycl_target),
                  std::logic_error);
 
   // Test grid_size error
-  std::vector<REAL> ranges_vec;
+  std::vector<REAL> coords_vec;
   int ranges_size = 0;
   for (auto &idim : dims_vec) {
     ranges_size += idim;
   }
 
   for (int i = 0; i < ranges_size; i++) {
-    ranges_vec.push_back(uniform_dist_1(rng));
+    coords_vec.push_back(uniform_dist_1(rng));
   }
 
   if (std::getenv("TEST_NESOASSERT") != nullptr)
-    EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, ranges_vec, dims_vec,
+    EXPECT_THROW(CartesianGridData<ndim>(invalid_grid_vec, coords_vec, dims_vec,
                                          sycl_target),
                  std::logic_error);
 

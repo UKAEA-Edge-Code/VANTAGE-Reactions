@@ -1,8 +1,6 @@
+#include "include/test_common.hpp"
+#include "include/test_extern_templates.hpp"
 
-#include <gtest/gtest.h>
-#include <reactions/reactions.hpp>
-
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(CrossSections, AMJUEL_H1_bulk) {

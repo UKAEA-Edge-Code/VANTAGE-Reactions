@@ -1,4 +1,4 @@
-inline void amjuel_h1_cs_example() {
+void amjuel_h1_cs_example() {
 
   // These are example values
   auto coeffs = std::array<REAL, 3>{1.0, 1.0, 1.0}; // a_n coefficients
@@ -20,10 +20,10 @@ inline void amjuel_h1_cs_example() {
         1e-4, // cross-section normalisation in m^2
         reduced_mass_amu,
         coeffs,    // Bulk fit coefficients
-        l_coeffs,  // Left asymptote coefficients - set to std::array<REAL,0>{}
-                   // if no left asymptote
-        r_coeffs,  // Right asymptote coefficents - set to std::array<REAL,0>{}
-                   // if no right asymptote
+        l_coeffs,  // Left asymptote coefficients - set to
+                   // std::array<REAL,0>{} if no left asymptote
+        r_coeffs,  // Right asymptote coefficents - set to
+                   // std::array<REAL,0>{} if no right asymptote
         E_lab_min, // Left asymptote energy threshold - ignored if l_coeffs of
                    // size 0
         E_lab_max, // Right asymptote energy threshold - ignored if r_coeffs of

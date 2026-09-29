@@ -1,4 +1,4 @@
-inline void general_absorption_kernels_example() {
+void general_absorption_kernels_example() {
 
   // For this kernel, we do need to remap the sources in general
   // For example we might want to use these kernels to represent absorption at a

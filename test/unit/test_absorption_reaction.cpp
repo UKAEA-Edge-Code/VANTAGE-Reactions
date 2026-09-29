@@ -1,14 +1,14 @@
 #include "include/mock_particle_group.hpp"
-#include <gtest/gtest.h>
+#include "include/test_common.hpp"
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(AbsorptionKernels, general) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group = std::make_shared<ParticleSubGroup>(particle_group);
+  auto particle_sub_group =
+      std::make_shared<NP::ParticleSubGroup>(particle_group);
 
   auto test_data = FixedRateData(1.0);
   auto target_species = Species("ION", 1.2);
@@ -32,7 +32,7 @@ TEST(AbsorptionKernels, general) {
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
-  auto descendant_particles = std::make_shared<ParticleGroup>(
+  auto descendant_particles = std::make_shared<NP::ParticleGroup>(
       particle_group->domain, particle_group->get_particle_spec(),
       particle_group->sycl_target);
 
@@ -42,19 +42,19 @@ TEST(AbsorptionKernels, general) {
                         descendant_particles);
 
     auto source_density =
-        particle_group->get_cell(Sym<REAL>("ION_SOURCE_DENSITY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_DENSITY"), i);
 
     auto source_momentum =
-        particle_group->get_cell(Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_MOMENTUM"), i);
 
     auto source_energy =
-        particle_group->get_cell(Sym<REAL>("ION_SOURCE_ENERGY"), i);
+        particle_group->get_cell(NP::Sym<REAL>("ION_SOURCE_ENERGY"), i);
 
-    auto position = particle_group->get_cell(Sym<REAL>("POSITION"), i);
+    auto position = particle_group->get_cell(NP::Sym<REAL>("POSITION"), i);
     const int nrow = position->nrow;
 
-    auto vel_parent = particle_group->get_cell(Sym<REAL>("VELOCITY"), i);
-    auto weight = particle_group->get_cell(Sym<REAL>("WEIGHT"), i);
+    auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
+    auto weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
 
     for (int rowx = 0; rowx < nrow; rowx++) {
       EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.9);

@@ -3,7 +3,6 @@
 #include <random>
 #include <vector>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(PairDataCalculator, cs_reaction_data_single_simple) {
@@ -16,7 +15,7 @@ TEST(PairDataCalculator, cs_reaction_data_single_simple) {
   int cell_count = A->domain->mesh->get_cell_count();
 
   auto cellwise_pair_listA =
-      std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
 
   std::vector<int> c;
   std::vector<int> i;
@@ -48,13 +47,14 @@ TEST(PairDataCalculator, cs_reaction_data_single_simple) {
   auto cs_data = CSPairData<2>(ConstantRateCrossSection(2.5));
   auto pair_data_calculator = PairDataCalculator(cs_data);
 
-  auto nd_arr = std::make_shared<NDLocalArray<REAL, 2>>(
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       A->sycl_target, cell_count * npart_cell / 2, 1);
 
   nd_arr->fill(0);
 
-  auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
-      A, A, cellwise_pair_listA);
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, A, cellwise_pair_listA);
 
   pair_data_calculator.fill_buffer(nd_arr, pair_list, 0, cell_count);
 
@@ -73,28 +73,28 @@ TEST(PairDataCalculator, cs_reaction_data_simple_and_constant) {
 
   auto [A, B] = create_test_particle_groups_pairs(N_total);
 
-  particle_loop(
+  NP::particle_loop(
       "set_vel_A", A,
       [=](auto vel) {
         vel[0] = 2;
         vel[1] = 0;
       },
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
-  particle_loop(
+  NP::particle_loop(
       "set_vel_B", B,
       [=](auto vel) {
         vel[0] = 4;
         vel[1] = 0;
       },
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
   int cell_count = A->domain->mesh->get_cell_count();
 
   auto cellwise_pair_list =
-      std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
 
   std::vector<int> c;
   std::vector<int> i;
@@ -126,13 +126,14 @@ TEST(PairDataCalculator, cs_reaction_data_simple_and_constant) {
       CSPairData<2, ConstantCrossSection>(ConstantCrossSection(2.5, 1.0));
   auto pair_data_calculator = PairDataCalculator(cs_data, cs_data_constant);
 
-  auto nd_arr = std::make_shared<NDLocalArray<REAL, 2>>(
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       A->sycl_target, cell_count * npart_cell, 2);
 
   nd_arr->fill(0);
 
-  auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
-      A, B, cellwise_pair_list);
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, B, cellwise_pair_list);
 
   pair_data_calculator.fill_buffer(nd_arr, pair_list, 0, cell_count);
 
@@ -153,28 +154,28 @@ TEST(PairDataCalculator,
 
   auto [A, B] = create_test_particle_groups_pairs(N_total);
 
-  particle_loop(
+  NP::particle_loop(
       "set_vel_A", A,
       [=](auto vel) {
         vel[0] = 2;
         vel[1] = 0;
       },
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
-  particle_loop(
+  NP::particle_loop(
       "set_vel_B", B,
       [=](auto vel) {
         vel[0] = 4;
         vel[1] = 0;
       },
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
   int cell_count = A->domain->mesh->get_cell_count();
 
   auto cellwise_pair_list =
-      std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
 
   std::vector<int> c;
   std::vector<int> i;
@@ -207,13 +208,14 @@ TEST(PairDataCalculator,
   auto pair_data_calculator =
       PairDataCalculator(ConcatenatorData(cs_data, cs_data_constant));
 
-  auto nd_arr = std::make_shared<NDLocalArray<REAL, 2>>(
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       A->sycl_target, cell_count * npart_cell, 2);
 
   nd_arr->fill(0);
 
-  auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
-      A, B, cellwise_pair_list);
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, B, cellwise_pair_list);
 
   pair_data_calculator.fill_buffer(nd_arr, pair_list, 0, cell_count);
 
@@ -238,7 +240,7 @@ TEST(PairDataCalculator, cs_reaction_data_single_simple_pipeline_scale_by) {
   int cell_count = A->domain->mesh->get_cell_count();
 
   auto cellwise_pair_listA =
-      std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
 
   std::vector<int> c;
   std::vector<int> i;
@@ -271,13 +273,14 @@ TEST(PairDataCalculator, cs_reaction_data_single_simple_pipeline_scale_by) {
   auto pair_data_calculator = PairDataCalculator(
       pipe(cs_data, scale_by<1, PairReactionDataArgumentPack>(2.0)));
 
-  auto nd_arr = std::make_shared<NDLocalArray<REAL, 2>>(
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       A->sycl_target, cell_count * npart_cell / 2, 1);
 
   nd_arr->fill(0);
 
-  auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
-      A, A, cellwise_pair_listA);
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, A, cellwise_pair_listA);
 
   pair_data_calculator.fill_buffer(nd_arr, pair_list, 0, cell_count);
 
@@ -296,28 +299,28 @@ TEST(PairDataCalculator, cs_reaction_data_simple_and_constant_binary_add) {
 
   auto [A, B] = create_test_particle_groups_pairs(N_total);
 
-  particle_loop(
+  NP::particle_loop(
       "set_vel_A", A,
       [=](auto vel) {
         vel[0] = 2;
         vel[1] = 0;
       },
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
-  particle_loop(
+  NP::particle_loop(
       "set_vel_B", B,
       [=](auto vel) {
         vel[0] = 4;
         vel[1] = 0;
       },
-      Access::write(Sym<REAL>("VELOCITY")))
+      NP::Access::write(NP::Sym<REAL>("VELOCITY")))
       ->execute();
 
   int cell_count = A->domain->mesh->get_cell_count();
 
   auto cellwise_pair_list =
-      std::make_shared<CellwisePairListSimple>(A->sycl_target, cell_count);
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
 
   std::vector<int> c;
   std::vector<int> i;
@@ -349,13 +352,14 @@ TEST(PairDataCalculator, cs_reaction_data_simple_and_constant_binary_add) {
       CSPairData<2, ConstantCrossSection>(ConstantCrossSection(2.5, 1.0));
   auto pair_data_calculator = PairDataCalculator(cs_data + cs_data_constant);
 
-  auto nd_arr = std::make_shared<NDLocalArray<REAL, 2>>(
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(
       A->sycl_target, cell_count * npart_cell, 1);
 
   nd_arr->fill(0);
 
-  auto pair_list = CellwisePairListAbsolute<ParticleGroup, CellwisePairList>(
-      A, B, cellwise_pair_list);
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, B, cellwise_pair_list);
 
   pair_data_calculator.fill_buffer(nd_arr, pair_list, 0, cell_count);
 

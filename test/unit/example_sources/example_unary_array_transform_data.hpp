@@ -1,4 +1,4 @@
-inline void unary_array_transform_examples() {
+void unary_array_transform_examples() {
 
   // Each unary array transform data object applies a transformation to
   // an input array

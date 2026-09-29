@@ -45,3 +45,20 @@ Below is a version of the charge exchange kernels with comments explaining the a
 .. literalinclude:: ../example_sources/example_cx_kernel_definition.hpp
    :language: cpp
    :caption: Defining CX kernels from scratch
+
+.. _header_impl_split:
+   
+Declaration/Definition split (compiled build)
+=============================================
+
+Some headers under ``include/reactions_lib/`` are split into 
+declarations (``X.hpp``) and definitions (``X.cpp`` which live in the ``src`` directory). 
+
+When adding new non-templated objects or non-inline functions to the library:
+
+#. put the declaration in ``X.hpp`` and the definition in ``X.cpp`` (in the ``src`` directory)
+   (create the pair if adding a new component)
+#. add the ``#include`` of the new ``X.hpp`` into ``include/reactions/reactions.hpp``.
+
+This is the pattern for non-templated objects and non-inline functions. 
+See :ref:`instantiating_unsupported_combos` for more details on instantiating new templated objects.

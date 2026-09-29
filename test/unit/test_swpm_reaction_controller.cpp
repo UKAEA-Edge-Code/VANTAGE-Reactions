@@ -3,7 +3,6 @@
 #include <random>
 #include <vector>
 
-using namespace NESO::Particles;
 using namespace VANTAGE::Reactions;
 
 TEST(SWPMReactionController, single_reaction) {
@@ -14,36 +13,38 @@ TEST(SWPMReactionController, single_reaction) {
     auto A = create_test_particle_group(N_total);
     auto B = create_test_particle_group(N_total);
 
-    particle_loop(
+    NP::particle_loop(
         "set_vels_ids_a", A,
         [=](auto vel, auto sp_id, auto id) {
           vel[0] = 2;
           vel[1] = 0;
         },
-        Access::write(Sym<REAL>("VELOCITY")),
-        Access::write(Sym<INT>("INTERNAL_STATE")), Access::read(Sym<INT>("ID")))
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")),
+        NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")),
+        NP::Access::read(NP::Sym<INT>("ID")))
         ->execute();
 
-    particle_loop(
+    NP::particle_loop(
         "set_vels_ids_b", B,
         [=](auto vel, auto sp_id, auto id) {
           sp_id[0] = 1;
           vel[0] = 4;
           vel[1] = 0;
         },
-        Access::write(Sym<REAL>("VELOCITY")),
-        Access::write(Sym<INT>("INTERNAL_STATE")), Access::read(Sym<INT>("ID")))
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")),
+        NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")),
+        NP::Access::read(NP::Sym<INT>("ID")))
         ->execute();
 
     A->add_particles_local(B);
-    auto particle_subgroup = particle_sub_group(A);
+    auto particle_subgroup = NP::particle_sub_group(A);
 
     int cell_count = A->domain->mesh->get_cell_count();
     std::vector<int> subdivision_order(cell_count, 1);
 
     auto coll_cell_h = make_coll_cell_hierarchy<CartesianCollCellH>(
         A->sycl_target,
-        std::dynamic_pointer_cast<CartesianHMesh>(A->domain->mesh),
+        std::dynamic_pointer_cast<NP::CartesianHMesh>(A->domain->mesh),
         subdivision_order);
 
     auto cc_manager = std::make_shared<CollisionCellManager>(
@@ -54,7 +55,7 @@ TEST(SWPMReactionController, single_reaction) {
     };
 
     auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
-    auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+    auto accessor = NP::Access::read(NP::Sym<REAL>("WEIGHT"));
     auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
         std::vector<std::shared_ptr<MarkingStrategy>>{
             make_direct_marking_strategy("small", lambda_marker, accessor)},
@@ -64,15 +65,15 @@ TEST(SWPMReactionController, single_reaction) {
     std::uniform_real_distribution<> rng_dist(0.0, 1.0);
     auto rng_lambda_sampler = [&]() -> REAL { return rng_dist(rng_state); };
 
-    auto rng_function =
-        std::make_shared<HostRNGGenerationFunction<REAL>>(rng_lambda_sampler);
+    auto rng_function = std::make_shared<NP::HostRNGGenerationFunction<REAL>>(
+        rng_lambda_sampler);
     // Mocking the species to test the correct reduced mass effects
     auto species_1 = Species("ION", 1.2, 0.0, 0);
     auto species_2 = Species("ION2", 2.0, 0.0, 1);
 
     auto rng_lambda = [&]() -> REAL { return rng_val; };
 
-    auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
+    auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
     auto spec = std::make_shared<SWPMDSMCSpecification>(rng_kernel);
     auto controller = SWPMReactionController(
         species_1.get_id(), species_2.get_id(), spec, rng_function, cc_manager,
@@ -86,7 +87,8 @@ TEST(SWPMReactionController, single_reaction) {
 
     auto rng_lambda_hs = [&]() -> REAL { return 0.125; };
 
-    auto rng_kernel_hs = host_atomic_block_kernel_rng<REAL>(rng_lambda_hs, 1);
+    auto rng_kernel_hs =
+        NP::host_atomic_block_kernel_rng<REAL>(rng_lambda_hs, 1);
     auto hs_scattering_data =
         HSScatteringData<2>(species_1, species_2, rng_kernel_hs);
     auto pair_data_calculator = PairDataCalculator(hs_scattering_data);
@@ -126,9 +128,9 @@ TEST(SWPMReactionController, single_reaction) {
 
   for (int i = 0; i < cell_count; i++) {
 
-    auto weight = A->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto velocity = A->get_cell(Sym<REAL>("VELOCITY"), i);
-    auto species_id = A->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+    auto weight = A->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto velocity = A->get_cell(NP::Sym<REAL>("VELOCITY"), i);
+    auto species_id = A->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     const int nrow = weight->nrow;
 
@@ -145,9 +147,9 @@ TEST(SWPMReactionController, single_reaction) {
       }
     }
   }
-  auto child_subgroup = particle_sub_group(
+  auto child_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 2; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   // We expect 6-7 pairs per cell
   // 50 * 50 (particles) * 0.0061 (sigma_v) * 1.0 (q_hat) / 0.25
   // (volume)
@@ -156,21 +158,21 @@ TEST(SWPMReactionController, single_reaction) {
 
   // Intentionally fail every rejection
   A = test_rng_lambda(0.1, 3.0);
-  child_subgroup = particle_sub_group(
+  child_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 2; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   ASSERT_EQ(child_subgroup->get_npart_local(), 0);
 
   // Exhaust all parents
   A = test_rng_lambda(100.0, 0.1);
-  child_subgroup = particle_sub_group(
+  child_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 2; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   ASSERT_EQ(child_subgroup->get_npart_local(), 50 * cell_count);
 
-  auto parent_subgroup = particle_sub_group(
+  auto parent_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 0; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   ASSERT_EQ(parent_subgroup->get_npart_local(), 0);
 }
 
@@ -182,36 +184,38 @@ TEST(SWPMReactionController, multi_reaction) {
     auto A = create_test_particle_group(N_total);
     auto B = create_test_particle_group(N_total);
 
-    particle_loop(
+    NP::particle_loop(
         "set_vels_ids_a", A,
         [=](auto vel, auto sp_id, auto id) {
           vel[0] = 2;
           vel[1] = 0;
         },
-        Access::write(Sym<REAL>("VELOCITY")),
-        Access::write(Sym<INT>("INTERNAL_STATE")), Access::read(Sym<INT>("ID")))
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")),
+        NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")),
+        NP::Access::read(NP::Sym<INT>("ID")))
         ->execute();
 
-    particle_loop(
+    NP::particle_loop(
         "set_vels_ids_b", B,
         [=](auto vel, auto sp_id, auto id) {
           sp_id[0] = 1;
           vel[0] = 4;
           vel[1] = 0;
         },
-        Access::write(Sym<REAL>("VELOCITY")),
-        Access::write(Sym<INT>("INTERNAL_STATE")), Access::read(Sym<INT>("ID")))
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")),
+        NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")),
+        NP::Access::read(NP::Sym<INT>("ID")))
         ->execute();
 
     A->add_particles_local(B);
-    auto particle_subgroup = particle_sub_group(A);
+    auto particle_subgroup = NP::particle_sub_group(A);
 
     int cell_count = A->domain->mesh->get_cell_count();
     std::vector<int> subdivision_order(cell_count, 1);
 
     auto coll_cell_h = make_coll_cell_hierarchy<CartesianCollCellH>(
         A->sycl_target,
-        std::dynamic_pointer_cast<CartesianHMesh>(A->domain->mesh),
+        std::dynamic_pointer_cast<NP::CartesianHMesh>(A->domain->mesh),
         subdivision_order);
 
     auto cc_manager = std::make_shared<CollisionCellManager>(
@@ -222,7 +226,7 @@ TEST(SWPMReactionController, multi_reaction) {
     };
 
     auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
-    auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+    auto accessor = NP::Access::read(NP::Sym<REAL>("WEIGHT"));
     auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
         std::vector<std::shared_ptr<MarkingStrategy>>{
             make_direct_marking_strategy("small", lambda_marker, accessor)},
@@ -232,15 +236,15 @@ TEST(SWPMReactionController, multi_reaction) {
     std::uniform_real_distribution<> rng_dist(0.0, 1.0);
     auto rng_lambda_sampler = [&]() -> REAL { return rng_dist(rng_state); };
 
-    auto rng_function =
-        std::make_shared<HostRNGGenerationFunction<REAL>>(rng_lambda_sampler);
+    auto rng_function = std::make_shared<NP::HostRNGGenerationFunction<REAL>>(
+        rng_lambda_sampler);
     // Mocking the species to test the correct reduced mass effects
     auto species_1 = Species("ION", 1.2, 0.0, 0);
     auto species_2 = Species("ION2", 2.0, 0.0, 1);
 
     auto rng_lambda = [&]() -> REAL { return rng_val; };
 
-    auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
+    auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
     auto spec = std::make_shared<SWPMDSMCSpecification>(rng_kernel);
     auto controller = SWPMReactionController(
         species_1.get_id(), species_2.get_id(), spec, rng_function, cc_manager,
@@ -254,7 +258,8 @@ TEST(SWPMReactionController, multi_reaction) {
 
     auto rng_lambda_hs = [&]() -> REAL { return 0.125; };
 
-    auto rng_kernel_hs = host_atomic_block_kernel_rng<REAL>(rng_lambda_hs, 1);
+    auto rng_kernel_hs =
+        NP::host_atomic_block_kernel_rng<REAL>(rng_lambda_hs, 1);
     auto hs_scattering_data =
         HSScatteringData<2>(species_1, species_2, rng_kernel_hs);
     auto pair_data_calculator = PairDataCalculator(hs_scattering_data);
@@ -291,9 +296,9 @@ TEST(SWPMReactionController, multi_reaction) {
   int cell_count = A->domain->mesh->get_cell_count();
   for (int i = 0; i < cell_count; i++) {
 
-    auto weight = A->get_cell(Sym<REAL>("WEIGHT"), i);
-    auto velocity = A->get_cell(Sym<REAL>("VELOCITY"), i);
-    auto species_id = A->get_cell(Sym<INT>("INTERNAL_STATE"), i);
+    auto weight = A->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto velocity = A->get_cell(NP::Sym<REAL>("VELOCITY"), i);
+    auto species_id = A->get_cell(NP::Sym<INT>("INTERNAL_STATE"), i);
 
     const int nrow = weight->nrow;
 
@@ -305,9 +310,9 @@ TEST(SWPMReactionController, multi_reaction) {
       }
     }
   }
-  auto child_subgroup = particle_sub_group(
+  auto child_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 2; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   // We expect 12-13 pairs per cell
   // 50 * 50 (particles) *  0.00122 (sigma_v sum) * 1.0 (q_hat) / 0.25
   // (volume)
@@ -323,36 +328,38 @@ TEST(SWPMReactionController, double_step) {
     auto A = create_test_particle_group(N_total);
     auto B = create_test_particle_group(N_total);
 
-    particle_loop(
+    NP::particle_loop(
         "set_vels_ids_a", A,
         [=](auto vel, auto sp_id, auto id) {
           vel[0] = 2;
           vel[1] = 0;
         },
-        Access::write(Sym<REAL>("VELOCITY")),
-        Access::write(Sym<INT>("INTERNAL_STATE")), Access::read(Sym<INT>("ID")))
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")),
+        NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")),
+        NP::Access::read(NP::Sym<INT>("ID")))
         ->execute();
 
-    particle_loop(
+    NP::particle_loop(
         "set_vels_ids_b", B,
         [=](auto vel, auto sp_id, auto id) {
           sp_id[0] = 1;
           vel[0] = 4;
           vel[1] = 0;
         },
-        Access::write(Sym<REAL>("VELOCITY")),
-        Access::write(Sym<INT>("INTERNAL_STATE")), Access::read(Sym<INT>("ID")))
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")),
+        NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")),
+        NP::Access::read(NP::Sym<INT>("ID")))
         ->execute();
 
     A->add_particles_local(B);
-    auto particle_subgroup = particle_sub_group(A);
+    auto particle_subgroup = NP::particle_sub_group(A);
 
     int cell_count = A->domain->mesh->get_cell_count();
     std::vector<int> subdivision_order(cell_count, 1);
 
     auto coll_cell_h = make_coll_cell_hierarchy<CartesianCollCellH>(
         A->sycl_target,
-        std::dynamic_pointer_cast<CartesianHMesh>(A->domain->mesh),
+        std::dynamic_pointer_cast<NP::CartesianHMesh>(A->domain->mesh),
         subdivision_order);
 
     auto cc_manager = std::make_shared<CollisionCellManager>(
@@ -363,7 +370,7 @@ TEST(SWPMReactionController, double_step) {
     };
 
     auto lambda_marker = [](auto w) { return w[0] < 1e-12; };
-    auto accessor = Access::read(Sym<REAL>("WEIGHT"));
+    auto accessor = NP::Access::read(NP::Sym<REAL>("WEIGHT"));
     auto test_removal_wrapper = std::make_shared<TransformationWrapper>(
         std::vector<std::shared_ptr<MarkingStrategy>>{
             make_direct_marking_strategy("small", lambda_marker, accessor)},
@@ -373,15 +380,15 @@ TEST(SWPMReactionController, double_step) {
     std::uniform_real_distribution<> rng_dist(0.0, 1.0);
     auto rng_lambda_sampler = [&]() -> REAL { return rng_dist(rng_state); };
 
-    auto rng_function =
-        std::make_shared<HostRNGGenerationFunction<REAL>>(rng_lambda_sampler);
+    auto rng_function = std::make_shared<NP::HostRNGGenerationFunction<REAL>>(
+        rng_lambda_sampler);
     // Mocking the species to test the correct reduced mass effects
     auto species_1 = Species("ION", 1.2, 0.0, 0);
     auto species_2 = Species("ION2", 2.0, 0.0, 1);
 
     auto rng_lambda = [&]() -> REAL { return rng_val; };
 
-    auto rng_kernel = host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
+    auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1);
     auto spec = std::make_shared<SWPMDSMCSpecification>(rng_kernel);
     auto controller = SWPMReactionController(
         species_1.get_id(), species_2.get_id(), spec, rng_function, cc_manager,
@@ -395,7 +402,8 @@ TEST(SWPMReactionController, double_step) {
 
     auto rng_lambda_hs = [&]() -> REAL { return 0.125; };
 
-    auto rng_kernel_hs = host_atomic_block_kernel_rng<REAL>(rng_lambda_hs, 1);
+    auto rng_kernel_hs =
+        NP::host_atomic_block_kernel_rng<REAL>(rng_lambda_hs, 1);
     auto hs_scattering_data =
         HSScatteringData<2>(species_1, species_2, rng_kernel_hs);
     auto pair_data_calculator = PairDataCalculator(hs_scattering_data);
@@ -421,9 +429,9 @@ TEST(SWPMReactionController, double_step) {
 
   auto A = test_rng_lambda(0.1, 0.1);
   int cell_count = A->domain->mesh->get_cell_count();
-  auto child_subgroup = particle_sub_group(
+  auto child_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 2; },
-      Access::read(Sym<INT>("INTERNAL_STATE")));
+      NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   // We expect 6-7 pairs per cell in the first step
   // 50 * 50 (particles) *  0.0061 (sigma_v) * 1.0 (q_hat) / 0.25
   // (volume)

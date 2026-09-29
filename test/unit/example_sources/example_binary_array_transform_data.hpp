@@ -1,4 +1,4 @@
-inline void binary_array_transform_examples() {
+void binary_array_transform_examples() {
 
   // Each binary array transform data object applies a transformation to
   // the results of two other data objects

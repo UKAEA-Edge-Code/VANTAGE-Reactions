@@ -1,0 +1,12 @@
+# This is a Spack Environment file.
+#
+# It describes the set of packages to be installed when developing
+# NESO, along with configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+    - doxygen+graphviz
+
+  view: false
+  concretizer:
+    unify: false

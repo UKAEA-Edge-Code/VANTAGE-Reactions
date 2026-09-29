@@ -61,14 +61,14 @@ Note the paths listed for the ``gcc`` command (for convenience the path can be s
 Defining external packages (optional)
 =====================================
 
-If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18:20) are pre-installed, then they can be designated as external packages that spack will try and use when installing Reactions.
+If compatible versions of ``cmake`` (3.24+), ``python`` (3) and ``llvm`` (18:20) are pre-installed, then they can be designated as external packages that spack will try and use them when installing VANTAGE-Reactions.
 This reduces the number of dependencies that spack has to install and hence speeds up the first-time install significantly.
 To designate a package as an external one, the path of the root directory of the package must be known, then the following command sets the package as external:
 ::
 
     spack external find --path {path_to_package} {name_of_package}
 
-Note, this must be done outside the Reactions spack environment (for example in the $HOME directory).
+Note, this must be done outside the VANTAGE-Reactions spack environment (for example in the $HOME directory).
 This will modify a file in ``$SPACK_ROOT`` called ``packages.yaml`` or create one if it doesn't exist. It is recommended to assign the listed packages as external if possible to smooth the experience of the first time install.
 NOTE: For ``llvm``, if it's pre-installed then it's best to let spack find it using ``spack compiler find ${llvm_install_path}`` instead.
 
@@ -100,7 +100,7 @@ For a standard install (CPU-only, using GCC) run the commands:
 
 Note if there is a compiler error or out-of-RAM crash when running the command then add ``-j1`` after ``spack install`` and try again.
 
-NOTE - It is recommended to not exceed ``-j2`` if there's less than 16GB of system RAM.
+NOTE - It is recommended to not exceed ``-j4`` if there's less than 16GB of system RAM.
 
 Optional variants
 ~~~~~~~~~~~~~~~~~
@@ -117,7 +117,14 @@ Similarly for HIP-specific installations (for AMD GPUs), the environment is prov
 
 The ``spack.yaml`` files do have some limited guidance on things like specifying GPU architecture and some dependencies but there may need to be more modifications system-side to make things work smoothly.
 
-If any compatibility issues are present when attempting these optional variants, please contact the repo maintainers for support.
+Using VANTAGE-Reactions with your application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``VANTAGE-Reactions`` is built as a **compiled runtime library** and 
+ships a curated set of pre-compiled template instantiations and SYCL device code in
+``libVANTAGE-Reactions.so``. Include the installed library via
+``find_package(VANTAGE-Reactions)`` when compiling your application with ``CMake``.
+Link to your application via ``target_link_libraries(<consumer> PRIVATE VANTAGE-Reactions::VANTAGE-Reactions)``.
 
 Run unit-tests (CPU)
 ~~~~~~~~~~~~~~~~~~~~
@@ -152,3 +159,44 @@ Similarly, to enable testing of failure states on GPU:
 ::
 
     TEST_NESOASSERT=ON SYCL_DEVICE_FILTER=GPU mpirun -n 1 unit_tests
+
+Compile and run an individual unit test
+=======================================
+
+By default the unit tests are built as a single ``unit_tests`` executable that
+contains every ``test_*.cpp`` under ``test/unit/``.
+
+Compile individual tests by configuring the source tree with CMake directly 
+(useful for fast iteration without re-running a Spack install that would compile all of the tests) or just using ``make`` inside the spack build directory.
+
+Via a direct CMake configure of the source tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you are working in a clone of the repository, you can configure the source tree with 
+CMake directly and pass the same options that spack has as CMake variables (assumes that all of the dependencies for ``vantagereactions`` are installed):
+
+::
+
+    spack env activate -p -d environments/spack_default
+    spack build-env vantagereactions -- cmake -S . -B build \
+        -DREACTIONS_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    cmake --build build -j4
+
+With no further options this produces a monolithic ``unit_tests`` executable combining all unit tests.
+Run using:
+::
+
+    OMP_NUM_THREADS=1 spack build-env vantagereactions -- mpirun -n 1 build/test/unit/unit_tests
+
+To build only a single test, pass its source stem to ``cmake --build`` via:
+
+::
+
+    spack env activate -p -d environments/spack_default
+    spack build-env vantagereactions -- cmake -S . -B build_test \
+        -DREACTIONS_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    cmake --build build_test -j4 --target test_cross_sections
+    OMP_NUM_THREADS=1 spack build-env vantagereactions -- mpirun -n 1 build_test/test/unit/test_cross_sections
+
+it's possible to pass a single stem or a space-separated list,
+e.g. ``cmake --build build_test -j4 --target test_cross_sections test_species``.

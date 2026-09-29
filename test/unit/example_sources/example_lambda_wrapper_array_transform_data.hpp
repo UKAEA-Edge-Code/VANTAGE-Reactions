@@ -1,4 +1,4 @@
-inline void lambda_wrapper_array_transform_examples() {
+void lambda_wrapper_array_transform_examples() {
 
   // 1D and 2D reaction data objects for the examples
   auto position_data_x = extract<1>("POSITION");
@@ -6,8 +6,8 @@ inline void lambda_wrapper_array_transform_examples() {
   auto velocity_data_xy = extract<2>("VELOCITY");
 
   // Supported lambdas are binary and unary functions of either
-  // conforming REAL arrays or of REAL values, allowing for full array or
-  // elementwise application
+  // conforming REAL arrays or of REAL values, allowing for full array
+  // or elementwise application
 
   // ------------------
   // Binary full array
