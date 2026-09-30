@@ -1,7 +1,7 @@
 #ifndef REACTIONS_AMJUEL_FIT_CS_H
 #define REACTIONS_AMJUEL_FIT_CS_H
 #include "../cross_section_abstract.hpp"
-#include <neso_particles.hpp>
+#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 

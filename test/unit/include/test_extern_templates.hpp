@@ -134,6 +134,7 @@ extern template class ArrayLookupData<1, false>;
 extern template class ArrayLookupData<1, true>;
 extern template class ExtractorData<1>;
 extern template class ExtractorData<2>;
+extern template class ExtractorData<3>;
 
 // ---------------------------------------------------------------------------
 // Interpolation / grid family (int-parametrized only)
