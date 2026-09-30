@@ -18,18 +18,14 @@ TEST(FilteredMaxwellianSampler, INVALID_NUM_COMPONENTS) {
     return rng_sample;
   };
 
-  auto rng_kernel =
-    NP::host_atomic_block_kernel_rng<REAL>(
-      rng_lambda,
-      required_components - 1);
+  auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(
+      rng_lambda, required_components - 1);
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
-    EXPECT_THROW(
-      FilteredMaxwellianSampler<2>(1.0, rng_kernel),
-      std::logic_error);
+    EXPECT_THROW(FilteredMaxwellianSampler<2>(1.0, rng_kernel),
+                 std::logic_error);
   }
 }
-
 
 TEST(FilteredMaxwellianSampler, VALID_NUM_COMPONENTS) {
   static constexpr size_t num_req_samples = 2;
@@ -47,10 +43,7 @@ TEST(FilteredMaxwellianSampler, VALID_NUM_COMPONENTS) {
   };
 
   auto rng_kernel =
-    NP::host_atomic_block_kernel_rng<REAL>(
-    rng_lambda,
-    required_components);
+      NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, required_components);
 
-  EXPECT_NO_THROW(
-    FilteredMaxwellianSampler<2>(1.0, rng_kernel));
+  EXPECT_NO_THROW(FilteredMaxwellianSampler<2>(1.0, rng_kernel));
 }
