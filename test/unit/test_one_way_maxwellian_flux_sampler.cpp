@@ -72,8 +72,8 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
                                       get_default_map());
   auto sampler_on_device = sampler.get_on_device_obj();
 
-  auto req_int_props_ = sampler.get_required_int_sym_vector();
-  auto req_real_props_ = sampler.get_required_real_sym_vector();
+  auto req_int_props_ = sampler.get_arg_pack().int_sym_vector();
+  auto req_real_props_ = sampler.get_arg_pack().real_sym_vector();
 
   particle_loop(
       "one_way_maxwellian_flux_sample_loop", particle_group,

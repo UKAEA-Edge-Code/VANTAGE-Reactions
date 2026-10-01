@@ -11,9 +11,7 @@ struct TestReactionDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionDataOnDevice(REAL rate) : rate(rate) {};
 
   std::array<REAL, 1>
-  calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<INT> &req_int_props,
-            const NP::Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
@@ -280,13 +278,12 @@ struct TestReactionVarDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestReactionVarDataOnDevice() = default;
 
   std::array<REAL, 1>
-  calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<INT> req_int_props,
-            const NP::Access::SymVector::Read<REAL> req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
-    return std::array<REAL, 1>{req_real_props.at(position_ind, index, 0)};
+    return std::array<REAL, 1>{
+        accessors.req_real_props.at(position_ind, accessors.index, 0)};
   }
 
 public:
@@ -311,8 +308,9 @@ struct TestReactionVarData
 
   void index_on_device_object() {
 
-    this->on_device_obj->position_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.position));
+    this->on_device_obj->position_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.position));
   };
 };
 
@@ -369,15 +367,13 @@ struct TestEphemeralVarDataOnDevice : public ReactionDataBaseOnDevice<> {
   TestEphemeralVarDataOnDevice() = default;
 
   std::array<REAL, 1>
-  calc_data(NP::Access::LoopIndex::Read &index,
-            NP::Access::SymVector::Write<INT> req_int_props,
-            NP::Access::SymVector::Read<REAL> req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
     return std::array<REAL, 1>{
-        req_real_props.at_ephemeral(point_ind, index, 0) *
-        req_real_props.at_ephemeral(normal_ind, index, 0)};
+        accessors.req_real_props.at_ephemeral(point_ind, accessors.index, 0) *
+        accessors.req_real_props.at_ephemeral(normal_ind, accessors.index, 0)};
   }
 
 public:
@@ -409,11 +405,13 @@ struct TestEphemeralVarData
 
   void index_on_device_object() {
 
-    this->on_device_obj->point_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.boundary_intersection_point));
+    this->on_device_obj->point_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.boundary_intersection_point));
 
-    this->on_device_obj->normal_ind = this->required_real_props.find_index(
-        this->properties_map.at(props.boundary_intersection_normal));
+    this->on_device_obj->normal_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.boundary_intersection_normal));
   };
 };
 #endif

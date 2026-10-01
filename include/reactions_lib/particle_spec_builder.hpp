@@ -100,6 +100,15 @@ struct ParticleSpecBuilder {
 private:
   NP::ParticleSpec particle_spec;
 };
+
+// Extern template declarations, so consumers do not re-instantiate what the
+// library already provides.
+extern template void
+ParticleSpecBuilder::add_particle_prop<INT>(Properties<INT>, int, bool,
+                                            const std::map<int, std::string> &);
+extern template void ParticleSpecBuilder::add_particle_prop<REAL>(
+    Properties<REAL>, int, bool, const std::map<int, std::string> &);
+
 } // namespace VANTAGE::Reactions
 
 #endif
