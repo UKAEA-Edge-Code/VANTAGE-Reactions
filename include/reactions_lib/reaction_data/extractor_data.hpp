@@ -43,14 +43,15 @@ struct ExtractorDataOnDevice : public ReactionDataBaseOnDevice<ncomp> {
 
     for (int i = 0; i < ncomp; i++) {
 
-      result[i] = req_real_props.at(this->prop_ind, index, i);
+      result[i] = req_real_props.at(this->prop_ind, index, i + this->offset);
     }
 
     return result;
   }
 
 public:
-  int prop_ind;
+  int prop_ind{0};
+  int offset{0};
 };
 
 /**
@@ -67,44 +68,52 @@ struct ExtractorData
    *
    * @param extracted_sym The NP::Sym<REAL> corresponding to the
    * NP::ParticleDat whose components should be extracted
+   * @param offset The component offset from which extraction begins (default 0)
    */
-  ExtractorData(const NP::Sym<REAL> &extracted_sym)
+  ExtractorData(const NP::Sym<REAL> &extracted_sym, int offset = 0)
       : ReactionDataBase<ExtractorDataOnDevice<ncomp>, ncomp>(),
-        extracted_sym(extracted_sym) {
+        extracted_sym(extracted_sym), offset(offset) {
+
+    NESOASSERT(offset >= 0, "ExtractorData offset must be non-negative.");
 
     this->required_real_props.add(extracted_sym.name);
     this->on_device_obj = ExtractorDataOnDevice<ncomp>();
+    this->on_device_obj->offset = offset;
 
     this->index_on_device_object();
   }
 
   /**
-   * @brief Index the particle weight on the on-device object
+   * @brief Index the particle weight and offset on the on-device object
    */
   void index_on_device_object() {
 
     this->on_device_obj->prop_ind =
         this->required_real_props.find_index(this->extracted_sym.name);
+    this->on_device_obj->offset = this->offset;
   };
 
 private:
   NP::Sym<REAL> extracted_sym;
+  int offset{0};
 };
 
 /**
  * @brief Helper function to construct ExtractorData using the name of a
  * NP::Sym<REAL>.
  *
- * @tparam ncomp Number of components of the dat to be extracted
+ * @tparam n_comp Number of components of the dat to be extracted (default 1)
  *
  * @param name Name of the NP::Sym<REAL> corresponding to the ParticleDat whose
  * components should be extracted.
+ * @param offset The component offset from which extraction begins (default 0).
  *
  * @return Specified ExtractorData object.
  */
-template <size_t n_comp> auto inline extract(const std::string &name) {
+template <size_t n_comp = 1>
+auto inline extract(const std::string &name, int offset = 0) {
 
-  return ExtractorData<n_comp>(NP::Sym<REAL>(name));
+  return ExtractorData<n_comp>(NP::Sym<REAL>(name), offset);
 }
 }; // namespace VANTAGE::Reactions
 #endif
