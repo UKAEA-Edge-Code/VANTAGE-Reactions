@@ -56,9 +56,15 @@ struct SingleReactionDataArgumentPack
   }
 };
 
+// Hidden from Doxygen: Doxygen's XML drops the specialization argument, so
+// Breathe renders both accessor_pack_for specializations as the identical
+// declaration "template<> accessor_pack_for", causing duplicate-declaration
+// warnings in Sphinx (which treats warnings as errors).
+/// \cond
 template <> struct accessor_pack_for<SingleReactionDataArgumentPack> {
   using type = SingleReactionDataAccessors;
 };
+/// \endcond
 
 /**
  * @brief Base reaction data object.

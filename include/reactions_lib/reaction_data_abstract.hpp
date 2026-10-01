@@ -48,12 +48,18 @@ struct calc_data_traits<T,
 
 } // namespace calc_data_traits
 
+// Hidden from Doxygen: with Doxygen >= 1.16 the initializer of this variable
+// template ends up rendered twice by Breathe ("= = ..."), which Sphinx's C++
+// parser rejects and the docs build treats warnings as errors. The doc comment
+// is hidden with it so it does not dangle.
+/// \cond
 /**
  * @brief true if T::calc_data(Args...) is a valid call expression.
  */
 template <typename T, typename... Args>
 inline constexpr bool is_abstract_calc_data_callable_v =
     calc_data_traits::calc_data_traits<T, void, Args...>::is_callable;
+/// \endcond
 
 /**
  * @brief The return type of T::calc_data(Args...) (or void if not

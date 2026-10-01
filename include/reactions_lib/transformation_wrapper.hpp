@@ -503,6 +503,11 @@ make_lambda_transformation_strategy(std::string &&name, LAMBDA &&lambda) {
 
 // Extern template declarations, so consumers do not re-instantiate what the
 // library already provides.
+// Hidden from Doxygen: it cannot match these to the class member template
+// (namespace-qualified NP:: arguments), so it emits them as namespace-scope
+// entries that Breathe/Sphinx fail to parse ("Expected '<' after 'template'")
+// and the docs build treats warnings as errors.
+/// \cond
 extern template void TransformationWrapper::transform<NP::ParticleGroup>(
     std::shared_ptr<NP::ParticleGroup>);
 extern template void TransformationWrapper::transform<NP::ParticleGroup>(
@@ -515,6 +520,7 @@ extern template void TransformationWrapper::transform<NP::ParticleSubGroup>(
     std::shared_ptr<NP::ParticleSubGroup>, int);
 extern template void TransformationWrapper::transform<NP::ParticleSubGroup>(
     std::shared_ptr<NP::ParticleSubGroup>, int, int);
+/// \endcond
 } // namespace VANTAGE::Reactions
 
 #endif

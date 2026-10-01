@@ -62,9 +62,13 @@ struct PairReactionDataArgumentPack
   ArgumentNameSet<REAL> required_real_props_b;
 };
 
+// Hidden from Doxygen: see accessor_pack_for<SingleReactionDataArgumentPack>
+// in reaction_data.hpp — duplicate-declaration warnings in Sphinx otherwise.
+/// \cond
 template <> struct accessor_pack_for<PairReactionDataArgumentPack> {
   using type = PairReactionDataAccessors;
 };
+/// \endcond
 
 using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
