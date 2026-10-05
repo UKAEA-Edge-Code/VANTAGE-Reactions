@@ -192,6 +192,7 @@ struct FilteredMaxwellianSampler
                          NP::HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
+
     this->on_device_obj = FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
         norm_ratio, cross_section);
 
@@ -199,15 +200,10 @@ struct FilteredMaxwellianSampler
                   "Template parameter CROSS_SECITON is not derived from "
                   "AbstractCrossSection...");
 
-    constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
-    
-    NESOASSERT(
-        rng_kernel->num_components >= num_req_samples + 1,
-        "FilteredMaxwellianSampler requires at least "
-            + std::to_string(num_req_samples + 1) +
-            " RNG components ("
-            + std::to_string(num_req_samples)
-            + " for Box-Muller sampling and 1 for rejection sampling).");
+    static constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
+
+    this->CheckMinimumComponentCount(rng_kernel, "FilteredMaxwellianSampler",
+                                     num_req_samples + 1);
 
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();

@@ -339,6 +339,24 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
   }
 
   /**
+   * @brief Check whether RNG_TYPE is capable of sampling random numbers.
+   *
+   * Non-sampling reaction data intentionally uses the default
+   * NullKernelRNG<REAL> placeholder, so this should only be enforced
+   * (via static_assert) by types that actually sample from the kernel
+   * (eg. in a SamplerData constructor).
+   */
+  static constexpr bool is_sampling_rng_kernel() {
+    return !std::is_same_v<RNG_TYPE, NP::NullKernelRNG<REAL>>;
+  }
+
+  static constexpr void RequireSamplingRNG() {
+    static_assert(is_sampling_rng_kernel(),
+                  "This reaction data requires a sampling RNG kernel. "
+                  "NullKernelRNG is only a placeholder.");
+  }
+
+  /**
    * @brief Constructor for ReactionDataBase.
    *
    * @param required_int_props Properties<INT> object containing information
@@ -462,6 +480,16 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
 protected:
   std::optional<ON_DEVICE_TYPE> on_device_obj;
   std::shared_ptr<RNG_TYPE> rng_kernel;
+
+  void CheckMinimumComponentCount(std::shared_ptr<RNG_TYPE> rng_kernel,
+                                  const std::string &case_name,
+                                  const int required_components) {
+    NESOASSERT(rng_kernel->num_components >= required_components,
+               "RNG kernel does not provide enough components for " +
+                   case_name +
+                   ". Required: " + std::to_string(required_components) +
+                   ", provided: " + std::to_string(rng_kernel->num_components));
+  }
 };
 
 /**
@@ -548,6 +576,5 @@ struct ReactionDataBaseOnDevice {
   }
   static constexpr size_t get_dim() { return dim; }
 };
-
 }; // namespace VANTAGE::Reactions
 #endif
