@@ -193,7 +193,6 @@ struct FilteredMaxwellianSampler
                          NP::HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
-
     this->on_device_obj = FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
         norm_ratio, cross_section);
 
@@ -202,7 +201,6 @@ struct FilteredMaxwellianSampler
                   "AbstractCrossSection...");
 
     static constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
-
     rng_kernel_utils::CheckMinimumComponentCount(
         rng_kernel, "FilteredMaxwellianSampler", num_req_samples + 1);
 
