@@ -3,6 +3,7 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
+#include "reactions_lib/rng_kernel_utils.hpp"
 #include <neso_particles.hpp>
 
 namespace VANTAGE::Reactions {

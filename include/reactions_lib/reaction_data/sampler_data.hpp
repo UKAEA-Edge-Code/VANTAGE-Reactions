@@ -3,6 +3,7 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
+#include "reactions_lib/rng_kernel_utils.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -83,8 +84,10 @@ struct SamplerData
                   "SamplerData requires a sampling RNG kernel: NullKernelRNG "
                   "is a placeholder that cannot generate random numbers.");
 
+    static constexpr size_t num_req_samples = 1;
     this->RequireSamplingRNG();
-
+    rng_kernel_utils::CheckMinimumComponentCount(rng_kernel, "SamplerData",
+                                                 num_req_samples);
     this->set_rng_kernel(rng_kernel);
 
     this->index_on_device_object();

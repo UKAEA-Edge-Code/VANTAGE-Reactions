@@ -3,6 +3,7 @@
 
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/downsampling_base.hpp"
+#include "reactions_lib/rng_kernel_utils.hpp"
 
 namespace VANTAGE::Reactions {
 

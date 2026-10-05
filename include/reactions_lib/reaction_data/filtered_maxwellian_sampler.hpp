@@ -4,6 +4,7 @@
 #include "../particle_properties_map.hpp"
 #include "../utils.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
+#include "reactions_lib/rng_kernel_utils.hpp"
 
 #include <type_traits>
 
@@ -202,8 +203,8 @@ struct FilteredMaxwellianSampler
 
     static constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
 
-    this->CheckMinimumComponentCount(rng_kernel, "FilteredMaxwellianSampler",
-                                     num_req_samples + 1);
+    rng_kernel_utils::CheckMinimumComponentCount(
+        rng_kernel, "FilteredMaxwellianSampler", num_req_samples + 1);
 
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
