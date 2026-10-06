@@ -201,7 +201,7 @@ struct FilteredMaxwellianSampler
                   "AbstractCrossSection...");
 
     static constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
-    VANTAGE::Reactions::rng_kernel_utils::CheckMinimumComponentCount(
+    VANTAGE::Reactions::rng_kernel_utils::check_minimum_component_count(
         rng_kernel, "FilteredMaxwellianSampler", num_req_samples + 1);
 
     this->set_rng_kernel(rng_kernel);

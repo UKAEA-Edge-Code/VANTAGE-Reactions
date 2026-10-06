@@ -80,8 +80,8 @@ struct SamplerData
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
 
     static constexpr size_t num_req_samples = 1;
-    VANTAGE::Reactions::rng_kernel_utils::RequireSamplingRNG<RNG_KERNEL>();
-    VANTAGE::Reactions::rng_kernel_utils::CheckMinimumComponentCount(
+    VANTAGE::Reactions::rng_kernel_utils::require_sampling_rng<RNG_KERNEL>();
+    VANTAGE::Reactions::rng_kernel_utils::check_minimum_component_count(
         rng_kernel, "SamplerData", num_req_samples);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
