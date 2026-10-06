@@ -566,5 +566,6 @@ struct ReactionDataBaseOnDevice {
   }
   static constexpr size_t get_dim() { return dim; }
 };
+
 }; // namespace VANTAGE::Reactions
 #endif
