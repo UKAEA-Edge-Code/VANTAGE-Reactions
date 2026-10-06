@@ -3,7 +3,7 @@
 
 #include "reactions/neso_particles_namespace_alias.hpp"
 
-namespace rng_kernel_utils {
+namespace VANTAGE::Reactions::rng_kernel_utils {
 
 template <typename RNG_TYPE>
 inline void CheckMinimumComponentCount(std::shared_ptr<RNG_TYPE> rng_kernel,
@@ -16,6 +16,6 @@ inline void CheckMinimumComponentCount(std::shared_ptr<RNG_TYPE> rng_kernel,
                  ", provided: " + std::to_string(rng_kernel->num_components));
 }
 
-} // namespace rng_kernel_utils
+} // namespace VANTAGE::Reactions::rng_kernel_utils
 
 #endif
