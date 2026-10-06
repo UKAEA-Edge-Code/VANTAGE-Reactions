@@ -350,6 +350,16 @@ struct ReactionDataBase : public ReactionDataBaseImpl {
     return !std::is_same_v<RNG_TYPE, NP::NullKernelRNG<REAL>>;
   }
 
+  /**
+   * @brief Enforce that RNG_TYPE is capable of sampling random numbers.
+   *
+   * This is a static_assert that can be called in derived-class constructors
+   * to enforce that RNG_TYPE is a sampling kernel.  It is not called
+   * automatically in ReactionDataBase because some derived classes (eg.
+   * ConcatenatorData) do not require sampling, and so should be able to use
+   * the default NullKernelRNG<REAL> placeholder without triggering a
+   * static_assert.
+   */
   static constexpr void RequireSamplingRNG() {
     static_assert(is_sampling_rng_kernel(),
                   "This reaction data requires a sampling RNG kernel. "

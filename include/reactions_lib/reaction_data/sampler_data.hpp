@@ -79,17 +79,11 @@ struct SamplerData
             Properties<INT>(required_simple_int_props), properties_map) {
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
 
-    static_assert(ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1,
-                                   RNG_KERNEL>::is_sampling_rng_kernel(),
-                  "SamplerData requires a sampling RNG kernel: NullKernelRNG "
-                  "is a placeholder that cannot generate random numbers.");
-
     static constexpr size_t num_req_samples = 1;
     this->RequireSamplingRNG();
     rng_kernel_utils::CheckMinimumComponentCount(rng_kernel, "SamplerData",
                                                  num_req_samples);
     this->set_rng_kernel(rng_kernel);
-
     this->index_on_device_object();
   }
 
