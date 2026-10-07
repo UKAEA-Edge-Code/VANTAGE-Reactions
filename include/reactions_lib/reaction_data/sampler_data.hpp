@@ -3,7 +3,7 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/rng_kernel_utils.hpp"
+#include "reactions_lib/rng_kernel_component_requirement.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -59,7 +59,8 @@ public:
  */
 template <typename RNG_KERNEL>
 struct SamplerData
-    : public ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL> {
+    : public ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL>,
+      public RNGKernelComponentRequirement<RNG_KERNEL, 1> {
 
   constexpr static auto props = default_properties;
 
@@ -79,10 +80,7 @@ struct SamplerData
             Properties<INT>(required_simple_int_props), properties_map) {
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
 
-    static constexpr size_t num_req_samples = 1;
-    VANTAGE::Reactions::rng_kernel_utils::require_sampling_rng<RNG_KERNEL>();
-    VANTAGE::Reactions::rng_kernel_utils::check_minimum_component_count(
-        rng_kernel, "SamplerData", num_req_samples);
+    this->validate_required_kernel_components(rng_kernel);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }

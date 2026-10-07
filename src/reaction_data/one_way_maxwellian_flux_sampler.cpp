@@ -1,5 +1,4 @@
 #include "../../include/reactions_lib/reaction_data/one_way_maxwellian_flux_sampler.hpp"
-#include "reactions_lib/rng_kernel_utils.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -12,8 +11,7 @@ OneWayMaxwellianFluxSampler::OneWayMaxwellianFluxSampler(
           Properties<INT>(required_simple_int_props),
           Properties<REAL>(required_simple_real_props), properties_map) {
   this->on_device_obj = OneWayMaxwellianFluxOnDevice(norm_ratio);
-  VANTAGE::Reactions::rng_kernel_utils::check_minimum_component_count(
-      rng_kernel, "OneWayMaxwellianFluxSampler", num_req_samples);
+  this->validate_required_kernel_components(rng_kernel);
   this->set_rng_kernel(rng_kernel);
   this->index_on_device_object();
 }

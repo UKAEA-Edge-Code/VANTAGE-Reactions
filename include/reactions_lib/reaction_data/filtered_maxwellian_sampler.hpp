@@ -4,7 +4,7 @@
 #include "../particle_properties_map.hpp"
 #include "../utils.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/rng_kernel_utils.hpp"
+#include "reactions_lib/rng_kernel_component_requirement.hpp"
 
 #include <type_traits>
 
@@ -161,7 +161,10 @@ public:
 template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
     : public ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>,
-                              ndim, NP::HostAtomicBlockKernelRNG<REAL>> {
+                              ndim, NP::HostAtomicBlockKernelRNG<REAL>>,
+      public RNGKernelComponentRequirement<NP::HostAtomicBlockKernelRNG<REAL>,
+                                           ((ndim % 2 == 0) ? ndim : ndim + 1) +
+                                               1> {
 
   constexpr static auto props = default_properties;
 
@@ -200,10 +203,7 @@ struct FilteredMaxwellianSampler
                   "Template parameter CROSS_SECITON is not derived from "
                   "AbstractCrossSection...");
 
-    static constexpr size_t num_req_samples = (ndim % 2 == 0) ? ndim : ndim + 1;
-    VANTAGE::Reactions::rng_kernel_utils::check_minimum_component_count(
-        rng_kernel, "FilteredMaxwellianSampler", num_req_samples + 1);
-
+    this->validate_required_kernel_components(rng_kernel);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }

@@ -1,7 +1,6 @@
 
 #include "../include/reactions_lib/downsampling_kernels/simple_thinning_kernels.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/rng_kernel_utils.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -15,8 +14,7 @@ SimpleThinningKernels::SimpleThinningKernels(
           Properties<INT>(required_simple_int_props),
           Properties<REAL>(required_simple_real_props), properties_map) {
 
-  VANTAGE::Reactions::rng_kernel_utils::check_minimum_component_count(
-      rng_kernel, "SimpleThinningKernels", num_req_samples);
+  this->validate_required_kernel_components(rng_kernel);
   this->set_rng_kernel(rng_kernel);
   this->downsampling_on_device_obj = SimpleThinningOnDevice(thinning_ratio);
   this->reduction_on_device_obj =
