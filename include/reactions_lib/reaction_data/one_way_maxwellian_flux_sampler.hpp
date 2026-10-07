@@ -228,9 +228,6 @@ struct OneWayMaxwellianFluxSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
-  static constexpr size_t num_req_samples =
-      (3 % 2 == 0) ? 3 : 4; // 3 references ndim which is hard coded
-
   /**
    * @brief Constructor for OneWayMaxwellianFluxSampler.
    *

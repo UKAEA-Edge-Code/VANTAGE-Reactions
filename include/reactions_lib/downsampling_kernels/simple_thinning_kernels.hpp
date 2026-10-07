@@ -96,8 +96,6 @@ struct SimpleThinningKernels
       REAL thinning_ratio,
       std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map());
-
-  static constexpr size_t num_req_samples = 1;
 };
 
 /**
