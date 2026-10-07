@@ -1,8 +1,4 @@
-#include "include/test_common.hpp"
-#include "reactions_lib/downsampling_kernels/simple_thinning_kernels.hpp"
-#include "reactions_lib/reaction_data/filtered_maxwellian_sampler.hpp"
-#include "reactions_lib/reaction_data/one_way_maxwellian_flux_sampler.hpp"
-#include "reactions_lib/reaction_data/sampler_data.hpp"
+#include "../include/test_common.hpp"
 #include "reactions_lib/rng_kernel_component_requirement.hpp"
 
 using namespace VANTAGE::Reactions;
@@ -53,7 +49,7 @@ TEST(RNGKernelComponentRequirement, SamplerDataRejectsInsufficientRNG) {
       NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 0);
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
-    EXPECT_THROW(SamplerData(rng_kernel), std::logic_error);
+    EXPECT_THROW((void)SamplerData(rng_kernel), std::logic_error);
   }
 }
 
