@@ -3,7 +3,7 @@
 
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/downsampling_base.hpp"
-#include "reactions_lib/rng_kernel_component_requirement.hpp"
+#include "reactions_lib/utils.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -71,8 +71,7 @@ public:
 struct SimpleThinningKernels
     : DownsamplingKernelBase<DownsamplingMode::thinning,
                              DownsamplingReductionKernelOnDeviceBase<0, 0, 0>,
-                             SimpleThinningOnDevice>,
-      RNGKernelComponentRequirement<NP::HostPerParticleBlockRNG<REAL>, 1> {
+                             SimpleThinningOnDevice> {
 
   constexpr static auto props = default_properties;
 
@@ -80,6 +79,8 @@ struct SimpleThinningKernels
       props.weight};
 
   constexpr static std::array<int, 1> required_simple_int_props = {props.panic};
+
+  constexpr static std::size_t required_kernel_components = 1;
 
   /**
    * @brief Simple thinning kernels constructor

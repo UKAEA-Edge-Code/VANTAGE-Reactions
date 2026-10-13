@@ -2,8 +2,8 @@
 #define REACTIONS_SAMPLER_DATA_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
+#include "../utils.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
-#include "reactions_lib/rng_kernel_component_requirement.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -59,13 +59,14 @@ public:
  */
 template <typename RNG_KERNEL>
 struct SamplerData
-    : public ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL>,
-      public RNGKernelComponentRequirement<RNG_KERNEL, 1> {
+    : public ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL> {
 
   constexpr static auto props = default_properties;
 
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
+
+  constexpr static std::size_t required_kernel_components = 1;
 
   /**
    * @brief Constructor for SamplerData.
@@ -80,7 +81,8 @@ struct SamplerData
             Properties<INT>(required_simple_int_props), properties_map) {
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
 
-    this->validate_required_kernel_components(rng_kernel);
+    utils::validate_required_kernel_components<required_kernel_components>(
+        rng_kernel);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }

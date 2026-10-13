@@ -3,7 +3,6 @@
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
 #include "../utils.hpp"
-#include "reactions_lib/rng_kernel_component_requirement.hpp"
 #include <neso_particles.hpp>
 
 namespace VANTAGE::Reactions {
@@ -215,9 +214,7 @@ public:
  */
 struct OneWayMaxwellianFluxSampler
     : public ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
-                              NP::HostAtomicBlockKernelRNG<REAL>>,
-      public RNGKernelComponentRequirement<NP::HostAtomicBlockKernelRNG<REAL>,
-                                           4> {
+                              NP::HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
 
@@ -227,6 +224,8 @@ struct OneWayMaxwellianFluxSampler
 
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
+
+  constexpr static std::size_t required_kernel_components = 4;
 
   /**
    * @brief Constructor for OneWayMaxwellianFluxSampler.

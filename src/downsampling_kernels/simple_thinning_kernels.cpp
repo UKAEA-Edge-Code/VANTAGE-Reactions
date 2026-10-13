@@ -14,7 +14,8 @@ SimpleThinningKernels::SimpleThinningKernels(
           Properties<INT>(required_simple_int_props),
           Properties<REAL>(required_simple_real_props), properties_map) {
 
-  this->validate_required_kernel_components(rng_kernel);
+  utils::validate_required_kernel_components<required_kernel_components>(
+      rng_kernel);
   this->set_rng_kernel(rng_kernel);
   this->downsampling_on_device_obj = SimpleThinningOnDevice(thinning_ratio);
   this->reduction_on_device_obj =

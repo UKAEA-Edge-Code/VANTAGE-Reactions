@@ -1,30 +1,42 @@
 #include "../include/test_common.hpp"
-#include "reactions_lib/rng_kernel_component_requirement.hpp"
 
 using namespace VANTAGE::Reactions;
 
-TEST(RNGKernelComponentRequirement, ReportsRequiredComponentAvailability) {
+TEST(ValidateRequiredKernelComponents, SufficientKernelPasses) {
   using RNG = NP::HostAtomicBlockKernelRNG<REAL>;
-  using Requirement = RNGKernelComponentRequirement<RNG, 3>;
-
-  auto short_rng =
-      NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 2);
   auto sufficient_rng =
       NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 3);
-  Requirement requirement;
 
-  EXPECT_EQ(Requirement::required_kernel_components, 3);
-  EXPECT_FALSE(requirement.has_required_kernel_components(nullptr));
-  EXPECT_FALSE(requirement.has_required_kernel_components(short_rng));
-  EXPECT_TRUE(requirement.has_required_kernel_components(sufficient_rng));
+  // A kernel with enough components must not throw (regardless of whether
+  // TEST_NESOASSERT is set).
+  utils::validate_required_kernel_components<3>(sufficient_rng);
+}
+
+TEST(ValidateRequiredKernelComponents, InsufficientKernelFails) {
+  using RNG = NP::HostAtomicBlockKernelRNG<REAL>;
+  auto short_rng =
+      NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 2);
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
-    EXPECT_THROW(requirement.validate_required_kernel_components(short_rng),
+    EXPECT_THROW(utils::validate_required_kernel_components<3>(short_rng),
+                 std::logic_error);
+    EXPECT_THROW(utils::validate_required_kernel_components<3>(
+                     std::shared_ptr<RNG>(nullptr)),
                  std::logic_error);
   }
 }
 
-TEST(RNGKernelComponentRequirement, FilteredMaxwellianRejectsInsufficientRNG) {
+TEST(ValidateRequiredKernelComponents, SamplerRequiredComponentCounts) {
+  EXPECT_EQ(OneWayMaxwellianFluxSampler::required_kernel_components, 4);
+  EXPECT_EQ(FilteredMaxwellianSampler<2>::required_kernel_components, 3);
+  EXPECT_EQ(FilteredMaxwellianSampler<3>::required_kernel_components, 5);
+  EXPECT_EQ(SamplerData<NP::HostAtomicBlockKernelRNG<REAL>>::
+                required_kernel_components,
+            1);
+  EXPECT_EQ(SimpleThinningKernels::required_kernel_components, 1);
+}
+
+TEST(ValidateRequiredKernelComponents, FilteredMaxwellianRejectsInsufficientRNG) {
   auto rng_kernel =
       NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 2);
 
@@ -34,7 +46,7 @@ TEST(RNGKernelComponentRequirement, FilteredMaxwellianRejectsInsufficientRNG) {
   }
 }
 
-TEST(RNGKernelComponentRequirement, OneWayMaxwellianRejectsInsufficientRNG) {
+TEST(ValidateRequiredKernelComponents, OneWayMaxwellianRejectsInsufficientRNG) {
   auto rng_kernel =
       NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 3);
 
@@ -44,7 +56,7 @@ TEST(RNGKernelComponentRequirement, OneWayMaxwellianRejectsInsufficientRNG) {
   }
 }
 
-TEST(RNGKernelComponentRequirement, SamplerDataRejectsInsufficientRNG) {
+TEST(ValidateRequiredKernelComponents, SamplerDataRejectsInsufficientRNG) {
   auto rng_kernel =
       NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 0);
 
@@ -53,7 +65,7 @@ TEST(RNGKernelComponentRequirement, SamplerDataRejectsInsufficientRNG) {
   }
 }
 
-TEST(RNGKernelComponentRequirement, SimpleThinningRejectsInsufficientRNG) {
+TEST(ValidateRequiredKernelComponents, SimpleThinningRejectsInsufficientRNG) {
   auto rng_kernel =
       NP::host_per_particle_block_rng<REAL>([]() -> REAL { return 0.5; }, 0);
 
