@@ -77,4 +77,11 @@ const NP::ParticleSpec &ParticleSpecBuilder::get_particle_spec() {
   return this->particle_spec;
 }
 
+// Template instantiations
+template void
+ParticleSpecBuilder::add_particle_prop<INT>(Properties<INT>, int, bool,
+                                            const std::map<int, std::string> &);
+template void ParticleSpecBuilder::add_particle_prop<REAL>(
+    Properties<REAL>, int, bool, const std::map<int, std::string> &);
+
 } // namespace VANTAGE::Reactions

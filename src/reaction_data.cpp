@@ -1,10 +1,9 @@
-
-#include "../include/reactions_lib/reaction_data.hpp"
+#include "../include/reactions_lib/reaction_data_abstract.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
-ReactionDataBaseImpl::ReactionDataBaseImpl(
+ReactionDataStorage::ReactionDataStorage(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     Properties<INT> required_int_props_ephemeral,
     Properties<REAL> required_real_props_ephemeral,
@@ -19,64 +18,64 @@ ReactionDataBaseImpl::ReactionDataBaseImpl(
                                           properties_map))),
       properties_map(properties_map) {}
 
-ReactionDataBaseImpl::ReactionDataBaseImpl(
+ReactionDataStorage::ReactionDataStorage(
     std::map<int, std::string> properties_map)
-    : ReactionDataBaseImpl(Properties<INT>(), Properties<REAL>(),
-                           Properties<INT>(), Properties<REAL>(),
-                           properties_map) {}
+    : ReactionDataStorage(Properties<INT>(), Properties<REAL>(),
+                          Properties<INT>(), Properties<REAL>(),
+                          properties_map) {}
 
-ReactionDataBaseImpl::ReactionDataBaseImpl(
+ReactionDataStorage::ReactionDataStorage(
     Properties<INT> required_int_props,
     std::map<int, std::string> properties_map)
-    : ReactionDataBaseImpl(required_int_props, Properties<REAL>(),
-                           Properties<INT>(), Properties<REAL>(),
-                           properties_map) {}
+    : ReactionDataStorage(required_int_props, Properties<REAL>(),
+                          Properties<INT>(), Properties<REAL>(),
+                          properties_map) {}
 
-ReactionDataBaseImpl::ReactionDataBaseImpl(
+ReactionDataStorage::ReactionDataStorage(
     Properties<REAL> required_real_props,
     std::map<int, std::string> properties_map)
-    : ReactionDataBaseImpl(Properties<INT>(), required_real_props,
-                           Properties<INT>(), Properties<REAL>(),
-                           properties_map) {}
+    : ReactionDataStorage(Properties<INT>(), required_real_props,
+                          Properties<INT>(), Properties<REAL>(),
+                          properties_map) {}
 
-ReactionDataBaseImpl::ReactionDataBaseImpl(
+ReactionDataStorage::ReactionDataStorage(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     std::map<int, std::string> properties_map)
-    : ReactionDataBaseImpl(required_int_props, required_real_props,
-                           Properties<INT>(), Properties<REAL>(),
-                           properties_map) {}
+    : ReactionDataStorage(required_int_props, required_real_props,
+                          Properties<INT>(), Properties<REAL>(),
+                          properties_map) {}
 
-ReactionDataBaseImpl::~ReactionDataBaseImpl() = default;
+ReactionDataStorage::~ReactionDataStorage() = default;
 
-ArgumentNameSet<INT> ReactionDataBaseImpl::get_required_int_props() {
+ArgumentNameSet<INT> ReactionDataStorage::get_required_int_props() const {
   return this->required_int_props;
 }
 
-void ReactionDataBaseImpl::set_required_int_props(
+void ReactionDataStorage::set_required_int_props(
     const ArgumentNameSet<INT> &props) {
   this->required_int_props = props;
-  this->index_on_device_object();
 }
 
-std::vector<NP::Sym<INT>> ReactionDataBaseImpl::get_required_int_sym_vector() {
+std::vector<NP::Sym<INT>> ReactionDataStorage::get_required_int_sym_vector() {
   return this->required_int_props.to_sym_vector();
 }
 
-ArgumentNameSet<REAL> ReactionDataBaseImpl::get_required_real_props() {
+ArgumentNameSet<REAL> ReactionDataStorage::get_required_real_props() const {
   return this->required_real_props;
 }
 
-void ReactionDataBaseImpl::set_required_real_props(
+void ReactionDataStorage::set_required_real_props(
     const ArgumentNameSet<REAL> &props) {
   this->required_real_props = props;
-  this->index_on_device_object();
 }
 
-std::vector<NP::Sym<REAL>>
-ReactionDataBaseImpl::get_required_real_sym_vector() {
+std::vector<NP::Sym<REAL>> ReactionDataStorage::get_required_real_sym_vector() {
   return this->required_real_props.to_sym_vector();
 }
 
-void ReactionDataBaseImpl::index_on_device_object() {}
+const std::map<int, std::string> &
+ReactionDataStorage::get_properties_map() const {
+  return this->properties_map;
+}
 
 }; // namespace VANTAGE::Reactions
