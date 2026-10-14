@@ -5,6 +5,7 @@
 #include "common_markers.hpp"
 #include "common_transformations.hpp"
 #include "particle_properties_map.hpp"
+#include "profiling_base.hpp"
 #include "reaction_base.hpp"
 #include "transformation_wrapper.hpp"
 #include <memory>
@@ -33,7 +34,7 @@ enum class ControllerMode {
  * @brief A reaction controller that orchestrates the application of reactions
  * to a given NP::ParticleGroup or NP::ParticleSubGroup.
  */
-struct ReactionController {
+struct ReactionController : ProfilingBase {
 
   /**
    * @brief Constructor for ReactionController.
@@ -259,6 +260,8 @@ private:
                   NP::ParticleGroupSharedPtr particle_group, double dt,
                   NP::ParticleGroupSharedPtr product_group,
                   ControllerMode controller_mode, bool is_particle_group);
+
+  virtual std::string get_profiling_name() override;
 
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
