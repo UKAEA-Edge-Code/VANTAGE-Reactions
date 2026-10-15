@@ -2,6 +2,7 @@
 #define REACTIONS_SWPM_REACTION_CONTROLLER_H
 #include "collision_cell_manager.hpp"
 #include "common_transformations.hpp"
+#include "profiling_base.hpp"
 #include "particle_properties_map.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "swpm_reaction.hpp"
@@ -13,7 +14,7 @@
 namespace VANTAGE::Reactions {
 
 template <typename SWPM_SPEC_T, typename RNG_GEN_T>
-struct SWPMReactionController {
+struct SWPMReactionController : ProfilingBase {
 
   SWPMReactionController(
       int species_a_id, int species_b_id,
@@ -200,6 +201,8 @@ struct SWPMReactionController {
              NP::ParticleGroupSharedPtr product_group) {
 
     NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
+    auto prof_region =
+        this->start_profiling_region(particle_group->sycl_target, "apply");
 
     if (this->reference_particle_group == nullptr) {
       this->reference_particle_group = particle_group;
@@ -367,6 +370,8 @@ struct SWPMReactionController {
 
       current_time += used_dt;
     }
+
+    this->end_profiling_region(particle_group->sycl_target, prof_region);
   }
 
   /**
@@ -390,6 +395,10 @@ struct SWPMReactionController {
   }
 
 private:
+  virtual std::string get_profiling_name() override {
+    return "SWPMReactionController";
+  }
+
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
   std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
