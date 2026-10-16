@@ -30,13 +30,14 @@ TEST(ValidateRequiredKernelComponents, SamplerRequiredComponentCounts) {
   EXPECT_EQ(OneWayMaxwellianFluxSampler::required_kernel_components, 4);
   EXPECT_EQ(FilteredMaxwellianSampler<2>::required_kernel_components, 3);
   EXPECT_EQ(FilteredMaxwellianSampler<3>::required_kernel_components, 5);
-  EXPECT_EQ(SamplerData<NP::HostAtomicBlockKernelRNG<REAL>>::
-                required_kernel_components,
+  EXPECT_EQ(SamplerData<
+                NP::HostAtomicBlockKernelRNG<REAL>>::required_kernel_components,
             1);
   EXPECT_EQ(SimpleThinningKernels::required_kernel_components, 1);
 }
 
-TEST(ValidateRequiredKernelComponents, FilteredMaxwellianRejectsInsufficientRNG) {
+TEST(ValidateRequiredKernelComponents,
+     FilteredMaxwellianRejectsInsufficientRNG) {
   auto rng_kernel =
       NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.5; }, 2);
 
