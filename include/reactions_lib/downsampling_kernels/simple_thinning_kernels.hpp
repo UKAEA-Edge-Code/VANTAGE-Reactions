@@ -3,6 +3,7 @@
 
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "reactions_lib/downsampling_base.hpp"
+#include "reactions_lib/utils.hpp"
 
 namespace VANTAGE::Reactions {
 
@@ -78,6 +79,8 @@ struct SimpleThinningKernels
       props.weight};
 
   constexpr static std::array<int, 1> required_simple_int_props = {props.panic};
+
+  constexpr static std::size_t required_kernel_components = 1;
 
   /**
    * @brief Simple thinning kernels constructor

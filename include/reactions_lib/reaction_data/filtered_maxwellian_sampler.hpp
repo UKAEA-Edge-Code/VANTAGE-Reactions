@@ -164,6 +164,9 @@ struct FilteredMaxwellianSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
+  constexpr static std::size_t required_kernel_components =
+      ((ndim % 2 == 0) ? ndim : ndim + 1) + 1;
+
   /**
    * @brief Constructor for FilteredMaxwellianSampler.
    *
@@ -193,6 +196,8 @@ struct FilteredMaxwellianSampler
                   "Template parameter CROSS_SECITON is not derived from "
                   "AbstractCrossSection...");
 
+    utils::validate_required_kernel_components<required_kernel_components>(
+        rng_kernel);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }

@@ -2,6 +2,7 @@
 #define REACTIONS_SAMPLER_DATA_H
 #include "../particle_properties_map.hpp"
 #include "../reaction_data.hpp"
+#include "../utils.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
@@ -56,6 +57,8 @@ struct SamplerData
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
+  constexpr static std::size_t required_kernel_components = 1;
+
   /**
    * @brief Constructor for SamplerData.
    *
@@ -69,6 +72,8 @@ struct SamplerData
             Properties<INT>(required_simple_int_props), properties_map) {
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
 
+    utils::validate_required_kernel_components<required_kernel_components>(
+        rng_kernel);
     this->set_rng_kernel(rng_kernel);
     this->index_on_device_object();
   }
