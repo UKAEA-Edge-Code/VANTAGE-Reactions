@@ -29,8 +29,8 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
   properties_map[VANTAGE::Reactions::default_properties.source_energy] =
       "ION_SOURCE_ENERGY";
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
-  auto test_kernels =
-      LinearScatteringKernels<2>(projectile_species, properties_map.get_map());
+  auto test_kernels = LinearScatteringKernels<2, true, false>(
+      projectile_species, properties_map.get_map());
 
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
   auto test_reaction =
@@ -65,6 +65,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
                         descendant_particles);
 
     auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto parent_weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
     auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
         descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
@@ -80,6 +81,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
       EXPECT_DOUBLE_EQ(vel_child->at(rowx, 0), 1.0);
       EXPECT_DOUBLE_EQ(vel_child->at(rowx, 1), 1.0);
       EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.1);
+      EXPECT_DOUBLE_EQ(parent_weight->at(rowx, 0), 1.0);
 
       EXPECT_DOUBLE_EQ(source_momentum->at(rowx, 0),
                        0.1 * 1.2 *

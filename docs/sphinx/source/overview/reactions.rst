@@ -561,7 +561,7 @@ General absorption kernels
 General linear scattering kernels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. Overview: These kernels produce one product, and the velocities of the product are set by the `DataCalculator` values. Sources (momentum and energy) are then calculated based on the parent and product velocities and the reacted weight.
+#. Overview: These kernels produce one product, and the velocities of the product are set by the `DataCalculator` values. Sources (momentum and energy) are then calculated based on the parent and product velocities and the reacted weight. The ``LinearScatteringKernels`` template arguments independently control source calculation and parent-weight feedback: ``with_sources`` defaults to ``true``, while ``with_weight_feedback`` defaults to ``true``. Set ``with_weight_feedback`` to ``false`` when marker particles should generate sources without losing parent weight.
 #. Required properties:
 
    * Parent: Simple props: weight, velocity, source_energy, source_momentum; Species props: N/A
@@ -570,7 +570,7 @@ General linear scattering kernels
 #. Scattering kernel: The velocities of the product are set from the values calculated by the `DataCalculator` of the containing reaction
 #. Weight kernel:  All reacted weight is passed onto the product
 #. Transformation kernel:  The product internal_state is set from the outgoing particle ID
-#. Feedback kernel: The weight is removed from the parent, and the momentum and energy sources are calculated using the parent and product velocities. **NOTE**: Unlike specific kernels, the sources are not species-specific, which means that property remapping is required. This is particularly important when using these kernels to specify surface processes. The calculation and writing of sources can be turned off using a template argument (see below).
+#. Feedback kernel: By default, the weight is removed from the parent, and the momentum and energy sources are calculated using the parent and product velocities. Set ``with_weight_feedback`` to ``false`` to preserve parent weight. Set ``with_sources`` to ``false`` to disable source calculation and writing. **NOTE**: Unlike specific kernels, the sources are not species-specific, which means that property remapping is required. This is particularly important when using these kernels to specify surface processes.
 #. Example: 
 
 .. literalinclude:: ../example_sources/example_general_linear_scattering_kernels.hpp
