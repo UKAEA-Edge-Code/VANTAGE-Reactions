@@ -15,8 +15,10 @@ namespace VANTAGE::Reactions {
  * property.
  * @tparam with_sources If true will attempt to write to source properties
  * (defaults to true)
+ * @tparam with_weight_feedback If true will subtract reacted weight from the
+ * parent particle (defaults to true)
  */
-template <int ndim_velocity, bool with_sources>
+template <int ndim_velocity, bool with_sources, bool with_weight_feedback>
 struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   LinearScatteringKernelsOnDevice() = default;
 
@@ -172,7 +174,9 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
           modified_weight * this->mass * delta_vsquared * 0.5;
     }
 
-    req_real_props.at(this->weight_ind, index, 0) -= modified_weight;
+    if constexpr (with_weight_feedback) {
+      req_real_props.at(this->weight_ind, index, 0) -= modified_weight;
+    }
   }
 
 public:
@@ -189,8 +193,11 @@ public:
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
  * property (default value of 2)
  * @tparam with_sources If true will track sources (defaults to true)
+ * @tparam with_weight_feedback If true will subtract reacted weight from the
+ * parent particle (defaults to true)
  */
-template <int ndim_velocity = 2, bool with_sources = true>
+template <int ndim_velocity = 2, bool with_sources = true,
+          bool with_weight_feedback = true>
 struct LinearScatteringKernels : public ReactionKernelsBase {
 
   constexpr static auto props = default_properties;
@@ -262,7 +269,8 @@ struct LinearScatteringKernels : public ReactionKernelsBase {
   };
 
 private:
-  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources>
+  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources,
+                                  with_weight_feedback>
       linear_scattering_kernels_on_device;
 
 public:
@@ -270,7 +278,8 @@ public:
    * @brief Getter for the SYCL device-specific struct.
    */
 
-  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources>
+  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources,
+                                  with_weight_feedback>
   get_on_device_obj() {
     return this->linear_scattering_kernels_on_device;
   }
