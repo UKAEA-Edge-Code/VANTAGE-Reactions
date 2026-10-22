@@ -74,6 +74,7 @@
 
 #include "../reactions_lib/derived_reactions/electron_impact_ionisation.hpp"
 #include "../reactions_lib/derived_reactions/recombination_reaction.hpp"
+#include "../reactions_lib/derived_reactions/source_reaction.hpp"
 
 #include "../reactions_lib/downsampling_kernels/simple_thinning_kernels.hpp"
 #include "../reactions_lib/downsampling_kernels/vranic_merging_kernels.hpp"
