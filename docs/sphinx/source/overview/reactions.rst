@@ -577,6 +577,23 @@ General linear scattering kernels
    :language: cpp
    :caption: Example of constructing general linear scattering kernels and using them to create a specular reflection reaction
 
+Source reaction
+~~~~~~~~~~~~~~~
+
+``SourceReaction`` is a convenience wrapper for generating product particles
+from marker particles. It accepts a velocity-producing :class:`ReactionData`
+object and uses a fixed reaction rate of ``1.0``. Marker weights are preserved.
+
+By default, ``SourceReaction`` does not write momentum or energy sources. Set
+its ``with_sources`` template argument to ``true`` to enable source feedback.
+The velocity data output dimension must match the wrapper's ``ndim`` template
+argument. Composed reaction data, including samplers and pipelines, can be
+used as the velocity source.
+
+.. literalinclude:: ../example_sources/example_source_reaction.hpp
+   :language: cpp
+   :caption: Example of constructing a source reaction from velocity data
+
 Pre-built reactions
 ===================
 
