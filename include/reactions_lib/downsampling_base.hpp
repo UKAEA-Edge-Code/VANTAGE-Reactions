@@ -64,13 +64,13 @@ enum class DownsamplingMode { merging, thinning };
  *
  * @tparam downsampling_dim The downsampling dimensionality, e.g.
  * post-downsampling number of particles or other measure
- * @tparam RNG_TYPE Type of rng kernel, if needed
+ * @tparam RNG_KERNEL_T Type of rng kernel, if needed
  */
-template <size_t downsampling_dim, typename RNG_TYPE = DEFAULT_RNG_KERNEL>
+template <size_t downsampling_dim, typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL>
 struct DownsamplingKernelOnDeviceBase {
 
   static inline constexpr size_t DOWNSAMPLING_DIM = downsampling_dim;
-  using RNG_KERNEL_TYPE = RNG_TYPE;
+  using RNG_KERNEL_TYPE = RNG_KERNEL_T;
   DownsamplingKernelOnDeviceBase() = default;
 
   /**
@@ -97,7 +97,7 @@ struct DownsamplingKernelOnDeviceBase {
              NP::Access::CellDatConst::Read<REAL> &reduction_min,
              NP::Access::CellDatConst::Read<REAL> &reduction_max,
              const size_t &reduction_idx, const size_t &linear_idx,
-             typename RNG_TYPE::KernelType &rng_kernel) const {
+             typename RNG_KERNEL_T::KernelType &rng_kernel) const {
     return;
   }
 
@@ -112,7 +112,7 @@ struct DownsamplingKernelOnDeviceBase {
   void apply_no_red(const NP::Access::LoopIndex::Read &index,
                     const NP::Access::SymVector::Write<INT> &req_int_props,
                     const NP::Access::SymVector::Write<REAL> &req_real_props,
-                    typename RNG_TYPE::KernelType &rng_kernel) const {
+                    typename RNG_KERNEL_T::KernelType &rng_kernel) const {
     return;
   }
 };
@@ -165,29 +165,29 @@ struct DownsamplingReductionKernelOnDeviceBase {
  *
  * @tparam mode The downsampling mode of the kernel, determining downstream
  * behaviour (e.g. merging vs thinning etc.)
- * @tparam REDUCTION_KERNEL_ON_DEVICE On device object type responsible for the
+ * @tparam REDUCTION_KERNEL_T On device object type responsible for the
  * calculation of the various reduction quantities needed for downsampling
  * algorithms
- * @tparam DOWNSAMPLING_KERNEL_ON_DEVICE On device object type responsible for
+ * @tparam DOWNSAMPLING_KERNEL_T On device object type responsible for
  * the application of the downsampling algorithm in conjunction with any
  * calculated reduced quantities
  */
-template <DownsamplingMode mode, typename REDUCTION_KERNEL_ON_DEVICE,
-          typename DOWNSAMPLING_KERNEL_ON_DEVICE>
+template <DownsamplingMode mode, typename REDUCTION_KERNEL_T,
+          typename DOWNSAMPLING_KERNEL_T>
 struct DownsamplingKernelBase {
-  using RNG_TYPE = typename DOWNSAMPLING_KERNEL_ON_DEVICE::RNG_KERNEL_TYPE;
+  using RNG_TYPE = typename DOWNSAMPLING_KERNEL_T::RNG_KERNEL_TYPE;
   static const DownsamplingMode DOWNSAMPLING_MODE = mode;
 
   static inline constexpr size_t DOWNSAMPLING_DIM =
-      DOWNSAMPLING_KERNEL_ON_DEVICE::DOWNSAMPLING_DIM;
+      DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_DIM;
   static inline constexpr size_t REDUCTION_PLUS_DIM =
-      REDUCTION_KERNEL_ON_DEVICE::REDUCTION_PLUS_DIM;
+      REDUCTION_KERNEL_T::REDUCTION_PLUS_DIM;
   static inline constexpr size_t REDUCTION_MIN_DIM =
-      REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MIN_DIM;
+      REDUCTION_KERNEL_T::REDUCTION_MIN_DIM;
   static inline constexpr size_t REDUCTION_MAX_DIM =
-      REDUCTION_KERNEL_ON_DEVICE::REDUCTION_MAX_DIM;
+      REDUCTION_KERNEL_T::REDUCTION_MAX_DIM;
   static inline constexpr size_t TOTAL_REDUCTION_DIM =
-      REDUCTION_KERNEL_ON_DEVICE::TOTAL_REDUCTION_DIM;
+      REDUCTION_KERNEL_T::TOTAL_REDUCTION_DIM;
 
   /**
    * @brief Base host-side downsampling kernel type constructor
@@ -209,7 +209,7 @@ struct DownsamplingKernelBase {
 
     static_assert(
         DOWNSAMPLING_MODE != DownsamplingMode::merging ||
-            REDUCTION_KERNEL_ON_DEVICE::TOTAL_REDUCTION_DIM > 0,
+            REDUCTION_KERNEL_T::TOTAL_REDUCTION_DIM > 0,
         "In merging mode downsampling requires at least one reduced quantity");
 
     this->rng_kernel = std::make_shared<RNG_TYPE>();
@@ -247,7 +247,7 @@ struct DownsamplingKernelBase {
     return this->required_real_props.to_sym_vector();
   }
 
-  DOWNSAMPLING_KERNEL_ON_DEVICE get_downsampling_kernel_on_device() {
+  DOWNSAMPLING_KERNEL_T get_downsampling_kernel_on_device() {
 
     NESOASSERT(
         this->downsampling_on_device_obj.has_value(),
@@ -255,7 +255,7 @@ struct DownsamplingKernelBase {
     return this->downsampling_on_device_obj.value();
   }
 
-  REDUCTION_KERNEL_ON_DEVICE get_reduction_kernel_on_device() {
+  REDUCTION_KERNEL_T get_reduction_kernel_on_device() {
 
     NESOASSERT(
         this->reduction_on_device_obj.has_value(),
@@ -281,8 +281,8 @@ struct DownsamplingKernelBase {
   }
 
 protected:
-  std::optional<REDUCTION_KERNEL_ON_DEVICE> reduction_on_device_obj;
-  std::optional<DOWNSAMPLING_KERNEL_ON_DEVICE> downsampling_on_device_obj;
+  std::optional<REDUCTION_KERNEL_T> reduction_on_device_obj;
+  std::optional<DOWNSAMPLING_KERNEL_T> downsampling_on_device_obj;
   ArgumentNameSet<INT> required_int_props;
   ArgumentNameSet<REAL> required_real_props;
   std::map<int, std::string> properties_map;
@@ -293,10 +293,10 @@ protected:
  * @brief Transformation strategy performing downsampling based on the contained
  * downsampling kernels
  *
- * @tparam DOWNSAMPLING_KERNEL Host-side downsampling kernel type, determining
+ * @tparam DOWNSAMPLING_KERNEL_T Host-side downsampling kernel type, determining
  * the reduction and downsampling application algorithms
  */
-template <typename DOWNSAMPLING_KERNEL>
+template <typename DOWNSAMPLING_KERNEL_T>
 struct DownsamplingStrategy : TransformationStrategy {
 
   /**
@@ -316,7 +316,8 @@ struct DownsamplingStrategy : TransformationStrategy {
    */
   DownsamplingStrategy(
       NP::ParticleGroupSharedPtr template_group,
-      DOWNSAMPLING_KERNEL downsampling_kernels, size_t num_downsampling_groups,
+      DOWNSAMPLING_KERNEL_T downsampling_kernels,
+      size_t num_downsampling_groups,
       const std::map<int, std::string> &properties_map = get_default_map())
       : downsampling_kernels(downsampling_kernels) {
 
@@ -338,24 +339,24 @@ struct DownsamplingStrategy : TransformationStrategy {
 
     // We only need to allocate reduction quantities if there are any reductions
     // needed
-    if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
+    if constexpr (DOWNSAMPLING_KERNEL_T::TOTAL_REDUCTION_DIM > 0) {
       this->reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
-          DOWNSAMPLING_KERNEL::REDUCTION_PLUS_DIM, num_downsampling_groups);
+          DOWNSAMPLING_KERNEL_T::REDUCTION_PLUS_DIM, num_downsampling_groups);
 
       this->min_reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
-          DOWNSAMPLING_KERNEL::REDUCTION_MIN_DIM, num_downsampling_groups);
+          DOWNSAMPLING_KERNEL_T::REDUCTION_MIN_DIM, num_downsampling_groups);
 
       this->max_reduction_cell_dats = std::make_shared<NP::CellDatConst<REAL>>(
           template_group->sycl_target, cell_count,
-          DOWNSAMPLING_KERNEL::REDUCTION_MAX_DIM, num_downsampling_groups);
+          DOWNSAMPLING_KERNEL_T::REDUCTION_MAX_DIM, num_downsampling_groups);
     }
 
     // We only need to track the number of particles in the merging mode
     // because it selects the first N particles to set to the post-merging
     // properties
-    if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
+    if constexpr (DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
       this->num_part_cell_dats = std::make_shared<NP::CellDatConst<INT>>(
           template_group->sycl_target, cell_count, num_downsampling_groups, 1);
@@ -373,7 +374,7 @@ struct DownsamplingStrategy : TransformationStrategy {
     auto reduction_obj =
         this->downsampling_kernels.get_reduction_kernel_on_device();
 
-    if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE ==
+    if constexpr (DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_MODE ==
                   DownsamplingMode::merging) {
 
       // When merging we assume we will always need to perform some reductions,
@@ -412,9 +413,9 @@ struct DownsamplingStrategy : TransformationStrategy {
                                                this->num_part_cell_dats);
     }
 
-    if constexpr (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE !=
+    if constexpr (DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_MODE !=
                       DownsamplingMode::merging &&
-                  DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
+                  DOWNSAMPLING_KERNEL_T::TOTAL_REDUCTION_DIM > 0) {
       // When not merging, we assume we only need to perform reduction if
       // tot_reduction_dim > 0
       particle_loop(
@@ -443,7 +444,7 @@ struct DownsamplingStrategy : TransformationStrategy {
     auto downsampling_obj =
         this->downsampling_kernels.get_downsampling_kernel_on_device();
 
-    switch (DOWNSAMPLING_KERNEL::DOWNSAMPLING_MODE) {
+    switch (DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_MODE) {
 
     case DownsamplingMode::merging: {
 
@@ -453,7 +454,7 @@ struct DownsamplingStrategy : TransformationStrategy {
       auto sub_group_to_merge = static_particle_sub_group(
           target_subgroup,
           [=](auto linear_index) {
-            return linear_index[0] < DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM;
+            return linear_index[0] < DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_DIM;
           },
           NP::Access::read(this->linear_index_sym));
 
@@ -469,7 +470,7 @@ struct DownsamplingStrategy : TransformationStrategy {
               auto downsampling_group_index, auto linear_index,
               auto rng_kernel) {
             if (n_part_group.at(downsampling_group_index[0], 0) >
-                DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM) {
+                DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_DIM) {
               downsampling_obj.apply(
                   loop_index, req_int_props, req_real_props, reduction_cell_dat,
                   min_reduction_cell_dat, max_reduction_cell_dat,
@@ -496,7 +497,7 @@ struct DownsamplingStrategy : TransformationStrategy {
       auto sub_group_to_remove_particles = static_particle_sub_group(
           target_subgroup,
           [=](auto linear_index) {
-            return linear_index[0] >= DOWNSAMPLING_KERNEL::DOWNSAMPLING_DIM;
+            return linear_index[0] >= DOWNSAMPLING_KERNEL_T::DOWNSAMPLING_DIM;
           },
           NP::Access::read(this->linear_index_sym));
 
@@ -511,7 +512,7 @@ struct DownsamplingStrategy : TransformationStrategy {
       // Note that unlike the merging loop, the thinning loop is applied on the
       // whole subgroup, with the assumption that any thinned particles will
       // have their weights set to 0
-      if constexpr (DOWNSAMPLING_KERNEL::TOTAL_REDUCTION_DIM > 0) {
+      if constexpr (DOWNSAMPLING_KERNEL_T::TOTAL_REDUCTION_DIM > 0) {
         particle_loop(
             "DownsamplingTransform::thinning_loop", target_subgroup,
             [=](auto loop_index, auto req_int_props, auto req_real_props,
@@ -575,7 +576,7 @@ private:
   NP::Sym<INT> group_index_sym;
   NP::Sym<INT> linear_index_sym;
   NP::Sym<REAL> weight_sym;
-  DOWNSAMPLING_KERNEL downsampling_kernels;
+  DOWNSAMPLING_KERNEL_T downsampling_kernels;
   NP::CellDatConstSharedPtr<REAL> reduction_cell_dats;
   NP::CellDatConstSharedPtr<INT> num_part_cell_dats;
   NP::CellDatConstSharedPtr<REAL> min_reduction_cell_dats;

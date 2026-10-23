@@ -22,9 +22,9 @@ struct AbstractDataCalculator {
 /**
  * @brief A static container class for ReactionData objects
  *
- * @tparam DATATYPE ReactionData types
+ * @tparam DATA_T ReactionData types
  */
-template <typename... DATATYPE>
+template <typename... DATA_T>
 struct DataCalculator : public AbstractDataCalculator {
 
   /**
@@ -32,7 +32,7 @@ struct DataCalculator : public AbstractDataCalculator {
    *
    * @param data List of ReactionData objects (as multiple arguments).
    */
-  DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
+  DataCalculator(DATA_T... data) : data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
     (
@@ -44,7 +44,7 @@ struct DataCalculator : public AbstractDataCalculator {
                       typename decltype(data)::ARGUMENT_PACK_TYPE,
                       data.get_dim(), typename decltype(data)::RNG_KERNEL_TYPE>,
                   decltype(data)>,
-              "DATATYPE provided is not derived from AbstractReactionData.");
+              "DATA_T provided is not derived from AbstractReactionData.");
           type_check_counter++;
         }(),
         ...);
@@ -67,11 +67,11 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Fills an NP::NDLocalArray buffer by invoking the stored ReactionData
-   * objects for a given cell index
+   * @brief Fills an NP::NDLocalArray buffer by invoking the stored
+   * ReactionData objects for a given cell index
    *
    * @param buffer NP::NDLocalArray buffer - size should conform to the stored
-   * ReactionData tuple size
+   * REACTION_DATA_T tuple size
    * @param particle_sub_group Particle subgroup used to fill out the buffer
    * @param cell_idx_start Starting cell index for which to invoke the
    * corresponding particle loops
@@ -128,7 +128,7 @@ struct DataCalculator : public AbstractDataCalculator {
 
   /**
    * @brief Getter for the total number of dimensions of the objects in the
-   * ReactionData tuple
+   * REACTION_DATA_T tuple
    */
   size_t get_data_size() const {
     size_t dat_idx = 0u;
@@ -146,12 +146,12 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Getter of the total number of objects in the ReactionData tuple
+   * @brief Getter of the total number of objects in the REACTION_DATA_T tuple
    */
-  size_t get_data_tuple_size() const { return sizeof...(DATATYPE); }
+  size_t get_data_tuple_size() const { return sizeof...(DATA_T); }
 
 private:
-  std::tuple<DATATYPE...> data;
+  std::tuple<DATA_T...> data;
   std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms;
   std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms;
 };

@@ -18,11 +18,11 @@ namespace VANTAGE::Reactions::utils {
  * device types that need them
  *
  * @tparam F Class of wrapped function
- * @tparam DIM The size of the output array of the wrapped function.
+ * @tparam dim The size of the output array of the wrapped function.
  */
-template <class F, size_t DIM = 1> struct LambdaWrapper {
+template <class F, size_t dim = 1> struct LambdaWrapper {
 
-  static const size_t OUTPUT_DIM = DIM;
+  static const size_t OUTPUT_DIM = dim;
 
   LambdaWrapper() = default;
 
@@ -123,23 +123,23 @@ std::vector<T> cross_product(const std::vector<T> &a, const std::vector<T> &b) {
 /**
  * @brief Helper function to build a std::vector of Syms from a list of names.
  *
- * @tparam PROP_TYPE The property type associated with the syms that need to
+ * @tparam PROP_T The property type associated with the syms that need to
  * be stored in the resulting vector (either INT or REAL).
  *
  * @param required_properties A vector of strings that contains the required
  * properties
  *
- * @return A std::vector of Syms of PROP_TYPE (ie.
- * std::vector<Syms<PROP_TYPE>>)
+ * @return A std::vector of Syms of PROP_T (ie.
+ * std::vector<Syms<PROP_T>>)
  */
-template <typename PROP_TYPE>
-std::vector<NP::Sym<PROP_TYPE>>
+template <typename PROP_T>
+std::vector<NP::Sym<PROP_T>>
 build_sym_vector(std::vector<std::string> required_properties) {
 
-  std::vector<NP::Sym<PROP_TYPE>> syms = {};
+  std::vector<NP::Sym<PROP_T>> syms = {};
 
   for (auto req_prop : required_properties) {
-    syms.push_back(NP::Sym<PROP_TYPE>(req_prop));
+    syms.push_back(NP::Sym<PROP_T>(req_prop));
   }
 
   return syms;
@@ -351,20 +351,20 @@ inline size_t bin_uniform_symmetric_guard_1d(const REAL &inverse_2L,
  * parameter is given explicitly), so callers only need to supply the required
  * component count.
  *
- * @tparam RequiredComponents Minimum number of components required.
- * @tparam RNG_TYPE Random number generator kernel type (deduced).
+ * @tparam required_components Minimum number of components required.
+ * @tparam RNG_KERNEL_T Random number generator kernel type (deduced).
  * @param rng_kernel Shared pointer to the RNG kernel to validate.
  */
-template <std::size_t RequiredComponents, typename RNG_TYPE>
+template <std::size_t required_components, typename RNG_KERNEL_T>
 void validate_required_kernel_components(
-    const std::shared_ptr<RNG_TYPE> &rng_kernel) {
-  static_assert(!std::is_same_v<RNG_TYPE, NP::NullKernelRNG<REAL>>,
+    const std::shared_ptr<RNG_KERNEL_T> &rng_kernel) {
+  static_assert(!std::is_same_v<RNG_KERNEL_T, NP::NullKernelRNG<REAL>>,
                 "Sampling requires a non-null RNG kernel type.");
   const std::string available_components =
       rng_kernel ? std::to_string(rng_kernel->num_components) : "null";
-  NESOASSERT(rng_kernel && rng_kernel->num_components >= RequiredComponents,
+  NESOASSERT(rng_kernel && rng_kernel->num_components >= required_components,
              "RNG kernel does not provide enough components. Required: " +
-                 std::to_string(RequiredComponents) +
+                 std::to_string(required_components) +
                  ", provided: " + available_components);
 }
 

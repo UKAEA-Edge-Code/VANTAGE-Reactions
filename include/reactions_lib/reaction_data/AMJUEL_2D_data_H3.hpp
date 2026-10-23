@@ -13,14 +13,14 @@ namespace VANTAGE::Reactions {
  * @brief On device: Reaction rate data calculation based on AMJUEL H.3 fits
  * against neutral particle energy and ion/plasma temperature
  *
- * @tparam num_coeffs_T The number of fit parameters in the T direction needed
+ * @tparam num_coeffs_t The number of fit parameters in the t direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @tparam num_coeffs_E The number of fit parameters in the n direction needed
+ * @tparam num_coeffs_e The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
  * @tparam dim The number of dimensions for the particle velocity
  * property and background fluid flow.
  */
-template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim>
+template <size_t num_coeffs_t, size_t num_coeffs_e, size_t dim>
 struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
 
   AMJUEL2DDataH3OnDevice() = default;
@@ -43,7 +43,7 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
       const REAL &density_normalisation, const REAL &temperature_normalisation,
       const REAL &time_normalisation, const REAL &velocity_normalisation,
       const REAL &mass_amu,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs)
+      const std::array<std::array<REAL, num_coeffs_e>, num_coeffs_t> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
         temperature_normalisation(temperature_normalisation),
@@ -88,21 +88,21 @@ struct AMJUEL2DDataH3OnDevice : public ReactionDataBaseOnDevice<> {
 
     REAL log_E = NP::Kernel::log(E);
 
-    std::array<REAL, num_coeffs_E> log_E_m_arr;
+    std::array<REAL, num_coeffs_e> log_E_m_arr;
     log_E_m_arr[0] = 1.0;
-    for (int i = 1; i < num_coeffs_E; i++) {
+    for (int i = 1; i < num_coeffs_e; i++) {
       log_E_m_arr[i] = log_E_m_arr[i - 1] * log_E;
     }
 
-    std::array<REAL, num_coeffs_T> log_temp_arr;
+    std::array<REAL, num_coeffs_t> log_temp_arr;
     log_temp_arr[0] = 1.0;
-    for (int i = 1; i < num_coeffs_T; i++) {
+    for (int i = 1; i < num_coeffs_t; i++) {
       log_temp_arr[i] = log_temp_arr[i - 1] * log_temp;
     }
 
     REAL log_rate = 0.0;
-    for (int j = 0; j < num_coeffs_E; j++) {
-      for (int i = 0; i < num_coeffs_T; i++) {
+    for (int j = 0; j < num_coeffs_e; j++) {
+      for (int i = 0; i < num_coeffs_t; i++) {
         log_rate += this->coeffs[i][j] * log_E_m_arr[j] * log_temp_arr[i];
       }
     }
@@ -121,24 +121,24 @@ public:
   REAL temperature_normalisation;
   REAL en_mult_const;
   REAL mult_const;
-  std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> coeffs;
+  std::array<std::array<REAL, num_coeffs_e>, num_coeffs_t> coeffs;
 };
 
 /**
  * @brief Reaction rate data calculation based on AMJUEL H.3 fits against
  * neutral particle energy and ion/plasma temperature
  *
- * @tparam num_coeffs_T The number of fit parameters in the T direction needed
+ * @tparam num_coeffs_t The number of fit parameters in the t direction needed
  * for 2D AMJUEL reaction rate calculation.
- * @tparam num_coeffs_E The number of fit parameters in the n direction needed
+ * @tparam num_coeffs_e The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
  * @tparam dim The number of dimensions for the particle velocity
  * property and background fluid flow (default value of 2)
  */
-template <size_t num_coeffs_T, size_t num_coeffs_E, size_t dim = 2>
+template <size_t num_coeffs_t, size_t num_coeffs_e, size_t dim = 2>
 struct AMJUEL2DDataH3
     : public ReactionDataBase<
-          AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>> {
+          AMJUEL2DDataH3OnDevice<num_coeffs_t, num_coeffs_e, dim>> {
 
   constexpr static auto props = default_properties;
 
@@ -167,14 +167,14 @@ struct AMJUEL2DDataH3
       const REAL &density_normalisation, const REAL &temperature_normalisation,
       const REAL &time_normalisation, const REAL &velocity_normalisation,
       const REAL &mass_amu,
-      const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs,
+      const std::array<std::array<REAL, num_coeffs_e>, num_coeffs_t> &coeffs,
       std::map<int, std::string> properties_map = get_default_map())
       : ReactionDataBase<
-            AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>>(
+            AMJUEL2DDataH3OnDevice<num_coeffs_t, num_coeffs_e, dim>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
 
     this->on_device_obj =
-        AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>(
+        AMJUEL2DDataH3OnDevice<num_coeffs_t, num_coeffs_e, dim>(
             evolved_quantity_normalisation, density_normalisation,
             temperature_normalisation, time_normalisation,
             velocity_normalisation, mass_amu, coeffs);

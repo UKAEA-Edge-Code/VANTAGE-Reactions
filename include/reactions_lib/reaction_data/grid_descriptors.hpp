@@ -24,15 +24,15 @@ namespace grid_utils {
 template <typename T> struct is_std_array_of_real : std::false_type {};
 
 /**
- * @brief Partial specialization for std::array<REAL, N>.
+ * @brief Partial specialization for std::array<REAL, num_elements>.
  *
  * Yields std::true_type when std::array of REAL values is inferred
  * implicitly.
  *
- * @tparam N Number of elements in the array.
+ * @tparam num_elements Number of elements in the array.
  */
-template <std::size_t N>
-struct is_std_array_of_real<std::array<REAL, N>> : std::true_type {};
+template <std::size_t num_elements>
+struct is_std_array_of_real<std::array<REAL, num_elements>> : std::true_type {};
 
 /**
  * @brief Helper variable template for is_std_array_of_real.
@@ -48,14 +48,14 @@ inline constexpr bool is_std_array_of_real_v = is_std_array_of_real<T>::value;
  * grid point.
  *
  * @tparam ndim Number of dimensions.
- * @tparam FUNC Type of callable taking const std::array<REAL, ndim> &
+ * @tparam FUNC_T Type of callable taking const std::array<REAL, ndim> &
  * (coordinate values).
  * @param coords Per-dimension coordinate vectors defining the grid.
  * @param func Callable invoked once per grid point with the coordinate array.
  */
-template <int ndim, typename FUNC>
+template <int ndim, typename FUNC_T>
 inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
-                           const FUNC &func) {
+                           const FUNC_T &func) {
   std::array<size_t, ndim> num_points;
   for (int i = 0; i < ndim; i++) {
     num_points[i] = coords[i].size();
@@ -90,22 +90,23 @@ inline void iterate_points(const std::array<std::vector<REAL>, ndim> &coords,
  * @brief Append elements from a container into the flat grid buffer at the
  * current offset.
  *
- * @tparam Container Valid types: std::array<REAL, N>,
+ * @tparam CONTAINER_T Valid types: std::array<REAL, num_elements>,
  * std::vector<REAL>.
  * @param ptr Pointer to the first value of the data that is to be copied to.
  * @param offset Location to specify where in ptr to copy data to. This is
  * updated post-copy so subsequent calls have the right offset.
- * @param data Container of REAL values to copy.
+ * @param data CONTAINER_T of REAL values to copy.
  */
-template <typename Container>
-inline void append(REAL *ptr, size_t &offset, const Container &data) {
+template <typename CONTAINER_T>
+inline void append(REAL *ptr, size_t &offset, const CONTAINER_T &data) {
   // Changed from std::enable_if_t for a nicer/more useful error message.
-  static_assert(std::is_same_v<Container, std::vector<REAL>> ||
-                    grid_utils::is_std_array_of_real_v<Container>,
-                "If passing a container to append, it must be a "
-                "std::vector<REAL> or a std::array<REAL, N>. Alternatively "
-                "pass a pointer to the start of a container and the size of "
-                "the data to append.");
+  static_assert(
+      std::is_same_v<CONTAINER_T, std::vector<REAL>> ||
+          grid_utils::is_std_array_of_real_v<CONTAINER_T>,
+      "If passing a container to append, it must be a "
+      "std::vector<REAL> or a std::array<REAL, num_elements>. Alternatively "
+      "pass a pointer to the start of a container and the size of "
+      "the data to append.");
   std::copy(data.begin(), data.end(), ptr + offset);
   offset += data.size();
 }
@@ -156,24 +157,24 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * order. It must return a REAL value. Each value is appended to the
    * internal flat grid buffer.
    *
-   * @tparam FUNC Generator callable type.
-   * @tparam Context Type names of any additional context data needed for the
+   * @tparam FUNC_T Generator callable type.
+   * @tparam CONTEXT_T Type names of any additional context data needed for the
    * generator.
    * @param coords_in Per-dimension interpolation coordinate vectors.
    * @param func Generator callable with signature
-   *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
+   *   auto(const std::array<REAL, interp_ndim> &coords, CONTEXT_T... context)
    * returning a REAL value.
-   * @param context Argument pack with types defined by Context... that may need
-   * to be passed to func.
+   * @param context Argument pack with types defined by CONTEXT_T... that may
+   * need to be passed to func.
    */
   // The extra std::is_same_v condition is due to a Clang limitation not
   // allowing deactivation using enable_if_t when the condition only uses the
   // template parameter from the enclosing struct.
-  template <typename FUNC, typename... Context,
-            std::enable_if_t<(output_ndim == 0) && std::is_same_v<FUNC, FUNC>,
-                             int> = 0>
+  template <typename FUNC_T, typename... CONTEXT_T,
+            std::enable_if_t<
+                (output_ndim == 0) && std::is_same_v<FUNC_T, FUNC_T>, int> = 0>
   GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &coords_in,
-                 const FUNC &func, const Context &...context)
+                 const FUNC_T &func, const CONTEXT_T &...context)
       : coords(coords_in) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,
@@ -212,26 +213,26 @@ template <int interp_ndim, int output_ndim = 0> struct GridDescriptor {
    * + (trim_dim0 * trim_dim1) + (trim_dim0 * trim_dim1 * trim_dim2)) . Each
    * array/vector is appended to the flat grid buffer.
    *
-   * @tparam FUNC Generator callable type.
-   * @tparam Context Type names of any additional context data needed for the
+   * @tparam FUNC_T Generator callable type.
+   * @tparam CONTEXT_T Type names of any additional context data needed for the
    * generator.
    * @param coords Per-dimension interpolation coordinate vectors.
    * @param trim_dims_arr TRIM grid dimensions per output axis.
    * @param func Generator callable with signature
-   *   auto(const std::array<REAL, interp_ndim> &coords, Context... context)
+   *   auto(const std::array<REAL, interp_ndim> &coords, CONTEXT_T... context)
    * returning a REAL std::array
-   * @param context Argument pack with types defined by Context... that may need
-   * to be passed to func.
+   * @param context Argument pack with types defined by CONTEXT_T... that may
+   * need to be passed to func.
    */
   // The extra std::is_same_v condition is due to Clang limitation not allowing
   // deactivation using enable_if_t when the condition only uses the template
   // parameter from the enclosing struct.
-  template <typename FUNC, typename... Context,
-            std::enable_if_t<(output_ndim == 3) && std::is_same_v<FUNC, FUNC>,
-                             int> = 0>
+  template <typename FUNC_T, typename... CONTEXT_T,
+            std::enable_if_t<
+                (output_ndim == 3) && std::is_same_v<FUNC_T, FUNC_T>, int> = 0>
   GridDescriptor(const std::array<std::vector<REAL>, interp_ndim> &coords,
                  const std::array<size_t, output_ndim> &trim_dims_arr,
-                 const FUNC &func, const Context &...context)
+                 const FUNC_T &func, const CONTEXT_T &...context)
       : coords(coords), output_dims(trim_dims_arr) {
     using FUNC_RETURN_TYPE =
         std::invoke_result_t<decltype(func), std::array<REAL, interp_ndim>,

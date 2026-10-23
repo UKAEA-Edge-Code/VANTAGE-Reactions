@@ -11,26 +11,26 @@ namespace VANTAGE::Reactions {
  * @tparam dim Used to set the size of the array that calc_data returns
  * @tparam input_dim The dimension of the optional input array (for use in
  * pipelines)
- * @tparam VAL_TYPE Return type of this objects calc_data routine
- * @tparam IN_TYPE Input type of array required by this object (if input_dim >0)
- * @tparam DATATYPE ReactionDataOnDevice variadic parameters whose calc_data is
+ * @tparam VALUE_T Return type of this objects calc_data routine
+ * @tparam INPUT_T Input type of array required by this object (if input_dim >0)
+ * @tparam DATA_T ReactionDataOnDevice variadic parameters whose calc_data is
  * called from this object
  */
 
-template <size_t dim, size_t input_dim, typename VAL_TYPE, typename IN_TYPE,
-          typename... DATATYPE>
+template <size_t dim, size_t input_dim, typename VALUE_T, typename INPUT_T,
+          typename... DATA_T>
 struct CompositeDataOnDevice
     : public AbstractReactionDataOnDevice<
           typename std::tuple_element_t<
-              0, std::tuple<DATATYPE...>>::ACCESSOR_PACK_TYPE,
+              0, std::tuple<DATA_T...>>::ACCESSOR_PACK_TYPE,
           dim,
-          NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
-          input_dim, VAL_TYPE, IN_TYPE> {
+          NP::TupleRNG<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>...>,
+          input_dim, VALUE_T, INPUT_T> {
 
   static_assert(
       (std::is_same_v<typename std::tuple_element_t<
-                          0, std::tuple<DATATYPE...>>::ACCESSOR_PACK_TYPE,
-                      typename DATATYPE::ACCESSOR_PACK_TYPE> &&
+                          0, std::tuple<DATA_T...>>::ACCESSOR_PACK_TYPE,
+                      typename DATA_T::ACCESSOR_PACK_TYPE> &&
        ...),
       "All contained on-device data objects must use the same "
       "ACCESSOR_PACK_TYPE.");
@@ -43,20 +43,19 @@ struct CompositeDataOnDevice
    * @param data Variadic argument with all of the contained
    * ReactionDataOnDevice objects
    */
-  CompositeDataOnDevice(DATATYPE... data)
-      : data(NP::Tuple::to_tuple(data...)) {};
+  CompositeDataOnDevice(DATA_T... data) : data(NP::Tuple::to_tuple(data...)) {};
 
 protected:
-  NP::Tuple::Tuple<DATATYPE...> data;
+  NP::Tuple::Tuple<DATA_T...> data;
 };
 
 /**
  * @brief Getter that returns tuple of ReactionDataOnDevice objects associated
- * with each DATATYPE object in data.
+ * with each DATA_T object in data.
  */
-template <typename... DATATYPE>
-inline std::tuple<typename DATATYPE::ON_DEVICE_OBJ_TYPE...>
-get_on_device_objs(std::tuple<DATATYPE...> &data) {
+template <typename... DATA_T>
+inline std::tuple<typename DATA_T::ON_DEVICE_OBJ_TYPE...>
+get_on_device_objs(std::tuple<DATA_T...> &data) {
 
   return std::apply(
       [](auto &&...args) { return std::tuple(args.get_on_device_obj()...); },
@@ -67,30 +66,31 @@ get_on_device_objs(std::tuple<DATATYPE...> &data) {
  * @brief Composite ReactionData object containing multiple other ReactionData
  * objects.
  *
- * @tparam ON_DEVICE_TYPE Type of the on-device object
+ * @tparam ON_DEVICE_T Type of the on-device object
  * @tparam dim Used to set the size of the array that calc_data returns
  * @tparam input_dim The dimension of the input array
- * @tparam DATATYPE ReactionData derived types contained within this composite
+ * @tparam DATA_T ReactionData derived types contained within this composite
  * object
  */
-template <typename ON_DEVICE_TYPE, size_t dim, size_t input_dim,
-          typename... DATATYPE>
+template <typename ON_DEVICE_T, size_t dim, size_t input_dim,
+          typename... DATA_T>
 struct CompositeData
     : public AbstractReactionData<
-          ON_DEVICE_TYPE,
+          ON_DEVICE_T,
           typename std::tuple_element_t<
-              0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE,
+              0, std::tuple<DATA_T...>>::ARGUMENT_PACK_TYPE,
           dim,
-          NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+          NP::TupleRNG<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>...>,
           input_dim> {
 
-  using ARGUMENT_PACK_TYPE = typename std::tuple_element_t<
-      0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE;
+  using ARGUMENT_PACK_TYPE =
+      typename std::tuple_element_t<0,
+                                    std::tuple<DATA_T...>>::ARGUMENT_PACK_TYPE;
 
   static_assert(
       (std::is_same_v<typename std::tuple_element_t<
-                          0, std::tuple<DATATYPE...>>::ARGUMENT_PACK_TYPE,
-                      typename DATATYPE::ARGUMENT_PACK_TYPE> &&
+                          0, std::tuple<DATA_T...>>::ARGUMENT_PACK_TYPE,
+                      typename DATA_T::ARGUMENT_PACK_TYPE> &&
        ...),
       "All contained ReactionData objects must use the same "
       "ARGUMENT_PACK_TYPE.");
@@ -100,12 +100,11 @@ struct CompositeData
    * @param data Variadic argument with all of the contained ReactionData
    * objects
    */
-  CompositeData(DATATYPE... data)
-      : AbstractReactionData<ON_DEVICE_TYPE, ARGUMENT_PACK_TYPE, dim,
-                             NP::TupleRNG<std::shared_ptr<
-                                 typename DATATYPE::RNG_KERNEL_TYPE>...>,
-                             input_dim>(ARGUMENT_PACK_TYPE(),
-                                        get_default_map()),
+  CompositeData(DATA_T... data)
+      : AbstractReactionData<
+            ON_DEVICE_T, ARGUMENT_PACK_TYPE, dim,
+            NP::TupleRNG<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>...>,
+            input_dim>(ARGUMENT_PACK_TYPE(), get_default_map()),
         data(std::make_tuple(data...)) {};
 
   /**
@@ -130,7 +129,7 @@ struct CompositeData
     this->index_on_device_object();
 
     this->set_rng_kernel(std::apply(
-        NP::tuple_rng<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>,
+        NP::tuple_rng<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>...>,
         this->get_rng_kernels_children()));
   }
 
@@ -145,7 +144,7 @@ struct CompositeData
     this->post_init();
   }
 
-  std::tuple<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>...>
+  std::tuple<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>...>
   get_rng_kernels_children() {
 
     return std::apply(
@@ -154,7 +153,7 @@ struct CompositeData
   }
 
 protected:
-  std::tuple<DATATYPE...> data;
+  std::tuple<DATA_T...> data;
 };
 
 }; // namespace VANTAGE::Reactions

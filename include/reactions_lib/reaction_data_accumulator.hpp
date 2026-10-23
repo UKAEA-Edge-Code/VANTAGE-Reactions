@@ -7,13 +7,13 @@
 
 namespace VANTAGE::Reactions {
 /**
- * @brief Transformation evaluating a ReactionData object and reducing the
+ * @brief Transformation evaluating a REACTION_DATA_T object and reducing the
  * results cellwise
  *
- * @tparam ReactionData Type of object whose outputs are to be reduced cellwise
- * (must be derived from ReactionDataBase).
+ * @tparam REACTION_DATA_T Type of object whose outputs are to be reduced
+ * cellwise (must be derived from ReactionDataBase).
  */
-template <typename ReactionData>
+template <typename REACTION_DATA_T>
 struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
   CellwiseReactionDataAccumulator() = delete;
@@ -23,25 +23,26 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
    *
    * @param template_group A template particle group used to provide the
    * CellDatConsts for the dats specified by dat_names.
-   * @param reaction_data ReactionData whose outputs are to be reduced cellwise
+   * @param reaction_data REACTION_DATA_T whose outputs are to be reduced
+   * cellwise
    */
   CellwiseReactionDataAccumulator(NP::ParticleGroupSharedPtr template_group,
-                                  ReactionData reaction_data)
+                                  REACTION_DATA_T reaction_data)
       : reaction_data(reaction_data) {
 
     static_assert(
         std::is_base_of_v<
-            AbstractReactionData<typename ReactionData::ON_DEVICE_OBJ_TYPE,
-                                 typename ReactionData::ARGUMENT_PACK_TYPE,
-                                 ReactionData::DIM,
-                                 typename ReactionData::RNG_KERNEL_TYPE>,
-            ReactionData>,
-        "Template parameter ReactionData is not derived from "
+            AbstractReactionData<typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE,
+                                 typename REACTION_DATA_T::ARGUMENT_PACK_TYPE,
+                                 REACTION_DATA_T::DIM,
+                                 typename REACTION_DATA_T::RNG_KERNEL_TYPE>,
+            REACTION_DATA_T>,
+        "Template parameter REACTION_DATA_T is not derived from "
         "AbstractReactionData...");
 
-    constexpr auto data_dim = ReactionData::DIM;
+    constexpr auto data_dim = REACTION_DATA_T::DIM;
     this->values = std::make_shared<NP::CellDatConst<
-        typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>(
+        typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>(
         template_group->sycl_target,
         template_group->domain->mesh->get_cell_count(), data_dim, 1);
 
@@ -51,7 +52,8 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
         this->reaction_data.get_arg_pack().required_real_props.to_sym_vector();
   }
   /**
-   * @brief Accumulate the results of evaluating the stored ReactionData object
+   * @brief Accumulate the results of evaluating the stored REACTION_DATA_T
+   * object
    *
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
@@ -62,7 +64,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
 
     // TODO: add sycl_target consistency test
 
-    constexpr auto data_dim = ReactionData::DIM;
+    constexpr auto data_dim = REACTION_DATA_T::DIM;
 
     auto loop = particle_loop(
         "CellwiseReactionDataAccumulator_loop", target_subgroup,
@@ -110,7 +112,7 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
    * NP::CellData objects
    */
   std::vector<
-      NP::CellData<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
+      NP::CellData<typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
   get_cell_data() {
 
     return this->values->get_all_cells();
@@ -122,12 +124,12 @@ struct CellwiseReactionDataAccumulator : TransformationStrategy {
   void zero_buffer() { this->values->fill(0); }
 
 private:
-  ReactionData reaction_data;
+  REACTION_DATA_T reaction_data;
   std::vector<NP::Sym<INT>> required_int_syms;
   std::vector<NP::Sym<REAL>> required_real_syms;
 
-  std::shared_ptr<
-      NP::CellDatConst<typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
+  std::shared_ptr<NP::CellDatConst<
+      typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>>
       values;
 };
 } // namespace VANTAGE::Reactions

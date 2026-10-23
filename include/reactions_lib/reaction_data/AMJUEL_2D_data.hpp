@@ -13,12 +13,12 @@ namespace VANTAGE::Reactions {
  * calculation against ion/plasma density  and ion/plasma temperature. Handles
  * Coronal approximation correctly.
  *
- * @tparam num_coeffs_T The number of fit parameters in the T direction needed
+ * @tparam num_coeffs_t The number of fit parameters in the t direction needed
  * for 2D AMJUEL reaction rate calculation.
  * @tparam num_coeffs_n The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
  */
-template <int num_coeffs_T, int num_coeffs_n>
+template <int num_coeffs_t, int num_coeffs_n>
 struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
 
   AMJUEL2DDataOnDevice() = default;
@@ -37,7 +37,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
       const REAL &evolved_quantity_normalisation,
       const REAL &density_normalisation, const REAL &temperature_normalisation,
       const REAL &time_normalisation,
-      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs)
+      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_t> &coeffs)
       : mult_const(density_normalisation * time_normalisation /
                    evolved_quantity_normalisation),
         density_normalisation(density_normalisation),
@@ -65,9 +65,9 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     REAL log_temp = NP::Kernel::log(fluid_temperature_dat *
                                     this->temperature_normalisation);
 
-    std::array<REAL, num_coeffs_T> log_temp_arr;
+    std::array<REAL, num_coeffs_t> log_temp_arr;
     log_temp_arr[0] = 1.0;
-    for (int i = 1; i < num_coeffs_T; i++) {
+    for (int i = 1; i < num_coeffs_t; i++) {
       log_temp_arr[i] = log_temp_arr[i - 1] * log_temp;
     }
 
@@ -87,7 +87,7 @@ struct AMJUEL2DDataOnDevice : public ReactionDataBaseOnDevice<> {
     }
 
     for (int j = 0; j < num_coeffs_n; j++) {
-      for (int i = 0; i < num_coeffs_T; i++) {
+      for (int i = 0; i < num_coeffs_t; i++) {
         log_rate += this->coeffs[i][j] * log_n_arr[j] * log_temp_arr[i];
       }
     }
@@ -105,7 +105,7 @@ public:
   REAL density_normalisation;
   REAL temperature_normalisation;
   REAL mult_const;
-  std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> coeffs;
+  std::array<std::array<REAL, num_coeffs_n>, num_coeffs_t> coeffs;
 };
 
 /**
@@ -113,14 +113,14 @@ public:
  * against ion/plasma density  and ion/plasma temperature. Handles Coronal
  * approximation correctly.
  *
- * @tparam num_coeffs_T The number of fit parameters in the T direction needed
+ * @tparam num_coeffs_t The number of fit parameters in the t direction needed
  * for 2D AMJUEL reaction rate calculation.
  * @tparam num_coeffs_n The number of fit parameters in the n direction needed
  * for 2D AMJUEL reaction rate calculation.
  */
-template <int num_coeffs_T, int num_coeffs_n>
+template <int num_coeffs_t, int num_coeffs_n>
 struct AMJUEL2DData : public ReactionDataBase<
-                          AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>> {
+                          AMJUEL2DDataOnDevice<num_coeffs_t, num_coeffs_n>> {
 
   constexpr static auto props = default_properties;
 
@@ -144,11 +144,11 @@ struct AMJUEL2DData : public ReactionDataBase<
       const REAL &evolved_quantity_normalisation,
       const REAL &density_normalisation, const REAL &temperature_normalisation,
       const REAL &time_normalisation,
-      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs,
+      const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_t> &coeffs,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>>(
+      : ReactionDataBase<AMJUEL2DDataOnDevice<num_coeffs_t, num_coeffs_n>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
-    this->on_device_obj = AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>(
+    this->on_device_obj = AMJUEL2DDataOnDevice<num_coeffs_t, num_coeffs_n>(
         evolved_quantity_normalisation, density_normalisation,
         temperature_normalisation, time_normalisation, coeffs);
 

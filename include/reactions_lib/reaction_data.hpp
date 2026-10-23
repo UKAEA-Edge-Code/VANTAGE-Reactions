@@ -69,22 +69,22 @@ template <> struct accessor_pack_for<SingleReactionDataArgumentPack> {
 /**
  * @brief Base reaction data object.
  *
- * @tparam ON_DEVICE_TYPE Type of the on-device object
+ * @tparam ON_DEVICE_T Type of the on-device object
  * @tparam dim Used to set the size of the array that calc_data returns
  * (Optional).
- * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
+ * @tparam RNG_KERNEL_T Sets the type of RNG that is used for sampling
+ * (Optional).
  * @tparam input_dim The size of the input array (Optional, defaults to 0,
  * not defining the corresponding calc_data)
  */
-template <typename ON_DEVICE_TYPE, size_t dim = 1,
-          typename RNG_TYPE = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
+template <typename ON_DEVICE_T, size_t dim = 1,
+          typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
 struct ReactionDataBase
-    : AbstractReactionData<ON_DEVICE_TYPE, SingleReactionDataArgumentPack, dim,
-                           RNG_TYPE, input_dim> {
+    : AbstractReactionData<ON_DEVICE_T, SingleReactionDataArgumentPack, dim,
+                           RNG_KERNEL_T, input_dim> {
 
-  using Base =
-      AbstractReactionData<ON_DEVICE_TYPE, SingleReactionDataArgumentPack, dim,
-                           RNG_TYPE, input_dim>;
+  using Base = AbstractReactionData<ON_DEVICE_T, SingleReactionDataArgumentPack,
+                                    dim, RNG_KERNEL_T, input_dim>;
 
   /**
    * @brief Constructor for ReactionDataBase from an already-merged
@@ -200,19 +200,21 @@ struct ReactionDataBase
  *
  * @tparam dim Used to set the size of the array that calc_data returns
  * (Optional).
- * @tparam RNG_TYPE Sets the type of RNG that is used for sampling (Optional).
+ * @tparam RNG_KERNEL_T Sets the type of RNG that is used for sampling
+ * (Optional).
  * @tparam input_dim The dimension of the optional input array (for use in
  * pipelines) (Optional, default 0)
- * @tparam VAL_TYPE Return type of this objects calc_data routine (Optional,
+ * @tparam VALUE_T Return type of this objects calc_data routine (Optional,
  * default REAL)
- * @tparam IN_TYPE Input type of array required by this object (if input_dim >0)
+ * @tparam INPUT_T Input type of array required by this object (if input_dim >0)
  */
-template <size_t dim = 1, typename RNG_TYPE = DEFAULT_RNG_KERNEL,
-          size_t input_dim = 0, typename VAL_TYPE = REAL,
-          typename IN_TYPE = REAL>
+template <size_t dim = 1, typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL,
+          size_t input_dim = 0, typename VALUE_T = REAL,
+          typename INPUT_T = REAL>
 struct ReactionDataBaseOnDevice
-    : AbstractReactionDataOnDevice<SingleReactionDataAccessors, dim, RNG_TYPE,
-                                   input_dim, VAL_TYPE, IN_TYPE> {};
+    : AbstractReactionDataOnDevice<SingleReactionDataAccessors, dim,
+                                   RNG_KERNEL_T, input_dim, VALUE_T, INPUT_T> {
+};
 
 }; // namespace VANTAGE::Reactions
 #endif

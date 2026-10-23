@@ -70,7 +70,7 @@ using abstract_calc_data_return_t =
     typename calc_data_traits::calc_data_traits<T, void, Args...>::return_type;
 
 /**
- * @brief Check whether T::calc_data(Args...) returns exactly Expected.
+ * @brief Check whether T::calc_data(Args...) returns exactly EXPECTED_T.
  *
  * This helper short-circuits: if the parameter signature is wrong,
  * is_abstract_calc_data_callable_v is false and the function returns true
@@ -78,10 +78,10 @@ using abstract_calc_data_return_t =
  * only error emitted.  When the parameter signature is correct but
  * the return type differs, it returns false.
  */
-template <typename T, typename Expected, typename... Args>
+template <typename T, typename EXPECTED_T, typename... Args>
 constexpr bool check_abstract_calc_data_return_type() {
   if constexpr (is_abstract_calc_data_callable_v<T, Args...>) {
-    return std::is_same_v<abstract_calc_data_return_t<T, Args...>, Expected>;
+    return std::is_same_v<abstract_calc_data_return_t<T, Args...>, EXPECTED_T>;
   } else {
     return true;
   }
@@ -93,19 +93,19 @@ constexpr bool check_abstract_calc_data_return_type() {
  * PairReactionDataArgumentPack) derives from this and implements
  * merge_with_impl.
  *
- * @tparam Derived The concrete argument pack type.
+ * @tparam DERIVED_T The concrete argument pack type.
  */
-template <typename Derived> struct AbstractArgumentPack {
+template <typename DERIVED_T> struct AbstractArgumentPack {
 
   /**
    * @brief Merge this pack with another of the same type, returning a new pack
    * containing the union of all required properties.
    *
    * @param other The pack to merge with.
-   * @return A new pack of type Derived with merged required properties.
+   * @return A new pack of type DERIVED_T with merged required properties.
    */
-  Derived merge_with(const Derived &other) const {
-    return static_cast<const Derived *>(this)->merge_with_impl(other);
+  DERIVED_T merge_with(const DERIVED_T &other) const {
+    return static_cast<const DERIVED_T *>(this)->merge_with_impl(other);
   }
 };
 
@@ -342,8 +342,8 @@ struct AbstractReactionData {
   virtual ~AbstractReactionData() = default;
 
   /**
-   * @brief To be implemented by each derived class in order to handle required
-   * property indexing on the on-device object
+   * @brief To be implemented by each derived class in order to handle
+   * required property indexing on the on-device object
    */
   virtual void index_on_device_object() {};
 
