@@ -38,7 +38,7 @@ struct ParticleSpecBuilder {
   /**
    * @brief Method to add particle properties to member particle_spec.
    *
-   * @tparam PROP_TYPE Specifier for type of property (INT or REAL)
+   * @tparam PROP_T Specifier for type of property (INT or REAL)
    * @param properties Properties object containing names of the particle
    * properties to be added.
    * @param ndim Number of dimensions for the properties to be added (note this
@@ -48,9 +48,9 @@ struct ParticleSpecBuilder {
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names.
    */
-  template <typename PROP_TYPE>
+  template <typename PROP_T>
   void add_particle_prop(
-      Properties<PROP_TYPE> properties, int ndim = 1, bool positions = false,
+      Properties<PROP_T> properties, int ndim = 1, bool positions = false,
       const std::map<int, std::string> &properties_map = get_default_map()) {
 
     NESOWARN(
@@ -65,7 +65,7 @@ struct ParticleSpecBuilder {
 
     for (auto prop_name : simple_prop_names) {
       auto particle_prop =
-          NP::ParticleProp(NP::Sym<PROP_TYPE>(prop_name), ndim, positions);
+          NP::ParticleProp(NP::Sym<PROP_T>(prop_name), ndim, positions);
       auto particle_spec_contains = this->particle_spec.contains(particle_prop);
       if (particle_spec_contains) {
         continue;
@@ -76,7 +76,7 @@ struct ParticleSpecBuilder {
 
     for (auto prop_name : species_prop_names) {
       auto particle_prop =
-          NP::ParticleProp(NP::Sym<PROP_TYPE>(prop_name), ndim, positions);
+          NP::ParticleProp(NP::Sym<PROP_T>(prop_name), ndim, positions);
       auto particle_spec_contains = this->particle_spec.contains(particle_prop);
       if (particle_spec_contains) {
         continue;

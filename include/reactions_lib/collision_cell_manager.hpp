@@ -56,15 +56,14 @@ struct AbstractCollCellHierarchy {
  * @brief Helper function for generating shared pointers of collision cell
  * hierarchies for passing to CollisionCellManager objects
  *
- * @tparam CollCellHierarchyDerived The class name of the derived class of
+ * @tparam DERIVED_T The class name of the derived class of
  * AbstractCollCellHierarchy
  * @param args Argument pack to be passed on to the derived class constructor
  */
-template <typename CollCellHierarchyDerived, typename... ARGS>
+template <typename DERIVED_T, typename... Args>
 inline std::shared_ptr<AbstractCollCellHierarchy>
-make_coll_cell_hierarchy(ARGS &&...args) {
-  auto r =
-      std::make_shared<CollCellHierarchyDerived>(std::forward<ARGS>(args)...);
+make_coll_cell_hierarchy(Args &&...args) {
+  auto r = std::make_shared<DERIVED_T>(std::forward<Args>(args)...);
   return std::dynamic_pointer_cast<AbstractCollCellHierarchy>(r);
 }
 
