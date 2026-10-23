@@ -393,8 +393,8 @@ struct AbstractReactionDataOnDevice {
    * @return A REAL-valued array of size dim containing the calculated
    * reaction rate.
    */
-  template <std::size_t d = INPUT_DIM,
-            std::enable_if_t<(d == 0) && d == INPUT_DIM, int> = 0>
+  template <std::size_t D = INPUT_DIM,
+            std::enable_if_t<(D == 0) && D == INPUT_DIM, int> = 0>
   std::array<VALUE_T, dim>
   calc_data(const ACCESSOR_PACK_T &accessor_pack,
             typename RNG_KERNEL_T::KernelType &rng_kernel) const {
@@ -412,8 +412,8 @@ struct AbstractReactionDataOnDevice {
    * @return A REAL-valued array of size dim containing the calculated
    * reaction rate.
    */
-  template <std::size_t d = INPUT_DIM,
-            std::enable_if_t<(d > 0) && d == INPUT_DIM, int> = 0>
+  template <std::size_t D = INPUT_DIM,
+            std::enable_if_t<(D > 0) && D == INPUT_DIM, int> = 0>
   std::array<VALUE_T, dim>
   calc_data(const std::array<INPUT_T, INPUT_DIM> &input,
             const ACCESSOR_PACK_T &accessor_pack,
