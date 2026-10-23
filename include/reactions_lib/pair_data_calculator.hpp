@@ -20,9 +20,9 @@ struct AbstractPairDataCalculator {
 /**
  * @brief A static container class for PairReactionData objects
  *
- * @tparam DATATYPE PairReactionData types
+ * @tparam DATA_T PairReactionData types
  */
-template <typename... DATATYPE>
+template <typename... DATA_T>
 struct PairDataCalculator : public AbstractPairDataCalculator {
 
   /**
@@ -30,7 +30,7 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
    *
    * @param data List of PairReactionData objects (as multiple arguments).
    */
-  PairDataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
+  PairDataCalculator(DATA_T... data) : data(std::make_tuple(data...)) {
 
     size_t type_check_counter = 0u;
     (
@@ -42,7 +42,7 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
                       typename decltype(data)::ARGUMENT_PACK_TYPE,
                       data.get_dim(), typename decltype(data)::RNG_KERNEL_TYPE>,
                   decltype(data)>,
-              "DATATYPE provided is not derived from AbstractReactionData.");
+              "DATA_T provided is not derived from AbstractReactionData.");
           type_check_counter++;
         }(),
         ...);
@@ -83,10 +83,11 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
    * @param cell_idx_end Cell index to which to invoke the corresponding
    * particle loops
    */
-  template <typename TARGET, typename PAIR_LIST>
-  void fill_buffer(const NP::NDLocalArraySharedPtr<REAL, 2> &buffer,
-                   NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
-                   INT cell_idx_start, INT cell_idx_end) {
+  template <typename TARGET_T, typename PAIR_LIST_T>
+  void
+  fill_buffer(const NP::NDLocalArraySharedPtr<REAL, 2> &buffer,
+              NP::CellwisePairListAbsolute<TARGET_T, PAIR_LIST_T> &pair_list,
+              INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
                "Buffer size in fill_buffer does not correspond to the number "
                "data calculation objects.");
@@ -158,10 +159,10 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
   /**
    * @brief Getter of the total number of objects in the PairReactionData tuple
    */
-  size_t get_data_tuple_size() const { return sizeof...(DATATYPE); }
+  size_t get_data_tuple_size() const { return sizeof...(DATA_T); }
 
 private:
-  std::tuple<DATATYPE...> data;
+  std::tuple<DATA_T...> data;
   std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms_a;
   std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms_a;
   std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms_b;

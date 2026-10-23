@@ -11,10 +11,10 @@ namespace VANTAGE::Reactions {
  * @brief On device: ReactionData sampling a single random number from a random
  * kernel
  *
- * @tparam RNG_KERNEL The RNG kernel type
+ * @tparam RNG_KERNEL_T The RNG kernel type
  */
-template <typename RNG_KERNEL>
-struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL> {
+template <typename RNG_KERNEL_T>
+struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL_T> {
 
   SamplerDataOnDevice() = default;
 
@@ -29,7 +29,7 @@ struct SamplerDataOnDevice : public ReactionDataBaseOnDevice<1, RNG_KERNEL> {
    */
   std::array<REAL, 1>
   calc_data(const SingleReactionDataAccessors &accessors,
-            typename RNG_KERNEL::KernelType &rng_kernel) const {
+            typename RNG_KERNEL_T::KernelType &rng_kernel) const {
     bool is_kernel_valid = true;
     auto rand = rng_kernel.at(accessors.index, 0, &is_kernel_valid);
     if (!is_kernel_valid) {
@@ -46,11 +46,11 @@ public:
  * @brief On host reaction data class for sampling one number from an rng_kernel
  * (to be used in pipelines)
  *
- * @tparam RNG_KERNEL The RNG kernel type
+ * @tparam RNG_KERNEL_T The RNG kernel type
  */
-template <typename RNG_KERNEL>
-struct SamplerData
-    : public ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL> {
+template <typename RNG_KERNEL_T>
+struct SamplerData : public ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL_T>,
+                                             1, RNG_KERNEL_T> {
 
   constexpr static auto props = default_properties;
 
@@ -66,11 +66,11 @@ struct SamplerData
    * @param properties_map (Optional) A std::map<int, std::string> object to be
    * used when remapping property names.
    */
-  SamplerData(std::shared_ptr<RNG_KERNEL> rng_kernel,
+  SamplerData(std::shared_ptr<RNG_KERNEL_T> rng_kernel,
               std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL>(
+      : ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL_T>, 1, RNG_KERNEL_T>(
             Properties<INT>(required_simple_int_props), properties_map) {
-    this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();
+    this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL_T>();
 
     utils::validate_required_kernel_components<required_kernel_components>(
         rng_kernel);

@@ -19,10 +19,10 @@ namespace VANTAGE::Reactions {
  *
  * @tparam ndim The velocity space dimensionality for both the particles and the
  * fields
- * @tparam CROSS_SECTION The typename corresponding to the cross-section class
+ * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class
  * used
  */
-template <size_t ndim, typename CROSS_SECTION>
+template <size_t ndim, typename CROSS_SECTION_T>
 struct FilteredMaxwellianOnDevice
     : public ReactionDataBaseOnDevice<ndim,
                                       NP::HostAtomicBlockKernelRNG<REAL>> {
@@ -38,7 +38,7 @@ struct FilteredMaxwellianOnDevice
    * method sampling
    */
   FilteredMaxwellianOnDevice(const REAL &norm_ratio,
-                             CROSS_SECTION cross_section)
+                             CROSS_SECTION_T cross_section)
       : norm_ratio(norm_ratio), cross_section(cross_section) {};
 
   /**
@@ -136,7 +136,7 @@ struct FilteredMaxwellianOnDevice
 public:
   int fluid_temperature_ind, fluid_flow_speed_ind, velocity_ind, panic_ind;
   REAL norm_ratio;
-  CROSS_SECTION cross_section;
+  CROSS_SECTION_T cross_section;
 };
 
 /**
@@ -148,12 +148,12 @@ public:
  *
  * @tparam ndim The velocity space dimensionality for both the particles and the
  * fields
- * @tparam CROSS_SECTION The typename corresponding to the cross-section class
+ * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class
  * used
  */
-template <size_t ndim, typename CROSS_SECTION = ConstantRateCrossSection>
+template <size_t ndim, typename CROSS_SECTION_T = ConstantRateCrossSection>
 struct FilteredMaxwellianSampler
-    : public ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>,
+    : public ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION_T>,
                               ndim, NP::HostAtomicBlockKernelRNG<REAL>> {
 
   constexpr static auto props = default_properties;
@@ -182,18 +182,18 @@ struct FilteredMaxwellianSampler
    * used when remapping property names.
    */
   FilteredMaxwellianSampler(
-      const REAL &norm_ratio, CROSS_SECTION cross_section,
+      const REAL &norm_ratio, CROSS_SECTION_T cross_section,
       std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       std::map<int, std::string> properties_map = get_default_map())
-      : ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>, ndim,
-                         NP::HostAtomicBlockKernelRNG<REAL>>(
+      : ReactionDataBase<FilteredMaxwellianOnDevice<ndim, CROSS_SECTION_T>,
+                         ndim, NP::HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
             Properties<REAL>(required_simple_real_props), properties_map) {
-    this->on_device_obj = FilteredMaxwellianOnDevice<ndim, CROSS_SECTION>(
+    this->on_device_obj = FilteredMaxwellianOnDevice<ndim, CROSS_SECTION_T>(
         norm_ratio, cross_section);
 
-    static_assert(std::is_base_of_v<AbstractCrossSection, CROSS_SECTION>,
-                  "Template parameter CROSS_SECITON is not derived from "
+    static_assert(std::is_base_of_v<AbstractCrossSection, CROSS_SECTION_T>,
+                  "Template parameter CROSS_SECTION_T is not derived from "
                   "AbstractCrossSection...");
 
     utils::validate_required_kernel_components<required_kernel_components>(
@@ -214,14 +214,14 @@ struct FilteredMaxwellianSampler
    * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
    * ReactionDataBase.
    */
-  // FUNC is defaulted (not deduced) so the enable_if below
-  // substitutes into a viable SFINAE context for the default-CROSS_SECTION
-  // constructor; without the default, FUNC is undeducible and this overload
+  // FUNC_T is defaulted (not deduced) so the enable_if below
+  // substitutes into a viable SFINAE context for the default-CROSS_SECTION_T
+  // constructor; without the default, FUNC_T is undeducible and this overload
   // is never selected.
-  template <typename FUNC = void,
+  template <typename FUNC_T = void,
             std::enable_if_t<
-                std::is_same_v<CROSS_SECTION, ConstantRateCrossSection> &&
-                    std::is_void_v<FUNC>,
+                std::is_same_v<CROSS_SECTION_T, ConstantRateCrossSection> &&
+                    std::is_void_v<FUNC_T>,
                 int> = 0>
   FilteredMaxwellianSampler(
       const REAL &norm_ratio,

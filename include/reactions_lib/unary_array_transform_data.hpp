@@ -9,14 +9,14 @@ namespace VANTAGE::Reactions {
  * @brief Abstract base class encapsulating a unary transformation of a
  * std::array
  *
- * @tparam INPUT_DIM Expected input size
- * @tparam OUTPUT_DIM Expected output_size
+ * @tparam input_dim Expected input size
+ * @tparam output_dim Expected output_size
  */
-template <size_t INPUT_DIM, size_t OUTPUT_DIM>
+template <size_t input_dim, size_t output_dim>
 struct AbstractUnaryArrayTransform {
 
-  static const size_t IN_DIM = INPUT_DIM;
-  static const size_t OUT_DIM = OUTPUT_DIM;
+  static const size_t IN_DIM = input_dim;
+  static const size_t OUT_DIM = output_dim;
 
   std::array<REAL, OUT_DIM> apply(const std::array<REAL, IN_DIM> &input) const {
     return {};
@@ -35,17 +35,17 @@ struct AbstractUnaryArrayTransform {
  * child data objects, allowing the same stage to be used inside either a single
  * or a pair pipeline.
  *
- * @tparam TRANSFORM Transform derived from AbstractUnaryArrayTransform
+ * @tparam TRANSFORM_T Transform derived from AbstractUnaryArrayTransform
  * @tparam ACCESSOR_PACK_T Bundled device accessors for the ParticleLoop inside
  * which calc_data is called (Optional, defaults to
  * SingleReactionDataAccessors).
  */
-template <typename TRANSFORM,
+template <typename TRANSFORM_T,
           typename ACCESSOR_PACK_T = SingleReactionDataAccessors>
 struct UnaryArrayTransformDataOnDevice
-    : public AbstractReactionDataOnDevice<ACCESSOR_PACK_T, TRANSFORM::OUT_DIM,
-                                          DEFAULT_RNG_KERNEL, TRANSFORM::IN_DIM,
-                                          REAL, REAL> {
+    : public AbstractReactionDataOnDevice<ACCESSOR_PACK_T, TRANSFORM_T::OUT_DIM,
+                                          DEFAULT_RNG_KERNEL,
+                                          TRANSFORM_T::IN_DIM, REAL, REAL> {
 
   UnaryArrayTransformDataOnDevice() = default;
   /**
@@ -53,7 +53,7 @@ struct UnaryArrayTransformDataOnDevice
    *
    * @param transform The transform object to be applied
    */
-  UnaryArrayTransformDataOnDevice(const TRANSFORM &transform)
+  UnaryArrayTransformDataOnDevice(const TRANSFORM_T &transform)
       : transform(transform) {};
 
   /**
@@ -68,8 +68,8 @@ struct UnaryArrayTransformDataOnDevice
    *
    * @return Result of applying the contained transform
    */
-  std::array<REAL, TRANSFORM::OUT_DIM>
-  calc_data(const std::array<REAL, TRANSFORM::IN_DIM> &input,
+  std::array<REAL, TRANSFORM_T::OUT_DIM>
+  calc_data(const std::array<REAL, TRANSFORM_T::IN_DIM> &input,
             const ACCESSOR_PACK_T &accessors,
             typename DEFAULT_RNG_KERNEL::KernelType &kernel) const {
 
@@ -77,7 +77,7 @@ struct UnaryArrayTransformDataOnDevice
   }
 
 private:
-  TRANSFORM transform;
+  TRANSFORM_T transform;
 };
 
 /**
@@ -88,18 +88,18 @@ private:
  * placed inside either a single or a pair pipeline. The matching device
  * accessor pack is derived via accessor_pack_for_t.
  *
- * @tparam TRANSFORM The transformation type being applied
+ * @tparam TRANSFORM_T The transformation type being applied
  * @tparam ARGUMENT_PACK_T Bundled host-side property requirements
  * (Optional, defaults to SingleReactionDataArgumentPack).
  */
-template <typename TRANSFORM,
+template <typename TRANSFORM_T,
           typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
 struct UnaryArrayTransformData
     : public AbstractReactionData<
-          UnaryArrayTransformDataOnDevice<TRANSFORM,
+          UnaryArrayTransformDataOnDevice<TRANSFORM_T,
                                           accessor_pack_for_t<ARGUMENT_PACK_T>>,
-          ARGUMENT_PACK_T, TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
-          TRANSFORM::IN_DIM> {
+          ARGUMENT_PACK_T, TRANSFORM_T::OUT_DIM, DEFAULT_RNG_KERNEL,
+          TRANSFORM_T::IN_DIM> {
 
   /**
    * @brief Constructor for UnaryArrayTransformData
@@ -107,14 +107,14 @@ struct UnaryArrayTransformData
    * @param transform Unary transform object (derived from
    * AbstractUnaryTransform) to be applied on input data
    */
-  UnaryArrayTransformData(const TRANSFORM &transform)
+  UnaryArrayTransformData(const TRANSFORM_T &transform)
       : AbstractReactionData<
             UnaryArrayTransformDataOnDevice<
-                TRANSFORM, accessor_pack_for_t<ARGUMENT_PACK_T>>,
-            ARGUMENT_PACK_T, TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
-            TRANSFORM::IN_DIM>(ARGUMENT_PACK_T(), get_default_map()) {
+                TRANSFORM_T, accessor_pack_for_t<ARGUMENT_PACK_T>>,
+            ARGUMENT_PACK_T, TRANSFORM_T::OUT_DIM, DEFAULT_RNG_KERNEL,
+            TRANSFORM_T::IN_DIM>(ARGUMENT_PACK_T(), get_default_map()) {
     this->on_device_obj = UnaryArrayTransformDataOnDevice<
-        TRANSFORM, accessor_pack_for_t<ARGUMENT_PACK_T>>(transform);
+        TRANSFORM_T, accessor_pack_for_t<ARGUMENT_PACK_T>>(transform);
   };
 
   /**

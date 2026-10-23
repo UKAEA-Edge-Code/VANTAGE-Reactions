@@ -180,7 +180,7 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * Function to calculate the initial function values on the vertices of the
  * hypercube.
  *
- * @tparam DATATYPE ReactionDataBaseOnDevice derived type corresponding to the
+ * @tparam DATA_T ReactionDataBaseOnDevice derived type corresponding to the
  * grid-function evaluation reaction data.
  * @tparam output_ndim Number of dimensions of the output of the grid-function
  * evaluation.
@@ -191,7 +191,7 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * with function evaluations.
  * @param vertex_coord Pointer to a vector to fill with
  * locations of the vertices of the hypercube.
- * @param grid_func_data DATATYPE object that defines the grid-function
+ * @param grid_func_data DATA_T object that defines the grid-function
  * evaluation.
  * @param origin_indices Pointer to a vector containing the
  * indices that will form the (0,0) point of the hypercube (that is to say, the
@@ -221,10 +221,10 @@ bin_uniform_indices(const std::array<REAL, index_ndim> &u,
  * the calculation
  */
 
-template <typename DATATYPE, int output_ndim, int interp_ndim,
+template <typename DATA_T, int output_ndim, int interp_ndim,
           int non_interp_ndim>
 inline void initial_func_eval_on_device(
-    REAL *vertex_func_evals, INT *vertex_coord, const DATATYPE &grid_func_data,
+    REAL *vertex_func_evals, INT *vertex_coord, const DATA_T &grid_func_data,
     INT const *origin_indices, size_t const *hypercube_vertices,
     REAL const *coords_vec,
     const std::array<REAL, non_interp_ndim> &non_interpolation_points,
@@ -233,7 +233,7 @@ inline void initial_func_eval_on_device(
     size_t const *dims_vec, const NP::Access::LoopIndex::Read &index,
     const NP::Access::SymVector::Write<INT> &req_int_props,
     const NP::Access::SymVector::Read<REAL> &req_real_props,
-    typename NP::TupleRNG<std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::
+    typename NP::TupleRNG<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>>::
         KernelType &rng_kernel) {
 
   std::array<REAL, output_ndim> grid_func_output;
