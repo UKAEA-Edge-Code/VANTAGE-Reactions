@@ -12,17 +12,17 @@ namespace VANTAGE::Reactions {
  * @brief A struct defining a reaction representing electron impact
  * ionisation, allowing for separate rate and energy rate calculation
  *
- * @tparam RateData ReactionData template parameter used for the rate
+ * @tparam RATE_DATA_T ReactionData template parameter used for the rate
  * calculation
- * @tparam EnergyRateData ReactionData template parameter used for the energy
- * rate calculation,
+ * @tparam ENERGY_RATE_DATA_T ReactionData template parameter used for the
+ * energy rate calculation,
  * @tparam ndim Optional template parameter defining the ndim_velocity template
  * parameter to use with IoniseReactionKernels
  */
-template <typename RateData, typename EnergyRateData, int ndim = 2>
+template <typename RATE_DATA_T, typename ENERGY_RATE_DATA_T, int ndim = 2>
 struct ElectronImpactIonisation
-    : public LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
-                                DataCalculator<EnergyRateData>> {
+    : public LinearReactionBase<0, RATE_DATA_T, IoniseReactionKernels<ndim>,
+                                DataCalculator<ENERGY_RATE_DATA_T>> {
 
   /**
    * @brief Constructor for ElectronImpactIonisation.
@@ -39,17 +39,18 @@ struct ElectronImpactIonisation
    * used when remapping property names.
    */
   ElectronImpactIonisation(
-      NP::SYCLTargetSharedPtr sycl_target, RateData rate_data,
-      EnergyRateData energy_rate_data, Species target_species,
+      NP::SYCLTargetSharedPtr sycl_target, RATE_DATA_T rate_data,
+      ENERGY_RATE_DATA_T energy_rate_data, Species target_species,
       Species electron_species,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
-                           DataCalculator<EnergyRateData>>(
+      : LinearReactionBase<0, RATE_DATA_T, IoniseReactionKernels<ndim>,
+                           DataCalculator<ENERGY_RATE_DATA_T>>(
             sycl_target, target_species.get_id(), std::array<int, 0>{},
             rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species, properties_map),
-            DataCalculator<EnergyRateData>(energy_rate_data), properties_map) {}
+            DataCalculator<ENERGY_RATE_DATA_T>(energy_rate_data),
+            properties_map) {}
 };
 }; // namespace VANTAGE::Reactions
 #endif

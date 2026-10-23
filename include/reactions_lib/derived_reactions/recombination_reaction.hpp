@@ -14,19 +14,19 @@ namespace VANTAGE::Reactions {
  * without reducing them. The user is responsible for setting the weight of
  * the marker species in a way that reproduces the sources they want.
  *
- * @tparam RateData ReactionData template parameter used for the rate
+ * @tparam RATE_DATA_T ReactionData template parameter used for the rate
  * calculation
- * @tparam DataCalcType DataCalculator template parameter used for calculating,
+ * @tparam DATA_CALC_T DataCalculator template parameter used for calculating,
  * electron source energy loss and the velocities for generated neutrals
  * @tparam ndim Template parameter defining the ndim_velocity template
  * parameter to use with RecombReactionKernels
  *
  */
 
-template <typename RateData, typename DataCalcType, size_t ndim>
+template <typename RATE_DATA_T, typename DATA_CALC_T, size_t ndim>
 struct Recombination
-    : public LinearReactionBase<1, RateData, RecombReactionKernels<ndim>,
-                                DataCalcType> {
+    : public LinearReactionBase<1, RATE_DATA_T, RecombReactionKernels<ndim>,
+                                DATA_CALC_T> {
 
   /**
    * @brief Constructor for Recombination.
@@ -51,13 +51,13 @@ struct Recombination
    * used when remapping property names.
    */
   Recombination(
-      NP::SYCLTargetSharedPtr sycl_target, RateData rate_data,
-      DataCalcType data_calc_obj, Species marker_species,
+      NP::SYCLTargetSharedPtr sycl_target, RATE_DATA_T rate_data,
+      DATA_CALC_T data_calc_obj, Species marker_species,
       Species electron_species, Species neutral_species,
       const REAL &normalised_potential_energy,
       const std::map<int, std::string> &properties_map = get_default_map())
-      : LinearReactionBase<1, RateData, RecombReactionKernels<ndim, ndim>,
-                           DataCalcType>(
+      : LinearReactionBase<1, RATE_DATA_T, RecombReactionKernels<ndim, ndim>,
+                           DATA_CALC_T>(
             sycl_target, marker_species.get_id(),
             std::array<int, 1>{static_cast<int>(neutral_species.get_id())},
             rate_data,
