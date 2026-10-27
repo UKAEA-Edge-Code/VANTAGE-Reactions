@@ -195,10 +195,10 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
       for (int in_state : in_states) {
 
         if (is_particle_group) {
-          this->species_groups.emplace(std::make_pair(
+          this->species_groups.insert_or_assign(
               in_state,
               this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  target)));
+                  target));
         } else {
 
           this->species_groups[in_state] =
@@ -212,9 +212,9 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
 
         for (int in_state : in_states) {
           if (is_particle_group) {
-            this->reacted_species_groups.emplace(std::make_pair(
+            this->reacted_species_groups.insert_or_assign(
                 in_state, this->reacted_marker->make_marker_subgroup(
-                              this->species_groups[in_state])));
+                              this->species_groups[in_state]));
           } else {
 
             this->reacted_species_groups[in_state] =
@@ -228,8 +228,8 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
       default: {
         for (int in_state : in_states) {
           if (is_particle_group) {
-            this->reacted_species_groups.emplace(
-                std::make_pair(in_state, this->species_groups[in_state]));
+            this->reacted_species_groups.insert_or_assign(
+                in_state, this->species_groups[in_state]);
           } else {
             this->reacted_species_groups[in_state] =
                 this->species_groups[in_state];
