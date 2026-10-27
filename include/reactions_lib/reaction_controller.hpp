@@ -263,13 +263,13 @@ private:
 
   virtual std::string get_profiling_name() override;
 
-  std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
-  std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
+  std::map<INT, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
+  std::map<INT, NP::ParticleSubGroupSharedPtr> species_groups;
+  std::map<INT, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
   NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
-  std::set<int> parent_ids;
-  std::set<int> child_ids;
+  std::set<INT> parent_ids;
+  std::set<INT> child_ids;
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions;
   std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;
