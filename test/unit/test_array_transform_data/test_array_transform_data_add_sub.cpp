@@ -8,8 +8,7 @@ TEST(ArrayTransformData, binary_add) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
@@ -54,8 +53,7 @@ TEST(ArrayTransformData, binary_add_left_scalar) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
   auto position_data_1 = ExtractorData<1>(NP::Sym<REAL>("POSITION"));
@@ -102,8 +100,7 @@ TEST(ArrayTransformData, binary_add_right_scalar) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
   auto position_data_1 = ExtractorData<1>(NP::Sym<REAL>("POSITION"));
