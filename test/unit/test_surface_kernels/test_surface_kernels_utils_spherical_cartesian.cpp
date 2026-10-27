@@ -87,7 +87,7 @@ TEST(SurfaceKernels, SphericalBasisReflectionData) {
       "ION_SOURCE_ENERGY";
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto test_kernels =
-      LinearScatteringKernels<3>(projectile_species, properties_map.get_map());
+      LinearScatteringKernels<3>(projectile_species, properties_map);
 
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
   auto test_reaction =
@@ -189,7 +189,7 @@ TEST(SurfaceKernels, CartesianBasisReflectionData) {
       "ION_SOURCE_ENERGY";
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto test_kernels =
-      LinearScatteringKernels<3>(projectile_species, properties_map.get_map());
+      LinearScatteringKernels<3>(projectile_species, properties_map);
 
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
   auto test_reaction =

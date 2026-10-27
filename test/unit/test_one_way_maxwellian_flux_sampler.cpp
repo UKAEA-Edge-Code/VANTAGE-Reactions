@@ -68,8 +68,7 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   auto rng_lambda = [&]() -> REAL { return 0.75; };
   auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
-  OneWayMaxwellianFluxSampler sampler(norm_ratio, rng_kernel,
-                                      get_default_map());
+  OneWayMaxwellianFluxSampler sampler(norm_ratio, rng_kernel, PropertiesMap());
   auto sampler_on_device = sampler.get_on_device_obj();
 
   auto req_int_props_ = sampler.get_arg_pack().int_sym_vector();

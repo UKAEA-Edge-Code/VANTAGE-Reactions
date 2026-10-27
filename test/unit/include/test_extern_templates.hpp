@@ -160,15 +160,15 @@ extern template class TrimEvalData<7>;
 // CROSS_SECTION_T. The members the tests use are therefore instantiated
 // individually.
 extern template CSPairData<2, ConstantRateCrossSection>::CSPairData(
-    ConstantRateCrossSection, std::map<int, std::string>);
+    ConstantRateCrossSection, const PropertiesMap);
 extern template REAL
     CSPairData<2, ConstantRateCrossSection>::get_cs_max_rate_val(REAL);
 extern template CSPairData<2, ConstantCrossSection>::CSPairData(
-    ConstantCrossSection, std::map<int, std::string>);
+    ConstantCrossSection, const PropertiesMap);
 extern template REAL
     CSPairData<2, ConstantCrossSection>::get_cs_max_rate_val(REAL);
-extern template CSPairData<3, IPLCrossSection>::CSPairData(
-    IPLCrossSection, std::map<int, std::string>);
+extern template CSPairData<3, IPLCrossSection>::CSPairData(IPLCrossSection,
+                                                           const PropertiesMap);
 extern template REAL CSPairData<3, IPLCrossSection>::get_cs_max_rate_val(REAL);
 
 extern template class HSScatteringData<2>;
@@ -222,8 +222,7 @@ extern template SWPMReaction<2, CSPairData<2, ConstantCrossSection>,
     SWPMReaction(NP::SYCLTargetSharedPtr, std::array<int, 2>,
                  std::array<int, 2>, CSPairData<2, ConstantCrossSection>,
                  PairScatteringKernels<2>,
-                 PairDataCalculator<HSScatteringData<2>>,
-                 const std::map<int, std::string> &);
+                 PairDataCalculator<HSScatteringData<2>>, const PropertiesMap);
 extern template void SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
                                       PairScatteringKernels<2>>::
     calculate_rates(
@@ -257,8 +256,7 @@ extern template SWPMReaction<2, CSPairData<3, IPLCrossSection>,
     SWPMReaction(NP::SYCLTargetSharedPtr, std::array<int, 2>,
                  std::array<int, 2>, CSPairData<3, IPLCrossSection>,
                  PairScatteringKernels<3>,
-                 PairDataCalculator<SSScatteringData<3>>,
-                 const std::map<int, std::string> &);
+                 PairDataCalculator<SSScatteringData<3>>, const PropertiesMap);
 extern template void
 SWPMReactionImpl<2, CSPairData<3, IPLCrossSection>, PairScatteringKernels<3>>::
     calculate_rates(

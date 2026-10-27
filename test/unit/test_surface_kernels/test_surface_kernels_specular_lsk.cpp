@@ -30,7 +30,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels) {
       "ION_SOURCE_ENERGY";
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto test_kernels =
-      LinearScatteringKernels<2>(projectile_species, properties_map.get_map());
+      LinearScatteringKernels<2>(projectile_species, properties_map);
 
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
   auto test_reaction =

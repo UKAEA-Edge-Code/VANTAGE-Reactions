@@ -3,7 +3,7 @@ void vranic_merging_strategy_example(
 
   auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
 
-  auto prop_map = get_default_map();
+  auto prop_map = PropertiesMap();
 
   auto merging_strat =
       make_vranic_merging_strategy<2 // The velocity space dimensionality

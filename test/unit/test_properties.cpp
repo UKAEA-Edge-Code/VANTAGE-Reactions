@@ -363,10 +363,10 @@ TEST(Properties, properties_map_setting) {
 
   struct test_reaction_data : ReactionDataBase<TestEphemeralVarDataOnDevice> {
     test_reaction_data(std::map<int, std::string> property_map_)
-        : ReactionDataBase(property_map_) {}
+        : ReactionDataBase(PropertiesMap(property_map_)) {}
 
     std::map<int, std::string> get_property_map() {
-      return this->get_properties_map();
+      return this->get_properties_map().get_map();
     }
   };
 
@@ -414,7 +414,7 @@ TEST(Properties, full_use_properties_map) {
   particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_DENSITY"));
   particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_TEMPERATURE"));
 
-  auto test_prop_map = get_default_map();
+  auto test_prop_map = PropertiesMap();
   test_prop_map[default_properties.fluid_density] = "TEST_PROP1";
   test_prop_map[default_properties.fluid_temperature] = "TEST_PROP2";
 
