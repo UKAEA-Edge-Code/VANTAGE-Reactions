@@ -25,10 +25,10 @@ struct CellwiseReactionDataAccumulatorBase : TransformationStrategy {
    *
    * @param template_group A template particle group used to provide the
    * SYCL target and cell count for the created CellDatConst.
-   * @param required_int_syms Integer-valued particle dats required by the
-   * derived accumulator.
-   * @param required_real_syms Real-valued particle dats required by the
-   * derived accumulator.
+   * @param required_int_syms A vector of NP::Sym objects that signify
+   * the integer-valued particle dats required by the derived accumulator
+   * @param required_real_syms A vector of NP::Sym objects that signify
+   * the real-valued particle dats required by the derived accumulator
    * @param data_dim Number of components accumulated per cell.
    */
   CellwiseReactionDataAccumulatorBase(
