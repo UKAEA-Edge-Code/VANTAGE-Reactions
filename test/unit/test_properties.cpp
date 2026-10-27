@@ -486,3 +486,15 @@ TEST(ArgumentNameSet, merging) {
 
   EXPECT_NE(std::find(names.begin(), names.end(), "test"), names.end());
 }
+
+TEST(Properties, subset_check) {
+  EXPECT_TRUE(map_subset_check(get_default_map()));
+
+  auto missing_last = get_default_map();
+  missing_last.erase(default_properties.fluid_flow_speed);
+  EXPECT_FALSE(map_subset_check(missing_last));
+
+  auto extended = get_default_map();
+  extended[default_properties.fluid_flow_speed + 1] = "TEST_CUSTOM_PROP";
+  EXPECT_TRUE(map_subset_check(extended));
+}
