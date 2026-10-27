@@ -236,13 +236,13 @@ struct OneWayMaxwellianFluxSampler
    * @param rng_kernel A shared pointer of a
    * NP::HostAtomicBlockKernelRNG<REAL> to be set as the rng_kernel in
    * ReactionDataBase.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
   OneWayMaxwellianFluxSampler(
       const REAL &norm_ratio,
       std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map = get_default_map());
+      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * @brief Index the fluid flow speed, fluid temperature, surface basis

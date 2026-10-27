@@ -8,14 +8,8 @@ ParticleSpecBuilder::ParticleSpecBuilder(NP::ParticleSpec particle_spec) {
   this->add_particle_spec(particle_spec);
 }
 
-ParticleSpecBuilder::ParticleSpecBuilder(
-    int ndim, const std::map<int, std::string> &properties_map) {
-
-  NESOWARN(map_subset_check(properties_map),
-           "The provided properties_map does not include all the keys from the \
-      default_map (and therefore is not an extension of that map). There \
-      may be inconsitencies with indexing of properties.");
-
+ParticleSpecBuilder::ParticleSpecBuilder(int ndim,
+                                         const PropertiesMap properties_map) {
   this->add_particle_spec(NP::ParticleSpec(
       NP::ParticleProp(
           NP::Sym<REAL>(properties_map.at(default_properties.position)), ndim,
@@ -78,10 +72,11 @@ const NP::ParticleSpec &ParticleSpecBuilder::get_particle_spec() {
 }
 
 // Template instantiations
-template void
-ParticleSpecBuilder::add_particle_prop<INT>(Properties<INT>, int, bool,
-                                            const std::map<int, std::string> &);
-template void ParticleSpecBuilder::add_particle_prop<REAL>(
-    Properties<REAL>, int, bool, const std::map<int, std::string> &);
+template void ParticleSpecBuilder::add_particle_prop<INT>(Properties<INT>, int,
+                                                          bool,
+                                                          const PropertiesMap);
+template void ParticleSpecBuilder::add_particle_prop<REAL>(Properties<REAL>,
+                                                           int, bool,
+                                                           const PropertiesMap);
 
 } // namespace VANTAGE::Reactions

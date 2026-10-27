@@ -63,12 +63,11 @@ struct FixedCoefficientData
    *
    * @param rate_coeff A real-valued rate coefficient (rate proportional to this
    * and the particle weight)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names
    */
-  FixedCoefficientData(
-      REAL rate_coefficient,
-      std::map<int, std::string> properties_map = get_default_map());
+  FixedCoefficientData(REAL rate_coefficient,
+                       const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * @brief Index the particle weight on the on-device object

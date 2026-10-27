@@ -77,14 +77,14 @@ struct SWPMReactionImpl : AbstractPairReaction {
    * pairs
    * @param reaction_kernels PairReactionKernels object defining the properties
    * of the products and the feedback on the parent particles and fields
-   * @param properties_map (Optional) A std::map<int, std::string> object used
+   * @param properties_map (Optional) A PropertiesMap object used
    * when remapping property names (tot_reaction_rate,weight_change)
    */
-  SWPMReactionImpl(
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
-      ReactionKernels reaction_kernels,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  SWPMReactionImpl(NP::SYCLTargetSharedPtr sycl_target,
+                   std::array<int, 2> reactants,
+                   std::array<int, num_products> products,
+                   ReactionData reaction_data, ReactionKernels reaction_kernels,
+                   const PropertiesMap properties_map = PropertiesMap())
       : reactants(reactants), products(products), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), sycl_target_stored(sycl_target),
         device_rate_buffer(
@@ -93,12 +93,6 @@ struct SWPMReactionImpl : AbstractPairReaction {
             std::make_shared<NP::NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
         max_buffer_size(16384 *
                         NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsistencies with indexing of properties.");
 
     this->total_reaction_rate =
         NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
@@ -410,14 +404,15 @@ struct SWPMReaction
    * of the products and the feedback on the parent particles and fields
    * @param data_calculator PairDataCalculator object defining any additional
    * required data for the kernels
-   * @param properties_map (Optional) A std::map<int, std::string> object used
+   * @param properties_map (Optional) A PropertiesMap object used
    * when remapping property names (tot_reaction_rate,weight_change)
    */
-  SWPMReaction(
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
-      ReactionKernels reaction_kernels, DataCalc data_calculator,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  SWPMReaction(NP::SYCLTargetSharedPtr sycl_target,
+               std::array<int, 2> reactants,
+               std::array<int, num_products> products,
+               ReactionData reaction_data, ReactionKernels reaction_kernels,
+               DataCalc data_calculator,
+               const PropertiesMap properties_map = PropertiesMap())
       : SWPMReactionImpl<num_products, ReactionData, ReactionKernels>(
             sycl_target, reactants, products, reaction_data, reaction_kernels,
             properties_map),
@@ -456,16 +451,16 @@ struct SWPMReaction
    * @param reaction_kernels PairReactionKernels object defining the
    * properties of the products and the feedback on the parent particles and
    * fields
-   * @param properties_map (Optional) A std::map<int, std::string> object
-   * used when remapping property names (tot_reaction_rate,weight_change)
+   * @param properties_map (Optional) A PropertiesMap object used when
+   * remapping property names (tot_reaction_rate,weight_change)
    */
   template <typename U = DataCalc,
             std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
-  SWPMReaction(
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
-      ReactionKernels reaction_kernels,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  SWPMReaction(NP::SYCLTargetSharedPtr sycl_target,
+               std::array<int, 2> reactants,
+               std::array<int, num_products> products,
+               ReactionData reaction_data, ReactionKernels reaction_kernels,
+               const PropertiesMap properties_map = PropertiesMap())
       : SWPMReaction(sycl_target, reactants, products, reaction_data,
                      reaction_kernels, DataCalc(), properties_map) {}
 

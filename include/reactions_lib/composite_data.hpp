@@ -104,8 +104,7 @@ struct CompositeData
       : AbstractReactionData<ON_DEVICE_TYPE, ARGUMENT_PACK_TYPE, dim,
                              NP::TupleRNG<std::shared_ptr<
                                  typename DATATYPE::RNG_KERNEL_TYPE>...>,
-                             input_dim>(ARGUMENT_PACK_TYPE(),
-                                        get_default_map()),
+                             input_dim>(ARGUMENT_PACK_TYPE(), PropertiesMap()),
         data(std::make_tuple(data...)) {};
 
   /**

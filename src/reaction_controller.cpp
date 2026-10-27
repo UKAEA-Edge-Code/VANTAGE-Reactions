@@ -7,17 +7,10 @@ namespace VANTAGE::Reactions {
 ReactionController::ReactionController(
     std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
     std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
-    bool auto_clean_tot_rate_buffer,
-    const std::map<int, std::string> &properties_map)
+    bool auto_clean_tot_rate_buffer, const PropertiesMap properties_map)
     : cell_block_size(NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
       parent_transform(parent_transform), child_transform(child_transform),
       auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
-
-  NESOWARN(map_subset_check(properties_map),
-           "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
   this->id_sym =
       NP::Sym<INT>(properties_map.at(default_properties.internal_state));
   this->weight_sym =
@@ -41,17 +34,15 @@ ReactionController::ReactionController(
       std::make_shared<NP::HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
 }
 
-ReactionController::ReactionController(
-    bool auto_clean_tot_rate_buffer,
-    const std::map<int, std::string> &properties_map)
+ReactionController::ReactionController(bool auto_clean_tot_rate_buffer,
+                                       const PropertiesMap properties_map)
     : ReactionController(std::vector<std::shared_ptr<TransformationWrapper>>{},
                          std::vector<std::shared_ptr<TransformationWrapper>>{},
                          auto_clean_tot_rate_buffer, properties_map) {}
 
 ReactionController::ReactionController(
     std::shared_ptr<TransformationWrapper> child_transform,
-    bool auto_clean_tot_rate_buffer,
-    const std::map<int, std::string> &properties_map)
+    bool auto_clean_tot_rate_buffer, const PropertiesMap properties_map)
     : ReactionController(std::vector<std::shared_ptr<TransformationWrapper>>{},
                          std::vector{child_transform},
                          auto_clean_tot_rate_buffer, properties_map) {}
@@ -59,8 +50,7 @@ ReactionController::ReactionController(
 ReactionController::ReactionController(
     std::shared_ptr<TransformationWrapper> parent_transform,
     std::shared_ptr<TransformationWrapper> child_transform,
-    bool auto_clean_tot_rate_buffer,
-    const std::map<int, std::string> &properties_map)
+    bool auto_clean_tot_rate_buffer, const PropertiesMap properties_map)
     : ReactionController(std::vector{parent_transform},
                          std::vector{child_transform},
                          auto_clean_tot_rate_buffer, properties_map) {}

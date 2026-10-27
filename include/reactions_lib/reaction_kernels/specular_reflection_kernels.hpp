@@ -90,11 +90,11 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
   /**
    * @brief Specular reflection host type constructor
    *
-   * @param properties_map A std::map<int, std::string> object to be to be
+   * @param properties_map A PropertiesMap object to be to be
    * passed to ReactionKernelsBase, used in remapping property names.
    */
   SpecularReflectionKernels(
-      std::map<int, std::string> properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : ReactionKernelsBase(Properties<INT>(),
                             Properties<REAL>(required_simple_real_props),
                             Properties<INT>(), Properties<REAL>()) {

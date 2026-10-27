@@ -35,17 +35,10 @@ struct MergeTransformationStrategy : TransformationStrategy {
   /**
    * @brief Constructor for MergeTransformationStrategy.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used to remap the syms for the position, weight and velocity properties.
    */
-  MergeTransformationStrategy(
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
+  MergeTransformationStrategy(PropertiesMap properties_map = PropertiesMap()) {
 
     this->position =
         NP::Sym<REAL>(properties_map.at(default_properties.position));

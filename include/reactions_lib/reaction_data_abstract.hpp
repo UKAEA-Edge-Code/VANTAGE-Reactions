@@ -133,25 +133,24 @@ struct ReactionDataStorage {
    * @param required_real_props_ephemeral Properties<REAL> object containing
    * information regarding the required REAL-based ephemeral properties for the
    * reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataStorage(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      Properties<INT> required_int_props_ephemeral,
-      Properties<REAL> required_real_props_ephemeral,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionDataStorage(Properties<INT> required_int_props,
+                      Properties<REAL> required_real_props,
+                      Properties<INT> required_int_props_ephemeral,
+                      Properties<REAL> required_real_props_ephemeral,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
    * @brief Constructor for ReactionDataStorage that sets no required
    * properties.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataStorage(
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionDataStorage(const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -160,12 +159,11 @@ struct ReactionDataStorage {
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataStorage(
-      Properties<INT> required_int_props,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionDataStorage(Properties<INT> required_int_props,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -174,12 +172,11 @@ struct ReactionDataStorage {
    *
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataStorage(
-      Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionDataStorage(Properties<REAL> required_real_props,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -190,12 +187,12 @@ struct ReactionDataStorage {
    * regarding the required INT-based properties for the reaction data.
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataStorage(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionDataStorage(Properties<INT> required_int_props,
+                      Properties<REAL> required_real_props,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   ~ReactionDataStorage();
 
@@ -236,12 +233,12 @@ struct ReactionDataStorage {
   /**
    * @brief Return the property remapping map.
    */
-  const std::map<int, std::string> &get_properties_map() const;
+  const PropertiesMap &get_properties_map() const;
 
 protected:
   ArgumentNameSet<INT> required_int_props;
   ArgumentNameSet<REAL> required_real_props;
-  std::map<int, std::string> properties_map;
+  PropertiesMap properties_map;
 };
 
 template <typename ON_DEVICE_T, typename ARGUMENT_PACK_T, size_t dim = 1,
@@ -293,9 +290,8 @@ struct AbstractReactionData {
     this->rng_kernel = std::make_shared<RNG_KERNEL_T>();
   }
 
-  AbstractReactionData(
-      ARGUMENT_PACK_T argument_pack,
-      std::map<int, std::string> properties_map = get_default_map())
+  AbstractReactionData(ARGUMENT_PACK_T argument_pack,
+                       const PropertiesMap properties_map = PropertiesMap())
       : AbstractReactionData(argument_pack,
                              ReactionDataStorage(properties_map)) {}
 
@@ -359,7 +355,7 @@ struct AbstractReactionData {
   }
 
 protected:
-  const std::map<int, std::string> &get_properties_map() const {
+  const PropertiesMap &get_properties_map() const {
     return this->storage.get_properties_map();
   }
 

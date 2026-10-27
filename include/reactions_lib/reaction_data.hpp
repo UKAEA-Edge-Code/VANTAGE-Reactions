@@ -113,14 +113,14 @@ struct ReactionDataBase
    * @param required_real_props_ephemeral Properties<REAL> object containing
    * information regarding the required REAL-based ephemeral properties for
    * the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      Properties<INT> required_int_props_ephemeral,
-      Properties<REAL> required_real_props_ephemeral,
-      std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(Properties<INT> required_int_props,
+                   Properties<REAL> required_real_props,
+                   Properties<INT> required_int_props_ephemeral,
+                   Properties<REAL> required_real_props_ephemeral,
+                   const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase(ReactionDataStorage(
             required_int_props, required_real_props,
             required_int_props_ephemeral, required_real_props_ephemeral,
@@ -130,11 +130,10 @@ struct ReactionDataBase
    * \overload
    * @brief Constructor for ReactionDataBase that sets no required properties.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataBase(
-      std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase(Properties<INT>(), Properties<REAL>(),
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
@@ -146,12 +145,11 @@ struct ReactionDataBase
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataBase(
-      Properties<INT> required_int_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(Properties<INT> required_int_props,
+                   const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase(required_int_props, Properties<REAL>(),
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
@@ -164,12 +162,11 @@ struct ReactionDataBase
    * @param required_real_props Properties<REAL> object containing
    * information regarding the required REAL-based properties for the
    * reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataBase(
-      Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(Properties<REAL> required_real_props,
+                   const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase(Properties<INT>(), required_real_props,
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}
@@ -184,12 +181,12 @@ struct ReactionDataBase
    * @param required_real_props Properties<REAL> object containing
    * information regarding the required REAL-based properties for the
    * reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  ReactionDataBase(Properties<INT> required_int_props,
+                   Properties<REAL> required_real_props,
+                   const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase(required_int_props, required_real_props,
                          Properties<INT>(), Properties<REAL>(),
                          properties_map) {}

@@ -80,10 +80,11 @@ struct PropertiesMap {
   PropertiesMap(std::map<int, std::string> custom_map);
 
 public:
-  std::map<int, std::string> get_map();
+  std::map<int, std::string> get_map() const;
 
   // Just exposes the bounds-checked accessor to the private_map.
   std::string &at(const int &key);
+  const std::string &at(const int &key) const;
 
   std::string &operator[](const int &key);
 

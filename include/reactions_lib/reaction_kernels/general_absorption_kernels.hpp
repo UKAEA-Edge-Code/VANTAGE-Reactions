@@ -99,12 +99,11 @@ struct GeneralAbsorptionKernels : public ReactionKernelsBase {
    *
    * @param absorbed_species Species object corresponding to the absorbed
    * particle
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  GeneralAbsorptionKernels(
-      const Species &absorbed_species,
-      std::map<int, std::string> properties_map = get_default_map())
+  GeneralAbsorptionKernels(const Species &absorbed_species,
+                           const PropertiesMap properties_map = PropertiesMap())
       : ReactionKernelsBase(Properties<REAL>(required_simple_real_props), 0,
                             properties_map) {
     this->absorption_kernels_on_device.velocity_ind =

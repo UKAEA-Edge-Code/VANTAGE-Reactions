@@ -90,11 +90,11 @@ struct CartesianBasisReflectionData
   /**
    * @brief Constructor for CartesianBasisReflectionData.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
   CartesianBasisReflectionData(
-      std::map<int, std::string> properties_map = get_default_map());
+      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * @brief Index the particle velocity and surface normal properties on the

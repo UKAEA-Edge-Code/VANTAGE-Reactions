@@ -29,12 +29,11 @@ struct AbstractReaction : ProfilingBase {
    * @param sycl_target Compute device used by the instance. This must be the
    * same sycl_target that is assigned to the NP::ParticleGroup that the
    * Reaction is to be applied to.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (weight and total_reaction_rate).
    */
-  AbstractReaction(
-      NP::SYCLTargetSharedPtr sycl_target,
-      const std::map<int, std::string> &properties_map = get_default_map());
+  AbstractReaction(NP::SYCLTargetSharedPtr sycl_target,
+                   const PropertiesMap properties_map = PropertiesMap());
 
   virtual ~AbstractReaction() = default;
 
@@ -177,14 +176,14 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * @param reaction_kernels ReactionKernels object defining the properties of
    * the products and the feedback on the parent particle and fields (used in
    * apply)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (weight and total_reaction_rate).
    */
-  LinearReactionBaseImpl(
-      NP::SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
-      ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  LinearReactionBaseImpl(NP::SYCLTargetSharedPtr sycl_target, int in_state,
+                         std::array<int, num_products_per_parent> out_states,
+                         ReactionData reaction_data,
+                         ReactionKernels reaction_kernels,
+                         const PropertiesMap properties_map = PropertiesMap())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels) {
@@ -606,15 +605,14 @@ struct LinearReactionBase
    * apply)
    * @param data_calculator DataCalculator object defining any additional
    * required data for the kernels, in addition to the rate
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (weight and total_reaction_rate).
    */
-  LinearReactionBase(
-      NP::SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
-      ReactionData reaction_data, ReactionKernels reaction_kernels,
-      DataCalc data_calculator,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  LinearReactionBase(NP::SYCLTargetSharedPtr sycl_target, int in_state,
+                     std::array<int, num_products_per_parent> out_states,
+                     ReactionData reaction_data,
+                     ReactionKernels reaction_kernels, DataCalc data_calculator,
+                     const PropertiesMap properties_map = PropertiesMap())
       : LinearReactionBaseImpl<num_products_per_parent, ReactionData,
                                ReactionKernels>(
             sycl_target, in_state, out_states, reaction_data, reaction_kernels,
@@ -651,16 +649,16 @@ struct LinearReactionBase
    * @param reaction_kernels ReactionKernels object defining the properties of
    * the products and the feedback on the parent particle and fields (used in
    * apply)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (weight and total_reaction_rate).
    */
   template <typename U = DataCalc,
             std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
-  LinearReactionBase(
-      NP::SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
-      ReactionData reaction_data, ReactionKernels reaction_kernels,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  LinearReactionBase(NP::SYCLTargetSharedPtr sycl_target, int in_state,
+                     std::array<int, num_products_per_parent> out_states,
+                     ReactionData reaction_data,
+                     ReactionKernels reaction_kernels,
+                     const PropertiesMap properties_map = PropertiesMap())
       : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,
                            reaction_kernels, DataCalc(), properties_map) {}
 

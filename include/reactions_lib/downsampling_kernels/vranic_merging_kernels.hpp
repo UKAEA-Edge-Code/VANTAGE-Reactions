@@ -251,11 +251,10 @@ struct VranicMergingKernels
   /**
    * @brief Constructor for host-side VranicMergingKernels object
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names - here weight and velocity
    */
-  VranicMergingKernels(
-      std::map<int, std::string> properties_map = get_default_map())
+  VranicMergingKernels(const PropertiesMap properties_map = PropertiesMap())
       : DownsamplingKernelBase<DownsamplingMode::merging,
                                VranicReductionOnDevice<ndim>,
                                VranicMergingOnDevice<ndim>>(
@@ -292,13 +291,13 @@ struct VranicMergingKernels
  * of the particle group to which the transformation strategy is to be applied
  * @param num_merging_groups The number of merging groups, i.e. velocity space
  * bins or other downsampling group types
- * @param properties_map (Optional) A std::map<int, std::string> object to be
+ * @param properties_map (Optional) A PropertiesMap object to be
  * used when remapping property names
  */
 template <size_t ndim>
 inline std::shared_ptr<TransformationStrategy> make_vranic_merging_strategy(
     NP::ParticleGroupSharedPtr template_group, size_t num_merging_groups,
-    const std::map<int, std::string> &properties_map = get_default_map()) {
+    const PropertiesMap properties_map = PropertiesMap()) {
 
   auto r = std::make_shared<DownsamplingStrategy<VranicMergingKernels<ndim>>>(
       template_group, VranicMergingKernels<ndim>(properties_map),

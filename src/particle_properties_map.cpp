@@ -4,24 +4,23 @@ namespace VANTAGE::Reactions {
 
 PropertiesMap::PropertiesMap(std::map<int, std::string> custom_map)
     : private_map(custom_map) {
-  // replace default_properties.fluid_flow_speed with the last enum in
-  // standard_properties_enum if any changes are made to it.
-  for (int i = 0; i <= default_properties.fluid_flow_speed; i++) {
-    NESOWARN(
-        map_subset_check(this->private_map),
-        "The provided properties map does not include all the keys from the "
-        "default map (and therefore is not an extension of that map). There "
-        "may be inconsistencies with indexing of properties.");
-  }
+  NESOWARN(map_subset_check(this->private_map),
+           "The provided properties map does not include all the keys from the "
+           "default map (and therefore is not an extension of that map). There "
+           "may be inconsistencies with indexing of properties.");
 }
 
-std::map<int, std::string> PropertiesMap::get_map() {
+std::map<int, std::string> PropertiesMap::get_map() const {
   return this->private_map;
 }
 
 std::string &PropertiesMap::at(const int &key) {
   return this->private_map.at(key);
-};
+}
+
+const std::string &PropertiesMap::at(const int &key) const {
+  return this->private_map.at(key);
+}
 
 std::string &PropertiesMap::operator[](const int &key) {
   return this->private_map[key];
