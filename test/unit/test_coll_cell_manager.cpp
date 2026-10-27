@@ -62,18 +62,42 @@ TEST(CollisionCellManager, CartesianHierarchySingleSpecies) {
   resolutions[1] = 0.2;
 
   cc_manager.set_coll_cell_linear_resolution(resolutions);
+  cc_manager.bin_particles(particle_subgroup);
   cc_manager.construct_cell_partition(particle_subgroup);
   num_coll_cells = cc_manager.get_num_coll_cells();
   volumes = cc_manager.get_coll_cell_volumes();
+  npart_coll_cell = cc_manager.get_npart_coll_cell(particle_subgroup, 0);
   EXPECT_EQ(num_coll_cells[0], 4);
+  int cell0_sum = 0;
+  int cell0_nonempty_subcells = 0;
   for (int i = 0; i < 4; i++) {
     EXPECT_DOUBLE_EQ(volumes->at(0, i), std::pow(0.25, 2));
+    cell0_sum += npart_coll_cell->at(0, i);
+    if (npart_coll_cell->at(0, i) > 0) {
+      cell0_nonempty_subcells++;
+    }
   }
+  EXPECT_EQ(cell0_sum, particle_subgroup->get_npart_cell(0));
+  EXPECT_GT(cell0_nonempty_subcells, 1);
+
   EXPECT_EQ(num_coll_cells[1], 9);
+  int cell1_sum = 0;
+  int cell1_nonempty_subcells = 0;
   for (int i = 0; i < 9; i++) {
     EXPECT_DOUBLE_EQ(volumes->at(1, i), std::pow(0.5 / 3, 2));
+    cell1_sum += npart_coll_cell->at(1, i);
+    if (npart_coll_cell->at(1, i) > 0) {
+      cell1_nonempty_subcells++;
+    }
   }
+  EXPECT_EQ(cell1_sum, particle_subgroup->get_npart_cell(1));
+  EXPECT_GT(cell1_nonempty_subcells, 1);
+
   for (int i = 2; i < cell_count; i++) {
     EXPECT_DOUBLE_EQ(volumes->at(i, 0), 0.25);
+    EXPECT_EQ(npart_coll_cell->at(i, 0), particle_subgroup->get_npart_cell(i));
   }
+
+  A->sycl_target->free();
+  A->domain->mesh->free();
 }
