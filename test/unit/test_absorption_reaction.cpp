@@ -27,7 +27,7 @@ TEST(AbsorptionKernels, general) {
 
   auto test_reaction =
       LinearReactionBase<0, decltype(test_data), decltype(test_kernels)>(
-          particle_group->sycl_target, 0, std::array<int, 0>{}, test_data,
+          particle_group->sycl_target, 0, std::array<INT, 0>{}, test_data,
           test_kernels);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

@@ -30,7 +30,7 @@ TEST(ReactionController, parent_transform) {
       ReactionController(parent_transform_wrapper, child_transform_wrapper);
 
   auto test_reaction =
-      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
+      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<INT, 0>{});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<0>>(test_reaction));

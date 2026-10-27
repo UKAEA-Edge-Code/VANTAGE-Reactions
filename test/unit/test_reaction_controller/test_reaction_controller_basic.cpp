@@ -25,7 +25,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto test_reaction = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0,
-      std::array<int, num_products_per_parent>{1});
+      std::array<INT, num_products_per_parent>{1});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));

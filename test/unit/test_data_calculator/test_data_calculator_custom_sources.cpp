@@ -15,7 +15,7 @@ TEST(DataCalculator, custom_sources) {
       LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
                          DataCalculator<TestReactionData, TestReactionData>>(
 
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
           DataCalculator<TestReactionData, TestReactionData>(
               TestReactionData(3.0), TestReactionData(4.0)));

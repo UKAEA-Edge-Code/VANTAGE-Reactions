@@ -429,7 +429,7 @@ TEST(Properties, full_use_properties_map) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{}, amjuel_data,
+          particle_group->sycl_target, 0, std::array<INT, 0>{}, amjuel_data,
           TestReactionKernels<0>(test_prop_map));
 
   auto descendant_particles = std::make_shared<NP::ParticleGroup>(

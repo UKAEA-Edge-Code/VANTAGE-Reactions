@@ -39,7 +39,7 @@ TEST(ReactionController, semi_dsmc_test) {
 
   auto test_reaction_1 = std::make_shared<
       LinearReactionBase<1, SquaredWeightData, TestReactionKernels<1>>>(
-      particle_group->sycl_target, 0, std::array<int, 1>{1},
+      particle_group->sycl_target, 0, std::array<INT, 1>{1},
       squared_reaction_data, TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_1);
@@ -48,7 +48,7 @@ TEST(ReactionController, semi_dsmc_test) {
       FixedCoefficientData(3.0) * extract<1>("WEIGHT");
   auto test_reaction_2 = std::make_shared<
       LinearReactionBase<1, SquaredWeightData, TestReactionKernels<1>>>(
-      particle_group->sycl_target, 0, std::array<int, 1>{2},
+      particle_group->sycl_target, 0, std::array<INT, 1>{2},
       squared_reaction_data_2, TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_2);

@@ -80,7 +80,7 @@ TEST(SWPMReactions, simple_hs_scattering) {
   auto swpm_reaction =
       SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                    decltype(pair_data_calculator)>(
-          A->sycl_target, std::array<int, 2>{0, 0}, std::array<int, 2>{1, 2},
+          A->sycl_target, std::array<INT, 2>{0, 0}, std::array<INT, 2>{1, 2},
           cs_data, scattering_kernels, pair_data_calculator);
 
   for (int i = 0; i < cell_count; i++) {
@@ -342,7 +342,7 @@ TEST(SWPMReactions, variable_soft_sphere_scattering) {
   auto swpm_reaction =
       SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                    decltype(pair_data_calculator)>(
-          A->sycl_target, std::array<int, 2>{0, 0}, std::array<int, 2>{1, 2},
+          A->sycl_target, std::array<INT, 2>{0, 0}, std::array<INT, 2>{1, 2},
           cs_data, scattering_kernels, pair_data_calculator);
 
   for (int i = 0; i < cell_count; i++) {

@@ -15,7 +15,7 @@ TEST(ConcatenatorData, custom_sources) {
       0, TestReactionData, TestReactionDataCalcKernels<0>,
       DataCalculator<ConcatenatorData<TestReactionData, TestReactionData>>>(
 
-      particle_group->sycl_target, 0, std::array<int, 0>{},
+      particle_group->sycl_target, 0, std::array<INT, 0>{},
       TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
       DataCalculator<ConcatenatorData<TestReactionData, TestReactionData>>(
           ConcatenatorData(TestReactionData(3.0), TestReactionData(4.0))));
@@ -60,7 +60,7 @@ TEST(ConcatenatorData, req_prop_test) {
                          DataCalculator<ConcatenatorData<
                              TestReactionVarData, FixedCoefficientData>>>(
 
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
           DataCalculator<
               ConcatenatorData<TestReactionVarData, FixedCoefficientData>>(

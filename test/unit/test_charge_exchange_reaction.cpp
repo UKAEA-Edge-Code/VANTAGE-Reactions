@@ -16,7 +16,7 @@ TEST(ChargeExchange, simple_beam_exchange) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<>,
                          DataCalculator<FixedRateData, FixedRateData>>(
-          particle_group->sycl_target, 0, std::array<int, 1>{1},
+          particle_group->sycl_target, 0, std::array<INT, 1>{1},
           FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
           DataCalculator<FixedRateData, FixedRateData>(FixedRateData(-1.0),
@@ -102,7 +102,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<>,
                          DataCalculator<FilteredMaxwellianSampler<2>>>(
-          particle_group->sycl_target, 0, std::array<int, 1>{1},
+          particle_group->sycl_target, 0, std::array<INT, 1>{1},
           FixedRateData(1.0),
           CXReactionKernels<>(target_species, projectile_species),
           DataCalculator<FilteredMaxwellianSampler<2>>(
@@ -198,7 +198,7 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, CXReactionKernels<3>,
                          DataCalculator<FilteredMaxwellianSampler<3>>>(
-          particle_group->sycl_target, 0, std::array<int, 1>{1},
+          particle_group->sycl_target, 0, std::array<INT, 1>{1},
           FixedRateData(1.0),
           CXReactionKernels<3>(target_species, projectile_species),
           DataCalculator<FilteredMaxwellianSampler<3>>(
@@ -306,7 +306,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D_pipeline) {
   auto data_calculator = DataCalculator(sampled_velocity);
   auto test_reaction = LinearReactionBase<1, FixedRateData, CXReactionKernels<>,
                                           decltype(data_calculator)>(
-      particle_group->sycl_target, 0, std::array<int, 1>{1}, FixedRateData(1.0),
+      particle_group->sycl_target, 0, std::array<INT, 1>{1}, FixedRateData(1.0),
       CXReactionKernels<>(target_species, projectile_species), data_calculator);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

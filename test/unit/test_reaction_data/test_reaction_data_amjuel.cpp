@@ -19,7 +19,7 @@ TEST(ReactionData, AMJUEL2DData) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{}, amjuel_data,
+          particle_group->sycl_target, 0, std::array<INT, 0>{}, amjuel_data,
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -67,7 +67,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DDataH3<2, 2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{}, amjuel_data,
+          particle_group->sycl_target, 0, std::array<INT, 0>{}, amjuel_data,
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -113,7 +113,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
 
   auto test_reaction =
       LinearReactionBase<0, AMJUEL2DData<2, 2>, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{}, amjuel_data,
+          particle_group->sycl_target, 0, std::array<INT, 0>{}, amjuel_data,
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

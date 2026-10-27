@@ -19,7 +19,7 @@ struct ExampleCXReactionKernelsOnDevice
       NP::Access::SymVector::Write<REAL>
           &req_real_props, // Accessor for parent particle required real
                            // properties
-      const std::array<int, 1> &out_states, // The outgoing state indices
+      const std::array<INT, 1> &out_states, // The outgoing state indices
       NP::Access::NDLocalArray::Read<REAL, 2>
           &pre_req_data, // Pre-calculated data from the DataCalculators
       double dt          // The timestep taken
@@ -42,7 +42,7 @@ struct ExampleCXReactionKernelsOnDevice
                      NP::Access::DescendantProducts::Write &descendant_products,
                      NP::Access::SymVector::Write<INT> &req_int_props,
                      NP::Access::SymVector::Write<REAL> &req_real_props,
-                     const std::array<int, 1> &out_states,
+                     const std::array<INT, 1> &out_states,
                      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     // Setting the weight of the produced particle to the entired of the reacted
@@ -56,7 +56,7 @@ struct ExampleCXReactionKernelsOnDevice
       NP::Access::DescendantProducts::Write &descendant_products,
       NP::Access::SymVector::Write<INT> &req_int_props,
       NP::Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, 1> &out_states,
+      const std::array<INT, 1> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     // Setting the internal state to the passed
     descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
@@ -68,7 +68,7 @@ struct ExampleCXReactionKernelsOnDevice
                   NP::Access::DescendantProducts::Write &descendant_products,
                   NP::Access::SymVector::Write<INT> &req_int_props,
                   NP::Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, 1> &out_states,
+                  const std::array<INT, 1> &out_states,
                   NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
 

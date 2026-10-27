@@ -14,7 +14,7 @@ TEST(LinearReactionBase, device_rate_buffer_reallocation) {
     TestDeviceRateBufferReaction(NP::ParticleGroupSharedPtr particle_group)
         : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<2>,
                              DataCalculator<FixedRateData>>(
-              particle_group->sycl_target, 0, std::array<int, 0>{},
+              particle_group->sycl_target, 0, std::array<INT, 0>{},
               FixedRateData(1),
               IoniseReactionKernels<2>(Species("ION", 1.0, 1.0, 0),
                                        Species("ELECTRON"),

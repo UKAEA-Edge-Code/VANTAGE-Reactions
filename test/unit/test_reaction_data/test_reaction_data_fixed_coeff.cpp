@@ -14,7 +14,7 @@ TEST(ReactionData, FixedCoefficientData) {
 
   auto test_reaction =
       LinearReactionBase<0, FixedCoefficientData, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           FixedCoefficientData(2.0), TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

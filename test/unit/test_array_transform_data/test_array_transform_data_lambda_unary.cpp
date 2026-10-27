@@ -27,7 +27,7 @@ TEST(ArrayTransformData, unary_lambda_full_array) {
       LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
                          DataCalculator<decltype(pipeline)>>(
 
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
           DataCalculator(pipeline));
 
@@ -81,7 +81,7 @@ TEST(ArrayTransformData, unary_lambda_elementwise) {
       LinearReactionBase<0, TestReactionData, TestReactionDataCalcKernels<0>,
                          DataCalculator<decltype(pipeline)>>(
 
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           TestReactionData(2.0), TestReactionDataCalcKernels<0>(),
           DataCalculator(pipeline));
 
