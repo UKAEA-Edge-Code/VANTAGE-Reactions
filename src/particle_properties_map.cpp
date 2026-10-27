@@ -6,7 +6,7 @@ PropertiesMap::PropertiesMap(std::map<int, std::string> custom_map)
     : private_map(custom_map) {
   // replace default_properties.fluid_flow_speed with the last enum in
   // standard_properties_enum if any changes are made to it.
-  for (int i = 0; i < default_properties.fluid_flow_speed; i++) {
+  for (int i = 0; i <= default_properties.fluid_flow_speed; i++) {
     NESOWARN(
         this->private_map.find(i) != this->private_map.end(),
         "The custom properties map provided does not contain all enums from "
