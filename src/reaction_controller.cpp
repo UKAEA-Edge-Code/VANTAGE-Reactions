@@ -36,9 +36,6 @@ ReactionController::ReactionController(
   this->reacted_marker = make_direct_marking_strategy(
       "reacted_marker", [=](auto reacted) { return reacted[0] == 1; },
       NP::Access::read(this->reacted_flag));
-  auto rng_lambda = [&]() -> REAL { return 0; };
-  this->rng_kernel =
-      std::make_shared<NP::HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
 }
 
 ReactionController::ReactionController(
@@ -175,6 +172,13 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
   switch (controller_mode) {
 
   case ControllerMode::semi_dsmc_mode:
+    NESOASSERT(this->rng_kernel != nullptr,
+               "ReactionController in semi_dsmc_mode requires a non-null RNG "
+               "kernel (call set_rng_kernel before apply).");
+    NESOASSERT(this->rng_kernel->num_components >= 1 &&
+                   this->rng_kernel->generation_function != nullptr,
+               "ReactionController in semi_dsmc_mode requires an RNG kernel "
+               "with at least 1 component and a valid generation function.");
     use_full_weight = true;
 
     break;
