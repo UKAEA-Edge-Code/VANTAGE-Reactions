@@ -48,6 +48,9 @@ CollisionCellManager::get_npart_coll_cell(NP::ParticleSubGroupSharedPtr target,
 };
 
 void CollisionCellManager::bin_particles(NP::ParticleSubGroupSharedPtr target) {
+  if (this->coll_cell_hierarchy->get_num_coll_cells() != this->num_coll_cells) {
+    this->partition_valid = false;
+  }
 
   if (!this->partition_valid) {
     this->coll_cell_hierarchy->bin_particles(target, this->coll_cell_sym);
@@ -68,6 +71,9 @@ void CollisionCellManager::set_coll_cell_linear_resolution(
     std::vector<REAL> resolutions) {
 
   this->coll_cell_hierarchy->set_coll_cell_linear_resolution(resolutions);
+  if (this->coll_cell_hierarchy->get_num_coll_cells() != this->num_coll_cells) {
+    this->partition_valid = false;
+  }
 }
 
 void CollisionCellManager::invalidate_partition() {
@@ -109,6 +115,7 @@ void CollisionCellManager::construct_cell_partition(
   if (std::any_of(this->cell_change_mask.begin(), this->cell_change_mask.end(),
                   [](int x) { return x > 0; })) {
     this->partition_valid = false;
+    this->num_particles = nullptr;
   }
   this->num_coll_cells = new_num_coll_cells;
   if (!this->partition_valid) {
