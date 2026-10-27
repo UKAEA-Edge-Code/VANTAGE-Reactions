@@ -38,6 +38,16 @@ struct IPLCrossSection : public AbstractCrossSection {
   };
 
   /**
+   * @brief Returns the rate sigma*v_r at a given relative speed.
+   *
+   * @param relative_vel Relative velocity of projectile and target
+   * @return REAL-valued rate sigma*v_r
+   */
+  REAL sigma_v(const REAL &relative_vel) const {
+    return this->get_value_at(relative_vel) * relative_vel;
+  };
+
+  /**
    * @brief Returns maximum value of the rate sigma*v of this cross-section.
    *
    * @return REAL-valued constant
