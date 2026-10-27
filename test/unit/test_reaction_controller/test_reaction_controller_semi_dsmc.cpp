@@ -190,3 +190,37 @@ TEST(ReactionController, semi_dsmc_test) {
   particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
+
+TEST(ReactionController, semi_dsmc_rng_validation) {
+  auto particle_group = create_test_particle_group(32);
+  auto reaction_controller = ReactionController();
+  reaction_controller.add_reaction(std::make_shared<TestReaction<1>>(
+      particle_group->sycl_target, 1.0, 0, std::array<int, 1>{1}));
+
+  // Standard mode does not require an RNG kernel.
+  EXPECT_NO_THROW(
+      reaction_controller.apply(particle_group, 0.25,
+                                ControllerMode::standard_mode));
+
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(reaction_controller.get_rng_kernel(), std::logic_error);
+    EXPECT_THROW(reaction_controller.apply(particle_group, 0.25,
+                                           ControllerMode::semi_dsmc_mode),
+                 std::logic_error);
+
+    reaction_controller.set_rng_kernel(
+        NP::host_per_particle_block_rng<REAL>([]() -> REAL { return 0.5; }, 0));
+    EXPECT_THROW(reaction_controller.apply(particle_group, 0.25,
+                                           ControllerMode::semi_dsmc_mode),
+                 std::logic_error);
+
+    reaction_controller.set_rng_kernel(
+        std::make_shared<NP::HostPerParticleBlockRNG<REAL>>());
+    EXPECT_THROW(reaction_controller.apply(particle_group, 0.25,
+                                           ControllerMode::semi_dsmc_mode),
+                 std::logic_error);
+  }
+
+  particle_group->sycl_target->free();
+  particle_group->domain->mesh->free();
+}
