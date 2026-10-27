@@ -11,7 +11,7 @@ NP::ParticleSubGroupSharedPtr MinimumNPartInCellMarker::make_marker_subgroup_v(
     NP::ParticleSubGroupSharedPtr particle_group) {
 
   auto min_npart = this->min_npart;
-  auto marker_subgroup = std::make_shared<NP::ParticleSubGroup>(
+  auto marker_subgroup = NP::particle_sub_group(
       particle_group,
       [=](auto cell_info_npart) { return cell_info_npart.get() >= min_npart; },
       NP::Access::read(NP::CellInfoNPart{}));
@@ -31,7 +31,7 @@ PanickedParticleMarker::PanickedParticleMarker(
 NP::ParticleSubGroupSharedPtr PanickedParticleMarker::make_marker_subgroup_v(
     NP::ParticleSubGroupSharedPtr particle_group) {
 
-  auto marker_subgroup = std::make_shared<NP::ParticleSubGroup>(
+  auto marker_subgroup = NP::particle_sub_group(
       particle_group, [=](auto panic) { return panic[0] > 0; },
       NP::Access::read(this->panic_sym));
   return marker_subgroup;
