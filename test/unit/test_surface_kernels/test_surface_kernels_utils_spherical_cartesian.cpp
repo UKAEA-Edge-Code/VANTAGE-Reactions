@@ -92,7 +92,7 @@ TEST(SurfaceKernels, SphericalBasisReflectionData) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, decltype(test_kernels),
                          decltype(data_calculator)>(
-          particle_group->sycl_target, 0, std::array<int, 1>{0}, test_data,
+          particle_group->sycl_target, 0, std::array<INT, 1>{0}, test_data,
           test_kernels, data_calculator);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
@@ -193,7 +193,7 @@ TEST(SurfaceKernels, CartesianBasisReflectionData) {
   auto test_reaction =
       LinearReactionBase<1, FixedRateData, decltype(test_kernels),
                          decltype(data_calculator)>(
-          particle_group->sycl_target, 0, std::array<int, 1>{0}, test_data,
+          particle_group->sycl_target, 0, std::array<INT, 1>{0}, test_data,
           test_kernels, data_calculator);
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

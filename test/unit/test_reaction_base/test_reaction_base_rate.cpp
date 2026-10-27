@@ -17,7 +17,7 @@ TEST(LinearReactionBase, calc_rate) {
   const INT num_products_per_parent = 0;
 
   auto test_reaction = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, test_rate, 0, std::array<int, 0>{});
+      particle_group->sycl_target, test_rate, 0, std::array<INT, 0>{});
 
   int cell_count = particle_group->domain->mesh->get_cell_count();
 

@@ -10,15 +10,15 @@ TEST(LinearReactionBase, single_group_multi_reaction) {
   auto particle_group = create_test_particle_group(N_total);
 
   auto test_reaction1 =
-      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
+      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<INT, 0>{});
 
   auto test_reaction2 =
-      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<int, 0>{});
+      TestReaction<0>(particle_group->sycl_target, 1, 0, std::array<INT, 0>{});
 
   const INT num_products_per_parent = 1;
 
   auto test_reaction3 = TestReaction<num_products_per_parent>(
-      particle_group->sycl_target, 2, 0, std::array<int, 1>{1});
+      particle_group->sycl_target, 2, 0, std::array<INT, 1>{1});
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions{};
   reactions.push_back(std::make_shared<TestReaction<0>>(test_reaction1));

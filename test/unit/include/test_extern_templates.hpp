@@ -219,8 +219,8 @@ extern template class PairDataCalculator<SSScatteringData<3>>;
 extern template SWPMReaction<2, CSPairData<2, ConstantCrossSection>,
                              PairScatteringKernels<2>,
                              PairDataCalculator<HSScatteringData<2>>>::
-    SWPMReaction(NP::SYCLTargetSharedPtr, std::array<int, 2>,
-                 std::array<int, 2>, CSPairData<2, ConstantCrossSection>,
+    SWPMReaction(NP::SYCLTargetSharedPtr, std::array<INT, 2>,
+                 std::array<INT, 2>, CSPairData<2, ConstantCrossSection>,
                  PairScatteringKernels<2>,
                  PairDataCalculator<HSScatteringData<2>>, const PropertiesMap);
 extern template void SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
@@ -240,10 +240,10 @@ SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
 extern template REAL
     SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
                      PairScatteringKernels<2>>::get_sigma_v_bound(REAL);
-extern template std::vector<int>
+extern template std::vector<INT>
 SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
                  PairScatteringKernels<2>>::get_in_states();
-extern template std::vector<int>
+extern template std::vector<INT>
 SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
                  PairScatteringKernels<2>>::get_out_states();
 extern template void
@@ -253,8 +253,8 @@ SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
 extern template SWPMReaction<2, CSPairData<3, IPLCrossSection>,
                              PairScatteringKernels<3>,
                              PairDataCalculator<SSScatteringData<3>>>::
-    SWPMReaction(NP::SYCLTargetSharedPtr, std::array<int, 2>,
-                 std::array<int, 2>, CSPairData<3, IPLCrossSection>,
+    SWPMReaction(NP::SYCLTargetSharedPtr, std::array<INT, 2>,
+                 std::array<INT, 2>, CSPairData<3, IPLCrossSection>,
                  PairScatteringKernels<3>,
                  PairDataCalculator<SSScatteringData<3>>, const PropertiesMap);
 extern template void
@@ -274,10 +274,10 @@ SWPMReactionImpl<2, CSPairData<3, IPLCrossSection>,
 extern template REAL
     SWPMReactionImpl<2, CSPairData<3, IPLCrossSection>,
                      PairScatteringKernels<3>>::get_sigma_v_bound(REAL);
-extern template std::vector<int>
+extern template std::vector<INT>
 SWPMReactionImpl<2, CSPairData<3, IPLCrossSection>,
                  PairScatteringKernels<3>>::get_in_states();
-extern template std::vector<int>
+extern template std::vector<INT>
 SWPMReactionImpl<2, CSPairData<3, IPLCrossSection>,
                  PairScatteringKernels<3>>::get_out_states();
 extern template void
