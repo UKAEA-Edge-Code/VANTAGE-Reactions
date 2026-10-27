@@ -42,8 +42,13 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
     }
     rel_speed = NP::Kernel::sqrt(rel_speed);
 
-    return std::array<REAL, 1>{this->cross_section.get_value_at(rel_speed) *
-                               rel_speed};
+    if constexpr (&CROSS_SECTION_T::sigma_v !=
+                  &AbstractCrossSection::sigma_v) {
+      return std::array<REAL, 1>{this->cross_section.sigma_v(rel_speed)};
+    } else {
+      return std::array<REAL, 1>{this->cross_section.get_value_at(rel_speed) *
+                                 rel_speed};
+    }
   }
 
   /**

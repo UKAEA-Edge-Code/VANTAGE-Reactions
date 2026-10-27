@@ -61,3 +61,16 @@ TEST(CrossSections, AMJUEL_H1_high_energy) {
               1e-14);
   EXPECT_NEAR(cs.get_value_at(1e4), cs.get_max_rate_val() / 1e4, 1e-14);
 }
+
+TEST(CrossSections, sigma_v_zero_relative_speed) {
+  auto constant_rate_cs = ConstantRateCrossSection(2.5);
+  EXPECT_DOUBLE_EQ(constant_rate_cs.sigma_v(0.0), 2.5);
+  EXPECT_DOUBLE_EQ(constant_rate_cs.sigma_v(4.0), 2.5);
+
+  auto zero_rate_cs = ConstantRateCrossSection(0.0);
+  EXPECT_DOUBLE_EQ(zero_rate_cs.sigma_v(0.0), 0.0);
+
+  auto constant_cs = ConstantCrossSection(2.5, 10.0);
+  EXPECT_DOUBLE_EQ(constant_cs.sigma_v(0.0), 0.0);
+  EXPECT_DOUBLE_EQ(constant_cs.sigma_v(4.0), 10.0);
+}
