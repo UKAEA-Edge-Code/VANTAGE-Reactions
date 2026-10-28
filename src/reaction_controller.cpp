@@ -259,7 +259,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
 
   auto child_group = this->particle_group_temporary->get(particle_group);
 
-  for (int i = 0; i < cell_count; i += this->cell_block_size) {
+  for (size_t i = 0; i < cell_count; i += this->cell_block_size) {
 
     for (int r = 0; r < this->reactions.size(); r++) {
 

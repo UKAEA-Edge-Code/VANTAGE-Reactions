@@ -42,8 +42,7 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
     }
     rel_speed = NP::Kernel::sqrt(rel_speed);
 
-    if constexpr (&CROSS_SECTION_T::sigma_v !=
-                  &AbstractCrossSection::sigma_v) {
+    if constexpr (&CROSS_SECTION_T::sigma_v != &AbstractCrossSection::sigma_v) {
       return std::array<REAL, 1>{this->cross_section.sigma_v(rel_speed)};
     } else {
       return std::array<REAL, 1>{this->cross_section.get_value_at(rel_speed) *
@@ -70,6 +69,10 @@ public:
 /**
  * @brief Reaction data class computing the sigma * v_r value for each particle
  * pair
+ *
+ * @warning An inherited concrete sigma_v() takes precedence over
+ * get_value_at(). A subclass that changes get_value_at() must also
+ * override sigma_v() to keep the two evaluations consistent.
  *
  * @tparam vel_ndim The velocity space dimensionality
  * @tparam CROSS_SECTION_T The typename corresponding to the cross-section class

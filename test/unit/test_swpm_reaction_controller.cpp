@@ -1,5 +1,6 @@
 #include "include/mock_particle_group.hpp"
 #include <gtest/gtest.h>
+#include <limits>
 #include <random>
 #include <vector>
 
@@ -9,7 +10,7 @@ TEST(SWPMReactionController, single_reaction) {
 
   const int N_total = 800;
 
-  auto test_rng_lambda = [=](auto dt, auto rng_val) {
+  auto test_rng_lambda = [=](auto dt, auto rng_val, size_t block_size = 256) {
     auto A = create_test_particle_group(N_total);
     auto B = create_test_particle_group(N_total);
 
@@ -105,13 +106,13 @@ TEST(SWPMReactionController, single_reaction) {
         pair_data_calculator);
 
     controller.add_reaction(swpm_reaction);
-
+    controller.set_cell_block_size(block_size);
     controller.apply(A, dt);
 
     return A;
   };
 
-  auto A = test_rng_lambda(0.1, 0.1);
+  auto A = test_rng_lambda(0.1, 0.1, 3); // Include a partial final block.
   int cell_count = A->domain->mesh->get_cell_count();
   // Expected velocities:
   // Centre-of-mass velocity: (1.2*2+2*4)/3.2 = 3.25
@@ -156,12 +157,24 @@ TEST(SWPMReactionController, single_reaction) {
   ASSERT_GE(child_subgroup->get_npart_local(), 6 * cell_count);
   ASSERT_LE(child_subgroup->get_npart_local(), 7 * cell_count);
 
-  // Intentionally fail every rejection
-  A = test_rng_lambda(0.1, 3.0);
+  // Intentionally fail every rejection. With a wider size_t, an int index
+  // would narrow this step to 3 and calculate rates in overlapping ranges.
+  const size_t wide_block =
+      size_t{std::numeric_limits<unsigned int>::max()} + 4;
+  A = test_rng_lambda(0.1, 3.0, wide_block);
   child_subgroup = NP::particle_sub_group(
       A, [](auto IS) { return IS[0] == 2; },
       NP::Access::read(NP::Sym<INT>("INTERNAL_STATE")));
   ASSERT_EQ(child_subgroup->get_npart_local(), 0);
+  bool sampled = false;
+  for (int cell = 0; cell < cell_count; cell++) {
+    auto rates = A->get_cell(NP::Sym<REAL>("TOT_REACTION_RATE"), cell);
+    for (int row = 0; row < rates->nrow; row++) {
+      sampled = sampled || rates->at(row, 0) > 0.0;
+      EXPECT_LE(rates->at(row, 0), 0.0061 * 2.0 + 1e-14);
+    }
+  }
+  EXPECT_TRUE(sampled);
 
   // Exhaust all parents
   A = test_rng_lambda(100.0, 0.1);
