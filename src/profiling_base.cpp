@@ -14,10 +14,23 @@ ProfilingBase::start_profiling_region(NP::ParticleSubGroupSharedPtr &subgroup,
                                                PROFILING_LEVEL);
 }
 
+std::optional<NP::ProfileRegion>
+ProfilingBase::start_profiling_region(NP::SYCLTargetSharedPtr &sycl_target,
+                                      const std::string key1) {
+  return sycl_target->profile_map.start_region(get_profiling_name(), key1,
+                                               PROFILING_LEVEL);
+}
+
 void ProfilingBase::end_profiling_region(
     NP::ParticleSubGroupSharedPtr &subgroup,
     std::optional<NP::ProfileRegion> &region) {
   auto &sycl_target = get_particle_group(subgroup)->sycl_target;
+  sycl_target->profile_map.end_region(region);
+}
+
+void ProfilingBase::end_profiling_region(
+    NP::SYCLTargetSharedPtr &sycl_target,
+    std::optional<NP::ProfileRegion> &region) {
   sycl_target->profile_map.end_region(region);
 }
 

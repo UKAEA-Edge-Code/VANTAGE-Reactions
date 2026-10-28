@@ -21,14 +21,7 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
   /**
    * @brief Function to calculate the reaction rate for a fixed rate reaction
    *
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which calc_data is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
@@ -36,9 +29,7 @@ struct FixedRateDataOnDevice : public ReactionDataBaseOnDevice<> {
    * reaction rate.
    */
   std::array<REAL, 1>
-  calc_data(const NP::Access::LoopIndex::Read &index,
-            const NP::Access::SymVector::Write<INT> &req_int_props,
-            const NP::Access::SymVector::Read<REAL> &req_real_props,
+  calc_data(const SingleReactionDataAccessors &accessors,
             typename ReactionDataBaseOnDevice::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 

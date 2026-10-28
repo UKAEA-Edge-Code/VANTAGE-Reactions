@@ -76,14 +76,7 @@ struct BinaryArrayTransformDataOnDevice
    * @brief Return the result of applying the binary transform on the results of
    * the two contained objects
    *
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which calc_data is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties
-   * that need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernels used in the
    * calculation, a NP::TupleRNG accessor
    *
@@ -91,9 +84,9 @@ struct BinaryArrayTransformDataOnDevice
    * contained data objects. REAL-valued array of size TRANSFORM::OUT_DIM
    */
   std::array<REAL, TRANSFORM::OUT_DIM> calc_data(
-      const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<INT> &req_int_props,
-      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      const typename CompositeDataOnDevice<
+          TRANSFORM::OUT_DIM, 0, REAL, REAL, DATATYPE1,
+          DATATYPE2>::ACCESSOR_PACK_TYPE &accessors,
       typename NP::TupleRNG<
           std::shared_ptr<typename DATATYPE1::RNG_KERNEL_TYPE>,
           std::shared_ptr<typename DATATYPE2::RNG_KERNEL_TYPE>>::KernelType
@@ -101,11 +94,9 @@ struct BinaryArrayTransformDataOnDevice
 
     return this->transform.apply(
         NP::Tuple::get<0>(this->data)
-            .calc_data(index, req_int_props, req_real_props,
-                       rng_kernel.template get<0>()),
+            .calc_data(accessors, rng_kernel.template get<0>()),
         NP::Tuple::get<1>(this->data)
-            .calc_data(index, req_int_props, req_real_props,
-                       rng_kernel.template get<1>()));
+            .calc_data(accessors, rng_kernel.template get<1>()));
   }
 
 private:

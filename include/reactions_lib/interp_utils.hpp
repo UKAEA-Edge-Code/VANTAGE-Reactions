@@ -2,6 +2,7 @@
 #define REACTIONS_INTERP_UTILS_H
 
 #include "reactions/neso_particles_namespace_alias.hpp"
+#include "reactions_lib/reaction_data.hpp"
 #include <vector>
 
 // Type discipline for indices:
@@ -270,9 +271,10 @@ inline void initial_func_eval_on_device(
           non_interpolation_points[i];
     }
 
-    grid_func_output =
-        grid_func_data.calc_data(grid_func_input, index, req_int_props,
-                                 req_real_props, rng_kernel.template get<0>());
+    auto accessors = VANTAGE::Reactions::SingleReactionDataAccessors{
+        index, req_int_props, req_real_props};
+    grid_func_output = grid_func_data.calc_data(grid_func_input, accessors,
+                                                rng_kernel.template get<0>());
 
     for (size_t idim = 0; idim < output_ndim; idim++) {
       vertex_func_evals[(point_index * output_ndim) + idim] =

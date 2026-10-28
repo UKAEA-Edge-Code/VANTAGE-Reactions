@@ -225,6 +225,8 @@ struct OneWayMaxwellianFluxSampler
   constexpr static auto required_simple_int_props =
       std::array<int, 1>{props.panic};
 
+  constexpr static std::size_t required_kernel_components = 4;
+
   /**
    * @brief Constructor for OneWayMaxwellianFluxSampler.
    *

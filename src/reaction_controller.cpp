@@ -133,6 +133,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
                                     NP::ParticleGroupSharedPtr product_group,
                                     ControllerMode controller_mode,
                                     bool is_particle_group) {
+  auto prof_region = this->start_profiling_region(target, "apply_impl");
 
   if (this->reference_particle_group == nullptr) {
     this->reference_particle_group = particle_group;
@@ -321,6 +322,12 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
     product_group->add_particles_local(child_group);
   }
   this->particle_group_temporary->restore(particle_group, child_group);
+
+  this->end_profiling_region(target, prof_region);
+}
+
+std::string ReactionController::get_profiling_name() {
+  return "ReactionController";
 }
 
 } // namespace VANTAGE::Reactions
