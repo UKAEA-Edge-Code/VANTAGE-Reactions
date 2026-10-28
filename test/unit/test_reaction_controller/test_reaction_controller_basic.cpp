@@ -2,6 +2,7 @@
 #include "../include/mock_reactions.hpp"
 #include "../include/test_common.hpp"
 #include "../include/test_reaction_controller_functors.hpp"
+#include <limits>
 #include <memory>
 #include <utility>
 
@@ -19,6 +20,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto test_wrapper = std::make_shared<TransformationWrapper>(child_transform);
   auto reaction_controller = ReactionController(test_wrapper);
+  reaction_controller.set_cell_block_size(3); // Include a partial final block.
   REAL test_rate = 5.0;
 
   const INT num_products_per_parent = 1;
@@ -61,6 +63,11 @@ TEST(ReactionController, single_reaction_multi_apply) {
                 reduction->get_cell(icell)->at(0, 0), 1e-12);
   }
 
+  // With a wider size_t, narrowing this step to int would produce 3 and
+  // repeatedly process overlapping ranges instead of one whole-mesh block.
+  const size_t wide_block =
+      size_t{std::numeric_limits<unsigned int>::max()} + 4;
+  reaction_controller.set_cell_block_size(wide_block);
   reaction_controller.apply(particle_group, 0.01);
 
   for (int icell = 0; icell < cell_count; icell++) {
@@ -129,9 +136,9 @@ TEST(ReactionController, single_reaction_multi_apply) {
                  std::logic_error);
     reaction_controller.set_max_particles_per_cell(3);
     EXPECT_EQ(valid_reaction->max_buffer_size(), 6u);
-    EXPECT_THROW(
-        reaction_controller.set_cell_block_size(std::numeric_limits<size_t>::max()),
-        std::logic_error);
+    EXPECT_THROW(reaction_controller.set_cell_block_size(
+                     std::numeric_limits<size_t>::max()),
+                 std::logic_error);
     EXPECT_EQ(valid_reaction->max_buffer_size(), 6u);
   }
 
