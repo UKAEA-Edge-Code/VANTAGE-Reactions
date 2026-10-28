@@ -3,18 +3,52 @@
 #include "collision_cell_manager.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <limits>
+#include <type_traits>
+#include <utility>
 
 namespace VANTAGE::Reactions {
 
 using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
+template <typename SPEC_T,
+          typename PAIR_LIST_T = NP::CellwisePairListAbsolute<
+              NP::ParticleGroup, NP::CellwisePairList>,
+          typename = void>
+struct has_swpm_weight_transfer : std::false_type {};
+
+template <typename SPEC_T, typename PAIR_LIST_T>
+struct has_swpm_weight_transfer<
+    SPEC_T, PAIR_LIST_T,
+    std::void_t<decltype(std::declval<SPEC_T &>().calculate_weight_transfer(
+        std::declval<PAIR_LIST_T &>(), std::declval<INT>(),
+        std::declval<INT>()))>> : std::true_type {};
+
+template <typename SPEC_T,
+          typename PAIR_LIST_T = NP::CellwisePairListAbsolute<
+              NP::ParticleGroup, NP::CellwisePairList>>
+inline constexpr bool has_swpm_weight_transfer_v =
+    has_swpm_weight_transfer<SPEC_T, PAIR_LIST_T>::value;
+
 /**
  * @brief Abstract base class for SWPM collision specification, defining
- * intensity bounds and weight transfer
+ * intensity bounds and weight transfer.
  *
+ * Derived specification classes must:
+ * 1. Override `calculate_q_hat` to compute the collision-cell-wise intensity
+ *    bound factor `q_hat` (excluding the volume and `sigma * v` bound).
+ * 2. Define a `calculate_weight_transfer(pair_list, cell_idx_start,
+ *    cell_idx_end)` member (or member template) that populates
+ *    `this->weight_change_sym` for each sampled collision pair. Because
+ *    `calculate_weight_transfer` is templated on the pair-list types rather
+ *    than virtual, the base declaration is deleted so derived specifications
+ *    cannot silently inherit a no-op implementation.
+ *
+ * @tparam RNG_KERNEL_T Type of the kernel RNG used by the specification.
  */
 template <typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL>
 struct AbstractSWPMSpecification {
+
+  virtual ~AbstractSWPMSpecification() = default;
 
   AbstractSWPMSpecification(
       std::shared_ptr<RNG_KERNEL_T> rng_kernel, REAL rate_norm_const = 1.0,
@@ -36,8 +70,13 @@ struct AbstractSWPMSpecification {
 
   /**
    * @brief Populate the weight change sym on the particles based on the
-   * sampled collision pairs
+   * sampled collision pairs.
    *
+   * Derived specification classes must provide their own implementation of
+   * `calculate_weight_transfer` hiding this deleted base template.
+   *
+   * @tparam TARGET Particle group or subgroup target type of the pair list
+   * @tparam PAIR_LIST Underlying cellwise pair-list type
    * @param pair_list Collision pair list
    * @param cell_idx_start Cell index from which to invoke the corresponding
    * pair loop
@@ -47,7 +86,7 @@ struct AbstractSWPMSpecification {
   template <typename TARGET, typename PAIR_LIST>
   void calculate_weight_transfer(
       NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list,
-      INT cell_idx_start, INT cell_idx_end) {};
+      INT cell_idx_start, INT cell_idx_end) = delete;
 
   /**
    * @brief Calculate the intensity bound component without the volume of
@@ -66,7 +105,7 @@ struct AbstractSWPMSpecification {
                   std::shared_ptr<CollisionCellManager> &ccm, int species_id_a,
                   int species_id_b,
                   NP::NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
-                  NP::NDLocalArraySharedPtr<REAL, 2> &result_buffer) {}
+                  NP::NDLocalArraySharedPtr<REAL, 2> &result_buffer) = 0;
 
   /**
    * @brief Calculate the exponential parameter for the Markov process of the
