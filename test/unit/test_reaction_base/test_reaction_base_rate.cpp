@@ -97,7 +97,8 @@ TEST(LinearReactionBase, zero_denominator_guards) {
     EXPECT_EQ(descendants->get_npart_local(),
               particle_group->get_npart_local());
     for (int cx = 0; cx < cell_count; cx++) {
-      auto parent_weights = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
+      auto parent_weights =
+          particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
       for (int row = 0; row < parent_weights->nrow; row++) {
         EXPECT_DOUBLE_EQ(parent_weights->at(row, 0), 0.5);
       }
@@ -125,11 +126,13 @@ TEST(LinearReactionBase, zero_denominator_guards) {
     auto zero_reaction = TestReaction<1>(particle_group->sycl_target, 0.0, 0,
                                          std::array<int, 1>{1});
     zero_reaction.calculate_rates(subgroup, 0, cell_count);
-    zero_reaction.apply(subgroup, 0, cell_count, 0.25, descendants, full_weight);
+    zero_reaction.apply(subgroup, 0, cell_count, 0.25, descendants,
+                        full_weight);
 
     EXPECT_EQ(descendants->get_npart_local(), 0);
     for (int cx = 0; cx < cell_count; cx++) {
-      auto parent_weights = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
+      auto parent_weights =
+          particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
       for (int row = 0; row < parent_weights->nrow; row++) {
         EXPECT_DOUBLE_EQ(parent_weights->at(row, 0), 1.0);
       }
@@ -154,7 +157,8 @@ TEST(LinearReactionBase, zero_denominator_guards) {
 
     EXPECT_EQ(descendants->get_npart_local(), 0);
     for (int cx = 0; cx < cell_count; cx++) {
-      auto parent_weights = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
+      auto parent_weights =
+          particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
       for (int row = 0; row < parent_weights->nrow; row++) {
         EXPECT_DOUBLE_EQ(parent_weights->at(row, 0), 1.0);
       }
@@ -183,7 +187,8 @@ TEST(LinearReactionBase, zero_denominator_guards) {
 
     EXPECT_EQ(descendants->get_npart_local(), 0);
     for (int cx = 0; cx < cell_count; cx++) {
-      auto parent_weights = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
+      auto parent_weights =
+          particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cx);
       for (int row = 0; row < parent_weights->nrow; row++) {
         EXPECT_DOUBLE_EQ(parent_weights->at(row, 0), 0.0);
       }
