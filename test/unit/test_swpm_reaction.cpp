@@ -416,3 +416,19 @@ TEST(SWPMReactions, variable_soft_sphere_scattering) {
   A->sycl_target->free();
   A->domain->mesh->free();
 }
+
+TEST(SWPMSpecification, RequiredOperationsContracts) {
+  static_assert(std::is_abstract_v<AbstractPairReaction>);
+  static_assert(std::is_abstract_v<AbstractSWPMSpecification<>>);
+  static_assert(has_swpm_weight_transfer_v<SWPMDSMCSpecification>);
+
+  struct MissingWeightTransferSpec : AbstractSWPMSpecification<> {
+    using AbstractSWPMSpecification<>::AbstractSWPMSpecification;
+    void calculate_q_hat(
+        NP::ParticleSubGroupSharedPtr, std::shared_ptr<CollisionCellManager> &,
+        int, int, NP::NDLocalArraySharedPtr<REAL, 2> &,
+        NP::NDLocalArraySharedPtr<REAL, 2> &) override {}
+  };
+  static_assert(!has_swpm_weight_transfer_v<MissingWeightTransferSpec>);
+  SUCCEED();
+}

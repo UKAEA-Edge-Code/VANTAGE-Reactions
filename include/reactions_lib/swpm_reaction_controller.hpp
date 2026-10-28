@@ -15,6 +15,10 @@ namespace VANTAGE::Reactions {
 
 template <typename SWPM_SPEC_T, typename RNG_GEN_T>
 struct SWPMReactionController : ProfilingBase {
+  static_assert(
+      has_swpm_weight_transfer_v<SWPM_SPEC_T>,
+      "SWPM_SPEC_T must implement calculate_weight_transfer(pair_list, "
+      "cell_idx_start, cell_idx_end).");
 
   SWPMReactionController(
       int species_a_id, int species_b_id,

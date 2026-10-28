@@ -21,13 +21,13 @@ public:
   virtual void calculate_rates(
       NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
           &pair_list,
-      INT cell_idx_start, INT cell_idx_end);
+      INT cell_idx_start, INT cell_idx_end) = 0;
 
   virtual void
   apply(NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
             &pair_list,
         INT cell_idx_start, INT cell_idx_end, double dt,
-        NP::ParticleGroupSharedPtr child_group);
+        NP::ParticleGroupSharedPtr child_group) = 0;
 
   virtual const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() = 0;
   virtual REAL get_sigma_v_bound(REAL relative_vel) = 0;
@@ -41,9 +41,7 @@ public:
    * @param max_size Maximum size (per dimension) of data buffers on this
    * reaction
    */
-  virtual void set_max_buffer_size(size_t max_size);
-
-  virtual void set_max_num_coll_cells(size_t max_cells);
+  virtual void set_max_buffer_size(size_t max_size) = 0;
 };
 
 /**
