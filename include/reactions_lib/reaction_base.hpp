@@ -149,10 +149,11 @@ private:
 };
 
 /**
- * @brief Non-template implementation base for linear reaction type.
- * Specifically meant for reactions that only involve a single particle at the
- * start of the reaction. A thinner implementation version of LinearReactionBase
- * (Open-ended DataCalculator template parameter is omitted here.)
+ * @brief Calculator-independent template implementation base for linear
+ * reactions. Specifically meant for reactions that only involve a single
+ * particle at the start of the reaction. A thinner implementation version of
+ * LinearReactionBase (the open-ended DataCalculator template parameter is
+ * omitted here).
  *
  * @tparam num_products_per_parent The number of products produced per parent
  * by the derived linear reaction.
@@ -244,8 +245,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    */
   void calculate_rates_v(NP::ParticleSubGroupSharedPtr particle_sub_group,
                          INT cell_idx_start, INT cell_idx_end) override {
-    auto reaction_data_buffer = this->reaction_data;
-    auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
+    auto reaction_data_on_device = this->reaction_data.get_on_device_obj();
 
     auto sycl_target_stored = this->get_sycl_target();
     this->blockwise_flush_buffer(particle_sub_group, cell_idx_start,
@@ -260,7 +260,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");
 
-    constexpr auto data_dim = reaction_data_buffer.get_dim();
+    constexpr auto data_dim = ReactionData::get_dim();
 
     auto weight_loop = particle_loop(
         "store_weights_loop", particle_sub_group,
@@ -329,8 +329,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
     auto device_rate_buffer = this->get_device_rate_buffer();
     auto device_weight_buffer = this->get_device_weight_buffer();
 
-    auto reaction_kernel_buffer = this->reaction_kernels;
-    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
+    auto reaction_kernel_on_device = this->reaction_kernels.get_on_device_obj();
 
     std::array<int, num_products_per_parent> out_states_arr = this->out_states;
     // The ->get_particle_group() is temporary since NP::ParticleSubGroup
@@ -615,7 +614,7 @@ struct LinearReactionBase
                   "AbstractDataCalculator...");
     NESOASSERT(this->data_calculator.get_data_size() ==
                    this->reaction_kernels.get_pre_ndims(),
-               "The number of ReactionData-derived objects in DataCalculator "
+               "The total prerequisite data dimensionality in DataCalculator "
                "does not match the required number of dimensions for the "
                "provided ReactionKernels object.");
 

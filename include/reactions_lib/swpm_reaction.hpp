@@ -45,8 +45,8 @@ public:
 };
 
 /**
- * @brief Non-template implementation base for binary reactions based on the
- * Stochastic Weighted Particle Method.
+ * @brief Calculator-independent template implementation base for binary
+ * reactions based on the Stochastic Weighted Particle Method.
  *
  * A thinner implementation version of SWPMReaction (the open-ended DataCalc
  * template parameter is omitted here.) Holds the DataCalc-independent members
@@ -183,8 +183,7 @@ public:
   calculate_rates_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                     INT cell_idx_start, INT cell_idx_end) {
 
-    auto reaction_data_buffer = this->reaction_data;
-    auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
+    auto reaction_data_on_device = this->reaction_data.get_on_device_obj();
 
     INT npart_block =
         pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
@@ -427,7 +426,7 @@ struct SWPMReaction
     NESOASSERT(
         this->data_calculator.get_data_size() ==
             this->reaction_kernels.get_pre_ndims(),
-        "The number of ReactionData-derived objects in PairDataCalculator "
+        "The total prerequisite data dimensionality in PairDataCalculator "
         "does not match the required number of dimensions for the "
         "provided PairReactionKernels object.");
 
@@ -493,8 +492,7 @@ public:
                INT cell_idx_start, INT cell_idx_end, double dt,
                NP::ParticleGroupSharedPtr child_group) {
 
-    auto reaction_kernel_buffer = this->reaction_kernels;
-    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
+    auto reaction_kernel_on_device = this->reaction_kernels.get_on_device_obj();
 
     std::array<int, num_products> products = this->products;
     NESOASSERT(pair_list.A->sycl_target == this->sycl_target_stored,
