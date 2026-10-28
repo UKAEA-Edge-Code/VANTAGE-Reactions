@@ -1,5 +1,6 @@
 #include "../include/reactions_lib/collision_cell_manager.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
+#include <utility>
 
 namespace VANTAGE::Reactions {
 
@@ -48,12 +49,12 @@ CollisionCellManager::get_npart_coll_cell(NP::ParticleSubGroupSharedPtr target,
 };
 
 void CollisionCellManager::bin_particles(NP::ParticleSubGroupSharedPtr target) {
-  if (this->coll_cell_hierarchy->get_num_coll_cells() != this->num_coll_cells) {
-    this->partition_valid = false;
-  }
-
-  if (!this->partition_valid) {
+  auto new_num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
+  if (!this->binned_num_coll_cells ||
+      *this->binned_num_coll_cells != new_num_coll_cells) {
+    this->invalidate_partition();
     this->coll_cell_hierarchy->bin_particles(target, this->coll_cell_sym);
+    this->binned_num_coll_cells = std::move(new_num_coll_cells);
   }
 }
 
@@ -70,13 +71,12 @@ CollisionCellManager::get_coll_cell_volumes() {
 void CollisionCellManager::set_coll_cell_linear_resolution(
     std::vector<REAL> resolutions) {
 
+  this->invalidate_partition();
   this->coll_cell_hierarchy->set_coll_cell_linear_resolution(resolutions);
-  if (this->coll_cell_hierarchy->get_num_coll_cells() != this->num_coll_cells) {
-    this->partition_valid = false;
-  }
 }
 
 void CollisionCellManager::invalidate_partition() {
+  this->binned_num_coll_cells.reset();
   this->partition_valid = false;
 }
 
@@ -106,6 +106,7 @@ void CollisionCellManager::get_rate_reduction(
 
 void CollisionCellManager::construct_cell_partition(
     NP::ParticleSubGroupSharedPtr target) {
+  this->bin_particles(target);
   auto new_num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
 
   std::transform(new_num_coll_cells.begin(), new_num_coll_cells.end(),
@@ -117,14 +118,13 @@ void CollisionCellManager::construct_cell_partition(
     this->partition_valid = false;
     this->num_particles = nullptr;
   }
-  this->num_coll_cells = new_num_coll_cells;
   if (!this->partition_valid) {
-
-    this->partition_valid = true;
-    this->coll_cell_partition->construct(target, this->num_coll_cells,
+    this->coll_cell_partition->construct(target, new_num_coll_cells,
                                          this->species_id_sym, 0,
                                          this->coll_cell_sym, 0);
     this->reduction_obj->resize();
+    this->num_coll_cells = std::move(new_num_coll_cells);
+    this->partition_valid = true;
   }
 };
 
