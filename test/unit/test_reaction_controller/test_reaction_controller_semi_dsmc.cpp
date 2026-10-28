@@ -14,7 +14,8 @@ void expect_parent_weights(NP::ParticleGroupSharedPtr particle_group,
   INT parent_count = 0;
   const int cell_count = particle_group->domain->mesh->get_cell_count();
   for (int cell = 0; cell < cell_count; cell++) {
-    auto states = particle_group->get_cell(NP::Sym<INT>("INTERNAL_STATE"), cell);
+    auto states =
+        particle_group->get_cell(NP::Sym<INT>("INTERNAL_STATE"), cell);
     auto ids = particle_group->get_cell(NP::Sym<INT>("ID"), cell);
     auto weights = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), cell);
     for (int row = 0; row < states->nrow; row++) {
@@ -50,9 +51,9 @@ TEST(ReactionController, mode_switching) {
         ->execute();
 
     const auto first_mode = semi_dsmc_first ? ControllerMode::semi_dsmc_mode
-                                          : ControllerMode::standard_mode;
+                                            : ControllerMode::standard_mode;
     const auto second_mode = semi_dsmc_first ? ControllerMode::standard_mode
-                                           : ControllerMode::semi_dsmc_mode;
+                                             : ControllerMode::semi_dsmc_mode;
     reaction_controller.apply(particle_group, 0.25, first_mode);
     const REAL first_weight = semi_dsmc_first ? 1.0 : 0.75;
     expect_parent_weights(particle_group, first_weight, first_weight);
@@ -198,9 +199,8 @@ TEST(ReactionController, semi_dsmc_rng_validation) {
       particle_group->sycl_target, 1.0, 0, std::array<int, 1>{1}));
 
   // Standard mode does not require an RNG kernel.
-  EXPECT_NO_THROW(
-      reaction_controller.apply(particle_group, 0.25,
-                                ControllerMode::standard_mode));
+  EXPECT_NO_THROW(reaction_controller.apply(particle_group, 0.25,
+                                            ControllerMode::standard_mode));
 
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     EXPECT_THROW(reaction_controller.get_rng_kernel(), std::logic_error);
@@ -219,6 +219,30 @@ TEST(ReactionController, semi_dsmc_rng_validation) {
     EXPECT_THROW(reaction_controller.apply(particle_group, 0.25,
                                            ControllerMode::semi_dsmc_mode),
                  std::logic_error);
+  }
+
+  // Zero-weight particles in semi_dsmc_mode must not divide by zero or react.
+  const auto npart_before = particle_group->get_npart_local();
+  particle_loop(
+      "zero_weights", particle_group,
+      [](auto w, auto reacted) {
+        w[0] = 0.0;
+        reacted[0] = -1;
+      },
+      NP::Access::write(NP::Sym<REAL>("WEIGHT")),
+      NP::Access::write(NP::Sym<INT>("PARTICLE_REACTED_FLAG")))
+      ->execute();
+  reaction_controller.set_rng_kernel(
+      NP::host_per_particle_block_rng<REAL>([]() -> REAL { return 0.1; }, 1));
+  reaction_controller.apply(particle_group, 0.25,
+                            ControllerMode::semi_dsmc_mode);
+  EXPECT_EQ(particle_group->get_npart_local(), npart_before);
+  for (int cx = 0; cx < particle_group->domain->mesh->get_cell_count(); cx++) {
+    auto reacted =
+        particle_group->get_cell(NP::Sym<INT>("PARTICLE_REACTED_FLAG"), cx);
+    for (int row = 0; row < reacted->nrow; row++) {
+      EXPECT_EQ(reacted->at(row, 0), 0);
+    }
   }
 
   particle_group->sycl_target->free();

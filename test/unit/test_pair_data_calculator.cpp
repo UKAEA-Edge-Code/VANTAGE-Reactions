@@ -407,24 +407,37 @@ TEST(PairDataCalculator, cs_reaction_data_zero_relative_speed) {
       NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
           A, B, cellwise_pair_list);
 
+  struct DivergentZeroVelCS : public AbstractCrossSection {
+    REAL get_value_at(const REAL &relative_vel) const {
+      return 1.0 / relative_vel;
+    }
+    REAL get_max_rate_val() const { return 1.0; }
+  };
+
   auto cs_rate_pos = CSPairData<2>(ConstantRateCrossSection(2.5));
   auto cs_rate_zero = CSPairData<2>(ConstantRateCrossSection(0.0));
   auto cs_const =
       CSPairData<2, ConstantCrossSection>(ConstantCrossSection(2.5, 1.0));
-  auto calc = PairDataCalculator(cs_rate_pos, cs_rate_zero, cs_const);
+  auto cs_ipl =
+      CSPairData<2, IPLCrossSection>(IPLCrossSection(2.5, 1.0, 0.5, 10.0));
+  auto cs_custom = CSPairData<2, DivergentZeroVelCS>(DivergentZeroVelCS{});
+  auto calc = PairDataCalculator(cs_rate_pos, cs_rate_zero, cs_const, cs_ipl,
+                                 cs_custom);
 
   const int total_pairs = static_cast<int>(c.size());
-  auto nd_arr =
-      std::make_shared<NP::NDLocalArray<REAL, 2>>(A->sycl_target, total_pairs, 3);
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(A->sycl_target,
+                                                            total_pairs, 5);
   nd_arr->fill(-1.0);
 
   calc.fill_buffer(nd_arr, pair_list, 0, cell_count);
   auto host_vals = nd_arr->get();
 
   for (int px = 0; px < total_pairs; px++) {
-    EXPECT_DOUBLE_EQ(host_vals.at(px * 3 + 0), 2.5);
-    EXPECT_DOUBLE_EQ(host_vals.at(px * 3 + 1), 0.0);
-    EXPECT_DOUBLE_EQ(host_vals.at(px * 3 + 2), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 0), 2.5);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 1), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 2), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 3), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 4), 0.0);
   }
 
   A->sycl_target->free();
