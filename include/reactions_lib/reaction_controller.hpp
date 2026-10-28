@@ -130,7 +130,16 @@ public:
    * @param max_num_parts Maximum number of particles per cell
    */
   void set_max_particles_per_cell(size_t max_num_parts) {
+    NESOASSERT(max_num_parts > 0,
+               "max_particles_per_cell must be greater than 0.");
+    NESOASSERT(max_num_parts <=
+                   std::numeric_limits<size_t>::max() / this->cell_block_size,
+               "max_particles_per_cell * cell_block_size overflows size_t.");
     this->max_particles_per_cell = max_num_parts;
+    for (auto &reaction : this->reactions) {
+      reaction->set_max_buffer_size(this->max_particles_per_cell *
+                                    this->cell_block_size);
+    }
   }
 
   /**
@@ -143,7 +152,15 @@ public:
    * to a lower number in case of memory issues)
    */
   void set_cell_block_size(size_t cell_block_size) {
+    NESOASSERT(cell_block_size > 0, "cell_block_size must be greater than 0.");
+    NESOASSERT(this->max_particles_per_cell <=
+                   std::numeric_limits<size_t>::max() / cell_block_size,
+               "max_particles_per_cell * cell_block_size overflows size_t.");
     this->cell_block_size = cell_block_size;
+    for (auto &reaction : this->reactions) {
+      reaction->set_max_buffer_size(this->max_particles_per_cell *
+                                    this->cell_block_size);
+    }
   }
 
   /**
