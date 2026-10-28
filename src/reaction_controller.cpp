@@ -98,6 +98,12 @@ void ReactionController::controller_pre_process() {
 
 void ReactionController::add_reaction(
     std::shared_ptr<AbstractReaction> reaction) {
+  NESOASSERT(reaction != nullptr,
+             "Reaction passed to ReactionController::add_reaction must not be "
+             "nullptr.");
+  NESOASSERT(reaction->get_in_states().size() == 1,
+             "Reaction passed to ReactionController::add_reaction must have "
+             "exactly 1 input state.");
   this->reactions.push_back(reaction);
   this->controller_pre_process();
 }
