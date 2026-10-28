@@ -107,7 +107,7 @@ void CollisionCellManager::get_rate_reduction(
 void CollisionCellManager::construct_cell_partition(
     NP::ParticleSubGroupSharedPtr target) {
   this->bin_particles(target);
-  auto new_num_coll_cells = this->coll_cell_hierarchy->get_num_coll_cells();
+  const auto &new_num_coll_cells = *this->binned_num_coll_cells;
 
   std::transform(new_num_coll_cells.begin(), new_num_coll_cells.end(),
                  this->num_coll_cells.begin(), this->cell_change_mask.begin(),
@@ -123,7 +123,7 @@ void CollisionCellManager::construct_cell_partition(
                                          this->species_id_sym, 0,
                                          this->coll_cell_sym, 0);
     this->reduction_obj->resize();
-    this->num_coll_cells = std::move(new_num_coll_cells);
+    this->num_coll_cells = new_num_coll_cells;
     this->partition_valid = true;
   }
 };

@@ -15,7 +15,7 @@ namespace VANTAGE::Reactions {
 struct AbstractPairReaction : ProfilingBase {
   AbstractPairReaction() = default;
 
-  virtual ~AbstractPairReaction() = default;
+  virtual ~AbstractPairReaction();
 
 public:
   virtual void calculate_rates(

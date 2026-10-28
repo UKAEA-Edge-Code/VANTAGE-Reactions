@@ -13,11 +13,8 @@ ReactionController::ReactionController(
       parent_transform(parent_transform), child_transform(child_transform),
       auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
-  NESOASSERT(this->cell_block_size > 0,
-             "cell_block_size must be greater than 0.");
-  NESOASSERT(this->max_particles_per_cell <=
-                 std::numeric_limits<size_t>::max() / this->cell_block_size,
-             "max_particles_per_cell * cell_block_size overflows size_t.");
+  this->configure_buffer_limits(this->max_particles_per_cell,
+                                this->cell_block_size);
 
   NESOWARN(map_subset_check(properties_map),
            "The provided properties_map does not include all the keys from the \
@@ -72,18 +69,14 @@ void ReactionController::controller_pre_process() {
   for (int r = 0; r < this->reactions.size(); r++) {
     this->reactions[r]->set_max_buffer_size(this->max_particles_per_cell *
                                             this->cell_block_size);
-    if (!this->reactions[r]->get_in_states().empty()) {
-      auto in_states = this->reactions[r]->get_in_states();
+    for (int in_state : this->reactions[r]->get_in_states()) {
+      this->parent_ids.insert(in_state);
 
-      for (int in_state : in_states) {
-        this->parent_ids.insert(in_state);
-
-        this->sub_group_selectors.emplace(std::make_pair(
-            in_state, make_direct_marking_strategy(
-                          "species_selector_" + std::to_string(in_state),
-                          [=](auto id) { return id[0] == in_state; },
-                          NP::Access::read(this->id_sym))));
-      }
+      this->sub_group_selectors.emplace(std::make_pair(
+          in_state, make_direct_marking_strategy(
+                        "species_selector_" + std::to_string(in_state),
+                        [=](auto id) { return id[0] == in_state; },
+                        NP::Access::read(this->id_sym))));
     }
 
     if (!this->reactions[r]->get_out_states().empty()) {
@@ -140,8 +133,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
                                     NP::ParticleGroupSharedPtr particle_group,
                                     double dt,
                                     NP::ParticleGroupSharedPtr product_group,
-                                    ControllerMode controller_mode,
-                                    bool is_particle_group) {
+                                    ControllerMode controller_mode) {
   auto prof_region = this->start_profiling_region(target, "apply_impl");
 
   if (this->reference_particle_group == nullptr) {
@@ -204,57 +196,14 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
     break;
   }
 
-  for (int r = 0; r < this->reactions.size(); r++) {
-    if (!this->reactions[r]->get_in_states().empty()) {
-      auto in_states = this->reactions[r]->get_in_states();
-
-      for (int in_state : in_states) {
-
-        if (is_particle_group) {
-          this->species_groups.insert_or_assign(
-              in_state,
-              this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  target));
-        } else {
-
-          this->species_groups[in_state] =
-              this->sub_group_selectors[in_state]->make_marker_subgroup(target);
-        }
-      }
-
-      switch (controller_mode) {
-
-      case ControllerMode::semi_dsmc_mode: {
-
-        for (int in_state : in_states) {
-          if (is_particle_group) {
-            this->reacted_species_groups.insert_or_assign(
-                in_state, this->reacted_marker->make_marker_subgroup(
-                              this->species_groups[in_state]));
-          } else {
-
-            this->reacted_species_groups[in_state] =
-                this->reacted_marker->make_marker_subgroup(
-                    this->species_groups[in_state]);
-          }
-        }
-        break;
-      }
-
-      default: {
-        for (int in_state : in_states) {
-          if (is_particle_group) {
-            this->reacted_species_groups.insert_or_assign(
-                in_state, this->species_groups[in_state]);
-          } else {
-            this->reacted_species_groups[in_state] =
-                this->species_groups[in_state];
-          }
-        }
-        break;
-      }
-      }
-    }
+  for (int in_state : this->parent_ids) {
+    auto species_group =
+        this->sub_group_selectors[in_state]->make_marker_subgroup(target);
+    this->species_groups[in_state] = species_group;
+    this->reacted_species_groups[in_state] =
+        (controller_mode == ControllerMode::semi_dsmc_mode)
+            ? this->reacted_marker->make_marker_subgroup(species_group)
+            : species_group;
   }
 
   auto child_group = this->particle_group_temporary->get(particle_group);
