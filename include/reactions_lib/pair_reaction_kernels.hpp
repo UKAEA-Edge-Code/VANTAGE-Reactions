@@ -171,8 +171,8 @@ protected:
       return;
     } else {
       NESOWARN(
-          ((this->required_descendant_int_props_a.get_props().size() == 0) &&
-           (this->required_descendant_real_props_a.get_props().size() == 0)),
+          ((this->required_descendant_int_props_a.get_props().size() > 0) ||
+           (this->required_descendant_real_props_a.get_props().size() > 0)),
           "The number of products per parent is >= 1 but no required "
           "descendant properties are set. This will result in an empty "
           "descendant_matrix_spec.")
@@ -209,8 +209,8 @@ protected:
       return;
     } else {
       NESOWARN(
-          ((this->required_descendant_int_props_b.get_props().size() == 0) &&
-           (this->required_descendant_real_props_b.get_props().size() == 0)),
+          ((this->required_descendant_int_props_b.get_props().size() > 0) ||
+           (this->required_descendant_real_props_b.get_props().size() > 0)),
           "The number of products per parent is >= 1 but no required "
           "descendant properties are set. This will result in an empty "
           "descendant_matrix_spec.")
@@ -257,8 +257,8 @@ protected:
       std::make_shared<NP::ProductMatrixSpec>();
 
   INT pre_req_ndims;
-  INT num_products_a;
-  INT num_products_b;
+  INT num_products_a = 0;
+  INT num_products_b = 0;
 
   std::map<int, std::string> properties_map;
 };

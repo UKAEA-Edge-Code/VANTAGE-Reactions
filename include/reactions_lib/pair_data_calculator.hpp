@@ -32,24 +32,18 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
    */
   PairDataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
-    size_t type_check_counter = 0u;
-    (
-        [&] {
-          static_assert(
-              std::is_base_of_v<
-                  AbstractReactionData<
-                      typename decltype(data)::ON_DEVICE_OBJ_TYPE,
-                      typename decltype(data)::ARGUMENT_PACK_TYPE,
-                      data.get_dim(), typename decltype(data)::RNG_KERNEL_TYPE>,
-                  decltype(data)>,
-              "DATATYPE provided is not derived from AbstractReactionData.");
-          type_check_counter++;
-        }(),
-        ...);
+    static_assert(
+        (std::is_base_of_v<
+             AbstractReactionData<
+                 typename DATATYPE::ON_DEVICE_OBJ_TYPE,
+                 typename DATATYPE::ARGUMENT_PACK_TYPE, DATATYPE::get_dim(),
+                 typename DATATYPE::RNG_KERNEL_TYPE>,
+             DATATYPE> &&
+         ...),
+        "DATATYPE provided is not derived from AbstractReactionData.");
 
     std::apply(
         [&](auto &&...args) {
-          size_t dat_idx = 0u;
           (
               [&] {
                 auto arg_pack = args.get_arg_pack();
@@ -64,7 +58,6 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
 
                 this->data_loop_real_syms_b.push_back(
                     arg_pack.required_real_props_b.to_sym_vector());
-                dat_idx++;
               }(),
               ...);
         },
@@ -75,8 +68,8 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
    * @brief Fills an NP::NDLocalArray buffer by invoking the stored
    * PairReactionData objects for a given cell index
    *
-   * @param buffer NP::NDLocalArray buffer - size should conform to the stored
-   * PairReactionData tuple size
+   * @param buffer NP::NDLocalArray buffer - column count should match the total
+   * output dimensionality of the stored PairReactionData tuple
    * @param pair_list Particle pair list used to fill out the buffer
    * @param cell_idx_start Cell index from which to invoke the corresponding
    * particle loops
@@ -88,8 +81,8 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
                    NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                    INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
-               "Buffer size in fill_buffer does not correspond to the number "
-               "data calculation objects.");
+               "Buffer column count in fill_buffer does not correspond to the "
+               "total dimensionality of the data calculation objects.");
     std::apply(
         [&](auto &&...args) {
           size_t dat_idx = 0u;

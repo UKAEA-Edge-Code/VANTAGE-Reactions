@@ -154,12 +154,6 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
 
   const size_t cell_count = particle_group->domain->mesh->get_cell_count();
 
-  // Ensure that the total rate buffer is flushed before the reactions are
-  // applied
-  if (this->auto_clean_tot_rate_buffer) {
-    this->rate_buffer_zeroer->transform(target);
-  }
-
   NESOASSERT(particle_group->contains_dat(this->id_sym, 1),
              "NP::ParticleGroup passed to controller does not contain expected "
              "ID dat, or the dat has wrong dimensionality");
@@ -178,6 +172,12 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
              "without adding at "
              "least one reaction to the ReactionController object (via "
              "ReactionController.add_reaction(...)).");
+
+  // Ensure that the total rate buffer is flushed before the reactions are
+  // applied
+  if (this->auto_clean_tot_rate_buffer) {
+    this->rate_buffer_zeroer->transform(target);
+  }
 
   bool use_full_weight = false;
 
