@@ -165,8 +165,8 @@ protected:
     if constexpr (num_products_per_parent < 1) {
       return;
     } else {
-      NESOWARN(((this->required_descendant_int_props.get_props().size() == 0) &&
-                (this->required_descendant_real_props.get_props().size() == 0)),
+      NESOWARN(((this->required_descendant_int_props.get_props().size() > 0) ||
+                (this->required_descendant_real_props.get_props().size() > 0)),
                "The number of products per parent is >= 1 but no required "
                "descendant properties are set. This will result in an empty "
                "descendant_matrix_spec.")

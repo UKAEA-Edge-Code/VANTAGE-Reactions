@@ -140,10 +140,10 @@ struct SWPMReactionController : ProfilingBase {
   }
 
   /**
-   * @brief Set the maximum number of particles per cell (used in determining
-   * the buffer size for reaction data)
+   * @brief Set the maximum number of collision pairs per cell (used in
+   * determining the buffer size for pair reaction data)
    *
-   * @param max_num_parts Maximum number of particles per cell
+   * @param max_num_parts Maximum number of collision pairs per cell
    */
   void set_max_particles_per_cell(size_t max_num_parts) {
     NESOASSERT(max_num_parts > 0,
@@ -437,8 +437,6 @@ private:
   }
 
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
-  std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
   NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::tuple<int, int> reactant_set;
@@ -457,8 +455,6 @@ private:
   std::shared_ptr<MarkingStrategy> reactant_selector;
 
   NP::Sym<INT> id_sym;
-  NP::Sym<INT> panic_flag;
-  NP::Sym<INT> reacted_flag;
   NP::Sym<REAL> tot_rate_buffer;
   NP::Sym<REAL> weight_sym;
   NP::Sym<REAL> weight_change;
