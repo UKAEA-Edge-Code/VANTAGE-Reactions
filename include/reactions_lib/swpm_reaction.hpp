@@ -517,9 +517,9 @@ public:
           REAL total_rate = total_reaction_rate.at(0);
 
           REAL deltaweight = weight_change.at(0);
-          if (deltaweight > 0) {
-
-            REAL modified_weight = deltaweight * rate / total_rate;
+          REAL modified_weight =
+              (total_rate > 0.0) ? deltaweight * (rate / total_rate) : 0.0;
+          if (modified_weight > 0.0) {
 
             reaction_kernel_on_device.parent_kernel(
                 particle_index_a, particle_index_b, descendant_particles_a,

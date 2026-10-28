@@ -73,4 +73,16 @@ TEST(CrossSections, sigma_v_zero_relative_speed) {
   auto constant_cs = ConstantCrossSection(2.5, 10.0);
   EXPECT_DOUBLE_EQ(constant_cs.sigma_v(0.0), 0.0);
   EXPECT_DOUBLE_EQ(constant_cs.sigma_v(4.0), 10.0);
+
+  auto ipl_cs = IPLCrossSection(2.5, 1.0, 0.5, 10.0);
+  EXPECT_DOUBLE_EQ(ipl_cs.sigma_v(0.0), 0.0);
+  EXPECT_DOUBLE_EQ(ipl_cs.sigma_v(4.0), 5.0);
+
+  REAL mass_amu = 1.0;
+  REAL vel_norm = std::sqrt(2 * 1.60217663e-19 / (mass_amu * 1.66053904e-27));
+  auto amjuel_cs = AMJUELFitCrossSection<2, 2, 0>(
+      vel_norm, 1e-4, mass_amu, std::array<REAL, 2>{-1.0, -0.1},
+      std::array<REAL, 2>{-2.0, -0.2}, std::array<REAL, 0>{}, 2.0, 1e4, 1.0e6);
+  EXPECT_DOUBLE_EQ(amjuel_cs.get_value_at(0.0), 0.0);
+  EXPECT_DOUBLE_EQ(amjuel_cs.sigma_v(0.0), 0.0);
 }

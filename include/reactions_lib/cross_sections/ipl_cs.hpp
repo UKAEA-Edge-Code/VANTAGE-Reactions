@@ -44,7 +44,10 @@ struct IPLCrossSection : public AbstractCrossSection {
    * @return REAL-valued rate sigma*v_r
    */
   REAL sigma_v(const REAL &relative_vel) const {
-    return this->get_value_at(relative_vel) * relative_vel;
+    return (relative_vel <= 0.0)
+               ? 0.0
+               : this->mult_const *
+                     NP::Kernel::pow(relative_vel, 1.0 - this->power);
   };
 
   /**

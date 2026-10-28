@@ -424,11 +424,76 @@ TEST(SWPMSpecification, RequiredOperationsContracts) {
 
   struct MissingWeightTransferSpec : AbstractSWPMSpecification<> {
     using AbstractSWPMSpecification<>::AbstractSWPMSpecification;
-    void calculate_q_hat(
-        NP::ParticleSubGroupSharedPtr, std::shared_ptr<CollisionCellManager> &,
-        int, int, NP::NDLocalArraySharedPtr<REAL, 2> &,
-        NP::NDLocalArraySharedPtr<REAL, 2> &) override {}
+    void calculate_q_hat(NP::ParticleSubGroupSharedPtr,
+                         std::shared_ptr<CollisionCellManager> &, int, int,
+                         NP::NDLocalArraySharedPtr<REAL, 2> &,
+                         NP::NDLocalArraySharedPtr<REAL, 2> &) override {}
   };
   static_assert(!has_swpm_weight_transfer_v<MissingWeightTransferSpec>);
   SUCCEED();
+}
+
+TEST(SWPMReactions, zero_rate_and_zero_total_rate_guards) {
+  const int N_total = 32;
+  auto [A, B] = create_test_particle_groups_pairs(N_total);
+  const int cell_count = A->domain->mesh->get_cell_count();
+  auto cellwise_pair_list =
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
+
+  std::vector<int> c, i, j;
+  for (int cellx = 0; cellx < cell_count; cellx++) {
+    const int npart_cell = A->get_npart_cell(cellx);
+    for (int px = 0; px < npart_cell; px++) {
+      c.push_back(cellx);
+      i.push_back(px);
+      j.push_back(px);
+    }
+  }
+  cellwise_pair_list->push_back(c, i, j);
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, B, cellwise_pair_list);
+
+  auto rng_kernel =
+      NP::host_atomic_block_kernel_rng<REAL>([]() -> REAL { return 0.125; }, 2);
+  auto species_1 = Species("ION", 1.2, 0.0, 0);
+  auto species_2 = Species("ION2", 2.0, 0.0, 1);
+  auto calc =
+      PairDataCalculator(HSScatteringData<2>(species_1, species_2, rng_kernel));
+  auto kernels = PairScatteringKernels<2>();
+
+  auto zero_cs_data = CSPairData<2>(ConstantRateCrossSection(0.0));
+  auto pos_cs_data = CSPairData<2>(ConstantRateCrossSection(0.2));
+
+  auto zero_reaction = SWPMReaction<2, decltype(zero_cs_data),
+                                    decltype(kernels), decltype(calc)>(
+      A->sycl_target, std::array<int, 2>{0, 0}, std::array<int, 2>{1, 2},
+      zero_cs_data, kernels, calc);
+  auto pos_reaction =
+      SWPMReaction<2, decltype(pos_cs_data), decltype(kernels), decltype(calc)>(
+          A->sycl_target, std::array<int, 2>{0, 0}, std::array<int, 2>{3, 4},
+          pos_cs_data, kernels, calc);
+
+  auto descendants = std::make_shared<NP::ParticleGroup>(
+      A->domain, A->get_particle_spec(), A->sycl_target);
+
+  // 1. All-zero total rate even if weight_change is positive -> no products
+  zero_reaction.calculate_rates(pair_list, 0, cell_count);
+  NP::particle_loop(
+      "set_pos_weight_change", A, [](auto wc) { wc[0] = 0.5; },
+      NP::Access::write(NP::Sym<REAL>("WEIGHT_CHANGE")))
+      ->execute();
+  zero_reaction.apply(pair_list, 0, cell_count, 1.0, descendants);
+  EXPECT_EQ(descendants->get_npart_local(), 0);
+
+  // 2. Zero-rate reaction competing with a positive-rate reaction -> only
+  //    positive-rate reaction spawns products
+  pos_reaction.calculate_rates(pair_list, 0, cell_count);
+  zero_reaction.apply(pair_list, 0, cell_count, 1.0, descendants);
+  EXPECT_EQ(descendants->get_npart_local(), 0);
+  pos_reaction.apply(pair_list, 0, cell_count, 1.0, descendants);
+  EXPECT_EQ(descendants->get_npart_local(), 2 * A->get_npart_local());
+
+  A->sycl_target->free();
+  A->domain->mesh->free();
 }
