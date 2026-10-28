@@ -72,6 +72,9 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * velocity value, obeying the fit asymptotic rules
    */
   REAL get_value_at(const REAL &relative_vel) const {
+    if (relative_vel <= 0.0) {
+      return 0.0;
+    }
 
     REAL E = this->mult_const * relative_vel * relative_vel;
 
@@ -123,7 +126,9 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * @return REAL-valued rate sigma*v_r
    */
   REAL sigma_v(const REAL &relative_vel) const {
-    return this->get_value_at(relative_vel) * relative_vel;
+    return (relative_vel <= 0.0)
+               ? 0.0
+               : this->get_value_at(relative_vel) * relative_vel;
   };
 
   /**

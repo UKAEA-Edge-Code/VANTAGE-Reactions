@@ -45,8 +45,10 @@ struct CSPairDataOnDevice : public PairReactionDataBaseOnDevice<> {
     if constexpr (&CROSS_SECTION_T::sigma_v != &AbstractCrossSection::sigma_v) {
       return std::array<REAL, 1>{this->cross_section.sigma_v(rel_speed)};
     } else {
-      return std::array<REAL, 1>{this->cross_section.get_value_at(rel_speed) *
-                                 rel_speed};
+      return std::array<REAL, 1>{
+          (rel_speed > 0.0)
+              ? this->cross_section.get_value_at(rel_speed) * rel_speed
+              : 0.0};
     }
   }
 

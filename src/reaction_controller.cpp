@@ -279,9 +279,11 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
           "reacted_loop", target,
           [=](auto index, auto reacted_flag, auto total_reaction_rate,
               auto weight, auto kernel) {
+            REAL rate = total_reaction_rate.at(0);
+            REAL w = weight[0];
             reacted_flag.at(0) =
-                (1 - NP::Kernel::exp(-total_reaction_rate.at(0) * dt /
-                                     weight[0])) > kernel.at(index, 0)
+                (rate > 0.0 && w > 0.0 &&
+                 (1 - NP::Kernel::exp(-rate * dt / w)) > kernel.at(index, 0))
                     ? 1
                     : 0;
           },
