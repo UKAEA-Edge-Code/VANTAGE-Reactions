@@ -32,6 +32,12 @@ struct SWPMReactionController : ProfilingBase {
         swpm_specification(swpm_specification),
         coll_cell_manager(coll_cell_manager) {
 
+    NESOASSERT(this->cell_block_size > 0,
+               "cell_block_size must be greater than 0.");
+    NESOASSERT(this->max_pairs_per_cell <=
+                   std::numeric_limits<size_t>::max() / this->cell_block_size,
+               "max_pairs_per_cell * cell_block_size overflows size_t.");
+
     NESOWARN(
         map_subset_check(properties_map),
         "The provided properties_map does not include all the keys from the \
@@ -136,7 +142,16 @@ struct SWPMReactionController : ProfilingBase {
    * @param max_num_parts Maximum number of particles per cell
    */
   void set_max_particles_per_cell(size_t max_num_parts) {
+    NESOASSERT(max_num_parts > 0,
+               "max_particles_per_cell must be greater than 0.");
+    NESOASSERT(max_num_parts <=
+                   std::numeric_limits<size_t>::max() / this->cell_block_size,
+               "max_pairs_per_cell * cell_block_size overflows size_t.");
     this->max_pairs_per_cell = max_num_parts;
+    for (auto &reaction : this->reactions) {
+      reaction->set_max_buffer_size(this->max_pairs_per_cell *
+                                    this->cell_block_size);
+    }
   }
 
   /**
@@ -149,7 +164,15 @@ struct SWPMReactionController : ProfilingBase {
    * to a lower number in case of memory issues)
    */
   void set_cell_block_size(size_t cell_block_size) {
+    NESOASSERT(cell_block_size > 0, "cell_block_size must be greater than 0.");
+    NESOASSERT(this->max_pairs_per_cell <=
+                   std::numeric_limits<size_t>::max() / cell_block_size,
+               "max_pairs_per_cell * cell_block_size overflows size_t.");
     this->cell_block_size = cell_block_size;
+    for (auto &reaction : this->reactions) {
+      reaction->set_max_buffer_size(this->max_pairs_per_cell *
+                                    this->cell_block_size);
+    }
   }
 
   void set_default_rel_vel(REAL rel_vel) { this->default_rel_vel = rel_vel; }

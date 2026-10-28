@@ -443,6 +443,14 @@ TEST(SWPMReactionController, double_step) {
           pair_data_calculator);
       EXPECT_THROW(controller.add_reaction(wrong_species_reaction),
                    std::logic_error);
+
+      EXPECT_THROW(controller.set_cell_block_size(0), std::logic_error);
+      EXPECT_THROW(controller.set_max_particles_per_cell(0), std::logic_error);
+      controller.set_cell_block_size(2);
+      EXPECT_THROW(controller.set_max_particles_per_cell(
+                       std::numeric_limits<size_t>::max()),
+                   std::logic_error);
+      controller.set_cell_block_size(256);
     }
 
     controller.apply(A, dt);

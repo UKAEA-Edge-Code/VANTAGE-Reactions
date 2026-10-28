@@ -98,22 +98,41 @@ TEST(ReactionController, single_reaction_multi_apply) {
   if (std::getenv("TEST_NESOASSERT") != nullptr) {
     EXPECT_THROW(reaction_controller.add_reaction(nullptr), std::logic_error);
 
-    struct InvalidArityReaction : TestReaction<1> {
+    struct InspectableReaction : TestReaction<1> {
       std::vector<int> in_states;
-      InvalidArityReaction(NP::SYCLTargetSharedPtr sycl_target,
-                           std::vector<int> in_states)
+      InspectableReaction(NP::SYCLTargetSharedPtr sycl_target,
+                          std::vector<int> in_states)
           : TestReaction<1>(sycl_target, 1.0, 0, std::array<int, 1>{1}),
             in_states(std::move(in_states)) {}
       std::vector<int> get_in_states() override { return this->in_states; }
+      size_t max_buffer_size() { return this->get_max_buffer_size(); }
     };
     EXPECT_THROW(
-        reaction_controller.add_reaction(std::make_shared<InvalidArityReaction>(
+        reaction_controller.add_reaction(std::make_shared<InspectableReaction>(
             particle_group->sycl_target, std::vector<int>{})),
         std::logic_error);
     EXPECT_THROW(
-        reaction_controller.add_reaction(std::make_shared<InvalidArityReaction>(
+        reaction_controller.add_reaction(std::make_shared<InspectableReaction>(
             particle_group->sycl_target, std::vector<int>{0, 1})),
         std::logic_error);
+
+    auto valid_reaction = std::make_shared<InspectableReaction>(
+        particle_group->sycl_target, std::vector<int>{0});
+    reaction_controller.add_reaction(valid_reaction);
+
+    EXPECT_THROW(reaction_controller.set_cell_block_size(0), std::logic_error);
+    EXPECT_THROW(reaction_controller.set_max_particles_per_cell(0),
+                 std::logic_error);
+    reaction_controller.set_cell_block_size(2);
+    EXPECT_THROW(reaction_controller.set_max_particles_per_cell(
+                     std::numeric_limits<size_t>::max()),
+                 std::logic_error);
+    reaction_controller.set_max_particles_per_cell(3);
+    EXPECT_EQ(valid_reaction->max_buffer_size(), 6u);
+    EXPECT_THROW(
+        reaction_controller.set_cell_block_size(std::numeric_limits<size_t>::max()),
+        std::logic_error);
+    EXPECT_EQ(valid_reaction->max_buffer_size(), 6u);
   }
 
   particle_group->sycl_target->free();
