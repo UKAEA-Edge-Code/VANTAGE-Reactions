@@ -13,6 +13,12 @@ ReactionController::ReactionController(
       parent_transform(parent_transform), child_transform(child_transform),
       auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
+  NESOASSERT(this->cell_block_size > 0,
+             "cell_block_size must be greater than 0.");
+  NESOASSERT(this->max_particles_per_cell <=
+                 std::numeric_limits<size_t>::max() / this->cell_block_size,
+             "max_particles_per_cell * cell_block_size overflows size_t.");
+
   NESOWARN(map_subset_check(properties_map),
            "The provided properties_map does not include all the keys from the \
         default_map (and therefore is not an extension of that map). There \
