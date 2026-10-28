@@ -130,16 +130,7 @@ public:
    * @param max_num_parts Maximum number of particles per cell
    */
   void set_max_particles_per_cell(size_t max_num_parts) {
-    NESOASSERT(max_num_parts > 0,
-               "max_particles_per_cell must be greater than 0.");
-    NESOASSERT(max_num_parts <=
-                   std::numeric_limits<size_t>::max() / this->cell_block_size,
-               "max_particles_per_cell * cell_block_size overflows size_t.");
-    this->max_particles_per_cell = max_num_parts;
-    for (auto &reaction : this->reactions) {
-      reaction->set_max_buffer_size(this->max_particles_per_cell *
-                                    this->cell_block_size);
-    }
+    this->configure_buffer_limits(max_num_parts, this->cell_block_size);
   }
 
   /**
@@ -152,15 +143,8 @@ public:
    * to a lower number in case of memory issues)
    */
   void set_cell_block_size(size_t cell_block_size) {
-    NESOASSERT(cell_block_size > 0, "cell_block_size must be greater than 0.");
-    NESOASSERT(this->max_particles_per_cell <=
-                   std::numeric_limits<size_t>::max() / cell_block_size,
-               "max_particles_per_cell * cell_block_size overflows size_t.");
-    this->cell_block_size = cell_block_size;
-    for (auto &reaction : this->reactions) {
-      reaction->set_max_buffer_size(this->max_particles_per_cell *
-                                    this->cell_block_size);
-    }
+    this->configure_buffer_limits(this->max_particles_per_cell,
+                                  cell_block_size);
   }
 
   /**
@@ -209,10 +193,8 @@ public:
              ControllerMode controller_mode = ControllerMode::standard_mode) {
     auto particle_group = get_particle_group(target);
     auto target_as_subgroup = particle_sub_group(target);
-    const bool is_particle_group =
-        std::is_same<NP::ParticleGroup, PARENT>::value;
     this->apply_impl(target_as_subgroup, particle_group, dt, product_group,
-                     controller_mode, is_particle_group);
+                     controller_mode);
   }
 
   /**
@@ -270,13 +252,11 @@ private:
    * should have the same spec as the parent.
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
-   * @param is_particle_group A boolean that specifies if the PARENT template
-   * parameter passed to apply is NP::ParticleGroup.
    */
   void apply_impl(NP::ParticleSubGroupSharedPtr target,
                   NP::ParticleGroupSharedPtr particle_group, double dt,
                   NP::ParticleGroupSharedPtr product_group,
-                  ControllerMode controller_mode, bool is_particle_group);
+                  ControllerMode controller_mode);
 
   virtual std::string get_profiling_name() override;
 
@@ -304,6 +284,20 @@ private:
   size_t cell_block_size = 256;
   size_t max_particles_per_cell = 16384;
   std::shared_ptr<NP::ParticleGroupTemporary> particle_group_temporary;
+
+  void configure_buffer_limits(size_t max_num_parts, size_t block_size) {
+    NESOASSERT(max_num_parts > 0,
+               "max_particles_per_cell must be greater than 0.");
+    NESOASSERT(block_size > 0, "cell_block_size must be greater than 0.");
+    NESOASSERT(max_num_parts <= std::numeric_limits<size_t>::max() / block_size,
+               "max_particles_per_cell * cell_block_size overflows size_t.");
+    this->max_particles_per_cell = max_num_parts;
+    this->cell_block_size = block_size;
+    for (auto &reaction : this->reactions) {
+      reaction->set_max_buffer_size(this->max_particles_per_cell *
+                                    this->cell_block_size);
+    }
+  }
 
   void setup_particle_group_temporary() {
     this->particle_group_temporary =
