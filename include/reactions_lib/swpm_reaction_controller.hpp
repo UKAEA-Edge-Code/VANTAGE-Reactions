@@ -115,6 +115,16 @@ struct SWPMReactionController : ProfilingBase {
    * @param reaction The reaction to be added
    */
   void add_reaction(std::shared_ptr<AbstractPairReaction> reaction) {
+    NESOASSERT(reaction != nullptr,
+               "Reaction passed to SWPMReactionController::add_reaction must "
+               "not be nullptr.");
+    auto in_states = reaction->get_in_states();
+    NESOASSERT(in_states.size() == 2 &&
+                   in_states[0] == std::get<0>(this->reactant_set) &&
+                   in_states[1] == std::get<1>(this->reactant_set),
+               "Reaction passed to SWPMReactionController::add_reaction must "
+               "have 2 input states matching the controller's ordered "
+               "(species_a_id, species_b_id) reactant pair.");
     this->reactions.push_back(reaction);
     this->controller_pre_process();
   }

@@ -95,6 +95,27 @@ TEST(ReactionController, single_reaction_multi_apply) {
     EXPECT_DOUBLE_EQ(rate, 5.0); //, 1e-12);
   }
 
+  if (std::getenv("TEST_NESOASSERT") != nullptr) {
+    EXPECT_THROW(reaction_controller.add_reaction(nullptr), std::logic_error);
+
+    struct InvalidArityReaction : TestReaction<1> {
+      std::vector<int> in_states;
+      InvalidArityReaction(NP::SYCLTargetSharedPtr sycl_target,
+                           std::vector<int> in_states)
+          : TestReaction<1>(sycl_target, 1.0, 0, std::array<int, 1>{1}),
+            in_states(std::move(in_states)) {}
+      std::vector<int> get_in_states() override { return this->in_states; }
+    };
+    EXPECT_THROW(
+        reaction_controller.add_reaction(std::make_shared<InvalidArityReaction>(
+            particle_group->sycl_target, std::vector<int>{})),
+        std::logic_error);
+    EXPECT_THROW(
+        reaction_controller.add_reaction(std::make_shared<InvalidArityReaction>(
+            particle_group->sycl_target, std::vector<int>{0, 1})),
+        std::logic_error);
+  }
+
   particle_group->sycl_target->free();
   particle_group->domain->mesh->free();
 }
