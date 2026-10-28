@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <vector>
 
@@ -112,8 +113,11 @@ struct CollisionCellManager {
   get_npart_coll_cell(NP::ParticleSubGroupSharedPtr target, INT species_id);
 
   /**
-   * @brief Bin particles in collision cells. Binning is a no-op if the
-   * partition is already valid.
+   * @brief Bin particles in collision cells if the cached binning is invalid
+   * or the hierarchy's collision-cell counts have changed. Repeated calls
+   * reuse valid binning even before the partition is constructed.
+   *
+   * Call invalidate_partition() after changing particles or target selection.
    *
    * @param target Particle subgroup containing particles to be binned
    */
@@ -132,15 +136,18 @@ struct CollisionCellManager {
 
   /**
    * @brief Set the maximum linear extent for collision cells per mesh cell.
+   * Invalidates both binning and the partition, even if cell counts do not
+   * change.
    *
    * @param resolutions Maximum linear extent for collision cells per mesh cell.
    */
   void set_coll_cell_linear_resolution(std::vector<REAL> resolutions);
 
   /**
-   * @brief Invalidate the collision cell partition. Should be called whenever
-   * particles are added or removed or the particle to collision cell map is
-   * otherwise invalidated.
+   * @brief Invalidate both particle binning and the collision cell partition.
+   * Call whenever particles are added, removed, or moved, the target selection
+   * changes, or the particle to collision cell map is otherwise invalidated.
+   * Direct hierarchy changes that retain cell counts also require this call.
    */
   void invalidate_partition();
 
@@ -257,7 +264,10 @@ struct CollisionCellManager {
 
   /**
    * @brief Construct the collision cell partition for a given group if the
-   * current is not valid
+   * current partition is not valid. Ensures particle binning is current before
+   * construction; an explicit preceding bin_particles() call is optional.
+   *
+   * Call invalidate_partition() after changing particles or target selection.
    *
    * @param target Particle subgroup for which to construct the partition
    */
@@ -277,6 +287,9 @@ private:
 
   std::shared_ptr<NP::DSMC::CollisionCellRateReduction> reduction_obj;
 
+  // Disengaged when particle binning is invalid. Kept separate from
+  // num_coll_cells, which describes the last constructed partition.
+  std::optional<std::vector<int>> binned_num_coll_cells;
   bool partition_valid = false;
   NP::NDHostArraySharedPtr<int, 2> num_particles;
 };
