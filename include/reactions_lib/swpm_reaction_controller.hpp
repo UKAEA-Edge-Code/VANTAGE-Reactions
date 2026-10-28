@@ -2,8 +2,8 @@
 #define REACTIONS_SWPM_REACTION_CONTROLLER_H
 #include "collision_cell_manager.hpp"
 #include "common_transformations.hpp"
-#include "profiling_base.hpp"
 #include "particle_properties_map.hpp"
+#include "profiling_base.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "swpm_reaction.hpp"
 #include "transformation_wrapper.hpp"
@@ -358,7 +358,7 @@ struct SWPMReactionController : ProfilingBase {
 
       auto child_group = this->particle_group_temporary->get(particle_group);
 
-      for (int i = 0; i < cell_count; i += this->cell_block_size) {
+      for (size_t i = 0; i < cell_count; i += this->cell_block_size) {
         for (int r = 0; r < this->reactions.size(); r++) {
 
           this->reactions[r]->calculate_rates(
