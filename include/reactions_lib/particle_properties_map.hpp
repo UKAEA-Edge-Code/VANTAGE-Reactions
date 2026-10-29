@@ -88,6 +88,8 @@ public:
 
   std::string &operator[](const int &key);
 
+  void erase(const int &key);
+
 private:
   std::map<int, std::string> private_map{
       {default_properties.reacted_flag, "PARTICLE_REACTED_FLAG"},
@@ -131,6 +133,8 @@ std::map<int, std::string> get_default_map();
  * @return True if the given custom map is a subset of the default map.
  */
 bool map_subset_check(std::map<int, std::string> custom_map);
+
+bool map_subset_check(const PropertiesMap &custom_map);
 }; // namespace VANTAGE::Reactions
 
 #endif

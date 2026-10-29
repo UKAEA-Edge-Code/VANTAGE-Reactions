@@ -26,6 +26,10 @@ std::string &PropertiesMap::operator[](const int &key) {
   return this->private_map[key];
 };
 
+void PropertiesMap::erase(const int &key) {
+  this->private_map.erase(key);
+}
+
 std::map<int, std::string> get_default_map() {
   return PropertiesMap().get_map();
 }
@@ -46,6 +50,10 @@ bool map_subset_check(std::map<int, std::string> custom_map) {
   }
 
   return true;
+}
+
+bool map_subset_check(const PropertiesMap &custom_map) {
+  return map_subset_check(custom_map.get_map());
 }
 
 } // namespace VANTAGE::Reactions

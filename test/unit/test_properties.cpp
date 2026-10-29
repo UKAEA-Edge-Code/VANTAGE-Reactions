@@ -488,13 +488,13 @@ TEST(ArgumentNameSet, merging) {
 }
 
 TEST(Properties, subset_check) {
-  EXPECT_TRUE(map_subset_check(get_default_map()));
+  EXPECT_TRUE(map_subset_check(PropertiesMap()));
 
-  auto missing_last = get_default_map();
+  auto missing_last = PropertiesMap();
   missing_last.erase(default_properties.fluid_flow_speed);
   EXPECT_FALSE(map_subset_check(missing_last));
 
-  auto extended = get_default_map();
+  auto extended = PropertiesMap();
   extended[default_properties.fluid_flow_speed + 1] = "TEST_CUSTOM_PROP";
   EXPECT_TRUE(map_subset_check(extended));
 }
