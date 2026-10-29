@@ -37,7 +37,7 @@ TEST(Properties, simple_prop_names) {
 
   std::vector<std::string> simple_int_props = {};
   for (auto prop : int_props_obj.get_simple_props()) {
-    simple_int_props.push_back(get_default_map().at(prop));
+    simple_int_props.push_back(PropertiesMap().at(prop));
   }
   auto int_prop_names = int_props_obj.simple_prop_names();
 
@@ -75,7 +75,7 @@ TEST(Properties, simple_prop_names) {
 
   std::vector<std::string> simple_real_props = {};
   for (auto prop : real_props) {
-    simple_real_props.push_back(get_default_map().at(prop));
+    simple_real_props.push_back(PropertiesMap().at(prop));
   }
 
   auto real_prop_names = real_props_obj.simple_prop_names();
@@ -163,7 +163,7 @@ TEST(Properties, species_prop_names) {
 
   std::vector<std::string> species_real_props = {};
   for (auto prop : real_props) {
-    species_real_props.push_back(get_default_map().at(prop));
+    species_real_props.push_back(PropertiesMap().at(prop));
   }
 
   auto real_prop_names = real_props_obj.species_prop_names();

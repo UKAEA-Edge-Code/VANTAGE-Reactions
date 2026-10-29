@@ -125,8 +125,6 @@ private:
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
-std::map<int, std::string> get_default_map();
-
 /**
  * @brief Function to check whether a custom map is a subset of the default map.
  *

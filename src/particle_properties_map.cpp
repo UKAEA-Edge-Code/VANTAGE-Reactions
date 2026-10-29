@@ -28,12 +28,8 @@ std::string &PropertiesMap::operator[](const int &key) {
 
 void PropertiesMap::erase(const int &key) { this->private_map.erase(key); }
 
-std::map<int, std::string> get_default_map() {
-  return PropertiesMap().get_map();
-}
-
 bool map_subset_check(std::map<int, std::string> custom_map) {
-  auto default_map = get_default_map();
+  auto default_map = PropertiesMap().get_map();
   auto default_map_size = default_map.size();
   auto custom_map_size = custom_map.size();
 
