@@ -115,8 +115,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_EXACT) {
       NP::Access::write(NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
@@ -275,8 +274,7 @@ TEST(InterpolationTest, TRIM_DATA_PIPELINE_INTERP) {
       NP::Access::write(NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 
@@ -435,8 +433,7 @@ TEST(InterpolationTest, TRIM_DATA_ASYMMETRIC) {
       NP::Access::write(NP::Sym<REAL>("EXPECTED_INTERPOLATION_VALUE")))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 

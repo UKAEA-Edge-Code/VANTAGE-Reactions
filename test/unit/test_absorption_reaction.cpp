@@ -7,8 +7,7 @@ TEST(AbsorptionKernels, general) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto test_data = FixedRateData(1.0);
   auto target_species = Species("ION", 1.2);

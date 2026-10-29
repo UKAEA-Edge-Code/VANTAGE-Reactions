@@ -7,8 +7,7 @@ TEST(ChargeExchange, simple_beam_exchange) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
@@ -90,8 +89,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
@@ -184,8 +182,7 @@ TEST(ChargeExchange, sampled_beam_exchange_3D) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group<3>(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);
@@ -287,8 +284,7 @@ TEST(ChargeExchange, sampled_beam_exchange_2D_pipeline) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
   auto target_species = Species("ION2", 2.0, 0.0, 1);

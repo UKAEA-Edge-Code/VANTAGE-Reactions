@@ -12,7 +12,7 @@ TEST(VranicMergeTransform, transform_2D) {
 
   auto test_merger = make_vranic_merging_strategy<2>(particle_group, 1);
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 3, 1);
@@ -72,7 +72,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_2D) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto test_merger = make_vranic_merging_strategy<2>(particle_group, 1);
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 1, 1);
@@ -132,7 +132,7 @@ TEST(VranicMergeTransform, transform_3D) {
 
   auto test_merger = make_vranic_merging_strategy<3>(particle_group, 1);
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 4, 1);
@@ -225,7 +225,7 @@ TEST(VranicMergeTransform, transform_zero_momentum_3D) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto test_merger = make_vranic_merging_strategy<3>(particle_group, 1);
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   particle_loop(
       subgroup,
@@ -309,7 +309,7 @@ TEST(VranicMergeTransform, transform_3D_simple_grouping) {
 
   auto test_merger = make_vranic_merging_strategy<3>(particle_group, 2);
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   particle_loop(
       "set_grouping", subgroup,
@@ -401,7 +401,7 @@ TEST(VranicMergeTransform, transform_3D_velocity_binning) {
   auto test_merger =
       make_vranic_merging_strategy<3>(particle_group, 12 * 12 * 12);
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto velocity_bin = uniform_velocity_bin_transform<3>(
       std::array<REAL, 3>{3.0, 3.0, 3.0}, std::array<INT, 3>{10, 10, 10},

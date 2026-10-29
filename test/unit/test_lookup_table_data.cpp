@@ -10,8 +10,7 @@ TEST(LookupTableData, ArrayLookupTable) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto default_array = std::array<REAL, 1>{1.0};
   std::map<int, std::array<REAL, 1>> lookup_table_map;
@@ -66,8 +65,7 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto default_array = std::array<REAL, 1>{1.0};
   std::map<int, std::array<REAL, 1>> lookup_table_map;

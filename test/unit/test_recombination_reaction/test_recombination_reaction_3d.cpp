@@ -15,8 +15,7 @@ TEST(Recombination, kernel_test_3D) {
       NP::Access::write(NP::Sym<INT>("INTERNAL_STATE")))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto marker_species = Species("ION", 1.0, 0.0, -1);
   auto neutral_species = Species("ION", 1.0, 0.0, 0);
