@@ -26,9 +26,7 @@ std::string &PropertiesMap::operator[](const int &key) {
   return this->private_map[key];
 };
 
-void PropertiesMap::erase(const int &key) {
-  this->private_map.erase(key);
-}
+void PropertiesMap::erase(const int &key) { this->private_map.erase(key); }
 
 std::map<int, std::string> get_default_map() {
   return PropertiesMap().get_map();
