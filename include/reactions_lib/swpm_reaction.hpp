@@ -59,6 +59,12 @@ public:
  */
 template <int num_products, typename ReactionData, typename ReactionKernels>
 struct SWPMReactionImpl : AbstractPairReaction {
+  static_assert(
+      is_loop_reaction_data<ReactionData, PairReactionDataArgumentPack>::value,
+      "SWPM reaction rates require zero-input AbstractReactionData with "
+      "PairReactionDataArgumentPack and std::array<REAL, DIM> output.");
+  static_assert(ReactionData::DIM == 1,
+                "SWPM reaction rates require scalar data (DIM == 1).");
   SWPMReactionImpl() = default;
 
   /**

@@ -164,6 +164,12 @@ private:
 template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels>
 struct LinearReactionBaseImpl : public AbstractReaction {
+  static_assert(
+      is_loop_reaction_data<ReactionData, SingleReactionDataArgumentPack>::value,
+      "Linear reaction rates require zero-input AbstractReactionData with "
+      "SingleReactionDataArgumentPack and std::array<REAL, DIM> output.");
+  static_assert(ReactionData::DIM == 1,
+                "Linear reaction rates require scalar data (DIM == 1).");
 
   /**
    * @brief Constructor for LinearReactionBaseImpl.
@@ -189,20 +195,6 @@ struct LinearReactionBaseImpl : public AbstractReaction {
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels) {
-    // These assertions are necessary since the typenames for ReactionData and
-    // ReactionKernels could be any type and for calculate_rates and
-    // apply to operate correctly, ReactionData and
-    // ReactionKernels have to be derived from ReactionKernelsBase and
-    // AbstractReactionKernels respectively
-    static_assert(
-        std::is_base_of_v<
-            AbstractReactionData<typename ReactionData::ON_DEVICE_OBJ_TYPE,
-                                 typename ReactionData::ARGUMENT_PACK_TYPE,
-                                 reaction_data.get_dim(),
-                                 typename ReactionData::RNG_KERNEL_TYPE>,
-            ReactionData>,
-        "Template parameter ReactionData is not derived from "
-        "ReactionDataBase...");
     static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
                   "Template parameter ReactionKernels is not derived from "
                   "ReactionKernelsBase...");

@@ -32,36 +32,36 @@ struct PairDataCalculator : public AbstractPairDataCalculator {
    */
   PairDataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
+    constexpr bool valid_data =
+        (is_loop_reaction_data<DATATYPE, PairReactionDataArgumentPack>::value &&
+         ...);
     static_assert(
-        (std::is_base_of_v<
-             AbstractReactionData<
-                 typename DATATYPE::ON_DEVICE_OBJ_TYPE,
-                 typename DATATYPE::ARGUMENT_PACK_TYPE, DATATYPE::get_dim(),
-                 typename DATATYPE::RNG_KERNEL_TYPE>,
-             DATATYPE> &&
-         ...),
-        "DATATYPE provided is not derived from AbstractReactionData.");
+        valid_data,
+        "PairDataCalculator requires zero-input AbstractReactionData with "
+        "PairReactionDataArgumentPack and std::array<REAL, DIM> output.");
 
-    std::apply(
-        [&](auto &&...args) {
-          (
-              [&] {
-                auto arg_pack = args.get_arg_pack();
-                this->data_loop_int_syms_a.push_back(
-                    arg_pack.required_int_props_a.to_sym_vector());
+    if constexpr (valid_data) {
+      std::apply(
+          [&](auto &&...args) {
+            (
+                [&] {
+                  auto arg_pack = args.get_arg_pack();
+                  this->data_loop_int_syms_a.push_back(
+                      arg_pack.required_int_props_a.to_sym_vector());
 
-                this->data_loop_real_syms_a.push_back(
-                    arg_pack.required_real_props_a.to_sym_vector());
+                  this->data_loop_real_syms_a.push_back(
+                      arg_pack.required_real_props_a.to_sym_vector());
 
-                this->data_loop_int_syms_b.push_back(
-                    arg_pack.required_int_props_b.to_sym_vector());
+                  this->data_loop_int_syms_b.push_back(
+                      arg_pack.required_int_props_b.to_sym_vector());
 
-                this->data_loop_real_syms_b.push_back(
-                    arg_pack.required_real_props_b.to_sym_vector());
-              }(),
-              ...);
-        },
-        this->data);
+                  this->data_loop_real_syms_b.push_back(
+                      arg_pack.required_real_props_b.to_sym_vector());
+                }(),
+                ...);
+          },
+          this->data);
+    }
   }
 
   /**

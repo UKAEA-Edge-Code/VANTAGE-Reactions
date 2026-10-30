@@ -3,6 +3,101 @@
 
 using namespace VANTAGE::Reactions;
 
+namespace {
+using TestRNG = DEFAULT_RNG_KERNEL::KernelType;
+
+template <typename ACCESSORS, typename RESULT = std::array<REAL, 1>,
+          typename RNG = TestRNG>
+struct SignatureDevice : AbstractReactionDataOnDevice<ACCESSORS> {
+  RESULT calc_data(const ACCESSORS &, RNG &) const;
+};
+
+using SingleDevice = SignatureDevice<SingleReactionDataAccessors>;
+using PairDevice = SignatureDevice<PairReactionDataAccessors>;
+using WrongReturnDevice = SignatureDevice<SingleReactionDataAccessors, REAL>;
+using WrongSizeDevice =
+    SignatureDevice<SingleReactionDataAccessors, std::array<REAL, 2>>;
+using WrongRNGDevice =
+    SignatureDevice<SingleReactionDataAccessors, std::array<REAL, 1>, int>;
+
+struct InputDevice : ReactionDataBaseOnDevice<1, DEFAULT_RNG_KERNEL, 1> {
+  std::array<REAL, 1> calc_data(const std::array<REAL, 1> &,
+                                const SingleReactionDataAccessors &,
+                                TestRNG &) const;
+};
+
+struct WrongInputReturnDevice : InputDevice {
+  REAL calc_data(const std::array<REAL, 1> &,
+                 const SingleReactionDataAccessors &, TestRNG &) const;
+};
+
+struct MutableDevice : ReactionDataBaseOnDevice<> {
+  std::array<REAL, 1> calc_data(const SingleReactionDataAccessors &, TestRNG &);
+};
+
+using SingleData = ReactionDataBase<SingleDevice>;
+using PairData = PairReactionDataBase<PairDevice>;
+using InputData = ReactionDataBase<InputDevice, 1, DEFAULT_RNG_KERNEL, 1>;
+using MultiData = ReactionDataBase<ReactionDataBaseOnDevice<2>, 2>;
+} // namespace
+
+TEST(ReactionDataContract, DeviceSignatures) {
+  static_assert(SingleData::validate_on_device_type());
+  static_assert(PairData::validate_on_device_type());
+  static_assert(InputData::validate_on_device_type());
+  static_assert(is_abstract_calc_data_callable_v<
+                SingleDevice, const SingleReactionDataAccessors &, TestRNG &>);
+  static_assert(!is_abstract_calc_data_callable_v<
+                PairDevice, const SingleReactionDataAccessors &, TestRNG &>);
+  static_assert(
+      !is_abstract_calc_data_callable_v<
+          WrongRNGDevice, const SingleReactionDataAccessors &, TestRNG &>);
+  static_assert(!is_abstract_calc_data_callable_v<
+                MutableDevice, const SingleReactionDataAccessors &, TestRNG &>);
+  static_assert(!is_abstract_calc_data_callable_v<
+                InputDevice, const SingleReactionDataAccessors &, TestRNG &>);
+  static_assert(!check_abstract_calc_data_return_type<
+                WrongReturnDevice, std::array<REAL, 1>,
+                const SingleReactionDataAccessors &, TestRNG &>());
+  static_assert(!check_abstract_calc_data_return_type<
+                WrongSizeDevice, std::array<REAL, 1>,
+                const SingleReactionDataAccessors &, TestRNG &>());
+  static_assert(!check_abstract_calc_data_return_type<
+                WrongInputReturnDevice, std::array<REAL, 1>,
+                const std::array<REAL, 1> &,
+                const SingleReactionDataAccessors &, TestRNG &>());
+}
+
+TEST(ReactionDataContract, LoopCompatibility) {
+  static_assert(
+      is_loop_reaction_data<SingleData, SingleReactionDataArgumentPack>::value);
+  static_assert(
+      is_loop_reaction_data<PairData, PairReactionDataArgumentPack>::value);
+  static_assert(
+      !is_loop_reaction_data<PairData, SingleReactionDataArgumentPack>::value);
+  static_assert(
+      !is_loop_reaction_data<SingleData, PairReactionDataArgumentPack>::value);
+  static_assert(
+      !is_loop_reaction_data<int, SingleReactionDataArgumentPack>::value);
+  static_assert(
+      !is_loop_reaction_data<InputData, SingleReactionDataArgumentPack>::value);
+  static_assert(!is_loop_reaction_data<ReactionDataBase<WrongReturnDevice>,
+                                    SingleReactionDataArgumentPack>::value);
+  static_assert(!is_loop_reaction_data<ReactionDataBase<WrongSizeDevice>,
+                                    SingleReactionDataArgumentPack>::value);
+  static_assert(is_loop_reaction_data<ConcatenatorData<SingleData, SingleData>,
+                                   SingleReactionDataArgumentPack>::value);
+  static_assert(is_loop_reaction_data<ConcatenatorData<PairData, PairData>,
+                                   PairReactionDataArgumentPack>::value);
+  // Calculator prerequisites are arrays, not scalar reaction rates.
+  auto single = DataCalculator(MultiData{});
+  auto pair = PairDataCalculator(PairData{});
+  EXPECT_EQ(single.get_data_size(), 2);
+  EXPECT_EQ(pair.get_data_size(), 1);
+  EXPECT_EQ(DataCalculator<>().get_data_size(), 0);
+  EXPECT_EQ(PairDataCalculator<>().get_data_size(), 0);
+}
+
 TEST(ReactionDataArgumentPack, IntegerOnlyConstruction) {
   ReactionDataBase<FixedRateDataOnDevice> data(
       Properties<INT>(std::array<int, 1>{default_properties.panic}));

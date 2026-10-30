@@ -146,6 +146,19 @@ struct AbstractReactionData {
               input_t, const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
               typename RNG_KERNEL_T::KernelType &>(),
           "ON_DEVICE_T::calc_data return type mismatch");
+    } else {
+      static_assert(
+          is_abstract_calc_data_callable_v<
+              ON_DEVICE_T, const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
+              typename RNG_KERNEL_T::KernelType &>,
+          "ON_DEVICE_T::calc_data parameter signature mismatch");
+      static_assert(
+          check_abstract_calc_data_return_type<
+              ON_DEVICE_T,
+              std::array<typename ON_DEVICE_T::VALUE_TYPE, ON_DEVICE_T::DIM>,
+              const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
+              typename RNG_KERNEL_T::KernelType &>(),
+          "ON_DEVICE_T::calc_data return type mismatch");
     }
     return true;
   }
@@ -279,6 +292,38 @@ template <typename ARGUMENT_PACK_T> struct accessor_pack_for;
  */
 template <typename ARGUMENT_PACK_T>
 using accessor_pack_for_t = typename accessor_pack_for<ARGUMENT_PACK_T>::type;
+
+/**
+ * @brief Whether host data can supply a REAL array to a single or pair loop.
+ *
+ * @tparam T Host reaction-data type.
+ * @tparam PACK Required host argument-pack type.
+ */
+template <typename T, typename PACK, typename = void>
+struct is_loop_reaction_data : std::false_type {};
+
+/// \cond
+template <typename T, typename PACK>
+struct is_loop_reaction_data<
+    T, PACK,
+    std::void_t<typename T::ON_DEVICE_OBJ_TYPE, typename T::ARGUMENT_PACK_TYPE,
+                typename T::RNG_KERNEL_TYPE, decltype(T::DIM),
+                decltype(T::INPUT_DIM),
+                decltype(T::ON_DEVICE_OBJ_TYPE::INPUT_DIM)>>
+    : std::bool_constant<
+          std::is_base_of_v<
+              AbstractReactionData<typename T::ON_DEVICE_OBJ_TYPE,
+                                   typename T::ARGUMENT_PACK_TYPE, T::DIM,
+                                   typename T::RNG_KERNEL_TYPE, T::INPUT_DIM>,
+              T> &&
+          std::is_same_v<typename T::ARGUMENT_PACK_TYPE, PACK> &&
+          T::INPUT_DIM == 0 && T::ON_DEVICE_OBJ_TYPE::INPUT_DIM == 0 &&
+          std::is_same_v<abstract_calc_data_return_t<
+                             typename T::ON_DEVICE_OBJ_TYPE,
+                             const accessor_pack_for_t<PACK> &,
+                             typename T::RNG_KERNEL_TYPE::KernelType &>,
+                         std::array<REAL, T::DIM>>> {};
+/// \endcond
 
 }; // namespace VANTAGE::Reactions
 #endif
