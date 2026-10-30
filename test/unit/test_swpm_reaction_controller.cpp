@@ -99,9 +99,8 @@ TEST(SWPMReactionController, single_reaction) {
         SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                      decltype(pair_data_calculator)>>(
         A->sycl_target,
-        std::array<int, 2>{static_cast<int>(species_1.get_id()),
-                           static_cast<int>(species_2.get_id())},
-        std::array<int, 2>{2, 3}, cs_data, scattering_kernels,
+        std::array<INT, 2>{species_1.get_id(), species_2.get_id()},
+        std::array<INT, 2>{2, 3}, cs_data, scattering_kernels,
         pair_data_calculator);
 
     controller.add_reaction(swpm_reaction);
@@ -270,18 +269,16 @@ TEST(SWPMReactionController, multi_reaction) {
         SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                      decltype(pair_data_calculator)>>(
         A->sycl_target,
-        std::array<int, 2>{static_cast<int>(species_1.get_id()),
-                           static_cast<int>(species_2.get_id())},
-        std::array<int, 2>{2, 3}, cs_data, scattering_kernels,
+        std::array<INT, 2>{species_1.get_id(), species_2.get_id()},
+        std::array<INT, 2>{2, 3}, cs_data, scattering_kernels,
         pair_data_calculator);
 
     auto swpm_reaction_2 = std::make_shared<
         SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                      decltype(pair_data_calculator)>>(
         A->sycl_target,
-        std::array<int, 2>{static_cast<int>(species_1.get_id()),
-                           static_cast<int>(species_2.get_id())},
-        std::array<int, 2>{4, 5}, cs_data, scattering_kernels,
+        std::array<INT, 2>{species_1.get_id(), species_2.get_id()},
+        std::array<INT, 2>{4, 5}, cs_data, scattering_kernels,
         pair_data_calculator);
 
     controller.add_reaction(swpm_reaction);
@@ -414,9 +411,8 @@ TEST(SWPMReactionController, double_step) {
         SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                      decltype(pair_data_calculator)>>(
         A->sycl_target,
-        std::array<int, 2>{static_cast<int>(species_1.get_id()),
-                           static_cast<int>(species_2.get_id())},
-        std::array<int, 2>{2, 3}, cs_data, scattering_kernels,
+        std::array<INT, 2>{species_1.get_id(), species_2.get_id()},
+        std::array<INT, 2>{2, 3}, cs_data, scattering_kernels,
         pair_data_calculator);
 
     controller.add_reaction(swpm_reaction);

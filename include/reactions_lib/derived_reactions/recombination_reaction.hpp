@@ -59,8 +59,7 @@ struct Recombination
       : LinearReactionBase<1, RateData, RecombReactionKernels<ndim, ndim>,
                            DataCalcType>(
             sycl_target, marker_species.get_id(),
-            std::array<int, 1>{static_cast<int>(neutral_species.get_id())},
-            rate_data,
+            std::array<INT, 1>{neutral_species.get_id()}, rate_data,
             RecombReactionKernels<ndim, ndim>(marker_species, electron_species,
                                               normalised_potential_energy),
             data_calc_obj, properties_map) {}

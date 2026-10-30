@@ -25,14 +25,14 @@ TEST(ReactionController, surface_mode_test) {
 
   auto test_reaction_1 = std::make_shared<
       LinearReactionBase<1, FixedCoefficientData, TestReactionKernels<1>>>(
-      particle_group->sycl_target, 0, std::array<int, 1>{1},
+      particle_group->sycl_target, 0, std::array<INT, 1>{1},
       FixedCoefficientData(1.0), TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_1);
 
   auto test_reaction_2 = std::make_shared<
       LinearReactionBase<1, FixedCoefficientData, TestReactionKernels<1>>>(
-      particle_group->sycl_target, 0, std::array<int, 1>{2},
+      particle_group->sycl_target, 0, std::array<INT, 1>{2},
       FixedCoefficientData(3.0), TestReactionKernels<1>());
 
   reaction_controller.add_reaction(test_reaction_2);

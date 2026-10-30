@@ -65,9 +65,9 @@ struct AbstractReaction : ProfilingBase {
                      NP::ParticleGroupSharedPtr child_group,
                      bool full_weight = false);
 
-  virtual std::vector<int> get_in_states() { return std::vector<int>{0}; }
+  virtual std::vector<INT> get_in_states() { return std::vector<INT>{0}; }
 
-  virtual std::vector<int> get_out_states() { return std::vector<int>{0}; }
+  virtual std::vector<INT> get_out_states() { return std::vector<INT>{0}; }
 
   virtual void flush_buffer(size_t buffer_size) = 0;
   virtual void flush_weight_buffer(size_t buffer_size) = 0;
@@ -181,8 +181,8 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    * used when remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBaseImpl(
-      NP::SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
+      NP::SYCLTargetSharedPtr sycl_target, INT in_state,
+      std::array<INT, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
@@ -332,7 +332,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
     auto reaction_kernel_buffer = this->reaction_kernels;
     auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
 
-    std::array<int, num_products_per_parent> out_states_arr = this->out_states;
+    std::array<INT, num_products_per_parent> out_states_arr = this->out_states;
     // The ->get_particle_group() is temporary since NP::ParticleSubGroup
     // doesn't have a sycl_target member
     NESOASSERT(particle_sub_group->get_particle_group()->sycl_target ==
@@ -537,19 +537,19 @@ struct LinearReactionBaseImpl : public AbstractReaction {
   /**
    * @brief Getter for in_states that define which species the reaction is to
    * be applied to.
-   * @return std::vector<int> Integer vector of species IDs.
+   * @return std::vector<INT> Integer vector of species IDs.
    */
-  std::vector<int> get_in_states() override {
-    return std::vector<int>{this->in_state};
+  std::vector<INT> get_in_states() override {
+    return std::vector<INT>{this->in_state};
   }
 
   /**
    * @brief Getter for out_states that define which species the reaction is to
    * produce.
-   * @return std::vector<int> Integer vector of species IDs.
+   * @return std::vector<INT> Integer vector of species IDs.
    */
-  std::vector<int> get_out_states() override {
-    return std::vector<int>(out_states.begin(), out_states.end());
+  std::vector<INT> get_out_states() override {
+    return std::vector<INT>(out_states.begin(), out_states.end());
   }
 
   virtual void
@@ -560,8 +560,8 @@ struct LinearReactionBaseImpl : public AbstractReaction {
   virtual ~LinearReactionBaseImpl() = default;
 
 protected:
-  int in_state;
-  std::array<int, num_products_per_parent> out_states;
+  INT in_state;
+  std::array<INT, num_products_per_parent> out_states;
   ReactionData reaction_data;
   ReactionKernels reaction_kernels;
   std::shared_ptr<NP::DescendantProducts> descendant_particles;
@@ -610,8 +610,8 @@ struct LinearReactionBase
    * used when remapping property names (weight and total_reaction_rate).
    */
   LinearReactionBase(
-      NP::SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
+      NP::SYCLTargetSharedPtr sycl_target, INT in_state,
+      std::array<INT, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
       DataCalc data_calculator,
       const std::map<int, std::string> &properties_map = get_default_map())
@@ -657,8 +657,8 @@ struct LinearReactionBase
   template <typename U = DataCalc,
             std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
   LinearReactionBase(
-      NP::SYCLTargetSharedPtr sycl_target, int in_state,
-      std::array<int, num_products_per_parent> out_states,
+      NP::SYCLTargetSharedPtr sycl_target, INT in_state,
+      std::array<INT, num_products_per_parent> out_states,
       ReactionData reaction_data, ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase(sycl_target, in_state, out_states, reaction_data,

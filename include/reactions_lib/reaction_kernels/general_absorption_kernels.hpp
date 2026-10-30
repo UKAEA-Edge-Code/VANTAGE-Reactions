@@ -45,7 +45,7 @@ struct GeneralAbsorptionKernelsOnDevice
                   NP::Access::DescendantProducts::Write &descendant_products,
                   NP::Access::SymVector::Write<INT> &req_int_props,
                   NP::Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, 0> &out_states,
+                  const std::array<INT, 0> &out_states,
                   NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
 

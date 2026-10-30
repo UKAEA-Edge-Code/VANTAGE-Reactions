@@ -25,10 +25,10 @@ TEST(LinearReactionBase, split_group_single_reaction) {
   particle_group->add_particles_local(particle_group_2);
 
   auto test_reaction1 =
-      TestReaction<0>(particle_group->sycl_target, 1, 2, std::array<int, 0>{});
+      TestReaction<0>(particle_group->sycl_target, 1, 2, std::array<INT, 0>{});
 
   auto test_reaction2 =
-      TestReaction<1>(particle_group->sycl_target, 2, 3, std::array<int, 1>{4});
+      TestReaction<1>(particle_group->sycl_target, 2, 3, std::array<INT, 1>{4});
 
   std::vector<std::shared_ptr<AbstractReaction>> reactions = {
       std::make_shared<TestReaction<0>>(test_reaction1),

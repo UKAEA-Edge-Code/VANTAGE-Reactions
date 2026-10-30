@@ -13,7 +13,7 @@ TEST(LinearReactionBase, data_calc_pre_req_ndim_mismatch) {
       : public LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>> {
     TestDataCalcNdimReaction(NP::ParticleGroupSharedPtr particle_group)
         : LinearReactionBase<0, FixedRateData, IoniseReactionKernels<>>(
-              particle_group->sycl_target, 0, std::array<int, 0>{},
+              particle_group->sycl_target, 0, std::array<INT, 0>{},
               FixedRateData(1),
               IoniseReactionKernels<>(Species("ION", 1.0, 1.0, 0),
                                       Species("ELECTRON"),

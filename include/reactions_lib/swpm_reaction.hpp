@@ -31,9 +31,9 @@ public:
 
   virtual const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() = 0;
   virtual REAL get_sigma_v_bound(REAL relative_vel) = 0;
-  virtual std::vector<int> get_in_states() = 0;
+  virtual std::vector<INT> get_in_states() = 0;
 
-  virtual std::vector<int> get_out_states() = 0;
+  virtual std::vector<INT> get_out_states() = 0;
 
   /**
    * @brief Set the maximum size for data buffers on this reaction
@@ -81,8 +81,8 @@ struct SWPMReactionImpl : AbstractPairReaction {
    * when remapping property names (tot_reaction_rate,weight_change)
    */
   SWPMReactionImpl(
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
+      NP::SYCLTargetSharedPtr sycl_target, std::array<INT, 2> reactants,
+      std::array<INT, num_products> products, ReactionData reaction_data,
       ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
       : reactants(reactants), products(products), reaction_data(reaction_data),
@@ -324,12 +324,12 @@ public:
     }
   }
 
-  std::vector<int> get_out_states() override {
-    return std::vector<int>(this->products.begin(), this->products.end());
+  std::vector<INT> get_out_states() override {
+    return std::vector<INT>(this->products.begin(), this->products.end());
   }
 
-  std::vector<int> get_in_states() override {
-    return std::vector<int>(this->reactants.begin(), this->reactants.end());
+  std::vector<INT> get_in_states() override {
+    return std::vector<INT>(this->reactants.begin(), this->reactants.end());
   }
 
   NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() override {
@@ -360,8 +360,8 @@ protected:
                     //!< derived reaction.
   NP::Sym<REAL> weight_change_sym;
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
-  std::array<int, 2> reactants;
-  std::array<int, num_products> products;
+  std::array<INT, 2> reactants;
+  std::array<INT, num_products> products;
   ReactionData reaction_data;
   ReactionKernels reaction_kernels;
   std::shared_ptr<NP::DescendantProducts> descendant_particles_a;
@@ -414,8 +414,8 @@ struct SWPMReaction
    * when remapping property names (tot_reaction_rate,weight_change)
    */
   SWPMReaction(
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
+      NP::SYCLTargetSharedPtr sycl_target, std::array<INT, 2> reactants,
+      std::array<INT, num_products> products, ReactionData reaction_data,
       ReactionKernels reaction_kernels, DataCalc data_calculator,
       const std::map<int, std::string> &properties_map = get_default_map())
       : SWPMReactionImpl<num_products, ReactionData, ReactionKernels>(
@@ -462,8 +462,8 @@ struct SWPMReaction
   template <typename U = DataCalc,
             std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
   SWPMReaction(
-      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
-      std::array<int, num_products> products, ReactionData reaction_data,
+      NP::SYCLTargetSharedPtr sycl_target, std::array<INT, 2> reactants,
+      std::array<INT, num_products> products, ReactionData reaction_data,
       ReactionKernels reaction_kernels,
       const std::map<int, std::string> &properties_map = get_default_map())
       : SWPMReaction(sycl_target, reactants, products, reaction_data,
@@ -498,7 +498,7 @@ public:
     auto reaction_kernel_buffer = this->reaction_kernels;
     auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
 
-    std::array<int, num_products> products = this->products;
+    std::array<INT, num_products> products = this->products;
     NESOASSERT(pair_list.A->sycl_target == this->sycl_target_stored,
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");

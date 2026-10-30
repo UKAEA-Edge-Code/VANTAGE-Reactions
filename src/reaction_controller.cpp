@@ -72,7 +72,7 @@ void ReactionController::controller_pre_process() {
     if (!this->reactions[r]->get_in_states().empty()) {
       auto in_states = this->reactions[r]->get_in_states();
 
-      for (int in_state : in_states) {
+      for (INT in_state : in_states) {
         this->parent_ids.insert(in_state);
 
         this->sub_group_selectors.emplace(std::make_pair(
@@ -86,7 +86,7 @@ void ReactionController::controller_pre_process() {
     if (!this->reactions[r]->get_out_states().empty()) {
       auto out_states = this->reactions[r]->get_out_states();
 
-      for (int out_state : out_states) {
+      for (INT out_state : out_states) {
         this->child_ids.insert(out_state);
 
         this->sub_group_selectors.emplace(std::make_pair(
@@ -192,7 +192,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
     if (!this->reactions[r]->get_in_states().empty()) {
       auto in_states = this->reactions[r]->get_in_states();
 
-      for (int in_state : in_states) {
+      for (INT in_state : in_states) {
 
         if (is_particle_group) {
           this->species_groups.emplace(std::make_pair(
@@ -210,7 +210,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
 
       case ControllerMode::semi_dsmc_mode: {
 
-        for (int in_state : in_states) {
+        for (INT in_state : in_states) {
           if (is_particle_group) {
             this->reacted_species_groups.emplace(std::make_pair(
                 in_state, this->reacted_marker->make_marker_subgroup(
@@ -226,7 +226,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
       }
 
       default: {
-        for (int in_state : in_states) {
+        for (INT in_state : in_states) {
           if (is_particle_group) {
             this->reacted_species_groups.emplace(
                 std::make_pair(in_state, this->species_groups[in_state]));

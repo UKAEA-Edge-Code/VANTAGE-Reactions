@@ -248,7 +248,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                     NP::Access::DescendantProducts::Write &descendant_products,
                     NP::Access::SymVector::Write<INT> &req_int_props,
                     NP::Access::SymVector::Write<REAL> &req_real_props,
-                    const std::array<int, num_products_per_parent> &out_states,
+                    const std::array<INT, num_products_per_parent> &out_states,
                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                     double dt) const {
     return;
@@ -279,7 +279,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                   NP::Access::DescendantProducts::Write &descendant_products,
                   NP::Access::SymVector::Write<INT> &req_int_props,
                   NP::Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, num_products_per_parent> &out_states,
+                  const std::array<INT, num_products_per_parent> &out_states,
                   NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                   double dt) const {
     return;
@@ -310,7 +310,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
       NP::Access::DescendantProducts::Write &descendant_products,
       NP::Access::SymVector::Write<INT> &req_int_props,
       NP::Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, num_products_per_parent> &out_states,
+      const std::array<INT, num_products_per_parent> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
@@ -339,7 +339,7 @@ template <int num_products_per_parent> struct ReactionKernelsBaseOnDevice {
                      NP::Access::DescendantProducts::Write &descendant_products,
                      NP::Access::SymVector::Write<INT> &req_int_props,
                      NP::Access::SymVector::Write<REAL> &req_real_props,
-                     const std::array<int, num_products_per_parent> &out_states,
+                     const std::array<INT, num_products_per_parent> &out_states,
                      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                      double dt) const {
     return;

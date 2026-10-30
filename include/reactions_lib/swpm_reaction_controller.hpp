@@ -2,8 +2,8 @@
 #define REACTIONS_SWPM_REACTION_CONTROLLER_H
 #include "collision_cell_manager.hpp"
 #include "common_transformations.hpp"
-#include "profiling_base.hpp"
 #include "particle_properties_map.hpp"
+#include "profiling_base.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "swpm_reaction.hpp"
 #include "transformation_wrapper.hpp"
@@ -81,7 +81,7 @@ struct SWPMReactionController : ProfilingBase {
       if (!this->reactions[r]->get_in_states().empty()) {
         auto in_states = this->reactions[r]->get_in_states();
 
-        for (int in_state : in_states) {
+        for (INT in_state : in_states) {
           this->parent_ids.insert(in_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
@@ -95,7 +95,7 @@ struct SWPMReactionController : ProfilingBase {
       if (!this->reactions[r]->get_out_states().empty()) {
         auto out_states = this->reactions[r]->get_out_states();
 
-        for (int out_state : out_states) {
+        for (INT out_state : out_states) {
           this->child_ids.insert(out_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
@@ -399,9 +399,9 @@ private:
     return "SWPMReactionController";
   }
 
-  std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
-  std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
+  std::map<INT, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
+  std::map<INT, NP::ParticleSubGroupSharedPtr> species_groups;
+  std::map<INT, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
   NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::tuple<int, int> reactant_set;
@@ -410,8 +410,8 @@ private:
   std::shared_ptr<RNG_GEN_T> rng_generation_fun;
   std::shared_ptr<NP::DSMC::PairSamplerNoReplacement> sampler;
   std::shared_ptr<CollisionCellManager> coll_cell_manager;
-  std::set<int> parent_ids;
-  std::set<int> child_ids;
+  std::set<INT> parent_ids;
+  std::set<INT> child_ids;
 
   std::vector<std::shared_ptr<AbstractPairReaction>> reactions;
   std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;

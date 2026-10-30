@@ -27,7 +27,7 @@ TEST(LookupTableData, ArrayLookupTable) {
 
   auto test_reaction =
       LinearReactionBase<0, ArrayLookupData<1>, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           ArrayLookupData<1>(NP::Sym<INT>("INTERNAL_STATE"), 0,
                              lookup_table_map, default_array,
                              particle_group->sycl_target),
@@ -93,7 +93,7 @@ TEST(LookupTableData, ArrayLookupDataEphemeralKey) {
 
   auto test_reaction =
       LinearReactionBase<0, ArrayLookupData<1, true>, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           ArrayLookupData<1, true>(
               NP::BoundaryInteractionSpecification::intersection_metadata, 1,
               lookup_table_map, default_array, particle_group->sycl_target),

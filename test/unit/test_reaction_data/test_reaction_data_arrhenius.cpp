@@ -13,7 +13,7 @@ TEST(ReactionData, ArrheniusData) {
 
   auto test_reaction =
       LinearReactionBase<0, ArrheniusData, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{},
+          particle_group->sycl_target, 0, std::array<INT, 0>{},
           ArrheniusData(2.0, 1.5), TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

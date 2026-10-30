@@ -45,7 +45,7 @@ struct ElectronImpactIonisation
       const std::map<int, std::string> &properties_map = get_default_map())
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
-            sycl_target, target_species.get_id(), std::array<int, 0>{},
+            sycl_target, target_species.get_id(), std::array<INT, 0>{},
             rate_data,
             IoniseReactionKernels<ndim>(target_species, electron_species,
                                         electron_species, properties_map),
