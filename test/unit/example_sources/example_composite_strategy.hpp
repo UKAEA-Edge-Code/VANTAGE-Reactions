@@ -1,6 +1,6 @@
 void composite_strategy_example(NP::ParticleGroupSharedPtr particle_group) {
 
-  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto input_subgroup = NP::particle_sub_group(particle_group);
 
   // We wish to compose an accumulator and a particle dat zeroer to accumulate
   // some sources and then to reset the particle data that stored them

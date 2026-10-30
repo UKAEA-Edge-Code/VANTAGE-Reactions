@@ -12,8 +12,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels_NoSources) {
   auto particle_group = create_test_particle_group(N_total);
   particle_group->add_particle_dat(
       NP::BoundaryInteractionSpecification::intersection_normal, 2);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto test_data = FixedRateData(1.0);
 
@@ -24,7 +23,8 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels_NoSources) {
   auto pipeline = PipelineData(velocity_data, specular_reflection);
 
   auto projectile_species = Species("ION", 1.2, 0.0, 0);
-  auto test_kernels = LinearScatteringKernels<2, false>(projectile_species);
+  auto test_kernels =
+      LinearScatteringKernels<2, false, false>(projectile_species);
 
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
   auto test_reaction =
@@ -59,6 +59,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels_NoSources) {
                         descendant_particles);
 
     auto weight = descendant_particles->get_cell(NP::Sym<REAL>("WEIGHT"), i);
+    auto parent_weight = particle_group->get_cell(NP::Sym<REAL>("WEIGHT"), i);
     auto vel_parent = particle_group->get_cell(NP::Sym<REAL>("VELOCITY"), i);
     auto vel_child =
         descendant_particles->get_cell(NP::Sym<REAL>("VELOCITY"), i);
@@ -69,6 +70,7 @@ TEST(SurfaceKernels, SpecularReflection_LinearScatteringKernels_NoSources) {
       EXPECT_DOUBLE_EQ(vel_child->at(rowx, 0), 1.0);
       EXPECT_DOUBLE_EQ(vel_child->at(rowx, 1), 1.0);
       EXPECT_DOUBLE_EQ(weight->at(rowx, 0), 0.1);
+      EXPECT_DOUBLE_EQ(parent_weight->at(rowx, 0), 1.0);
     }
   }
 

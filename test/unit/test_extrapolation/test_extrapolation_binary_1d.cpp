@@ -87,8 +87,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_0) {
       NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::continue_linear;
@@ -189,8 +188,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_0) {
       NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::continue_linear;
@@ -289,8 +287,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_1) {
       NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
@@ -388,8 +385,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_1) {
       NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_zero;
@@ -489,8 +485,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_OVER_TYPE_2) {
       NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;
@@ -590,8 +585,7 @@ TEST(ExtrapolationTest, REACTION_DATA_1D_UNDER_TYPE_2) {
       NP::Access::read(rng_kernel))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto extrapolation_type = ExtrapolationType::clamp_to_edge;

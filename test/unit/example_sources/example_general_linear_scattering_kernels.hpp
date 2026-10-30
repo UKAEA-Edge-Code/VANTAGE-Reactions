@@ -28,8 +28,8 @@ void general_linear_scattering_kernels_example(
 
   auto scattering_kernel =
       LinearScatteringKernels<2,   // velocity dat dimensionality
-                              true // Whether sources should be written to
-                                   // (remapping not required if false)
+                              true, // Whether sources should be written to
+                              true  // Whether parent weight is reduced
                               >(projectile_species, // Scattered species
                                 properties_map      // Our remapped sources
       );

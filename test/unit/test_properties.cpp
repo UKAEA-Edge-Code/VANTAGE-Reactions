@@ -418,8 +418,7 @@ TEST(Properties, full_use_properties_map) {
   test_prop_map[default_properties.fluid_density] = "TEST_PROP1";
   test_prop_map[default_properties.fluid_temperature] = "TEST_PROP2";
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto amjuel_data = AMJUEL2DData<2, 2>(
       3e12, 1.0, 1.0, 1.0,

@@ -119,26 +119,17 @@ struct OneWayMaxwellianFluxOnDevice
    * @brief Function to calculate the sampled ion velocities from a one way /
    * truncated Maxwellian.
    *
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which calc_data is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for the reaction rate calculation.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for the reaction rate calculation.
+   * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel
    *
    * @return A REAL-valued array of size 3 that contains the calculated sampled
    * ion velocities.
    */
   std::array<REAL, 3> calc_data(
-      const NP::Access::LoopIndex::Read &index,
-      const NP::Access::SymVector::Write<INT> &req_int_props,
-      const NP::Access::SymVector::Read<REAL> &req_real_props,
+      const SingleReactionDataAccessors &accessors,
       typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
-    const REAL fluid_temperature_dat =
-        req_real_props.at(this->fluid_temperature_ind, index, 0);
+    const REAL fluid_temperature_dat = accessors.req_real_props.at(
+        this->fluid_temperature_ind, accessors.index, 0);
 
     std::array<REAL, 3> fluid_flow_speed{};
     std::array<REAL, 3> basis_e1{};
@@ -146,11 +137,14 @@ struct OneWayMaxwellianFluxOnDevice
     std::array<REAL, 3> basis_pi{};
 
     for (int i = 0; i < 3; i++) {
-      fluid_flow_speed[i] =
-          req_real_props.at(this->fluid_flow_speed_ind, index, i);
-      basis_e1[i] = req_real_props.at(this->basis_e1_ind, index, i);
-      basis_e2[i] = req_real_props.at(this->basis_e2_ind, index, i);
-      basis_pi[i] = req_real_props.at(this->basis_pi_ind, index, i);
+      fluid_flow_speed[i] = accessors.req_real_props.at(
+          this->fluid_flow_speed_ind, accessors.index, i);
+      basis_e1[i] =
+          accessors.req_real_props.at(this->basis_e1_ind, accessors.index, i);
+      basis_e2[i] =
+          accessors.req_real_props.at(this->basis_e2_ind, accessors.index, i);
+      basis_pi[i] =
+          accessors.req_real_props.at(this->basis_pi_ind, accessors.index, i);
     }
 
     REAL drift_e1 = 0.0;
@@ -168,11 +162,11 @@ struct OneWayMaxwellianFluxOnDevice
     bool is_kernel_valid = true;
     int sample_counter = 0;
 
-    REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
-    REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
+    REAL rand1 = kernel.at(accessors.index, sample_counter++, &is_kernel_valid);
+    REAL rand2 = kernel.at(accessors.index, sample_counter++, &is_kernel_valid);
 
     if (!is_kernel_valid) {
-      req_int_props.at(this->panic_ind, index, 0) += 1;
+      accessors.req_int_props.at(this->panic_ind, accessors.index, 0) += 1;
       return std::array<REAL, 3>{0.0, 0.0, 0.0};
     }
 
@@ -181,10 +175,10 @@ struct OneWayMaxwellianFluxOnDevice
     const REAL sample_e2 = drift_e2 + thermal_sigma * normal_samples[1];
 
     const REAL sample_pi =
-        sample_positive_maxwellian(drift_pi, thermal_sigma, index, kernel,
-                                   sample_counter, is_kernel_valid);
+        sample_positive_maxwellian(drift_pi, thermal_sigma, accessors.index,
+                                   kernel, sample_counter, is_kernel_valid);
     if (!is_kernel_valid) {
-      req_int_props.at(this->panic_ind, index, 0) += 1;
+      accessors.req_int_props.at(this->panic_ind, accessors.index, 0) += 1;
       return std::array<REAL, 3>{0.0, 0.0, 0.0};
     }
 

@@ -7,6 +7,7 @@ using namespace VANTAGE::Reactions;
 #include "../example_sources/example_reaction_controller.hpp"
 #include "../example_sources/example_reaction_data_accumulator_strategy.hpp"
 #include "../example_sources/example_recombination_reaction.hpp"
+#include "../example_sources/example_source_reaction.hpp"
 
 TEST(Examples, reactions) {
 
@@ -17,6 +18,7 @@ TEST(Examples, reactions) {
   linear_reaction_CX_example(particle_group);
   reaction_controller_example(particle_group);
   recombination_reaction_example(particle_group);
+  source_reaction_example(particle_group);
   reaction_data_accumulator_strategy_example(particle_group);
 
   particle_group->domain->mesh->free();

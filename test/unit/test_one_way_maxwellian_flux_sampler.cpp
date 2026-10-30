@@ -78,8 +78,9 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
       "one_way_maxwellian_flux_sample_loop", particle_group,
       [=](auto particle_index, auto req_int_props, auto req_real_props,
           auto sampled_velocity, auto kernel) {
-        auto sampled = sampler_on_device.calc_data(
-            particle_index, req_int_props, req_real_props, kernel);
+        const auto accessors = SingleReactionDataAccessors{
+            particle_index, req_int_props, req_real_props};
+        auto sampled = sampler_on_device.calc_data(accessors, kernel);
         sampled_velocity[0] = sampled[0];
         sampled_velocity[1] = sampled[1];
         sampled_velocity[2] = sampled[2];
@@ -92,11 +93,28 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
       ->execute();
 
   const int cell_count = particle_group->domain->mesh->get_cell_count();
+  // DataCalculator must be able to invoke the sampler without an adapter.
+  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto buffer = std::make_shared<NP::NDLocalArray<REAL, 2>>(
+      particle_group->sycl_target, particle_group->get_npart_local(), 3);
+  DataCalculator<OneWayMaxwellianFluxSampler> calculator(sampler);
+  calculator.fill_buffer(buffer, subgroup, 0, cell_count);
+  const auto calculated = buffer->get();
+  ASSERT_EQ(calculated.size(), 3 * particle_group->get_npart_local());
+  for (size_t row = 0; row < calculated.size() / 3; row++) {
+    for (size_t dim = 0; dim < 3; dim++) {
+      EXPECT_NEAR(calculated[row * 3 + dim], expected_vals[dim], 1e-14);
+    }
+  }
+  EXPECT_TRUE(rng_kernel->valid_internal_state());
   for (int i = 0; i < cell_count; i++) {
     auto sampled_cell =
         particle_group->get_cell(NP::Sym<REAL>("SAMPLED_VELOCITY"), i);
 
+    auto panic_cell = particle_group->get_cell(
+        NP::Sym<INT>(PropertiesMap().at(default_properties.panic)), i);
     for (int row = 0; row < sampled_cell->nrow; row++) {
+      EXPECT_EQ(panic_cell->at(row, 0), 0);
       EXPECT_NEAR(sampled_cell->at(row, 0), expected_vals[0], 1e-14);
       EXPECT_NEAR(sampled_cell->at(row, 1), expected_vals[1], 1e-14);
       EXPECT_NEAR(sampled_cell->at(row, 2), expected_vals[2], 1e-14);

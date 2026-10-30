@@ -70,8 +70,7 @@ TEST(InterpolationTest, REACTION_DATA_3D_PIPELINE) {
       NP::Access::read(rng_kernel_2))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto prop1_extract = extract<1>("PROP1");
@@ -197,8 +196,7 @@ TEST(InterpolationTest, REACTION_DATA_4D_PIPELINE) {
       NP::Access::read(rng_kernel_2), NP::Access::read(rng_kernel_3))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto prop0_extract = extract<1>("PROP0");
   auto prop1_extract = extract<1>("PROP1");
