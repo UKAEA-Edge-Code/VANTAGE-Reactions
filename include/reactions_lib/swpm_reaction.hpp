@@ -15,19 +15,19 @@ namespace VANTAGE::Reactions {
 struct AbstractPairReaction : ProfilingBase {
   AbstractPairReaction() = default;
 
-  virtual ~AbstractPairReaction() = default;
+  virtual ~AbstractPairReaction();
 
 public:
   virtual void calculate_rates(
       NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
           &pair_list,
-      INT cell_idx_start, INT cell_idx_end);
+      INT cell_idx_start, INT cell_idx_end) = 0;
 
   virtual void
   apply(NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>
             &pair_list,
         INT cell_idx_start, INT cell_idx_end, double dt,
-        NP::ParticleGroupSharedPtr child_group);
+        NP::ParticleGroupSharedPtr child_group) = 0;
 
   virtual const NP::LocalArraySharedPtr<REAL> &get_device_rate_buffer() = 0;
   virtual REAL get_sigma_v_bound(REAL relative_vel) = 0;
@@ -41,14 +41,12 @@ public:
    * @param max_size Maximum size (per dimension) of data buffers on this
    * reaction
    */
-  virtual void set_max_buffer_size(size_t max_size);
-
-  virtual void set_max_num_coll_cells(size_t max_cells);
+  virtual void set_max_buffer_size(size_t max_size) = 0;
 };
 
 /**
- * @brief Non-template implementation base for binary reactions based on the
- * Stochastic Weighted Particle Method.
+ * @brief Calculator-independent template implementation base for binary
+ * reactions based on the Stochastic Weighted Particle Method.
  *
  * A thinner implementation version of SWPMReaction (the open-ended DataCalc
  * template parameter is omitted here.) Holds the DataCalc-independent members
@@ -185,8 +183,7 @@ public:
   calculate_rates_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
                     INT cell_idx_start, INT cell_idx_end) {
 
-    auto reaction_data_buffer = this->reaction_data;
-    auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
+    auto reaction_data_on_device = this->reaction_data.get_on_device_obj();
 
     INT npart_block =
         pair_list.pair_list->get_num_pairs_range(cell_idx_start, cell_idx_end);
@@ -429,7 +426,7 @@ struct SWPMReaction
     NESOASSERT(
         this->data_calculator.get_data_size() ==
             this->reaction_kernels.get_pre_ndims(),
-        "The number of ReactionData-derived objects in PairDataCalculator "
+        "The total prerequisite data dimensionality in PairDataCalculator "
         "does not match the required number of dimensions for the "
         "provided PairReactionKernels object.");
 
@@ -495,8 +492,7 @@ public:
                INT cell_idx_start, INT cell_idx_end, double dt,
                NP::ParticleGroupSharedPtr child_group) {
 
-    auto reaction_kernel_buffer = this->reaction_kernels;
-    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
+    auto reaction_kernel_on_device = this->reaction_kernels.get_on_device_obj();
 
     std::array<int, num_products> products = this->products;
     NESOASSERT(pair_list.A->sycl_target == this->sycl_target_stored,
@@ -521,9 +517,9 @@ public:
           REAL total_rate = total_reaction_rate.at(0);
 
           REAL deltaweight = weight_change.at(0);
-          if (deltaweight > 0) {
-
-            REAL modified_weight = deltaweight * rate / total_rate;
+          REAL modified_weight =
+              (total_rate > 0.0) ? deltaweight * (rate / total_rate) : 0.0;
+          if (modified_weight > 0.0) {
 
             reaction_kernel_on_device.parent_kernel(
                 particle_index_a, particle_index_b, descendant_particles_a,

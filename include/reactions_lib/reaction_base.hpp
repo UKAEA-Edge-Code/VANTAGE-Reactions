@@ -149,10 +149,11 @@ private:
 };
 
 /**
- * @brief Non-template implementation base for linear reaction type.
- * Specifically meant for reactions that only involve a single particle at the
- * start of the reaction. A thinner implementation version of LinearReactionBase
- * (Open-ended DataCalculator template parameter is omitted here.)
+ * @brief Calculator-independent template implementation base for linear
+ * reactions. Specifically meant for reactions that only involve a single
+ * particle at the start of the reaction. A thinner implementation version of
+ * LinearReactionBase (the open-ended DataCalculator template parameter is
+ * omitted here).
  *
  * @tparam num_products_per_parent The number of products produced per parent
  * by the derived linear reaction.
@@ -244,8 +245,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
    */
   void calculate_rates_v(NP::ParticleSubGroupSharedPtr particle_sub_group,
                          INT cell_idx_start, INT cell_idx_end) override {
-    auto reaction_data_buffer = this->reaction_data;
-    auto reaction_data_on_device = reaction_data_buffer.get_on_device_obj();
+    auto reaction_data_on_device = this->reaction_data.get_on_device_obj();
 
     auto sycl_target_stored = this->get_sycl_target();
     this->blockwise_flush_buffer(particle_sub_group, cell_idx_start,
@@ -260,7 +260,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
                "sycl_target assigned to particle_group is not the same as "
                "the sycl_target passed to Reaction object...");
 
-    constexpr auto data_dim = reaction_data_buffer.get_dim();
+    constexpr auto data_dim = ReactionData::get_dim();
 
     auto weight_loop = particle_loop(
         "store_weights_loop", particle_sub_group,
@@ -329,8 +329,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
     auto device_rate_buffer = this->get_device_rate_buffer();
     auto device_weight_buffer = this->get_device_weight_buffer();
 
-    auto reaction_kernel_buffer = this->reaction_kernels;
-    auto reaction_kernel_on_device = reaction_kernel_buffer.get_on_device_obj();
+    auto reaction_kernel_on_device = this->reaction_kernels.get_on_device_obj();
 
     std::array<int, num_products_per_parent> out_states_arr = this->out_states;
     // The ->get_particle_group() is temporary since NP::ParticleSubGroup
@@ -352,51 +351,41 @@ struct LinearReactionBaseImpl : public AbstractReaction {
             auto weight_buffer, auto total_reaction_rate) {
           INT current_count = particle_index.get_loop_linear_index();
           REAL rate = rate_buffer.at(current_count);
+          REAL initial_weight = weight_buffer.at(current_count);
+          REAL total_rate = total_reaction_rate.at(0);
 
-          // If the entire weight is used need to know the weight before any
-          // reactions are applied
-          REAL used_dt = full_weight ? weight_buffer.at(current_count) /
-                                           total_reaction_rate.at(0)
-                                     : dt;
-          REAL deltaweight =
-              used_dt * rate; // weight participating in this reaction
-          REAL total_deltaweight =
-              used_dt *
-              total_reaction_rate.at(0); // Total weight participating in all
-                                         // reactions (before rescaling_
+          REAL max_weight =
+              (total_rate > 0.0) ? initial_weight * (rate / total_rate) : 0.0;
+          REAL modified_weight =
+              full_weight ? max_weight : NP::Kernel::min(dt * rate, max_weight);
 
-          // Use either the above calculated delta weight or a fraction of the
-          // initial weight based on how much of the total reaction rate this
-          // reaction is responsible
-          REAL modified_weight = NP::Kernel::min(
-              deltaweight, deltaweight * (weight_buffer.at(current_count) /
-                                          total_deltaweight));
+          if (modified_weight > 0.0) {
+            REAL modified_dt = modified_weight / rate;
+            for (int childx = 0; childx < num_products_per_parent; childx++) {
 
-          REAL modified_dt = used_dt * modified_weight / deltaweight;
-          for (int childx = 0; childx < num_products_per_parent; childx++) {
+              descendant_particle.set_parent(particle_index, childx);
+            }
 
-            descendant_particle.set_parent(particle_index, childx);
+            reaction_kernel_on_device.scattering_kernel(
+                modified_weight, particle_index, descendant_particle,
+                req_int_props, req_real_props, out_states_arr, pre_req_data,
+                modified_dt);
+
+            reaction_kernel_on_device.weight_kernel(
+                modified_weight, particle_index, descendant_particle,
+                req_int_props, req_real_props, out_states_arr, pre_req_data,
+                modified_dt);
+
+            reaction_kernel_on_device.transformation_kernel(
+                modified_weight, particle_index, descendant_particle,
+                req_int_props, req_real_props, out_states_arr, pre_req_data,
+                modified_dt);
+
+            reaction_kernel_on_device.feedback_kernel(
+                modified_weight, particle_index, descendant_particle,
+                req_int_props, req_real_props, out_states_arr, pre_req_data,
+                modified_dt);
           }
-
-          reaction_kernel_on_device.scattering_kernel(
-              modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data,
-              modified_dt);
-
-          reaction_kernel_on_device.weight_kernel(
-              modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data,
-              modified_dt);
-
-          reaction_kernel_on_device.transformation_kernel(
-              modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data,
-              modified_dt);
-
-          reaction_kernel_on_device.feedback_kernel(
-              modified_weight, particle_index, descendant_particle,
-              req_int_props, req_real_props, out_states_arr, pre_req_data,
-              modified_dt);
         },
         NP::Access::write(this->descendant_particles),
         NP::Access::read(NP::ParticleLoopIndex{}),
@@ -625,7 +614,7 @@ struct LinearReactionBase
                   "AbstractDataCalculator...");
     NESOASSERT(this->data_calculator.get_data_size() ==
                    this->reaction_kernels.get_pre_ndims(),
-               "The number of ReactionData-derived objects in DataCalculator "
+               "The total prerequisite data dimensionality in DataCalculator "
                "does not match the required number of dimensions for the "
                "provided ReactionKernels object.");
 

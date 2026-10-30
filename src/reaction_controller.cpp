@@ -13,6 +13,9 @@ ReactionController::ReactionController(
       parent_transform(parent_transform), child_transform(child_transform),
       auto_clean_tot_rate_buffer(auto_clean_tot_rate_buffer) {
 
+  this->configure_buffer_limits(this->max_particles_per_cell,
+                                this->cell_block_size);
+
   NESOWARN(map_subset_check(properties_map),
            "The provided properties_map does not include all the keys from the \
         default_map (and therefore is not an extension of that map). There \
@@ -36,9 +39,6 @@ ReactionController::ReactionController(
   this->reacted_marker = make_direct_marking_strategy(
       "reacted_marker", [=](auto reacted) { return reacted[0] == 1; },
       NP::Access::read(this->reacted_flag));
-  auto rng_lambda = [&]() -> REAL { return 0; };
-  this->rng_kernel =
-      std::make_shared<NP::HostPerParticleBlockRNG<REAL>>(rng_lambda, 0);
 }
 
 ReactionController::ReactionController(
@@ -69,18 +69,14 @@ void ReactionController::controller_pre_process() {
   for (int r = 0; r < this->reactions.size(); r++) {
     this->reactions[r]->set_max_buffer_size(this->max_particles_per_cell *
                                             this->cell_block_size);
-    if (!this->reactions[r]->get_in_states().empty()) {
-      auto in_states = this->reactions[r]->get_in_states();
+    for (int in_state : this->reactions[r]->get_in_states()) {
+      this->parent_ids.insert(in_state);
 
-      for (int in_state : in_states) {
-        this->parent_ids.insert(in_state);
-
-        this->sub_group_selectors.emplace(std::make_pair(
-            in_state, make_direct_marking_strategy(
-                          "species_selector_" + std::to_string(in_state),
-                          [=](auto id) { return id[0] == in_state; },
-                          NP::Access::read(this->id_sym))));
-      }
+      this->sub_group_selectors.emplace(std::make_pair(
+          in_state, make_direct_marking_strategy(
+                        "species_selector_" + std::to_string(in_state),
+                        [=](auto id) { return id[0] == in_state; },
+                        NP::Access::read(this->id_sym))));
     }
 
     if (!this->reactions[r]->get_out_states().empty()) {
@@ -101,6 +97,12 @@ void ReactionController::controller_pre_process() {
 
 void ReactionController::add_reaction(
     std::shared_ptr<AbstractReaction> reaction) {
+  NESOASSERT(reaction != nullptr,
+             "Reaction passed to ReactionController::add_reaction must not be "
+             "nullptr.");
+  NESOASSERT(reaction->get_in_states().size() == 1,
+             "Reaction passed to ReactionController::add_reaction must have "
+             "exactly 1 input state.");
   this->reactions.push_back(reaction);
   this->controller_pre_process();
 }
@@ -131,8 +133,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
                                     NP::ParticleGroupSharedPtr particle_group,
                                     double dt,
                                     NP::ParticleGroupSharedPtr product_group,
-                                    ControllerMode controller_mode,
-                                    bool is_particle_group) {
+                                    ControllerMode controller_mode) {
   auto prof_region = this->start_profiling_region(target, "apply_impl");
 
   if (this->reference_particle_group == nullptr) {
@@ -144,12 +145,6 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
              "recorded reference group.");
 
   const size_t cell_count = particle_group->domain->mesh->get_cell_count();
-
-  // Ensure that the total rate buffer is flushed before the reactions are
-  // applied
-  if (this->auto_clean_tot_rate_buffer) {
-    this->rate_buffer_zeroer->transform(target);
-  }
 
   NESOASSERT(particle_group->contains_dat(this->id_sym, 1),
              "NP::ParticleGroup passed to controller does not contain expected "
@@ -170,11 +165,24 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
              "least one reaction to the ReactionController object (via "
              "ReactionController.add_reaction(...)).");
 
+  // Ensure that the total rate buffer is flushed before the reactions are
+  // applied
+  if (this->auto_clean_tot_rate_buffer) {
+    this->rate_buffer_zeroer->transform(target);
+  }
+
   bool use_full_weight = false;
 
   switch (controller_mode) {
 
   case ControllerMode::semi_dsmc_mode:
+    NESOASSERT(this->rng_kernel != nullptr,
+               "ReactionController in semi_dsmc_mode requires a non-null RNG "
+               "kernel (call set_rng_kernel before apply).");
+    NESOASSERT(this->rng_kernel->num_components >= 1 &&
+                   this->rng_kernel->generation_function != nullptr,
+               "ReactionController in semi_dsmc_mode requires an RNG kernel "
+               "with at least 1 component and a valid generation function.");
     use_full_weight = true;
 
     break;
@@ -188,62 +196,19 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
     break;
   }
 
-  for (int r = 0; r < this->reactions.size(); r++) {
-    if (!this->reactions[r]->get_in_states().empty()) {
-      auto in_states = this->reactions[r]->get_in_states();
-
-      for (int in_state : in_states) {
-
-        if (is_particle_group) {
-          this->species_groups.emplace(std::make_pair(
-              in_state,
-              this->sub_group_selectors[in_state]->make_marker_subgroup(
-                  target)));
-        } else {
-
-          this->species_groups[in_state] =
-              this->sub_group_selectors[in_state]->make_marker_subgroup(target);
-        }
-      }
-
-      switch (controller_mode) {
-
-      case ControllerMode::semi_dsmc_mode: {
-
-        for (int in_state : in_states) {
-          if (is_particle_group) {
-            this->reacted_species_groups.emplace(std::make_pair(
-                in_state, this->reacted_marker->make_marker_subgroup(
-                              this->species_groups[in_state])));
-          } else {
-
-            this->reacted_species_groups[in_state] =
-                this->reacted_marker->make_marker_subgroup(
-                    this->species_groups[in_state]);
-          }
-        }
-        break;
-      }
-
-      default: {
-        for (int in_state : in_states) {
-          if (is_particle_group) {
-            this->reacted_species_groups.emplace(
-                std::make_pair(in_state, this->species_groups[in_state]));
-          } else {
-            this->reacted_species_groups[in_state] =
-                this->species_groups[in_state];
-          }
-        }
-        break;
-      }
-      }
-    }
+  for (int in_state : this->parent_ids) {
+    auto species_group =
+        this->sub_group_selectors[in_state]->make_marker_subgroup(target);
+    this->species_groups[in_state] = species_group;
+    this->reacted_species_groups[in_state] =
+        (controller_mode == ControllerMode::semi_dsmc_mode)
+            ? this->reacted_marker->make_marker_subgroup(species_group)
+            : species_group;
   }
 
   auto child_group = this->particle_group_temporary->get(particle_group);
 
-  for (int i = 0; i < cell_count; i += this->cell_block_size) {
+  for (size_t i = 0; i < cell_count; i += this->cell_block_size) {
 
     for (int r = 0; r < this->reactions.size(); r++) {
 
@@ -263,9 +228,11 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
           "reacted_loop", target,
           [=](auto index, auto reacted_flag, auto total_reaction_rate,
               auto weight, auto kernel) {
+            REAL rate = total_reaction_rate.at(0);
+            REAL w = weight[0];
             reacted_flag.at(0) =
-                (1 - NP::Kernel::exp(-total_reaction_rate.at(0) * dt /
-                                     weight[0])) > kernel.at(index, 0)
+                (rate > 0.0 && w > 0.0 &&
+                 (1 - NP::Kernel::exp(-rate * dt / w)) > kernel.at(index, 0))
                     ? 1
                     : 0;
           },

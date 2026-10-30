@@ -34,6 +34,16 @@ struct ConstantCrossSection : public AbstractCrossSection {
   };
 
   /**
+   * @brief Returns the rate sigma*v_r at a given relative speed.
+   *
+   * @param relative_vel Relative velocity of projectile and target
+   * @return REAL-valued rate constant_sigma * relative_vel
+   */
+  REAL sigma_v(const REAL &relative_vel) const {
+    return this->constant_sigma * relative_vel;
+  };
+
+  /**
    * @brief Returns maximum value of the rate sigma*v of this cross-section.
    *
    * @return REAL-valued maximum rate, i.e. constant_sigma * default_max_vel

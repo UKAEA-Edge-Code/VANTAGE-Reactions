@@ -2,8 +2,8 @@
 #define REACTIONS_SWPM_REACTION_CONTROLLER_H
 #include "collision_cell_manager.hpp"
 #include "common_transformations.hpp"
-#include "profiling_base.hpp"
 #include "particle_properties_map.hpp"
+#include "profiling_base.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include "swpm_reaction.hpp"
 #include "transformation_wrapper.hpp"
@@ -15,6 +15,10 @@ namespace VANTAGE::Reactions {
 
 template <typename SWPM_SPEC_T, typename RNG_GEN_T>
 struct SWPMReactionController : ProfilingBase {
+  static_assert(
+      has_swpm_weight_transfer_v<SWPM_SPEC_T>,
+      "SWPM_SPEC_T must implement calculate_weight_transfer(pair_list, "
+      "cell_idx_start, cell_idx_end).");
 
   SWPMReactionController(
       int species_a_id, int species_b_id,
@@ -31,6 +35,9 @@ struct SWPMReactionController : ProfilingBase {
         rng_generation_fun(rng_generation_fun),
         swpm_specification(swpm_specification),
         coll_cell_manager(coll_cell_manager) {
+
+    this->configure_buffer_limits(this->max_pairs_per_cell,
+                                  this->cell_block_size);
 
     NESOWARN(
         map_subset_check(properties_map),
@@ -115,18 +122,28 @@ struct SWPMReactionController : ProfilingBase {
    * @param reaction The reaction to be added
    */
   void add_reaction(std::shared_ptr<AbstractPairReaction> reaction) {
+    NESOASSERT(reaction != nullptr,
+               "Reaction passed to SWPMReactionController::add_reaction must "
+               "not be nullptr.");
+    auto in_states = reaction->get_in_states();
+    NESOASSERT(in_states.size() == 2 &&
+                   in_states[0] == std::get<0>(this->reactant_set) &&
+                   in_states[1] == std::get<1>(this->reactant_set),
+               "Reaction passed to SWPMReactionController::add_reaction must "
+               "have 2 input states matching the controller's ordered "
+               "(species_a_id, species_b_id) reactant pair.");
     this->reactions.push_back(reaction);
     this->controller_pre_process();
   }
 
   /**
-   * @brief Set the maximum number of particles per cell (used in determining
-   * the buffer size for reaction data)
+   * @brief Set the maximum number of collision pairs per cell (used in
+   * determining the buffer size for pair reaction data)
    *
-   * @param max_num_parts Maximum number of particles per cell
+   * @param max_num_parts Maximum number of collision pairs per cell
    */
   void set_max_particles_per_cell(size_t max_num_parts) {
-    this->max_pairs_per_cell = max_num_parts;
+    this->configure_buffer_limits(max_num_parts, this->cell_block_size);
   }
 
   /**
@@ -139,7 +156,7 @@ struct SWPMReactionController : ProfilingBase {
    * to a lower number in case of memory issues)
    */
   void set_cell_block_size(size_t cell_block_size) {
-    this->cell_block_size = cell_block_size;
+    this->configure_buffer_limits(this->max_pairs_per_cell, cell_block_size);
   }
 
   void set_default_rel_vel(REAL rel_vel) { this->default_rel_vel = rel_vel; }
@@ -321,7 +338,7 @@ struct SWPMReactionController : ProfilingBase {
 
       auto child_group = this->particle_group_temporary->get(particle_group);
 
-      for (int i = 0; i < cell_count; i += this->cell_block_size) {
+      for (size_t i = 0; i < cell_count; i += this->cell_block_size) {
         for (int r = 0; r < this->reactions.size(); r++) {
 
           this->reactions[r]->calculate_rates(
@@ -400,8 +417,6 @@ private:
   }
 
   std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
-  std::map<int, NP::ParticleSubGroupSharedPtr> species_groups;
-  std::map<int, NP::ParticleSubGroupSharedPtr> reacted_species_groups;
   NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::tuple<int, int> reactant_set;
@@ -420,8 +435,6 @@ private:
   std::shared_ptr<MarkingStrategy> reactant_selector;
 
   NP::Sym<INT> id_sym;
-  NP::Sym<INT> panic_flag;
-  NP::Sym<INT> reacted_flag;
   NP::Sym<REAL> tot_rate_buffer;
   NP::Sym<REAL> weight_sym;
   NP::Sym<REAL> weight_change;
@@ -438,6 +451,20 @@ private:
   REAL max_pair_fraction_per_cycle = 0.8;
 
   bool add_noise_to_partial_collisions;
+
+  void configure_buffer_limits(size_t max_num_pairs, size_t block_size) {
+    NESOASSERT(max_num_pairs > 0,
+               "max_particles_per_cell must be greater than 0.");
+    NESOASSERT(block_size > 0, "cell_block_size must be greater than 0.");
+    NESOASSERT(max_num_pairs <= std::numeric_limits<size_t>::max() / block_size,
+               "max_pairs_per_cell * cell_block_size overflows size_t.");
+    this->max_pairs_per_cell = max_num_pairs;
+    this->cell_block_size = block_size;
+    for (auto &reaction : this->reactions) {
+      reaction->set_max_buffer_size(this->max_pairs_per_cell *
+                                    this->cell_block_size);
+    }
+  }
 
   inline void setup_particle_group_temporary() {
     this->particle_group_temporary =
