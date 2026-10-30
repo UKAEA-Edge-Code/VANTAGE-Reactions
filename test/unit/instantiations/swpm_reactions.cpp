@@ -27,8 +27,7 @@ template SWPMReaction<2, CSPairData<2, ConstantCrossSection>,
     SWPMReaction(NP::SYCLTargetSharedPtr, std::array<int, 2>,
                  std::array<int, 2>, CSPairData<2, ConstantCrossSection>,
                  PairScatteringKernels<2>,
-                 PairDataCalculator<HSScatteringData<2>>,
-                 const std::map<int, std::string> &);
+                 PairDataCalculator<HSScatteringData<2>>, const PropertiesMap);
 
 template void SWPMReactionImpl<2, CSPairData<2, ConstantCrossSection>,
                                PairScatteringKernels<2>>::
@@ -73,8 +72,7 @@ template SWPMReaction<2, CSPairData<3, IPLCrossSection>,
     SWPMReaction(NP::SYCLTargetSharedPtr, std::array<int, 2>,
                  std::array<int, 2>, CSPairData<3, IPLCrossSection>,
                  PairScatteringKernels<3>,
-                 PairDataCalculator<SSScatteringData<3>>,
-                 const std::map<int, std::string> &);
+                 PairDataCalculator<SSScatteringData<3>>, const PropertiesMap);
 
 template void
 SWPMReactionImpl<2, CSPairData<3, IPLCrossSection>, PairScatteringKernels<3>>::

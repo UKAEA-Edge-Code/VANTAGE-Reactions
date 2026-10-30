@@ -18,7 +18,7 @@ struct AbstractSWPMSpecification {
 
   AbstractSWPMSpecification(
       std::shared_ptr<RNG_KERNEL_T> rng_kernel, REAL rate_norm_const = 1.0,
-      const std::map<int, std::string> &properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : rng_kernel(rng_kernel), norm_const(rate_norm_const) {
 
     this->weight_sym =

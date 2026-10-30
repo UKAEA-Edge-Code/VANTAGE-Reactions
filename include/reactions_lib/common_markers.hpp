@@ -53,11 +53,10 @@ public:
   /**
    * @brief Constructor for PanickedParticleMarker.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used to remap the NP::Sym for the Panic property.
    */
-  PanickedParticleMarker(
-      const std::map<int, std::string> &properties_map = get_default_map());
+  PanickedParticleMarker(const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * @brief Helper function to construct a particle sub group that's generated
@@ -82,15 +81,14 @@ private:
  *
  * @param particle_group The particle group that contains the particles to be
  * counted.
- * @param properties_map (Optional) A std::map<int, std::string> object to be
+ * @param properties_map (Optional) A PropertiesMap object to be
  * used to remap the NP::Sym for the Panic property.
  *
  * @return Boolean to indicate if any panicked particles exist in the particle
  * group.
  */
-bool panicked(
-    NP::ParticleSubGroupSharedPtr particle_group,
-    const std::map<int, std::string> &properties_map = get_default_map());
+bool panicked(NP::ParticleSubGroupSharedPtr particle_group,
+              const PropertiesMap properties_map = PropertiesMap());
 
 } // namespace VANTAGE::Reactions
 

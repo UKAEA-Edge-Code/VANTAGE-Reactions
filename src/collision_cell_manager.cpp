@@ -6,8 +6,7 @@ namespace VANTAGE::Reactions {
 CollisionCellManager::CollisionCellManager(
     NP::SYCLTargetSharedPtr sycl_target,
     std::shared_ptr<AbstractCollCellHierarchy> coll_cell_hierarchy,
-    std::vector<INT> species_ids,
-    const std::map<int, std::string> &properties_map)
+    std::vector<INT> species_ids, const PropertiesMap properties_map)
     : coll_cell_hierarchy(coll_cell_hierarchy), species_ids(species_ids) {
 
   this->coll_cell_partition =

@@ -11,7 +11,7 @@ void linear_reaction_CX_example(NP::ParticleGroupSharedPtr particle_group) {
   // reaction only to those particles with ID = 0, since those are the
   // projectiles
 
-  auto prop_map = get_default_map();
+  auto prop_map = PropertiesMap();
 
   auto spec_id =
       projectile_species.get_id(); // projectile species internal state id = 0

@@ -90,13 +90,13 @@ struct SimpleThinningKernels
    * @param rng_kernel Shared-pointer to a uniform variate
    * NP::HostPerParticleBlockRNG kernel used to sample the random number for
    * comparison with the thinning ratio
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names
    */
   SimpleThinningKernels(
       REAL thinning_ratio,
       std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map = get_default_map());
+      const PropertiesMap properties_map = PropertiesMap());
 };
 
 /**
@@ -109,12 +109,12 @@ struct SimpleThinningKernels
  * @param rng_kernel Shared-pointer to a uniform variate
  * NP::HostPerParticleBlockRNG kernel used to sample the random number for
  * comparison with the thinning ratio
- * @param properties_map (Optional) A std::map<int, std::string> object to be
+ * @param properties_map (Optional) A PropertiesMap object to be
  * used when remapping property names
  */
 std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
     NP::ParticleGroupSharedPtr template_group, REAL thinning_ratio,
     std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
-    const std::map<int, std::string> &properties_map = get_default_map());
+    const PropertiesMap properties_map = PropertiesMap());
 }; // namespace VANTAGE::Reactions
 #endif

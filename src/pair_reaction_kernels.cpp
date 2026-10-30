@@ -6,42 +6,37 @@ namespace VANTAGE::Reactions {
 PairReactionKernelsBase::PairReactionKernelsBase(
     Properties<INT> req_int_props_a, Properties<REAL> req_real_props_a,
     Properties<INT> req_int_props_b, Properties<REAL> req_real_props_b,
-    INT pre_req_ndims, std::map<int, std::string> properties_map)
+    INT pre_req_ndims, const PropertiesMap properties_map)
     : required_int_props_a(req_int_props_a),
       required_real_props_a(req_real_props_a),
       required_int_props_b(req_int_props_b),
       required_real_props_b(req_real_props_b), pre_req_ndims(pre_req_ndims) {
-  NESOWARN(map_subset_check(properties_map),
-           "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
   this->properties_map = properties_map;
 }
 
 PairReactionKernelsBase::PairReactionKernelsBase(
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : PairReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
                               Properties<INT>(), Properties<REAL>(), 0,
                               properties_map) {}
 
 PairReactionKernelsBase::PairReactionKernelsBase(
     Properties<INT> required_int_props, INT pre_req_ndims,
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : PairReactionKernelsBase(required_int_props, Properties<REAL>(),
                               required_int_props, Properties<REAL>(),
                               pre_req_ndims, properties_map) {}
 
 PairReactionKernelsBase::PairReactionKernelsBase(
     Properties<REAL> required_real_props, INT pre_req_ndims,
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : PairReactionKernelsBase(Properties<INT>(), required_real_props,
                               Properties<INT>(), required_real_props,
                               pre_req_ndims, properties_map) {}
 
 PairReactionKernelsBase::PairReactionKernelsBase(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
-    INT pre_req_ndims, std::map<int, std::string> properties_map)
+    INT pre_req_ndims, const PropertiesMap properties_map)
     : PairReactionKernelsBase(required_int_props, required_real_props,
                               required_int_props, required_real_props,
                               pre_req_ndims, properties_map) {}

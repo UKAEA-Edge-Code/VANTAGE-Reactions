@@ -196,12 +196,12 @@ struct DownsamplingKernelBase {
    * regarding the required INT-based properties
    * @param required_real_props Properties<REAL> object containing
    * information regarding the required REAL-based properties
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names
    */
-  DownsamplingKernelBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  DownsamplingKernelBase(Properties<INT> required_int_props,
+                         Properties<REAL> required_real_props,
+                         const PropertiesMap properties_map = PropertiesMap())
       : required_int_props(ArgumentNameSet(required_int_props, properties_map)),
         required_real_props(
             ArgumentNameSet(required_real_props, properties_map)),
@@ -222,12 +222,11 @@ struct DownsamplingKernelBase {
    *
    * @param required_real_props Properties<REAL> object containing
    * information regarding the required REAL-based properties
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names
    */
-  DownsamplingKernelBase(
-      Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  DownsamplingKernelBase(Properties<REAL> required_real_props,
+                         const PropertiesMap properties_map = PropertiesMap())
       : DownsamplingKernelBase(Properties<INT>(), required_real_props,
                                properties_map) {}
 
@@ -285,7 +284,7 @@ protected:
   std::optional<DOWNSAMPLING_KERNEL_ON_DEVICE> downsampling_on_device_obj;
   ArgumentNameSet<INT> required_int_props;
   ArgumentNameSet<REAL> required_real_props;
-  std::map<int, std::string> properties_map;
+  PropertiesMap properties_map;
   std::shared_ptr<RNG_TYPE> rng_kernel;
 };
 
@@ -310,21 +309,15 @@ struct DownsamplingStrategy : TransformationStrategy {
    * (such as velocity/phase space bins) - determines the dimensionality of the
    * NP::CellDatConst objects storing cell-wise and downsampling group-wise
    * reductions of the properties needed for the downsampling algorithm
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names, in particular the grouping index,
    * linear index, and particle weights
    */
-  DownsamplingStrategy(
-      NP::ParticleGroupSharedPtr template_group,
-      DOWNSAMPLING_KERNEL downsampling_kernels, size_t num_downsampling_groups,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  DownsamplingStrategy(NP::ParticleGroupSharedPtr template_group,
+                       DOWNSAMPLING_KERNEL downsampling_kernels,
+                       size_t num_downsampling_groups,
+                       const PropertiesMap properties_map = PropertiesMap())
       : downsampling_kernels(downsampling_kernels) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
 
     this->group_index_sym =
         NP::Sym<INT>(properties_map.at(default_properties.grouping_index));

@@ -204,12 +204,12 @@ int main() {
 
   // --- ParticleSpecBuilder member-function template instantiations ---------
   void (ParticleSpecBuilder::*ps0)(Properties<INT>, int, bool,
-                                   const std::map<int, std::string> &) =
+                                   const PropertiesMap) =
       &ParticleSpecBuilder::add_particle_prop<INT>;
   (void)ps0;
 
   void (ParticleSpecBuilder::*ps1)(Properties<REAL>, int, bool,
-                                   const std::map<int, std::string> &) =
+                                   const PropertiesMap) =
       &ParticleSpecBuilder::add_particle_prop<REAL>;
   (void)ps1;
 

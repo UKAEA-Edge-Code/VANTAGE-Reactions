@@ -4,9 +4,8 @@
 
 namespace VANTAGE::Reactions {
 
-AbstractReaction::AbstractReaction(
-    NP::SYCLTargetSharedPtr sycl_target,
-    const std::map<int, std::string> &properties_map)
+AbstractReaction::AbstractReaction(NP::SYCLTargetSharedPtr sycl_target,
+                                   const PropertiesMap properties_map)
     : sycl_target_stored(sycl_target),
       device_rate_buffer(
           std::make_shared<NP::LocalArray<REAL>>(sycl_target, 0, 0.0)),
@@ -14,12 +13,6 @@ AbstractReaction::AbstractReaction(
           std::make_shared<NP::NDLocalArray<REAL, 2>>(sycl_target, 0, 0)),
       max_buffer_size(16384 *
                       NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)) {
-
-  NESOWARN(map_subset_check(properties_map),
-           "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsistencies with indexing of properties.");
-
   this->total_reaction_rate =
       NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
   this->weight_sym =

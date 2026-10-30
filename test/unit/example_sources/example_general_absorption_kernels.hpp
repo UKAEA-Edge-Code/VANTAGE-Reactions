@@ -16,10 +16,9 @@ void general_absorption_kernels_example() {
                                 -1); // This is absorbed species
 
   auto absorption_kernels =
-      GeneralAbsorptionKernels<2 // velocity dat dimensionality
-                               >(
-          target_species,          // Absorbed species
-          properties_map.get_map() // Our remapped sources
+      GeneralAbsorptionKernels<2                 // velocity dat dimensionality
+                               >(target_species, // Absorbed species
+                                 properties_map  // Our remapped sources
       );
 
   return;

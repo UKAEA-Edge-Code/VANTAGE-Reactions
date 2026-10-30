@@ -30,27 +30,27 @@ struct ReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * DataCalculator object when this kernel and the DataCalculator object are
    * passed to a LinearReactionBase-derived object constructor).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionKernelsBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      Properties<INT> required_int_props_ephemeral,
-      Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionKernelsBase(Properties<INT> required_int_props,
+                      Properties<REAL> required_real_props,
+                      Properties<INT> required_int_props_ephemeral,
+                      Properties<REAL> required_real_props_ephemeral,
+                      INT pre_req_ndims = 0,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
    * @brief Constructor for ReactionKernelsBase that by default sets no required
    * props.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionKernelsBase(
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionKernelsBase(const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -64,13 +64,12 @@ struct ReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * DataCalculator object when this kernel and the DataCalculator object are
    * passed to a LinearReactionBase-derived object constructor).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionKernelsBase(
-      Properties<INT> required_int_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionKernelsBase(Properties<INT> required_int_props, INT pre_req_ndims = 0,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -85,13 +84,13 @@ struct ReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * DataCalculator object when this kernel and the DataCalculator object are
    * passed to a LinearReactionBase-derived object constructor).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionKernelsBase(
-      Properties<REAL> required_real_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionKernelsBase(Properties<REAL> required_real_props,
+                      INT pre_req_ndims = 0,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -108,14 +107,14 @@ struct ReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * DataCalculator object when this kernel and the DataCalculator object are
    * passed to a LinearReactionBase-derived object constructor).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  ReactionKernelsBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  ReactionKernelsBase(Properties<INT> required_int_props,
+                      Properties<REAL> required_real_props,
+                      INT pre_req_ndims = 0,
+                      const PropertiesMap properties_map = PropertiesMap());
 
   virtual ~ReactionKernelsBase() = default;
 
@@ -210,7 +209,7 @@ protected:
 
   INT pre_req_ndims;
 
-  std::map<int, std::string> properties_map;
+  PropertiesMap properties_map;
 };
 
 /**

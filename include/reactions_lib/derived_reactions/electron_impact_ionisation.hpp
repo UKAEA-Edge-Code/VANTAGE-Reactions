@@ -35,14 +35,13 @@ struct ElectronImpactIonisation
    * @param target_species Species object representing the ionisation target
    * (and the corresponding ion fluid)
    * @param electron_species Species object corresponding to the electrons
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ElectronImpactIonisation(
-      NP::SYCLTargetSharedPtr sycl_target, RateData rate_data,
-      EnergyRateData energy_rate_data, Species target_species,
-      Species electron_species,
-      const std::map<int, std::string> &properties_map = get_default_map())
+  ElectronImpactIonisation(NP::SYCLTargetSharedPtr sycl_target,
+                           RateData rate_data, EnergyRateData energy_rate_data,
+                           Species target_species, Species electron_species,
+                           const PropertiesMap properties_map = PropertiesMap())
       : LinearReactionBase<0, RateData, IoniseReactionKernels<ndim>,
                            DataCalculator<EnergyRateData>>(
             sycl_target, target_species.get_id(), std::array<int, 0>{},

@@ -1,7 +1,7 @@
 void spherical_basis_reflection_example() {
 
   // In case we wish to remap the default boundary normal or velocity name
-  auto used_map = get_default_map();
+  auto used_map = PropertiesMap();
 
   // v = 2, theta = pi/4, phi = 3*pi/4
   std::array<REAL, 3> coords{2.0, M_PI / 4, 3 * M_PI / 4};

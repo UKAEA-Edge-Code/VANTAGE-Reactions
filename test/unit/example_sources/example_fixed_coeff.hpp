@@ -1,7 +1,7 @@
 void fixed_rate_coeff_example() {
 
   // In case we would like to remap the used weight NP::Sym
-  auto used_map = get_default_map();
+  auto used_map = PropertiesMap();
 
   auto fixed_coeff_rate =
       FixedCoefficientData(5.0, // K - fixed rate coefficient

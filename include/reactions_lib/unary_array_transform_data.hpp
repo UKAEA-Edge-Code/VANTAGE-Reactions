@@ -112,7 +112,7 @@ struct UnaryArrayTransformData
             UnaryArrayTransformDataOnDevice<
                 TRANSFORM, accessor_pack_for_t<ARGUMENT_PACK_T>>,
             ARGUMENT_PACK_T, TRANSFORM::OUT_DIM, DEFAULT_RNG_KERNEL,
-            TRANSFORM::IN_DIM>(ARGUMENT_PACK_T(), get_default_map()) {
+            TRANSFORM::IN_DIM>(ARGUMENT_PACK_T(), PropertiesMap()) {
     this->on_device_obj = UnaryArrayTransformDataOnDevice<
         TRANSFORM, accessor_pack_for_t<ARGUMENT_PACK_T>>(transform);
   };

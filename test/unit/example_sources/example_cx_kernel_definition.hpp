@@ -152,8 +152,8 @@ struct ExampleCXReactionKernels : public ReactionKernelsBase {
       const Species &target_species,     // The target (ion) species
       const Species &projectile_species, // The projectile (neutral
                                          // particle/parent) species
-      std::map<int, std::string> properties_map =
-          get_default_map() // We allow for remaping
+      const PropertiesMap properties_map =
+          PropertiesMap() // We allow for remaping
       )
       : ReactionKernelsBase(
             Properties<REAL>( // The Properties container object for the

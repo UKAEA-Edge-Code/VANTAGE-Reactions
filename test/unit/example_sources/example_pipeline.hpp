@@ -5,7 +5,7 @@ void pipeline_example() {
 
   // In case we wish to remap the default boundary normal for the specular
   // reflection
-  auto used_map = get_default_map();
+  auto used_map = PropertiesMap();
 
   auto velocity_data = extract<2>("VELOCITY");
 

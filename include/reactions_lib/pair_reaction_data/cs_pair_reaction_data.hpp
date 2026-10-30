@@ -86,11 +86,11 @@ struct CSPairData : public PairReactionDataBase<
    * @brief Constructor for CSPairData.
    *
    * @param cross_section Cross section object to be used in the calculation
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
   CSPairData(CROSS_SECTION_T cross_section,
-             std::map<int, std::string> properties_map = get_default_map())
+             const PropertiesMap properties_map = PropertiesMap())
       : PairReactionDataBase<CSPairDataOnDevice<vel_ndim, CROSS_SECTION_T>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
     this->on_device_obj =

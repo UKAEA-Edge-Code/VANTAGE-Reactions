@@ -257,11 +257,10 @@ struct PairScatteringKernels : public PairReactionKernelsBase {
   /**
    * @brief Constructor for PairScatteringKernels.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  PairScatteringKernels(
-      std::map<int, std::string> properties_map = get_default_map())
+  PairScatteringKernels(const PropertiesMap properties_map = PropertiesMap())
       : PairReactionKernelsBase(Properties<REAL>(required_simple_real_props),
                                 2 * ndim_velocity, properties_map) {
 

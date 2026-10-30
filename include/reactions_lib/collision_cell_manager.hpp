@@ -87,7 +87,7 @@ struct CollisionCellManager {
    * binning and collision cell volumes
    * @param species_ids Vector of integer ids for species managed by this
    * manager
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (here mesh, collision cell, and species
    * id syms)
    */
@@ -95,7 +95,7 @@ struct CollisionCellManager {
       NP::SYCLTargetSharedPtr sycl_target,
       std::shared_ptr<AbstractCollCellHierarchy> coll_cell_hierarchy,
       std::vector<INT> species_ids,
-      const std::map<int, std::string> &properties_map = get_default_map());
+      const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * @brief Get the current CollisionCellPartition object

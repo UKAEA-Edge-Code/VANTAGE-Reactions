@@ -43,7 +43,7 @@ struct SourceReaction
   SourceReaction(
       NP::SYCLTargetSharedPtr sycl_target, VelocityData velocity_data,
       Species marker_species, Species product_species,
-      const std::map<int, std::string> &properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : LinearReactionBase<1, FixedRateData,
                            LinearScatteringKernels<ndim, with_sources, false>,
                            DataCalculator<VelocityData>>(

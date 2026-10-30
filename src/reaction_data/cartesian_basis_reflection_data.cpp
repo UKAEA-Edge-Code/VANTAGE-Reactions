@@ -5,7 +5,7 @@
 namespace VANTAGE::Reactions {
 
 CartesianBasisReflectionData::CartesianBasisReflectionData(
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : ReactionDataBase<CartesianBasisReflectionDataOnDevice, 3,
                        DEFAULT_RNG_KERNEL, 3>(
           Properties<REAL>(required_simple_real_props), properties_map) {

@@ -27,27 +27,27 @@ struct PairReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * PairDataCalculator object when this kernel and the PairDataCalculator
    * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  PairReactionKernelsBase(
-      Properties<INT> req_int_props_a, Properties<REAL> req_real_props_a,
-      Properties<INT> req_int_props_b, Properties<REAL> req_real_props_b,
-      INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  PairReactionKernelsBase(Properties<INT> req_int_props_a,
+                          Properties<REAL> req_real_props_a,
+                          Properties<INT> req_int_props_b,
+                          Properties<REAL> req_real_props_b,
+                          INT pre_req_ndims = 0,
+                          const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
    * @brief Constructor for PairReactionKernelsBase that by default sets no
    * required props.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  PairReactionKernelsBase(
-      std::map<int, std::string> properties_map = get_default_map());
+  PairReactionKernelsBase(const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -61,13 +61,13 @@ struct PairReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * PairDataCalculator object when this kernel and the PairDataCalculator
    * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  PairReactionKernelsBase(
-      Properties<INT> required_int_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  PairReactionKernelsBase(Properties<INT> required_int_props,
+                          INT pre_req_ndims = 0,
+                          const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -81,13 +81,13 @@ struct PairReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * PairDataCalculator object when this kernel and the PairDataCalculator
    * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  PairReactionKernelsBase(
-      Properties<REAL> required_real_props, INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  PairReactionKernelsBase(Properties<REAL> required_real_props,
+                          INT pre_req_ndims = 0,
+                          const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * \overload
@@ -103,14 +103,14 @@ struct PairReactionKernelsBase {
    * ReactionData-derived objects that must be passed to the constructor of a
    * PairDataCalculator object when this kernel and the PairDataCalculator
    * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names (in get_required_real_props(...) and
    * get_required_int_props(...)).
    */
-  PairReactionKernelsBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      INT pre_req_ndims = 0,
-      std::map<int, std::string> properties_map = get_default_map());
+  PairReactionKernelsBase(Properties<INT> required_int_props,
+                          Properties<REAL> required_real_props,
+                          INT pre_req_ndims = 0,
+                          const PropertiesMap properties_map = PropertiesMap());
 
   virtual ~PairReactionKernelsBase() = default;
 
@@ -260,7 +260,7 @@ protected:
   INT num_products_a;
   INT num_products_b;
 
-  std::map<int, std::string> properties_map;
+  PropertiesMap properties_map;
 };
 
 /**

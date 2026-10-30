@@ -17,7 +17,7 @@ struct SWPMDSMCSpecification
   SWPMDSMCSpecification(
       std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
       REAL rate_norm_const = 1.0,
-      const std::map<int, std::string> &properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : AbstractSWPMSpecification(rng_kernel, rate_norm_const, properties_map) {
         };
 

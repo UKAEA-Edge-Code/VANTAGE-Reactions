@@ -37,7 +37,7 @@ TEST(Properties, simple_prop_names) {
 
   std::vector<std::string> simple_int_props = {};
   for (auto prop : int_props_obj.get_simple_props()) {
-    simple_int_props.push_back(get_default_map().at(prop));
+    simple_int_props.push_back(PropertiesMap().at(prop));
   }
   auto int_prop_names = int_props_obj.simple_prop_names();
 
@@ -75,7 +75,7 @@ TEST(Properties, simple_prop_names) {
 
   std::vector<std::string> simple_real_props = {};
   for (auto prop : real_props) {
-    simple_real_props.push_back(get_default_map().at(prop));
+    simple_real_props.push_back(PropertiesMap().at(prop));
   }
 
   auto real_prop_names = real_props_obj.simple_prop_names();
@@ -163,7 +163,7 @@ TEST(Properties, species_prop_names) {
 
   std::vector<std::string> species_real_props = {};
   for (auto prop : real_props) {
-    species_real_props.push_back(get_default_map().at(prop));
+    species_real_props.push_back(PropertiesMap().at(prop));
   }
 
   auto real_prop_names = real_props_obj.species_prop_names();
@@ -363,10 +363,10 @@ TEST(Properties, properties_map_setting) {
 
   struct test_reaction_data : ReactionDataBase<TestEphemeralVarDataOnDevice> {
     test_reaction_data(std::map<int, std::string> property_map_)
-        : ReactionDataBase(property_map_) {}
+        : ReactionDataBase(PropertiesMap(property_map_)) {}
 
     std::map<int, std::string> get_property_map() {
-      return this->get_properties_map();
+      return this->get_properties_map().get_map();
     }
   };
 
@@ -414,7 +414,7 @@ TEST(Properties, full_use_properties_map) {
   particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_DENSITY"));
   particle_group->remove_particle_dat(NP::Sym<REAL>("FLUID_TEMPERATURE"));
 
-  auto test_prop_map = get_default_map();
+  auto test_prop_map = PropertiesMap();
   test_prop_map[default_properties.fluid_density] = "TEST_PROP1";
   test_prop_map[default_properties.fluid_temperature] = "TEST_PROP2";
 
@@ -484,4 +484,16 @@ TEST(ArgumentNameSet, merging) {
   EXPECT_EQ(names.size(), 4);
 
   EXPECT_NE(std::find(names.begin(), names.end(), "test"), names.end());
+}
+
+TEST(Properties, subset_check) {
+  EXPECT_TRUE(map_subset_check(PropertiesMap()));
+
+  auto missing_last = PropertiesMap();
+  missing_last.erase(default_properties.fluid_flow_speed);
+  EXPECT_FALSE(map_subset_check(missing_last));
+
+  auto extended = PropertiesMap();
+  extended[default_properties.fluid_flow_speed + 1] = "TEST_CUSTOM_PROP";
+  EXPECT_TRUE(map_subset_check(extended));
 }

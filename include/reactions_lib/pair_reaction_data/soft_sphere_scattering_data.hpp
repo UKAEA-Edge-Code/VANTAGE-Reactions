@@ -109,13 +109,13 @@ struct SSScatteringData
    * @param species_b Species of the second scattering particle (needed for
    * species mass)
    * @param alpha Soft scattering anisotropy constant
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
   SSScatteringData(
       const Species &species_a, const Species &species_b, REAL alpha,
       std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-      std::map<int, std::string> properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : PairReactionDataBase<SSScatteringDataOnDevice<vel_ndim>, 2 * vel_ndim,
                              NP::HostAtomicBlockKernelRNG<REAL>>(
             Properties<INT>(required_simple_int_props),
