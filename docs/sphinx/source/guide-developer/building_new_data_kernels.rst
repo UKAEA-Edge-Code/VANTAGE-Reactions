@@ -18,14 +18,42 @@ When building new reaction data objects, the following should be kept in mind:
 
 #. The device type should be constructed in the host type constructor and stored on the host type
 #. Required properties need to be passed to the base reaction data class :class:`ReactionDataBase` in the form of :class:`Properties` containers - so they are best stored as static class members
-#. Any required properties must be associated with public indices on the device type - this has to be done in the host type constructor
-#. The device type stored on the host type must be made accessible through the definition of a :code:`get_on_device_obj()` getter 
+#. Any required properties must be associated with public indices on the device type. Implement :code:`index_on_device_object()` and call it after constructing the device object; composition also calls this hook when property indices change.
+#. The base class exposes the stored device object through :code:`get_on_device_obj()`.
 
 Below is an example of how to build a set of reaction data objects, both host and device. The example is essentially a reproduction of the :class:`FixedCoefficientData` implementation. 
 
 .. literalinclude:: ../example_sources/example_new_reaction_data.hpp
    :language: cpp
    :caption: Defining a new reaction data class on host and device
+
+Property requirements and argument packs
+----------------------------------------
+
+Each host reaction-data object holds one current argument pack and a separate
+property-name map. The pack is the authoritative layout for both loop arguments
+and device property indices. Use :code:`get_arg_pack()` to inspect this layout and
+the protected :code:`get_properties_map()` accessor to resolve property IDs to
+names.
+
+For single-particle data, :class:`ReactionDataBase` converts the supplied
+:class:`Properties` containers into a :code:`SingleReactionDataArgumentPack`.
+Regular and ephemeral requirements are merged into the same INT and REAL name
+sets, with duplicate names removed. Pair data use a
+:code:`PairReactionDataArgumentPack`, which keeps the INT and REAL requirements
+of particles A and B separate.
+
+Composition merges child packs and supplies the merged layout to every child.
+Nested composites propagate that layout recursively before rebuilding their
+device objects. A child's current pack therefore includes properties needed by
+its siblings; it does not retain a separate narrow construction-time pack.
+
+Implement :code:`index_on_device_object()` using the current pack's
+:code:`find_index()` lookups. For enum-based requirements, resolve names through
+:code:`get_properties_map()`; data taking explicit symbols can look up those
+symbol names directly. Do not cache indices from the initial requirement set:
+merging adds names to the sorted layout and can shift existing indices.
+Constructor-only indexing is insufficient when the object is later composed.
 
 Reaction kernels
 ================ 
