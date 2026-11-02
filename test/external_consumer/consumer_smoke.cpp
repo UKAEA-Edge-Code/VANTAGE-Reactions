@@ -181,6 +181,30 @@ int main() {
           Properties<REAL>{}};
   (void)sr0;
 
+  auto kernel_pack = SingleReactionKernelArgumentPack(
+      Properties<INT>(std::array<int, 1>{default_properties.panic}),
+      Properties<REAL>(std::array<int, 1>{default_properties.weight}),
+      Properties<INT>(std::array<int, 2>{default_properties.panic,
+                                         default_properties.internal_state}),
+      Properties<REAL>(std::array<int, 2>{default_properties.weight,
+                                          default_properties.velocity}),
+      Properties<INT>(std::array<int, 1>{default_properties.internal_state}),
+      Properties<REAL>(std::array<int, 2>{default_properties.velocity,
+                                          default_properties.weight}));
+  auto kernel_schema = build_kernel_product_schema(
+      kernel_pack.required_descendant_int_props,
+      kernel_pack.required_descendant_real_props, 3);
+  if (kernel_pack.required_int_props.to_string_vector() !=
+          std::vector<std::string>{"INTERNAL_STATE", "REACTIONS_PANIC_FLAG"} ||
+      kernel_pack.required_real_props.to_string_vector() !=
+          std::vector<std::string>{"VELOCITY", "WEIGHT"} ||
+      kernel_schema->get_num_components(NP::Sym<REAL>("VELOCITY")) != 3 ||
+      kernel_schema->get_num_components(NP::Sym<REAL>("WEIGHT")) != 1 ||
+      kernel_schema->get_num_components(NP::Sym<INT>("INTERNAL_STATE")) != 1) {
+    std::cerr << "consumer_smoke: kernel pack/schema construction failed\n";
+    return 1;
+  }
+
   // --- CollisionCellManager member-function template instantiations ---------
   void (CollisionCellManager::*m0)(NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>,
                                    int, NP::NDLocalArraySharedPtr<REAL, 2> &) =

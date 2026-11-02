@@ -170,6 +170,12 @@ struct LinearReactionBaseImpl : public AbstractReaction {
       "SingleReactionDataArgumentPack and std::array<REAL, DIM> output.");
   static_assert(ReactionData::DIM == 1,
                 "Linear reaction rates require scalar data (DIM == 1).");
+  static_assert(
+      is_single_reaction_kernel<ReactionKernels>::value,
+      "Linear reaction kernels must derive from ReactionKernelsBase.");
+  static_assert(detail::has_matching_kernel_product_count<
+                    ReactionKernels, num_products_per_parent>::value,
+                "Linear reaction and kernel product counts must agree.");
 
   /**
    * @brief Constructor for LinearReactionBaseImpl.
@@ -195,10 +201,6 @@ struct LinearReactionBaseImpl : public AbstractReaction {
       : AbstractReaction(sycl_target, properties_map), in_state(in_state),
         out_states(out_states), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels) {
-    static_assert(std::is_base_of_v<ReactionKernelsBase, ReactionKernels>,
-                  "Template parameter ReactionKernels is not derived from "
-                  "ReactionKernelsBase...");
-
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
 
@@ -208,11 +210,11 @@ struct LinearReactionBaseImpl : public AbstractReaction {
     this->calculate_rates_real_syms =
         reaction_data_buffer.get_arg_pack().required_real_props.to_sym_vector();
 
-    this->apply_int_syms = utils::build_sym_vector<INT>(
-        reaction_kernel_buffer.get_required_int_props());
+    this->apply_int_syms = reaction_kernel_buffer.get_arg_pack()
+                               .required_int_props.to_sym_vector();
 
-    this->apply_real_syms = utils::build_sym_vector<REAL>(
-        reaction_kernel_buffer.get_required_real_props());
+    this->apply_real_syms = reaction_kernel_buffer.get_arg_pack()
+                                .required_real_props.to_sym_vector();
 
     auto descendant_matrix_spec =
         reaction_kernel_buffer.get_descendant_matrix_spec();
@@ -358,25 +360,17 @@ struct LinearReactionBaseImpl : public AbstractReaction {
               descendant_particle.set_parent(particle_index, childx);
             }
 
+            auto accessors = SingleReactionKernelAccessors{
+                particle_index, req_int_props, req_real_props,
+                descendant_particle, pre_req_data};
             reaction_kernel_on_device.scattering_kernel(
-                modified_weight, particle_index, descendant_particle,
-                req_int_props, req_real_props, out_states_arr, pre_req_data,
-                modified_dt);
-
+                modified_weight, accessors, out_states_arr, modified_dt);
             reaction_kernel_on_device.weight_kernel(
-                modified_weight, particle_index, descendant_particle,
-                req_int_props, req_real_props, out_states_arr, pre_req_data,
-                modified_dt);
-
+                modified_weight, accessors, out_states_arr, modified_dt);
             reaction_kernel_on_device.transformation_kernel(
-                modified_weight, particle_index, descendant_particle,
-                req_int_props, req_real_props, out_states_arr, pre_req_data,
-                modified_dt);
-
+                modified_weight, accessors, out_states_arr, modified_dt);
             reaction_kernel_on_device.feedback_kernel(
-                modified_weight, particle_index, descendant_particle,
-                req_int_props, req_real_props, out_states_arr, pre_req_data,
-                modified_dt);
+                modified_weight, accessors, out_states_arr, modified_dt);
           }
         },
         NP::Access::write(this->descendant_particles),

@@ -21,6 +21,7 @@ namespace VANTAGE::Reactions {
 template <int ndim_velocity, bool with_sources, bool with_weight_feedback>
 struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
   LinearScatteringKernelsOnDevice() = default;
+  LinearScatteringKernelsOnDevice(REAL mass) : mass(mass) {}
 
   /**
    * @brief General scattering kernel - assumes that pre_req_data stores
@@ -28,32 +29,20 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which apply is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param descendant_products Write accessor to descendant products
-   * that may need to be operated on
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for operations inside the kernel.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for operations inside the kernel.
+   * @param accessors Bundled loop index, input/descendant properties, and
+   * prerequisite data accessors.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
-   * data
    * @param dt The current time step size.
    */
-  void
-  scattering_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
-                    NP::Access::DescendantProducts::Write &descendant_products,
-                    NP::Access::SymVector::Write<INT> &req_int_props,
-                    NP::Access::SymVector::Write<REAL> &req_real_props,
-                    const std::array<int, 1> &out_states,
-                    NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                    double dt) const {
+  void scattering_kernel(REAL &modified_weight,
+                         SingleReactionKernelAccessors &accessors,
+                         const std::array<int, 1> &out_states,
+                         double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
-      descendant_products.at_real(index, 0, descendant_velocity_ind, dimx) =
-          pre_req_data.at(index.get_loop_linear_index(), dimx);
+      accessors.descendant_products.at_real(
+          accessors.index, 0, this->descendant_velocity_ind, dimx) =
+          accessors.pre_req_data.at(accessors.index.get_loop_linear_index(),
+                                    dimx);
     }
   }
 
@@ -63,30 +52,16 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which apply is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param descendant_products Write accessor to descendant products
-   * that may need to be operated on
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for operations inside the kernel.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for operations inside the kernel.
+   * @param accessors Bundled loop index, input/descendant properties, and
+   * prerequisite data accessors.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
-   * data
    * @param dt The current time step size.
    */
-  void weight_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
-                     NP::Access::DescendantProducts::Write &descendant_products,
-                     NP::Access::SymVector::Write<INT> &req_int_props,
-                     NP::Access::SymVector::Write<REAL> &req_real_props,
-                     const std::array<int, 1> &out_states,
-                     NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                     double dt) const {
-    descendant_products.at_real(index, 0, descendant_weight_ind, 0) =
-        modified_weight;
+  void weight_kernel(REAL &modified_weight,
+                     SingleReactionKernelAccessors &accessors,
+                     const std::array<int, 1> &out_states, double dt) const {
+    accessors.descendant_products.at_real(
+        accessors.index, 0, this->descendant_weight_ind, 0) = modified_weight;
   }
 
   /**
@@ -95,30 +70,18 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which apply is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param descendant_products Write accessor to descendant products
-   * that may need to be operated on
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for operations inside the kernel.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for operations inside the kernel.
+   * @param accessors Bundled loop index, input/descendant properties, and
+   * prerequisite data accessors.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
-   * data
    * @param dt The current time step size.
    */
-  void transformation_kernel(
-      REAL &modified_weight, NP::Access::LoopIndex::Read &index,
-      NP::Access::DescendantProducts::Write &descendant_products,
-      NP::Access::SymVector::Write<INT> &req_int_props,
-      NP::Access::SymVector::Write<REAL> &req_real_props,
-      const std::array<int, 1> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-    descendant_products.at_int(index, 0, descendant_internal_state_ind, 0) =
-        out_states[0];
+  void transformation_kernel(REAL &modified_weight,
+                             SingleReactionKernelAccessors &accessors,
+                             const std::array<int, 1> &out_states,
+                             double dt) const {
+    accessors.descendant_products.at_int(accessors.index, 0,
+                                         this->descendant_internal_state_ind,
+                                         0) = out_states[0];
   }
 
   /**
@@ -127,54 +90,44 @@ struct LinearScatteringKernelsOnDevice : public ReactionKernelsBaseOnDevice<1> {
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which apply is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param descendant_products Write accessor to descendant products
-   * that may need to be operated on
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for operations inside the kernel.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for operations inside the kernel.
+   * @param accessors Bundled loop index, input/descendant properties, and
+   * prerequisite data accessors.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
-   * data
    * @param dt The current time step size.
    */
-  void
-  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
-                  NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<INT> &req_int_props,
-                  NP::Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, 1> &out_states,
-                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                  double dt) const {
+  void feedback_kernel(REAL &modified_weight,
+                       SingleReactionKernelAccessors &accessors,
+                       const std::array<int, 1> &out_states, double dt) const {
 
     if constexpr (with_sources) {
       std::array<REAL, ndim_velocity> k_V_pre, k_V_post;
       REAL delta_vsquared = 0.0;
 
       for (int vdim = 0; vdim < ndim_velocity; vdim++) {
-        k_V_pre[vdim] = req_real_props.at(velocity_ind, index, vdim);
-        k_V_post[vdim] = pre_req_data.at(index.get_loop_linear_index(), vdim);
+        k_V_pre[vdim] = accessors.req_real_props.at(this->velocity_ind,
+                                                    accessors.index, vdim);
+        k_V_post[vdim] = accessors.pre_req_data.at(
+            accessors.index.get_loop_linear_index(), vdim);
         delta_vsquared +=
             k_V_pre[vdim] * k_V_pre[vdim] - k_V_post[vdim] * k_V_post[vdim];
       }
 
       // SOURCE_MOMENTUM calc
       for (int sm_dim = 0; sm_dim < ndim_velocity; sm_dim++) {
-        req_real_props.at(this->source_momentum_ind, index, sm_dim) +=
+        accessors.req_real_props.at(this->source_momentum_ind, accessors.index,
+                                    sm_dim) +=
             this->mass * modified_weight * (k_V_pre[sm_dim] - k_V_post[sm_dim]);
       }
 
       // Set SOURCE_ENERGY
-      req_real_props.at(this->source_energy_ind, index, 0) +=
+      accessors.req_real_props.at(this->source_energy_ind, accessors.index,
+                                  0) +=
           modified_weight * this->mass * delta_vsquared * 0.5;
     }
 
     if constexpr (with_weight_feedback) {
-      req_real_props.at(this->weight_ind, index, 0) -= modified_weight;
+      accessors.req_real_props.at(this->weight_ind, accessors.index, 0) -=
+          modified_weight;
     }
   }
 
@@ -197,7 +150,11 @@ public:
  */
 template <int ndim_velocity = 2, bool with_sources = true,
           bool with_weight_feedback = true>
-struct LinearScatteringKernels : public ReactionKernelsBase {
+struct LinearScatteringKernels
+    : public ReactionKernelsBase<LinearScatteringKernelsOnDevice<
+          ndim_velocity, with_sources, with_weight_feedback>> {
+  using Base = ReactionKernelsBase<LinearScatteringKernelsOnDevice<
+      ndim_velocity, with_sources, with_weight_feedback>>;
 
   constexpr static auto props = default_properties;
 
@@ -220,66 +177,45 @@ struct LinearScatteringKernels : public ReactionKernelsBase {
    */
   LinearScatteringKernels(const Species &scattered_species,
                           const PropertiesMap properties_map = PropertiesMap())
-      : ReactionKernelsBase(
-            (with_sources) ? Properties<REAL>(required_simple_real_props)
-                                 .merge_with(Properties<REAL>(
-                                     required_simple_real_props_with_sources))
-                           : Properties<REAL>(required_simple_real_props),
-            ndim_velocity, properties_map) {
-    this->linear_scattering_kernels_on_device.velocity_ind =
+      : Base((with_sources) ? Properties<REAL>(required_simple_real_props)
+                                  .merge_with(Properties<REAL>(
+                                      required_simple_real_props_with_sources))
+                            : Properties<REAL>(required_simple_real_props),
+             Properties<INT>(required_descendant_simple_int_props),
+             Properties<REAL>(required_descendant_simple_real_props),
+             ndim_velocity, ndim_velocity, properties_map) {
+    this->on_device_obj =
+        LinearScatteringKernelsOnDevice<ndim_velocity, with_sources,
+                                        with_weight_feedback>(
+            scattered_species.get_mass());
+    this->index_on_device_object();
+  }
 
-        this->required_real_props.simple_prop_index(props.velocity,
-                                                    this->properties_map);
-
+  /** @brief Index inputs and descendants from the argument pack. */
+  void index_on_device_object() override {
+    this->on_device_obj->velocity_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.velocity));
     if constexpr (with_sources) {
-      this->linear_scattering_kernels_on_device.source_momentum_ind =
-          this->required_real_props.simple_prop_index(props.source_momentum,
-                                                      this->properties_map);
-
-      this->linear_scattering_kernels_on_device.source_energy_ind =
-          this->required_real_props.simple_prop_index(props.source_energy,
-                                                      this->properties_map);
+      this->on_device_obj->source_momentum_ind =
+          this->argument_pack.required_real_props.find_index(
+              this->get_properties_map().at(props.source_momentum));
+      this->on_device_obj->source_energy_ind =
+          this->argument_pack.required_real_props.find_index(
+              this->get_properties_map().at(props.source_energy));
     }
-    this->linear_scattering_kernels_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight,
-                                                    this->properties_map);
-
-    this->linear_scattering_kernels_on_device.mass =
-        scattered_species.get_mass();
-
-    this->set_required_descendant_int_props(
-        Properties<INT>(required_descendant_simple_int_props));
-
-    this->set_required_descendant_real_props(
-        Properties<REAL>(required_descendant_simple_real_props));
-
-    this->linear_scattering_kernels_on_device.descendant_internal_state_ind =
-        this->required_descendant_int_props.simple_prop_index(
-            props.internal_state, this->properties_map);
-    this->linear_scattering_kernels_on_device.descendant_velocity_ind =
-        this->required_descendant_real_props.simple_prop_index(
-            props.velocity, this->properties_map);
-    this->linear_scattering_kernels_on_device.descendant_weight_ind =
-        this->required_descendant_real_props.simple_prop_index(
-            props.weight, this->properties_map);
-
-    this->set_descendant_matrix_spec<ndim_velocity, 1>();
-  };
-
-private:
-  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources,
-                                  with_weight_feedback>
-      linear_scattering_kernels_on_device;
-
-public:
-  /**
-   * @brief Getter for the SYCL device-specific struct.
-   */
-
-  LinearScatteringKernelsOnDevice<ndim_velocity, with_sources,
-                                  with_weight_feedback>
-  get_on_device_obj() {
-    return this->linear_scattering_kernels_on_device;
+    this->on_device_obj->weight_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.weight));
+    this->on_device_obj->descendant_internal_state_ind =
+        this->argument_pack.required_descendant_int_props.find_index(
+            this->get_properties_map().at(props.internal_state));
+    this->on_device_obj->descendant_velocity_ind =
+        this->argument_pack.required_descendant_real_props.find_index(
+            this->get_properties_map().at(props.velocity));
+    this->on_device_obj->descendant_weight_ind =
+        this->argument_pack.required_descendant_real_props.find_index(
+            this->get_properties_map().at(props.weight));
   }
 };
 
