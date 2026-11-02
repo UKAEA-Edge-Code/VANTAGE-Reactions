@@ -11,13 +11,13 @@ void linear_reaction_CX_example(NP::ParticleGroupSharedPtr particle_group) {
   // reaction only to those particles with ID = 0, since those are the
   // projectiles
 
-  auto prop_map = get_default_map();
+  auto prop_map = PropertiesMap();
 
   auto spec_id =
       projectile_species.get_id(); // projectile species internal state id = 0
   // The resulting subgroup will have only particles with ID=0
   // using the default properties name for the internal state
-  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto input_subgroup = NP::particle_sub_group(particle_group);
   auto particle_subgroup = particle_sub_group(
       particle_group, [=](auto id) { return id[0] == spec_id; },
       NP::Access::read(

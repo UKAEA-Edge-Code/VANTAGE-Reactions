@@ -1,9 +1,9 @@
 void uniform_velocity_binning_example(
     NP::ParticleGroupSharedPtr particle_group) {
 
-  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto input_subgroup = NP::particle_sub_group(particle_group);
 
-  auto prop_map = get_default_map();
+  auto prop_map = PropertiesMap();
 
   auto velocity_bin =
       uniform_velocity_bin_transform<2 // Velocity space dimensionality

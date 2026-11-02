@@ -8,8 +8,7 @@ TEST(ReactionData, ExtractorData_DefaultOffset) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group<2>(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto weight_extract = ExtractorData<1>(NP::Sym<REAL>("WEIGHT"));
   auto pos_extract = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
@@ -55,8 +54,7 @@ TEST(ReactionData, ExtractorData_Specific1DComponent) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group<3>(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   // FLUID_FLOW_SPEED has values: comp 0 -> 1.0, comp 1 -> 3.0, comp 2 -> 5.0
   auto comp0_extract = ExtractorData<1>(NP::Sym<REAL>("FLUID_FLOW_SPEED"), 0);
@@ -127,8 +125,7 @@ TEST(ReactionData, ExtractorData_MultiComponentOffset) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group<3>(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   // Extract 2 components starting at offset 0 (Vx, Vy) and offset 1 (Vy, Vz)
   auto vel_xy = ExtractorData<2>(NP::Sym<REAL>("VELOCITY"), 0);

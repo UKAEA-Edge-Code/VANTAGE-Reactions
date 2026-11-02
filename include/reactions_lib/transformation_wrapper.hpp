@@ -264,7 +264,7 @@ struct MarkingStrategyBase : MarkingStrategy {
     const auto &underlying = static_cast<MarkingStrategyDerived &>(*this);
     auto device_type = underlying.get_device_data();
 
-    auto marker_subgroup = std::make_shared<NP::ParticleSubGroup>(
+    auto marker_subgroup = NP::particle_sub_group(
         particle_sub_group,
         [=](auto req_reals, auto req_ints) {
           return device_type.marking_condition(req_reals, req_ints);

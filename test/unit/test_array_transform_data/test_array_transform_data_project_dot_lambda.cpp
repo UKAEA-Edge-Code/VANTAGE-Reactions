@@ -8,8 +8,7 @@ TEST(ArrayTransformData, unary_project) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
@@ -59,8 +58,7 @@ TEST(ArrayTransformData, binary_project) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 
@@ -110,8 +108,7 @@ TEST(ArrayTransformData, binary_dot) {
   const int N_total = 100;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto position_data = ExtractorData<2>(NP::Sym<REAL>("POSITION"));
 

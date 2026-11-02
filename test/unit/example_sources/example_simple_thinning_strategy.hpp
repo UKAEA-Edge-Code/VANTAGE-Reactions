@@ -1,9 +1,9 @@
 void simple_thinning_strategy_example(
     NP::ParticleGroupSharedPtr particle_group) {
 
-  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto input_subgroup = NP::particle_sub_group(particle_group);
 
-  auto prop_map = get_default_map();
+  auto prop_map = PropertiesMap();
 
   // Below is a placeholder rng kernel, in practice this would be a uniformly
   // sampled value - here we just use a constant number

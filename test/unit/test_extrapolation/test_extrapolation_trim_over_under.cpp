@@ -89,8 +89,7 @@ TEST(ExtrapolationTest, TRIM_DATA_OVER_UNDER_OVER) {
       NP::Access::write(NP::Sym<INT>("REACTIONS_PANIC_FLAG")))
       ->execute();
 
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto props_extract = extract<ndim>("PROPS");
 

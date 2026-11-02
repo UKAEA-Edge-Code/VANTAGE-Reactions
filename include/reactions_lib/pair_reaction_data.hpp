@@ -104,15 +104,14 @@ struct PairReactionDataBase
    * @param required_real_props_b Properties<REAL> object containing information
    * regarding the required REAL-based properties of the second particle for the
    * reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  PairReactionDataBase(
-      Properties<INT> required_int_props_a,
-      Properties<REAL> required_real_props_a,
-      Properties<INT> required_int_props_b,
-      Properties<REAL> required_real_props_b,
-      std::map<int, std::string> properties_map = get_default_map())
+  PairReactionDataBase(Properties<INT> required_int_props_a,
+                       Properties<REAL> required_real_props_a,
+                       Properties<INT> required_int_props_b,
+                       Properties<REAL> required_real_props_b,
+                       const PropertiesMap properties_map = PropertiesMap())
       : AbstractReactionData<ON_DEVICE_T, PairReactionDataArgumentPack, dim,
                              RNG_KERNEL_T, input_dim>(
             PairReactionDataArgumentPack(
@@ -127,11 +126,10 @@ struct PairReactionDataBase
    * @brief Constructor for PairReactionDataBase that sets no required
    * properties.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  PairReactionDataBase(
-      std::map<int, std::string> properties_map = get_default_map())
+  PairReactionDataBase(const PropertiesMap properties_map = PropertiesMap())
       : PairReactionDataBase(Properties<INT>(), Properties<REAL>(),
                              Properties<INT>(), Properties<REAL>(),
                              properties_map) {}
@@ -143,12 +141,11 @@ struct PairReactionDataBase
    *
    * @param required_int_props Properties<INT> object containing information
    * regarding the required INT-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  PairReactionDataBase(
-      Properties<INT> required_int_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  PairReactionDataBase(Properties<INT> required_int_props,
+                       const PropertiesMap properties_map = PropertiesMap())
       : PairReactionDataBase(required_int_props, Properties<REAL>(),
                              required_int_props, Properties<REAL>(),
                              properties_map) {}
@@ -160,12 +157,11 @@ struct PairReactionDataBase
    *
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  PairReactionDataBase(
-      Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  PairReactionDataBase(Properties<REAL> required_real_props,
+                       const PropertiesMap properties_map = PropertiesMap())
       : PairReactionDataBase(Properties<INT>(), required_real_props,
                              Properties<INT>(), required_real_props,
                              properties_map) {}
@@ -179,12 +175,12 @@ struct PairReactionDataBase
    * regarding the required INT-based properties for the reaction data.
    * @param required_real_props Properties<REAL> object containing information
    * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  PairReactionDataBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      std::map<int, std::string> properties_map = get_default_map())
+  PairReactionDataBase(Properties<INT> required_int_props,
+                       Properties<REAL> required_real_props,
+                       const PropertiesMap properties_map = PropertiesMap())
       : PairReactionDataBase(required_int_props, required_real_props,
                              required_int_props, required_real_props,
                              properties_map) {}

@@ -232,7 +232,7 @@ struct TrimEvalData
                const std::vector<size_t> &dims_vec,
                const std::vector<size_t> &trim_dims_vec,
                NP::SYCLTargetSharedPtr sycl_target,
-               std::map<int, std::string> properties_map = get_default_map())
+               const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase<TrimEvalDataOnDevice<input_ndim>>(
             Properties<INT>(required_simple_int_props), properties_map) {
 
@@ -289,7 +289,7 @@ struct TrimEvalData
    */
   TrimEvalData(const GridDescriptor<interp_ndim, output_ndim> &grid_descriptor,
                NP::SYCLTargetSharedPtr sycl_target,
-               std::map<int, std::string> properties_map = get_default_map())
+               const PropertiesMap properties_map = PropertiesMap())
       : TrimEvalData(
             grid_descriptor.get_flat_grid(), grid_descriptor.get_flat_coords(),
             grid_descriptor.get_interp_dims(),

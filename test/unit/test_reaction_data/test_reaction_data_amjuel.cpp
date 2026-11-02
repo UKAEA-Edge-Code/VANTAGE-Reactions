@@ -9,8 +9,7 @@ TEST(ReactionData, AMJUEL2DData) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto amjuel_data = AMJUEL2DData<2, 2>(
       3e12, 1.0, 1.0, 1.0,
@@ -49,8 +48,7 @@ TEST(ReactionData, AMJUEL2DDataH3) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   REAL mass_amu = 1.0;
   REAL vel_norm = std::sqrt(
@@ -101,8 +99,7 @@ TEST(ReactionData, AMJUEL2DData_coronal) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   // Manipulating the normalisation quantities to trigger the coronal limit
   // calculation

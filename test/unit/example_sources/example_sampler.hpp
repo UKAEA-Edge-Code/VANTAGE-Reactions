@@ -2,7 +2,7 @@ void sampler_example() {
 
   // In case we wish to remap the default panic flag - used in case the sampling
   // fails
-  auto used_map = get_default_map();
+  auto used_map = PropertiesMap();
 
   // The sampler needs a NESO-Particles rng_kernel
   //

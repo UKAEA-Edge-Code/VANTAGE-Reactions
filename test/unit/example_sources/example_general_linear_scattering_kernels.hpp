@@ -28,10 +28,10 @@ void general_linear_scattering_kernels_example(
 
   auto scattering_kernel =
       LinearScatteringKernels<2,   // velocity dat dimensionality
-                              true // Whether sources should be written to
-                                   // (remapping not required if false)
-                              >(projectile_species,      // Scattered species
-                                properties_map.get_map() // Our remapped sources
+                              true, // Whether sources should be written to
+                              true  // Whether parent weight is reduced
+                              >(projectile_species, // Scattered species
+                                properties_map      // Our remapped sources
       );
 
   // The above can then be used to creat a specular reflection reaction

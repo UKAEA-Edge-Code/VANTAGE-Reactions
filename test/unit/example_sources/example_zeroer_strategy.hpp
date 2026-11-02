@@ -1,6 +1,6 @@
 void zeroer_strategy_example(NP::ParticleGroupSharedPtr particle_group) {
 
-  auto input_subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto input_subgroup = NP::particle_sub_group(particle_group);
 
   // A ParticleDatZeroer zeroes INT or REAL particle dats and is
   // constructed by passing a vestor of strings with the dat names

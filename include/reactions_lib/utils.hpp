@@ -3,7 +3,9 @@
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <memory>
+#include <string>
 
 #include <numeric>
 #include <type_traits>
@@ -339,6 +341,31 @@ inline size_t bin_uniform_symmetric_guard_1d(const REAL &inverse_2L,
       NP::Kernel::min(sycl::ceil((position * inverse_2L + 0.5) * n_cells),
                       n_cells + 1),
       0);
+}
+
+/**
+ * @brief Validate that an RNG kernel provides at least the required number of
+ * components.
+ *
+ * The RNG kernel type is deduced from the argument (the non-type template
+ * parameter is given explicitly), so callers only need to supply the required
+ * component count.
+ *
+ * @tparam RequiredComponents Minimum number of components required.
+ * @tparam RNG_TYPE Random number generator kernel type (deduced).
+ * @param rng_kernel Shared pointer to the RNG kernel to validate.
+ */
+template <std::size_t RequiredComponents, typename RNG_TYPE>
+void validate_required_kernel_components(
+    const std::shared_ptr<RNG_TYPE> &rng_kernel) {
+  static_assert(!std::is_same_v<RNG_TYPE, NP::NullKernelRNG<REAL>>,
+                "Sampling requires a non-null RNG kernel type.");
+  const std::string available_components =
+      rng_kernel ? std::to_string(rng_kernel->num_components) : "null";
+  NESOASSERT(rng_kernel && rng_kernel->num_components >= RequiredComponents,
+             "RNG kernel does not provide enough components. Required: " +
+                 std::to_string(RequiredComponents) +
+                 ", provided: " + available_components);
 }
 
 } // namespace VANTAGE::Reactions::utils

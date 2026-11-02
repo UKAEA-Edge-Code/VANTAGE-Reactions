@@ -10,15 +10,14 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
   const int N_total = 1000;
 
   auto particle_group = create_test_particle_group(N_total);
-  auto particle_sub_group =
-      std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto particle_sub_group = NP::particle_sub_group(particle_group);
 
   auto test_data = TestEphemeralVarData();
 
   auto expected_prop_names = std::vector<std::string>{
-      get_default_map().at(default_properties.weight),
-      get_default_map().at(default_properties.boundary_intersection_point),
-      get_default_map().at(default_properties.boundary_intersection_normal)};
+      PropertiesMap().at(default_properties.weight),
+      PropertiesMap().at(default_properties.boundary_intersection_point),
+      PropertiesMap().at(default_properties.boundary_intersection_normal)};
 
   auto test_prop_names =
       test_data.get_arg_pack().required_real_props.to_string_vector();

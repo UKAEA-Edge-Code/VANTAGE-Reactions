@@ -5,12 +5,14 @@ namespace VANTAGE::Reactions {
 OneWayMaxwellianFluxSampler::OneWayMaxwellianFluxSampler(
     const REAL &norm_ratio,
     std::shared_ptr<NP::HostAtomicBlockKernelRNG<REAL>> rng_kernel,
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : ReactionDataBase<OneWayMaxwellianFluxOnDevice, 3,
                        NP::HostAtomicBlockKernelRNG<REAL>>(
           Properties<INT>(required_simple_int_props),
           Properties<REAL>(required_simple_real_props), properties_map) {
   this->on_device_obj = OneWayMaxwellianFluxOnDevice(norm_ratio);
+  utils::validate_required_kernel_components<required_kernel_components>(
+      rng_kernel);
   this->set_rng_kernel(rng_kernel);
   this->index_on_device_object();
 }

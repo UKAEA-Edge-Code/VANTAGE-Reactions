@@ -12,7 +12,7 @@ TEST(MergeTransformationStrategy, transform_2D) {
 
   auto test_merger = MergeTransformationStrategy<2>();
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 5, 1);
@@ -80,7 +80,7 @@ TEST(MergeTransformationStrategy, transform_zero_momentum_2D) {
   int cell_count = particle_group->domain->mesh->get_cell_count();
 
   auto test_merger = MergeTransformationStrategy<2>();
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 3, 1);
@@ -148,7 +148,7 @@ TEST(MergeTransformationStrategy, transform_3D) {
 
   auto test_merger = MergeTransformationStrategy<3>();
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   auto reduction = std::make_shared<NP::CellDatConst<REAL>>(
       particle_group->sycl_target, cell_count, 7, 1);
@@ -249,7 +249,7 @@ TEST(MergeTransformationStrategy, transform_zero_momentum_3D) {
 
   auto test_merger = MergeTransformationStrategy<3>();
 
-  auto subgroup = std::make_shared<NP::ParticleSubGroup>(particle_group);
+  auto subgroup = NP::particle_sub_group(particle_group);
 
   particle_loop(
       subgroup,

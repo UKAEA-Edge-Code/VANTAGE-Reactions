@@ -7,7 +7,7 @@ ReactionDataStorage::ReactionDataStorage(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     Properties<INT> required_int_props_ephemeral,
     Properties<REAL> required_real_props_ephemeral,
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : required_int_props(
           ArgumentNameSet(required_int_props, properties_map)
               .merge_with(ArgumentNameSet(required_int_props_ephemeral,
@@ -18,29 +18,26 @@ ReactionDataStorage::ReactionDataStorage(
                                           properties_map))),
       properties_map(properties_map) {}
 
-ReactionDataStorage::ReactionDataStorage(
-    std::map<int, std::string> properties_map)
+ReactionDataStorage::ReactionDataStorage(const PropertiesMap properties_map)
     : ReactionDataStorage(Properties<INT>(), Properties<REAL>(),
                           Properties<INT>(), Properties<REAL>(),
                           properties_map) {}
 
-ReactionDataStorage::ReactionDataStorage(
-    Properties<INT> required_int_props,
-    std::map<int, std::string> properties_map)
+ReactionDataStorage::ReactionDataStorage(Properties<INT> required_int_props,
+                                         const PropertiesMap properties_map)
     : ReactionDataStorage(required_int_props, Properties<REAL>(),
                           Properties<INT>(), Properties<REAL>(),
                           properties_map) {}
 
-ReactionDataStorage::ReactionDataStorage(
-    Properties<REAL> required_real_props,
-    std::map<int, std::string> properties_map)
+ReactionDataStorage::ReactionDataStorage(Properties<REAL> required_real_props,
+                                         const PropertiesMap properties_map)
     : ReactionDataStorage(Properties<INT>(), required_real_props,
                           Properties<INT>(), Properties<REAL>(),
                           properties_map) {}
 
-ReactionDataStorage::ReactionDataStorage(
-    Properties<INT> required_int_props, Properties<REAL> required_real_props,
-    std::map<int, std::string> properties_map)
+ReactionDataStorage::ReactionDataStorage(Properties<INT> required_int_props,
+                                         Properties<REAL> required_real_props,
+                                         const PropertiesMap properties_map)
     : ReactionDataStorage(required_int_props, required_real_props,
                           Properties<INT>(), Properties<REAL>(),
                           properties_map) {}
@@ -73,8 +70,7 @@ std::vector<NP::Sym<REAL>> ReactionDataStorage::get_required_real_sym_vector() {
   return this->required_real_props.to_sym_vector();
 }
 
-const std::map<int, std::string> &
-ReactionDataStorage::get_properties_map() const {
+const PropertiesMap &ReactionDataStorage::get_properties_map() const {
   return this->properties_map;
 }
 
