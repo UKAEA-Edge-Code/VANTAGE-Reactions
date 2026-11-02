@@ -58,15 +58,44 @@ Constructor-only indexing is insufficient when the object is later composed.
 Reaction kernels
 ================ 
 
-Developing new kernels follows a similar process to the construction of new reaction data:
+Developing new single-particle reaction kernels follows a similar host/device
+pattern to reaction data (see :code:`reactions_lib/reaction_kernels.hpp` and
+:code:`reactions_lib/reaction_kernels_abstract.hpp`):
 
-#. The device type should be stored on the host type and constructed in the host constructor in order to hide it from users 
-#. Required properties work similarly to reaction data, but descendant particle properties are also required
-#. Any required properties must be associated with public indices on the device type in the host constructor, as with reaction data 
-#. A device object getter must be defined 
-#. If descendant particles are produced, a call to :code:`set_descendant_matrix_spec<ndim_velocity,num_products_per_parent>()` is required. Here the template arguments are the velocity 
-   space dimension and the number of products in the reaction 
-#. When defining kernels that use data produced in :code:`DataCalculator` objects, the required data dimensionality must be set 
+#. Derive the device type from :code:`ReactionKernelsBaseOnDevice<N>`, where
+   :code:`N` is the number of products per parent particle. Inherited operation
+   hooks are no-ops; override only the operations needed.
+#. Derive the host type from :code:`ReactionKernelsBase<Device>` and pass the
+   required input (and optional ephemeral/descendant) :class:`Properties`
+   containers, prerequisite data dimensionality, and property map to the base
+   constructor.
+#. Initialize :code:`this->on_device_obj` and any non-index parameters (such as
+   species masses) in the host constructor, then call
+   :code:`index_on_device_object()`.
+#. Implement :code:`index_on_device_object()` using
+   :code:`this->argument_pack` and :code:`this->get_properties_map()` (using
+   :code:`species_property(...)` for species-qualified names) to populate the
+   public property indices on the device object.
+#. The base class owns the device object and builds the descendant
+   :class:`ProductMatrixSpec` automatically, exposing them via
+   :code:`get_on_device_obj()` and :code:`get_descendant_matrix_spec()`.
+
+All four device operations use the bundled accessor signature::
+
+   void scattering_kernel(REAL &modified_weight,
+                          SingleReactionKernelAccessors &accessors,
+                          const std::array<int, N> &out_states,
+                          double dt) const;
+
+The same signature applies to :code:`weight_kernel`,
+:code:`transformation_kernel`, and :code:`feedback_kernel`. The
+:code:`SingleReactionKernelAccessors` bundle contains :code:`index`,
+:code:`req_int_props`, :code:`req_real_props`, :code:`descendant_products`, and
+:code:`pre_req_data`. Prerequisite rows are indexed with
+:code:`accessors.index.get_loop_linear_index()`. During reaction application, the
+reaction associates parents with products and then invokes
+:code:`scattering_kernel`, :code:`weight_kernel`,
+:code:`transformation_kernel`, and :code:`feedback_kernel` in order.
 
 Below is a version of the charge exchange kernels with comments explaining the above points as well as othern nuances. 
 
