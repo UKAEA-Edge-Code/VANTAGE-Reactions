@@ -216,6 +216,17 @@ int main() {
     return 1;
   }
 
+  auto pair_kernel_pack = PairReactionKernelArgumentPack(
+      Properties<INT>(std::array<int, 1>{default_properties.panic}),
+      Properties<REAL>(std::array<int, 1>{default_properties.weight}),
+      Properties<INT>(std::array<int, 1>{default_properties.internal_state}),
+      Properties<REAL>(std::array<int, 1>{default_properties.velocity}));
+  if (pair_kernel_pack.required_real_props_a.find_index("WEIGHT") != 0 ||
+      pair_kernel_pack.required_real_props_b.find_index("VELOCITY") != 0) {
+    std::cerr << "consumer_smoke: pair kernel pack construction failed\n";
+    return 1;
+  }
+
   // --- CollisionCellManager member-function template instantiations ---------
   void (CollisionCellManager::*m0)(NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>,
                                    int, NP::NDLocalArraySharedPtr<REAL, 2> &) =

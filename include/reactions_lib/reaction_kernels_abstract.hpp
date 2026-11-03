@@ -2,7 +2,6 @@
 #define REACTIONS_REACTION_KERNELS_ABSTRACT_H
 
 #include "../reactions/neso_test_assert.hpp"
-#include "accessor_pack.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include <array>
 #include <memory>
@@ -27,13 +26,16 @@ namespace VANTAGE::Reactions {
  * is present.
  * @param properties_map Map used to resolve the velocity name, matching the map
  * used to construct the descendant sets.
+ * @param num_products Number of products for this channel; nonpositive values
+ * return an empty schema without warning.
  * @return A new schema whose per-type field indices match the name sets.
  */
 std::shared_ptr<NP::ProductMatrixSpec> build_kernel_product_schema(
     const ArgumentNameSet<INT> &required_descendant_int_props,
     const ArgumentNameSet<REAL> &required_descendant_real_props,
     int ndim_velocity = 2,
-    const PropertiesMap &properties_map = PropertiesMap());
+    const PropertiesMap &properties_map = PropertiesMap(),
+    INT num_products = 1);
 
 /**
  * @brief Optional no-op operations for bundled-accessor device kernels.
@@ -43,7 +45,6 @@ std::shared_ptr<NP::ProductMatrixSpec> build_kernel_product_schema(
 template <typename ACCESSOR_PACK_T, int num_products>
 struct AbstractReactionKernelsOnDevice {
   static_assert(num_products >= 0, "Kernel product count must be nonnegative");
-  using ACCESSOR_PACK_TYPE = ACCESSOR_PACK_T;
   static constexpr int NUM_PRODUCTS = num_products;
 
   AbstractReactionKernelsOnDevice() = default;
@@ -51,7 +52,7 @@ struct AbstractReactionKernelsOnDevice {
   /**
    * @brief Apply scattering; inherited implementation does nothing.
    * @param modified_weight Shared mutable reacted weight.
-   * @param accessors Non-owning loop accessors.
+   * @param accessors Bundled loop accessors.
    * @param out_states Explicit descendant species IDs.
    * @param dt Current effective timestep.
    */
@@ -108,17 +109,6 @@ struct has_kernel_operations<DEVICE, ACCESSORS,
 void validate_kernel_pre_req_ndims(INT pre_req_ndims);
 } // namespace detail
 
-/// \cond
-/**
- * @brief Whether all operations have the exact const bundled-hook signatures.
- * @tparam DEVICE Device kernel type, including its fixed NUM_PRODUCTS extent.
- * @tparam PACK Host argument-pack type.
- */
-template <typename DEVICE, typename PACK>
-inline constexpr bool is_reaction_kernel_device_v =
-    detail::has_kernel_operations<DEVICE, accessor_pack_for_t<PACK>>::value;
-/// \endcond
-
 /**
  * @brief Base host class for reaction kernels.
  * @tparam ON_DEVICE_T Device type with bundled operations and NUM_PRODUCTS.
@@ -132,16 +122,8 @@ struct AbstractReactionKernels {
   using ON_DEVICE_OBJ_TYPE = ON_DEVICE_T;
   using ARGUMENT_PACK_TYPE = ARGUMENT_PACK_T;
   static constexpr int NUM_PRODUCTS = ON_DEVICE_T::NUM_PRODUCTS;
+  static_assert(NUM_PRODUCTS >= 0, "Kernel product count must be nonnegative");
   virtual ~AbstractReactionKernels() = default;
-
-  /** @brief Check device signatures at compile time. @return True if valid. */
-  static constexpr bool validate_on_device_type() {
-    static_assert(NUM_PRODUCTS >= 0,
-                  "Kernel product count must be nonnegative");
-    static_assert(is_reaction_kernel_device_v<ON_DEVICE_T, ARGUMENT_PACK_T>,
-                  "Device kernel operation signature mismatch");
-    return true;
-  }
 
   /** @brief Get the argument pack. @return Read-only argument pack reference.
    */
@@ -181,7 +163,6 @@ protected:
                           const PropertiesMap &properties_map = PropertiesMap())
       : argument_pack(std::move(argument_pack)), properties_map(properties_map),
         pre_req_ndims(pre_req_ndims) {
-    static_assert(validate_on_device_type());
     detail::validate_kernel_pre_req_ndims(pre_req_ndims);
   }
 

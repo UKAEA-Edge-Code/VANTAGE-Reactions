@@ -5,12 +5,20 @@ namespace VANTAGE::Reactions {
 std::shared_ptr<NP::ProductMatrixSpec> build_kernel_product_schema(
     const ArgumentNameSet<INT> &required_descendant_int_props,
     const ArgumentNameSet<REAL> &required_descendant_real_props,
-    int ndim_velocity, const PropertiesMap &properties_map) {
+    int ndim_velocity, const PropertiesMap &properties_map, INT num_products) {
+  if (num_products <= 0) {
+    return NP::product_matrix_spec(NP::ParticleSpec());
+  }
+  const auto int_names = required_descendant_int_props.to_string_vector();
+  const auto real_names = required_descendant_real_props.to_string_vector();
+  NESOWARN(!int_names.empty() || !real_names.empty(),
+           "The number of products per parent is >= 1 but no required "
+           "descendant properties are set. This will result in an empty "
+           "descendant_matrix_spec.");
   NP::ParticleSpec particle_spec;
-  for (const auto &name : required_descendant_int_props.to_string_vector()) {
+  for (const auto &name : int_names) {
     particle_spec.push(NP::ParticleProp<INT>(NP::Sym<INT>(name), 1));
   }
-  const auto real_names = required_descendant_real_props.to_string_vector();
   if (!real_names.empty()) {
     const auto prop_map = properties_map.get_map();
     auto vel_it = prop_map.find(default_properties.velocity);

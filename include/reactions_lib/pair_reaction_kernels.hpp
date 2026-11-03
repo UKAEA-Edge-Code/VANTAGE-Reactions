@@ -1,470 +1,349 @@
 #ifndef REACTIONS_PAIR_REACTION_KERNELS_H
 #define REACTIONS_PAIR_REACTION_KERNELS_H
-#include "particle_properties_map.hpp"
-#include "reaction_kernel_pre_reqs.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
+
+#include "reaction_kernels_abstract.hpp"
 
 namespace VANTAGE::Reactions {
 
 /**
- * @brief Base pair reaction kernels object.
+ * @brief Bundles the accessors passed into a ParticlePairLoop for pair reaction
+ * kernels.
  */
-struct PairReactionKernelsBase {
+struct PairReactionKernelAccessors {
+  NP::Access::PairLoopIndex::Read index_a;
+  NP::Access::PairLoopIndex::Read index_b;
+  NP::Access::PairLoopIndex::Read pair_index;
+  NP::Access::SymVector::Write<INT> req_int_props_a;
+  NP::Access::SymVector::Write<REAL> req_real_props_a;
+  NP::Access::SymVector::Write<INT> req_int_props_b;
+  NP::Access::SymVector::Write<REAL> req_real_props_b;
+  NP::Access::DescendantProducts::Write descendant_products_a;
+  NP::Access::DescendantProducts::Write descendant_products_b;
+  NP::Access::NDLocalArray::Read<REAL, 2> pre_req_data;
+};
+
+/**
+ * @brief Bundles the host-side A/B input and descendant property requirements
+ * for pair reaction kernels.
+ */
+struct PairReactionKernelArgumentPack {
+  ArgumentNameSet<INT> required_int_props_a;
+  ArgumentNameSet<REAL> required_real_props_a;
+  ArgumentNameSet<INT> required_int_props_b;
+  ArgumentNameSet<REAL> required_real_props_b;
+  ArgumentNameSet<INT> required_descendant_int_props_a;
+  ArgumentNameSet<REAL> required_descendant_real_props_a;
+  ArgumentNameSet<INT> required_descendant_int_props_b;
+  ArgumentNameSet<REAL> required_descendant_real_props_b;
+
+  PairReactionKernelArgumentPack() = default;
 
   /**
-   * @brief Constructor for PairReactionKernelsBase.
+   * @brief Build a pack from A/B input and descendant property requirements.
    *
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
-   * required by a reaction kernel (this in turn matches the number of
-   * ReactionData-derived objects that must be passed to the constructor of a
-   * PairDataCalculator object when this kernel and the PairDataCalculator
-   * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * @param required_int_props_a Integer input properties for particle A.
+   * @param required_real_props_a Real input properties for particle A.
+   * @param required_int_props_b Integer input properties for particle B.
+   * @param required_real_props_b Real input properties for particle B.
+   * @param required_descendant_int_props_a Explicitly written integer
+   * descendant properties for channel A.
+   * @param required_descendant_real_props_a Explicitly written real descendant
+   * properties for channel A.
+   * @param required_descendant_int_props_b Explicitly written integer
+   * descendant properties for channel B.
+   * @param required_descendant_real_props_b Explicitly written real descendant
+   * properties for channel B.
+   * @param properties_map Property-name mapping used for all requirements.
+   */
+  PairReactionKernelArgumentPack(
+      Properties<INT> required_int_props_a,
+      Properties<REAL> required_real_props_a,
+      Properties<INT> required_int_props_b,
+      Properties<REAL> required_real_props_b,
+      Properties<INT> required_descendant_int_props_a,
+      Properties<REAL> required_descendant_real_props_a,
+      Properties<INT> required_descendant_int_props_b,
+      Properties<REAL> required_descendant_real_props_b,
+      const PropertiesMap &properties_map = PropertiesMap());
+
+  /**
+   * \overload
+   * @brief Build an input-only pack from A/B property requirements.
+   *
+   * @param required_int_props_a Integer input properties for particle A.
+   * @param required_real_props_a Real input properties for particle A.
+   * @param required_int_props_b Integer input properties for particle B.
+   * @param required_real_props_b Real input properties for particle B.
+   * @param properties_map Property-name mapping used for all requirements.
+   */
+  PairReactionKernelArgumentPack(
+      Properties<INT> required_int_props_a,
+      Properties<REAL> required_real_props_a,
+      Properties<INT> required_int_props_b,
+      Properties<REAL> required_real_props_b,
+      const PropertiesMap &properties_map = PropertiesMap());
+};
+
+/// \cond
+namespace detail {
+template <typename DEVICE, int N>
+using kernel_parent_signature = void (DEVICE::*)(
+    PairReactionKernelAccessors &, const std::array<int, N> &) const;
+
+template <typename DEVICE, typename = void>
+struct has_parent_kernel : std::false_type {};
+
+template <typename DEVICE>
+struct has_parent_kernel<
+    DEVICE, std::void_t<decltype(static_cast<kernel_parent_signature<
+                                     DEVICE, DEVICE::NUM_PRODUCTS>>(
+                &DEVICE::parent_kernel))>> : std::true_type {};
+
+void validate_kernel_product_counts(INT extent, INT count_a, INT count_b);
+} // namespace detail
+
+template <typename DEVICE>
+inline constexpr bool is_pair_reaction_kernel_device_v = std::conjunction_v<
+    detail::has_kernel_operations<DEVICE, PairReactionKernelAccessors>,
+    detail::has_parent_kernel<DEVICE>>;
+/// \endcond
+
+/**
+ * @brief Base pair reaction kernels object to be used on SYCL devices.
+ *
+ * @tparam num_products Fixed total output-state extent across A and B.
+ */
+template <int num_products>
+struct PairReactionKernelsBaseOnDevice
+    : AbstractReactionKernelsOnDevice<PairReactionKernelAccessors,
+                                      num_products> {
+  PairReactionKernelsBaseOnDevice() = default;
+
+  /**
+   * @brief Associate descendant products with parents; default does nothing.
+   *
+   * @param accessors Bundled pair-loop accessors.
+   * @param out_states Explicit descendant species IDs.
+   */
+  void parent_kernel(PairReactionKernelAccessors &accessors,
+                     const std::array<int, num_products> &out_states) const {}
+};
+
+/**
+ * @brief Base host class for pair reaction kernels.
+ *
+ * Constructors without A/B product counts are only for zero-product kernels.
+ * Inherited-only products require explicit counts and empty descendant sets.
+ *
+ * @tparam ON_DEVICE_T Type of the on-device kernel object.
+ */
+template <typename ON_DEVICE_T>
+struct PairReactionKernelsBase
+    : AbstractReactionKernels<ON_DEVICE_T, PairReactionKernelArgumentPack> {
+  using Base =
+      AbstractReactionKernels<ON_DEVICE_T, PairReactionKernelArgumentPack>;
+
+  /** @brief Check device signatures at compile time. @return True if valid. */
+  static constexpr bool validate_on_device_type() {
+    static_assert(is_pair_reaction_kernel_device_v<ON_DEVICE_T>,
+                  "Device kernel operation signature mismatch");
+    return true;
+  }
+
+  /**
+   * @brief Construct with distinct A/B input and descendant properties.
+   */
+  PairReactionKernelsBase(Properties<INT> required_int_props_a,
+                          Properties<REAL> required_real_props_a,
+                          Properties<INT> required_int_props_b,
+                          Properties<REAL> required_real_props_b,
+                          Properties<INT> required_descendant_int_props_a,
+                          Properties<REAL> required_descendant_real_props_a,
+                          Properties<INT> required_descendant_int_props_b,
+                          Properties<REAL> required_descendant_real_props_b,
+                          INT pre_req_ndims, int ndim_velocity,
+                          INT num_products_a, INT num_products_b,
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(PairReactionKernelArgumentPack(
+                                    std::move(required_int_props_a),
+                                    std::move(required_real_props_a),
+                                    std::move(required_int_props_b),
+                                    std::move(required_real_props_b),
+                                    std::move(required_descendant_int_props_a),
+                                    std::move(required_descendant_real_props_a),
+                                    std::move(required_descendant_int_props_b),
+                                    std::move(required_descendant_real_props_b),
+                                    properties_map),
+                                pre_req_ndims, ndim_velocity, num_products_a,
+                                num_products_b, properties_map) {}
+
+  /**
+   * \overload
+   * @brief Construct with symmetric A/B input and descendant properties.
+   */
+  PairReactionKernelsBase(Properties<INT> required_int_props,
+                          Properties<REAL> required_real_props,
+                          Properties<INT> required_descendant_int_props,
+                          Properties<REAL> required_descendant_real_props,
+                          INT pre_req_ndims, int ndim_velocity,
+                          INT num_products_a, INT num_products_b,
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(
+            required_int_props, required_real_props, required_int_props,
+            required_real_props, required_descendant_int_props,
+            required_descendant_real_props, required_descendant_int_props,
+            required_descendant_real_props, pre_req_ndims, ndim_velocity,
+            num_products_a, num_products_b, properties_map) {}
+
+  /**
+   * \overload
+   * @brief Construct with symmetric A/B real input properties and descendant
+   * properties.
+   */
+  PairReactionKernelsBase(Properties<REAL> required_real_props,
+                          Properties<INT> required_descendant_int_props,
+                          Properties<REAL> required_descendant_real_props,
+                          INT pre_req_ndims, int ndim_velocity,
+                          INT num_products_a, INT num_products_b,
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(
+            Properties<INT>(), std::move(required_real_props),
+            std::move(required_descendant_int_props),
+            std::move(required_descendant_real_props), pre_req_ndims,
+            ndim_velocity, num_products_a, num_products_b, properties_map) {}
+
+  /**
+   * \overload
+   * @brief Construct with distinct A/B input properties (no explicitly written
+   * descendants).
    */
   PairReactionKernelsBase(Properties<INT> req_int_props_a,
                           Properties<REAL> req_real_props_a,
                           Properties<INT> req_int_props_b,
                           Properties<REAL> req_real_props_b,
                           INT pre_req_ndims = 0,
-                          const PropertiesMap properties_map = PropertiesMap());
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(
+            PairReactionKernelArgumentPack(
+                std::move(req_int_props_a), std::move(req_real_props_a),
+                std::move(req_int_props_b), std::move(req_real_props_b),
+                properties_map),
+            pre_req_ndims, 2, 0, 0, properties_map) {
+    static_assert(
+        Base::NUM_PRODUCTS == 0,
+        "Pair kernels with products require explicit A/B counts; use a "
+        "descendant-properties constructor.");
+  }
 
   /**
    * \overload
-   * @brief Constructor for PairReactionKernelsBase that by default sets no
-   * required props.
-   *
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * @brief Construct with no required properties.
    */
-  PairReactionKernelsBase(const PropertiesMap properties_map = PropertiesMap());
+  PairReactionKernelsBase(const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
+                                Properties<INT>(), Properties<REAL>(), 0,
+                                properties_map) {}
 
   /**
    * \overload
-   * @brief Constructor for PairReactionKernelsBase that by default only sets
-   * required_int_props and sets them the same for both particles.
-   *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction kernel.
-   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
-   * required by a reaction kernel (this in turn matches the number of
-   * ReactionData-derived objects that must be passed to the constructor of a
-   * PairDataCalculator object when this kernel and the PairDataCalculator
-   * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * @brief Construct with symmetric A/B integer input properties.
    */
   PairReactionKernelsBase(Properties<INT> required_int_props,
                           INT pre_req_ndims = 0,
-                          const PropertiesMap properties_map = PropertiesMap());
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(required_int_props, Properties<REAL>(),
+                                required_int_props, Properties<REAL>(),
+                                pre_req_ndims, properties_map) {}
 
   /**
    * \overload
-   * @brief Constructor for PairReactionKernelsBase that by default only sets
-   * required_real_props and sets them the same for both particles.
-   *
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction kernel.
-   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
-   * required by a reaction kernel (this in turn matches the number of
-   * ReactionData-derived objects that must be passed to the constructor of a
-   * PairDataCalculator object when this kernel and the PairDataCalculator
-   * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * @brief Construct with symmetric A/B real input properties.
    */
   PairReactionKernelsBase(Properties<REAL> required_real_props,
                           INT pre_req_ndims = 0,
-                          const PropertiesMap properties_map = PropertiesMap());
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(Properties<INT>(), required_real_props,
+                                Properties<INT>(), required_real_props,
+                                pre_req_ndims, properties_map) {}
 
   /**
    * \overload
-   * @brief Constructor for PairReactionKernelsBase that sets the same required
-   * properties for both particles.
-   *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction kernel.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction kernel.
-   * @param pre_req_ndims (Optional) Integer defining the number of dimensions
-   * required by a reaction kernel (this in turn matches the number of
-   * ReactionData-derived objects that must be passed to the constructor of a
-   * PairDataCalculator object when this kernel and the PairDataCalculator
-   * object are passed to corresponding reaction object).
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names (in get_required_real_props(...) and
-   * get_required_int_props(...)).
+   * @brief Construct with symmetric A/B integer and real input properties.
    */
   PairReactionKernelsBase(Properties<INT> required_int_props,
                           Properties<REAL> required_real_props,
                           INT pre_req_ndims = 0,
-                          const PropertiesMap properties_map = PropertiesMap());
+                          const PropertiesMap &properties_map = PropertiesMap())
+      : PairReactionKernelsBase(required_int_props, required_real_props,
+                                required_int_props, required_real_props,
+                                pre_req_ndims, properties_map) {}
 
-  virtual ~PairReactionKernelsBase() = default;
+  /** @brief Get the fixed total product count. @return Device output-state
+   * extent. */
+  INT get_num_products() const { return this->NUM_PRODUCTS; }
 
-  /**
-   * @brief Return all required integer property names for the first particle
-   *
-   */
-  std::vector<std::string> get_required_int_props_a();
+  /** @brief Get the fixed channel A product count. @return Number of A
+   * products. */
+  INT get_num_products_a() const { return this->num_products_a; }
 
-  /**
-   * @brief Return all required integer property names for the second particle
-   *
-   */
-  std::vector<std::string> get_required_int_props_b();
-  /**
-   * @brief Return all required real property names for the first particle
-   *
-   */
-  std::vector<std::string> get_required_real_props_a();
+  /** @brief Get the fixed channel B product count. @return Number of B
+   * products. */
+  INT get_num_products_b() const { return this->num_products_b; }
 
-  /**
-   * @brief Return all required real property names for the second particle
-   *
-   */
-  std::vector<std::string> get_required_real_props_b();
-
-  const Properties<INT> &get_required_descendant_int_props_a();
-
-  const Properties<REAL> &get_required_descendant_real_props_a();
-
-  const Properties<INT> &get_required_descendant_int_props_b();
-
-  const Properties<REAL> &get_required_descendant_real_props_b();
-  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_a();
-
-  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_b();
-  const INT &get_pre_ndims() const;
-  const INT &get_num_products_a() const;
-  const INT &get_num_products_b() const;
-
-protected:
-  void set_required_descendant_int_props_a(
-      const Properties<INT> &required_descendant_int_props);
-
-  void set_required_descendant_real_props_a(
-      const Properties<REAL> &required_descendant_real_props);
-
-  void set_required_descendant_int_props_b(
-      const Properties<INT> &required_descendant_int_props);
-
-  void set_required_descendant_real_props_b(
-      const Properties<REAL> &required_descendant_real_props);
-
-  template <int ndim_velocity = 2, int num_products_per_parent = 0>
-  void set_descendant_matrix_spec_a() {
-    this->num_products_a = num_products_per_parent;
-    if constexpr (num_products_per_parent < 1) {
-      return;
-    } else {
-      NESOWARN(
-          ((this->required_descendant_int_props_a.get_props().size() > 0) ||
-           (this->required_descendant_real_props_a.get_props().size() > 0)),
-          "The number of products per parent is >= 1 but no required "
-          "descendant properties are set. This will result in an empty "
-          "descendant_matrix_spec.")
-
-      auto descendant_particles_spec = NP::ParticleSpec();
-
-      for (auto prop : this->required_descendant_int_props_a.get_props()) {
-        auto descendant_prop = NP::ParticleProp<INT>(
-            NP::Sym<INT>(this->properties_map.at(prop)), 1);
-        descendant_particles_spec.push(descendant_prop);
-      }
-
-      for (auto prop : this->required_descendant_real_props_a.get_props()) {
-        if (prop == default_properties.velocity) {
-          auto descendant_prop = NP::ParticleProp<REAL>(
-              NP::Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
-          descendant_particles_spec.push(descendant_prop);
-        } else {
-          auto descendant_prop = NP::ParticleProp<REAL>(
-              NP::Sym<REAL>(this->properties_map.at(prop)), 1);
-          descendant_particles_spec.push(descendant_prop);
-        }
-      }
-
-      this->descendant_matrix_spec_a =
-          NP::product_matrix_spec(descendant_particles_spec);
-    }
+  /** @brief Copy the channel A product schema. @return Independent mutable NESO
+   * schema. */
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_a() const {
+    return std::make_shared<NP::ProductMatrixSpec>(
+        *this->descendant_matrix_spec_a);
   }
 
-  template <int ndim_velocity = 2, int num_products_per_parent = 0>
-  void set_descendant_matrix_spec_b() {
-    this->num_products_b = num_products_per_parent;
-    if constexpr (num_products_per_parent < 1) {
-      return;
-    } else {
-      NESOWARN(
-          ((this->required_descendant_int_props_b.get_props().size() > 0) ||
-           (this->required_descendant_real_props_b.get_props().size() > 0)),
-          "The number of products per parent is >= 1 but no required "
-          "descendant properties are set. This will result in an empty "
-          "descendant_matrix_spec.")
-
-      auto descendant_particles_spec = NP::ParticleSpec();
-
-      for (auto prop : this->required_descendant_int_props_b.get_props()) {
-        auto descendant_prop = NP::ParticleProp<INT>(
-            NP::Sym<INT>(this->properties_map.at(prop)), 1);
-        descendant_particles_spec.push(descendant_prop);
-      }
-
-      for (auto prop : this->required_descendant_real_props_b.get_props()) {
-        if (prop == default_properties.velocity) {
-          auto descendant_prop = NP::ParticleProp<REAL>(
-              NP::Sym<REAL>(this->properties_map.at(prop)), ndim_velocity);
-          descendant_particles_spec.push(descendant_prop);
-        } else {
-          auto descendant_prop = NP::ParticleProp<REAL>(
-              NP::Sym<REAL>(this->properties_map.at(prop)), 1);
-          descendant_particles_spec.push(descendant_prop);
-        }
-      }
-
-      this->descendant_matrix_spec_b =
-          NP::product_matrix_spec(descendant_particles_spec);
-    }
+  /** @brief Copy the channel B product schema. @return Independent mutable NESO
+   * schema. */
+  std::shared_ptr<NP::ProductMatrixSpec> get_descendant_matrix_spec_b() const {
+    return std::make_shared<NP::ProductMatrixSpec>(
+        *this->descendant_matrix_spec_b);
   }
-  Properties<INT> required_int_props_a;
-  Properties<REAL> required_real_props_a;
-  Properties<INT> required_int_props_b;
-  Properties<REAL> required_real_props_b;
 
-  Properties<INT> required_descendant_int_props_a;
-  Properties<REAL> required_descendant_real_props_a;
+private:
+  PairReactionKernelsBase(PairReactionKernelArgumentPack argument_pack,
+                          INT pre_req_ndims, int ndim_velocity,
+                          INT num_products_a, INT num_products_b,
+                          const PropertiesMap &properties_map)
+      : Base(std::move(argument_pack), pre_req_ndims, properties_map),
+        num_products_a(num_products_a), num_products_b(num_products_b) {
+    static_assert(validate_on_device_type());
+    detail::validate_kernel_product_counts(this->NUM_PRODUCTS, num_products_a,
+                                           num_products_b);
+    this->descendant_matrix_spec_a = build_kernel_product_schema(
+        this->argument_pack.required_descendant_int_props_a,
+        this->argument_pack.required_descendant_real_props_a, ndim_velocity,
+        this->get_properties_map(), num_products_a);
+    this->descendant_matrix_spec_b = build_kernel_product_schema(
+        this->argument_pack.required_descendant_int_props_b,
+        this->argument_pack.required_descendant_real_props_b, ndim_velocity,
+        this->get_properties_map(), num_products_b);
+  }
 
-  Properties<INT> required_descendant_int_props_b;
-  Properties<REAL> required_descendant_real_props_b;
-
-  std::shared_ptr<NP::ProductMatrixSpec> descendant_matrix_spec_a =
-      std::make_shared<NP::ProductMatrixSpec>();
-
-  std::shared_ptr<NP::ProductMatrixSpec> descendant_matrix_spec_b =
-      std::make_shared<NP::ProductMatrixSpec>();
-
-  INT pre_req_ndims;
   INT num_products_a = 0;
   INT num_products_b = 0;
-
-  PropertiesMap properties_map;
+  std::shared_ptr<const NP::ProductMatrixSpec> descendant_matrix_spec_a;
+  std::shared_ptr<const NP::ProductMatrixSpec> descendant_matrix_spec_b;
 };
 
 /**
- * @brief Base pair reaction kernels object to be used on SYCL devices.
- *
- * @tparam num_products_per_parent The number of products produced per parent
- * by a reaction.
+ * @brief Whether a type is a valid pair reaction kernel host.
+ * @tparam T Candidate host kernel type.
  */
-template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
-  PairReactionKernelsBaseOnDevice() = default;
+template <typename T, typename = void>
+struct is_pair_reaction_kernel : std::false_type {};
 
-  /**
-   * @brief Parent setting kernel determining which product inherits from which
-   * parent. Should call .set_parent on the corresponding descendant products.
-   *
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param out_states Array defining the IDs of descendant particles
-   */
-  void parent_kernel(
-      NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      const std::array<int, num_products_per_parent> &out_states) const {
-    return;
-  }
+/// \cond
+template <typename T>
+struct is_pair_reaction_kernel<T, std::void_t<typename T::ON_DEVICE_OBJ_TYPE>>
+    : std::is_base_of<PairReactionKernelsBase<typename T::ON_DEVICE_OBJ_TYPE>,
+                      T> {};
+/// \endcond
 
-  /**
-   * @brief Base scattering kernel for calculating and applying
-   * reaction-derived velocity modifications of the particles.
-   *
-   * @param modified_weight The weight modification needed for calculating
-   * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
-   * @param dt The current time step size.
-   */
-  void scattering_kernel(
-      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::PairLoopIndex::Read &pair_index,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      NP::Access::SymVector::Write<INT> &req_int_props_a,
-      NP::Access::SymVector::Write<REAL> &req_real_props_a,
-      NP::Access::SymVector::Write<INT> &req_int_props_b,
-      NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-    return;
-  }
-  /**
-   * @brief Base feedback kernel for calculating and applying
-   * background field modifications from the reaction.
-   *
-   * @param modified_weight The weight modification needed for calculating
-   * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
-   * @param dt The current time step size.
-   */
-  void feedback_kernel(
-      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::PairLoopIndex::Read &pair_index,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      NP::Access::SymVector::Write<INT> &req_int_props_a,
-      NP::Access::SymVector::Write<REAL> &req_real_props_a,
-      NP::Access::SymVector::Write<INT> &req_int_props_b,
-      NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-    return;
-  }
+} // namespace VANTAGE::Reactions
 
-  /**
-   * @brief Base transformation kernel for calculating and applying
-   * reaction-derived ID modifications of the particles.
-   *
-   * @param modified_weight The weight modification needed for calculating
-   * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
-   * @param dt The current time step size.
-   *
-   */
-  void transformation_kernel(
-      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::PairLoopIndex::Read &pair_index,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      NP::Access::SymVector::Write<INT> &req_int_props_a,
-      NP::Access::SymVector::Write<REAL> &req_real_props_a,
-      NP::Access::SymVector::Write<INT> &req_int_props_b,
-      NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-    return;
-  }
-  /**
-   * @brief Base weight kernel for calculating and applying
-   * reaction-derived weight modifications of the particles.
-   *
-   * @param modified_weight The weight modification needed for calculating
-   * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
-   * @param dt The current time step size.
-   *
-   */
-  void
-  weight_kernel(REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-                NP::Access::PairLoopIndex::Read &index_b,
-                NP::Access::PairLoopIndex::Read &pair_index,
-                NP::Access::DescendantProducts::Write &descendant_products_a,
-                NP::Access::DescendantProducts::Write &descendant_products_b,
-                NP::Access::SymVector::Write<INT> &req_int_props_a,
-                NP::Access::SymVector::Write<REAL> &req_real_props_a,
-                NP::Access::SymVector::Write<INT> &req_int_props_b,
-                NP::Access::SymVector::Write<REAL> &req_real_props_b,
-                const std::array<int, num_products_per_parent> &out_states,
-                NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                double dt) const {
-    return;
-  }
-};
-}; // namespace VANTAGE::Reactions
 #endif

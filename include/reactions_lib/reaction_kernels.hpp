@@ -29,17 +29,6 @@ struct SingleReactionKernelArgumentPack {
 
   SingleReactionKernelArgumentPack() = default;
 
-  SingleReactionKernelArgumentPack(
-      ArgumentNameSet<INT> required_int_props,
-      ArgumentNameSet<REAL> required_real_props,
-      ArgumentNameSet<INT> required_descendant_int_props = {},
-      ArgumentNameSet<REAL> required_descendant_real_props = {})
-      : required_int_props(std::move(required_int_props)),
-        required_real_props(std::move(required_real_props)),
-        required_descendant_int_props(std::move(required_descendant_int_props)),
-        required_descendant_real_props(
-            std::move(required_descendant_real_props)) {}
-
   /**
    * @brief Build a pack from regular and ephemeral input property requirements
    * and descendant property requirements.
@@ -78,19 +67,12 @@ struct SingleReactionKernelArgumentPack {
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral,
       const PropertiesMap &properties_map = PropertiesMap());
-
-  std::vector<NP::Sym<INT>> int_sym_vector() const {
-    return required_int_props.to_sym_vector();
-  }
-  std::vector<NP::Sym<REAL>> real_sym_vector() const {
-    return required_real_props.to_sym_vector();
-  }
 };
 
 /// \cond
-template <> struct accessor_pack_for<SingleReactionKernelArgumentPack> {
-  using type = SingleReactionKernelAccessors;
-};
+template <typename DEVICE>
+inline constexpr bool is_single_reaction_kernel_device_v =
+    detail::has_kernel_operations<DEVICE, SingleReactionKernelAccessors>::value;
 /// \endcond
 
 /**
@@ -115,51 +97,24 @@ struct ReactionKernelsBase
   using Base =
       AbstractReactionKernels<ON_DEVICE_T, SingleReactionKernelArgumentPack>;
 
-  /**
-   * @brief Construct from a complete SingleReactionKernelArgumentPack.
-   *
-   * @param argument_pack Complete input and explicitly written descendant
-   * names.
-   * @param pre_req_ndims Prerequisite component count.
-   * @param ndim_velocity Velocity component count for descendant velocity.
-   * @param properties_map Mapping used to construct argument_pack.
-   */
-  ReactionKernelsBase(
-      SingleReactionKernelArgumentPack argument_pack, INT pre_req_ndims = 0,
-      int ndim_velocity = 2,
-      const PropertiesMap &properties_map = PropertiesMap())
-      : Base(std::move(argument_pack), pre_req_ndims, properties_map) {
-    if constexpr (this->NUM_PRODUCTS > 0) {
-      NESOWARN(
-          !this->argument_pack.required_descendant_int_props.to_string_vector()
-                  .empty() ||
-              !this->argument_pack.required_descendant_real_props
-                   .to_string_vector()
-                   .empty(),
-          "The number of products per parent is >= 1 but no required "
-          "descendant properties are set. This will result in an empty "
-          "descendant_matrix_spec.");
-      this->descendant_matrix_spec = build_kernel_product_schema(
-          this->argument_pack.required_descendant_int_props,
-          this->argument_pack.required_descendant_real_props, ndim_velocity,
-          this->get_properties_map());
-    } else {
-      this->descendant_matrix_spec =
-          NP::product_matrix_spec(NP::ParticleSpec());
-    }
+  /** @brief Check device signatures at compile time. @return True if valid. */
+  static constexpr bool validate_on_device_type() {
+    static_assert(is_single_reaction_kernel_device_v<ON_DEVICE_T>,
+                  "Device kernel operation signature mismatch");
+    return true;
   }
 
   /**
-   * \overload
    * @brief Construct with regular/ephemeral inputs and descendant properties.
    */
-  ReactionKernelsBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      Properties<INT> required_int_props_ephemeral,
-      Properties<REAL> required_real_props_ephemeral,
-      Properties<INT> required_descendant_int_props,
-      Properties<REAL> required_descendant_real_props, INT pre_req_ndims,
-      int ndim_velocity, const PropertiesMap &properties_map = PropertiesMap())
+  ReactionKernelsBase(Properties<INT> required_int_props,
+                      Properties<REAL> required_real_props,
+                      Properties<INT> required_int_props_ephemeral,
+                      Properties<REAL> required_real_props_ephemeral,
+                      Properties<INT> required_descendant_int_props,
+                      Properties<REAL> required_descendant_real_props,
+                      INT pre_req_ndims, int ndim_velocity,
+                      const PropertiesMap &properties_map = PropertiesMap())
       : ReactionKernelsBase(
             SingleReactionKernelArgumentPack(
                 std::move(required_int_props), std::move(required_real_props),
@@ -256,6 +211,17 @@ struct ReactionKernelsBase
   }
 
 private:
+  ReactionKernelsBase(SingleReactionKernelArgumentPack argument_pack,
+                      INT pre_req_ndims, int ndim_velocity,
+                      const PropertiesMap &properties_map)
+      : Base(std::move(argument_pack), pre_req_ndims, properties_map),
+        descendant_matrix_spec(build_kernel_product_schema(
+            this->argument_pack.required_descendant_int_props,
+            this->argument_pack.required_descendant_real_props, ndim_velocity,
+            this->get_properties_map(), this->NUM_PRODUCTS)) {
+    static_assert(validate_on_device_type());
+  }
+
   std::shared_ptr<const NP::ProductMatrixSpec> descendant_matrix_spec;
 };
 
@@ -268,24 +234,9 @@ struct is_single_reaction_kernel : std::false_type {};
 
 /// \cond
 template <typename T>
-struct is_single_reaction_kernel<
-    T, std::void_t<typename T::ON_DEVICE_OBJ_TYPE,
-                   typename T::ARGUMENT_PACK_TYPE, decltype(T::NUM_PRODUCTS)>>
-    : std::bool_constant<
-          std::is_base_of_v<ReactionKernelsBase<typename T::ON_DEVICE_OBJ_TYPE>,
-                            T> &&
-          std::is_same_v<typename T::ARGUMENT_PACK_TYPE,
-                         SingleReactionKernelArgumentPack>> {};
-
-namespace detail {
-template <typename T, int num_products,
-          bool IsKernel = is_single_reaction_kernel<T>::value>
-struct has_matching_kernel_product_count : std::true_type {};
-
-template <typename T, int num_products>
-struct has_matching_kernel_product_count<T, num_products, true>
-    : std::bool_constant<T::NUM_PRODUCTS == num_products> {};
-} // namespace detail
+struct is_single_reaction_kernel<T, std::void_t<typename T::ON_DEVICE_OBJ_TYPE>>
+    : std::is_base_of<ReactionKernelsBase<typename T::ON_DEVICE_OBJ_TYPE>, T> {
+};
 /// \endcond
 
 } // namespace VANTAGE::Reactions
