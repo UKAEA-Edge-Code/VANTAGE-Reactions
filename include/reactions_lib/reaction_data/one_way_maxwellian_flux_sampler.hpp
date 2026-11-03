@@ -75,7 +75,46 @@ struct OneWayMaxwellianFluxOnDevice
   }
 
   /**
+   * @brief Sample a drifting Maxwellian using Box-Muller, rejecting velocities
+   * that are not strictly positive. Alternative function used at large
+   * positive drift because default method becomes inefficient.
+   *
+   * @param drift Drift velocity in the surface-normal direction.
+   * @param thermal_sigma Thermal velocity spread (must be positive).
+   * @param index Read-only loop index passed to the RNG kernel.
+   * @param kernel Random number generator kernel.
+   * @param sample_counter Counter incremented for each RNG access.
+   * @param is_kernel_valid RNG validity; false causes a zero return value.
+   * @return A strictly positive velocity, or zero if the RNG is invalid.
+   */
+  REAL sample_positive_drifting_maxwellian(
+      REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
+      typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
+      int &sample_counter, bool &is_kernel_valid) const {
+    if (!is_kernel_valid) {
+      return 0.0;
+    }
+
+    do {
+      const REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
+      const REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
+      if (!is_kernel_valid) {
+        return 0.0;
+      }
+
+      const auto normal_samples = utils::box_muller_transform(rand1, rand2);
+      const REAL candidate = drift + thermal_sigma * normal_samples[0];
+      if (candidate > REAL(0.0)) {
+        return candidate;
+      }
+    } while (true);
+  }
+
+  /**
    * @brief Samples a single value from a positive Maxwellian.
+   *
+   * @tparam EnableOneWayMaxEdgeCase Use a positive drifting Maxwellian
+   * approximation when drift / thermal_sigma > 2 (default: true).
    *
    * @param drift Drift velocity due to fluid flow speed in the basis_pi
    * direction.
@@ -89,6 +128,7 @@ struct OneWayMaxwellianFluxOnDevice
    *
    * @return The sampled velocity value.
    */
+  template <bool EnableOneWayMaxEdgeCase = true>
   REAL sample_positive_maxwellian(
       REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
       typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
@@ -98,6 +138,13 @@ struct OneWayMaxwellianFluxOnDevice
     }
 
     const REAL d = drift / thermal_sigma;
+    if constexpr (EnableOneWayMaxEdgeCase) {
+      if (d > REAL(2.0)) {
+        return sample_positive_drifting_maxwellian(drift, thermal_sigma, index,
+                                                   kernel, sample_counter,
+                                                   is_kernel_valid);
+      }
+    }
     const REAL maxval = rejection_function(d, cardano_cubic_solver(d));
     REAL candidate = 0.0;
     REAL compare = 0.0;
@@ -119,12 +166,15 @@ struct OneWayMaxwellianFluxOnDevice
    * @brief Function to calculate the sampled ion velocities from a one way /
    * truncated Maxwellian.
    *
+   * @tparam EnableOneWayMaxEdgeCase Enable the large-positive-drift
+   * approximation for the surface-normal sample (default: true).
    * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel
    *
    * @return A REAL-valued array of size 3 that contains the calculated sampled
    * ion velocities.
    */
+  template <bool EnableOneWayMaxEdgeCase = true>
   std::array<REAL, 3> calc_data(
       const SingleReactionDataAccessors &accessors,
       typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel) const {
@@ -174,9 +224,9 @@ struct OneWayMaxwellianFluxOnDevice
     const REAL sample_e1 = drift_e1 + thermal_sigma * normal_samples[0];
     const REAL sample_e2 = drift_e2 + thermal_sigma * normal_samples[1];
 
-    const REAL sample_pi =
-        sample_positive_maxwellian(drift_pi, thermal_sigma, accessors.index,
-                                   kernel, sample_counter, is_kernel_valid);
+    const REAL sample_pi = sample_positive_maxwellian<EnableOneWayMaxEdgeCase>(
+        drift_pi, thermal_sigma, accessors.index, kernel, sample_counter,
+        is_kernel_valid);
     if (!is_kernel_valid) {
       accessors.req_int_props.at(this->panic_ind, accessors.index, 0) += 1;
       return std::array<REAL, 3>{0.0, 0.0, 0.0};
