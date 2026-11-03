@@ -5,7 +5,7 @@
 namespace VANTAGE::Reactions {
 
 ArrheniusData::ArrheniusData(REAL a_coeff, REAL b_coeff,
-                             std::map<int, std::string> properties_map)
+                             const PropertiesMap properties_map)
     : ReactionDataBase<ArrheniusDataOnDevice>(
           Properties<REAL>(required_simple_real_props), properties_map) {
 

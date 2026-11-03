@@ -68,11 +68,10 @@ struct SpecularReflectionData
   /**
    * @brief Constructor for SpecularReflectionData.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  SpecularReflectionData(
-      std::map<int, std::string> properties_map = get_default_map())
+  SpecularReflectionData(const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase<SpecularReflectionDataOnDevice<ndim>, ndim,
                          DEFAULT_RNG_KERNEL, ndim>(
             Properties<REAL>(required_simple_real_props), properties_map) {

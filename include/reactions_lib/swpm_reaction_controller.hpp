@@ -28,7 +28,7 @@ struct SWPMReactionController : ProfilingBase {
       std::vector<std::shared_ptr<TransformationWrapper>> parent_transform,
       std::vector<std::shared_ptr<TransformationWrapper>> child_transform,
       bool add_noise_to_partial_collisions = true,
-      const std::map<int, std::string> &properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : cell_block_size(NP::get_env_size_t("REACTIONS_CELL_BLOCK_SIZE", 256)),
         parent_transform(parent_transform), child_transform(child_transform),
         add_noise_to_partial_collisions(add_noise_to_partial_collisions),
@@ -36,15 +36,11 @@ struct SWPMReactionController : ProfilingBase {
         swpm_specification(swpm_specification),
         coll_cell_manager(coll_cell_manager) {
 
+
     this->configure_buffer_limits(this->max_pairs_per_cell,
                                   this->cell_block_size);
 
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
-
+  
     this->reactant_set = std::make_tuple(species_a_id, species_b_id);
 
     auto ccm_species = coll_cell_manager->get_species_ids();

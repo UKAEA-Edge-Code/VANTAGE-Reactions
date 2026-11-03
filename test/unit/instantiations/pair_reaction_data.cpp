@@ -16,14 +16,14 @@ namespace VANTAGE::Reactions {
 // CSPairData
 // ---------------------------------------------------------------------------
 template CSPairData<2, ConstantRateCrossSection>::CSPairData(
-    ConstantRateCrossSection, std::map<int, std::string>);
+    ConstantRateCrossSection, const PropertiesMap);
 template REAL
     CSPairData<2, ConstantRateCrossSection>::get_cs_max_rate_val(REAL);
-template CSPairData<2, ConstantCrossSection>::CSPairData(
-    ConstantCrossSection, std::map<int, std::string>);
+template CSPairData<2, ConstantCrossSection>::CSPairData(ConstantCrossSection,
+                                                         const PropertiesMap);
 template REAL CSPairData<2, ConstantCrossSection>::get_cs_max_rate_val(REAL);
 template CSPairData<3, IPLCrossSection>::CSPairData(IPLCrossSection,
-                                                    std::map<int, std::string>);
+                                                    const PropertiesMap);
 template REAL CSPairData<3, IPLCrossSection>::get_cs_max_rate_val(REAL);
 
 // ---------------------------------------------------------------------------

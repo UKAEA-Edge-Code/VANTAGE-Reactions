@@ -2,7 +2,7 @@ void amjuel_1d_example() {
 
   // In case we wish to remap the default weight, fluid_temperature,
   // fluid_density
-  auto used_map = get_default_map();
+  auto used_map = PropertiesMap();
 
   auto coeffs = std::array<REAL, 3>{1.0, 1.0, 1.0}; // b_n coefficients
 

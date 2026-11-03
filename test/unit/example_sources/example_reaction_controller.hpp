@@ -2,7 +2,7 @@ void reaction_controller_example(NP::ParticleGroupSharedPtr particle_group) {
 
   auto particle_spec = particle_group->get_particle_spec();
 
-  auto prop_map = get_default_map();
+  auto prop_map = PropertiesMap();
 
   // We shall generate a CX and two ionisation reactions quickly, in order to
   // populate the controller with some reactions

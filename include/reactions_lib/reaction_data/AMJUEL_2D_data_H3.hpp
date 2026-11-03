@@ -158,7 +158,7 @@ struct AMJUEL2DDataH3
    * @param mass_amu Mass of the neutral particle in amus
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
 
@@ -168,7 +168,7 @@ struct AMJUEL2DDataH3
       const REAL &time_normalisation, const REAL &velocity_normalisation,
       const REAL &mass_amu,
       const std::array<std::array<REAL, num_coeffs_E>, num_coeffs_T> &coeffs,
-      std::map<int, std::string> properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase<
             AMJUEL2DDataH3OnDevice<num_coeffs_T, num_coeffs_E, dim>>(
             Properties<REAL>(required_simple_real_props), properties_map) {

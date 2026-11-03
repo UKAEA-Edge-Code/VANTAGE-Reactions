@@ -217,8 +217,8 @@ template <typename PROP_TYPE> struct Properties {
    */
   template <size_t N>
   Properties(const std::array<int, N> &simple_props)
-      : Properties(simple_props, std::vector<Species>{}, std::array<int, 0>{}) {
-        };
+      : Properties(simple_props, std::vector<Species>{},
+                   std::array<int, 0>{}){};
 
   /**
    * \overload
@@ -237,7 +237,7 @@ template <typename PROP_TYPE> struct Properties {
   template <size_t M>
   Properties(std::vector<Species> species,
              const std::array<int, M> &species_props)
-      : Properties(std::array<int, 0>{}, species, species_props) {};
+      : Properties(std::array<int, 0>{}, species, species_props){};
 
   /**
    * @brief Merge with another property, taking care of duplicates. The
@@ -294,27 +294,21 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Function to return a vector of strings containing the names of the
    * required simple properties.
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used in remapping the property names.
    *
    * @return simple_prop_names
    */
-  std::vector<std::string> simple_prop_names(
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
+  std::vector<std::string>
+  simple_prop_names(const PropertiesMap properties_map = PropertiesMap()) {
 
     std::vector<std::string> simple_prop_names_vec;
+    auto prop_map = properties_map.get_map();
     for (auto req_prop : this->simple_props) {
       std::string error_msg =
           "The property referenced by index: " + std::to_string(req_prop) +
           ", is not present in the property map provided";
-      NESOASSERT(properties_map.find(req_prop) != properties_map.end(),
-                 error_msg);
+      NESOASSERT(prop_map.find(req_prop) != prop_map.end(), error_msg);
       simple_prop_names_vec.push_back(std::string(properties_map.at(req_prop)));
     }
 
@@ -328,20 +322,13 @@ template <typename PROP_TYPE> struct Properties {
    * @param prop An integer that corresponds to a value from the enumerator in
    * a StandardPropertiesEnum (or derived) struct (eg. for "VELOCITY" this would
    * be the variable name - velocity - which corresponds to 1.)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used in remapping the property indices.
    *
    * @return simple_prop_index
    */
-  int simple_prop_index(
-      int prop,
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
+  int simple_prop_index(int prop,
+                        const PropertiesMap properties_map = PropertiesMap()) {
 
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
@@ -362,19 +349,13 @@ template <typename PROP_TYPE> struct Properties {
    * required species props combined with the species as a prefix. (eg.
    * "ELECTRON" + "_" + "DENSITY")
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used in remapping the property names.
    *
    * @return species_prop_names
    */
-  std::vector<std::string> species_prop_names(
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
+  std::vector<std::string>
+  species_prop_names(const PropertiesMap properties_map = PropertiesMap()) {
 
     std::vector<std::string> species_real_prop_names_vec;
 
@@ -397,20 +378,13 @@ template <typename PROP_TYPE> struct Properties {
    * @param prop An integer that corresponds to a value from the enumerator in
    * a StandardPropertiesEnum (or derived) struct (eg. for "DENSITY" this would
    * be the variable name - density - which corresponds to 8).
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used in remapping the property indices.
    *
    * @return species_prop_index
    */
-  int species_prop_index(
-      std::string species_name, int prop,
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
+  int species_prop_index(std::string species_name, int prop,
+                         const PropertiesMap properties_map = PropertiesMap()) {
 
     int prop_index = 0;
     for (auto req_prop : this->all_props) {
@@ -450,11 +424,11 @@ template <typename PROP_TYPE> struct Properties {
   /**
    * @brief Getter for combined prop_names vector
    *
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used in remapping the property names.
    */
-  const std::vector<std::string> get_prop_names(
-      const std::map<int, std::string> &properties_map = get_default_map()) {
+  const std::vector<std::string>
+  get_prop_names(const PropertiesMap properties_map = PropertiesMap()) {
     std::vector<std::string> simple_prop_names;
     std::vector<std::string> species_props_names;
 
@@ -510,15 +484,8 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    * @param properties_map Property map used to map property enums in the
    * Properties object to strings
    */
-  ArgumentNameSet(
-      Properties<PROP_TYPE> properties,
-      const std::map<int, std::string> &properties_map = get_default_map()) {
-
-    NESOWARN(
-        map_subset_check(properties_map),
-        "The provided properties_map does not include all the keys from the \
-        default_map (and therefore is not an extension of that map). There \
-        may be inconsitencies with indexing of properties.");
+  ArgumentNameSet(Properties<PROP_TYPE> properties,
+                  const PropertiesMap properties_map = PropertiesMap()) {
 
     auto name_vector = properties.get_prop_names(properties_map);
     this->name_set = std::set(name_vector.begin(), name_vector.end());

@@ -22,7 +22,7 @@ TEST(AbsorptionKernels, general) {
       "ION_SOURCE_ENERGY";
 
   auto test_kernels =
-      GeneralAbsorptionKernels<2>(target_species, properties_map.get_map());
+      GeneralAbsorptionKernels<2>(target_species, properties_map);
 
   auto test_reaction =
       LinearReactionBase<0, decltype(test_data), decltype(test_kernels)>(

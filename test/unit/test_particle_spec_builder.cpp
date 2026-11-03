@@ -54,7 +54,7 @@ TEST(ParticleSpecBuilder, add_particle_prop) {
 
   test_particle_spec_builder.add_particle_prop(int_props);
 
-  auto new_map = get_default_map();
+  auto new_map = PropertiesMap();
   new_map[props.weight] = "w";
   test_particle_spec_builder.add_particle_prop(real_props, 1, false, new_map);
 

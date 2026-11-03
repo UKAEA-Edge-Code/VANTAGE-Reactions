@@ -68,8 +68,7 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
   auto rng_lambda = [&]() -> REAL { return 0.75; };
   auto rng_kernel = NP::host_atomic_block_kernel_rng<REAL>(rng_lambda, 1000);
 
-  OneWayMaxwellianFluxSampler sampler(norm_ratio, rng_kernel,
-                                      get_default_map());
+  OneWayMaxwellianFluxSampler sampler(norm_ratio, rng_kernel, PropertiesMap());
   auto sampler_on_device = sampler.get_on_device_obj();
 
   auto req_int_props_ = sampler.get_arg_pack().int_sym_vector();
@@ -113,7 +112,7 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
         particle_group->get_cell(NP::Sym<REAL>("SAMPLED_VELOCITY"), i);
 
     auto panic_cell = particle_group->get_cell(
-        NP::Sym<INT>(get_default_map().at(default_properties.panic)), i);
+        NP::Sym<INT>(PropertiesMap().at(default_properties.panic)), i);
     for (int row = 0; row < sampled_cell->nrow; row++) {
       EXPECT_EQ(panic_cell->at(row, 0), 0);
       EXPECT_NEAR(sampled_cell->at(row, 0), expected_vals[0], 1e-14);

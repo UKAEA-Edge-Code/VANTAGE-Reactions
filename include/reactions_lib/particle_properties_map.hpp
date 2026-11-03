@@ -80,12 +80,15 @@ struct PropertiesMap {
   PropertiesMap(std::map<int, std::string> custom_map);
 
 public:
-  std::map<int, std::string> get_map();
+  std::map<int, std::string> get_map() const;
 
   // Just exposes the bounds-checked accessor to the private_map.
   std::string &at(const int &key);
+  const std::string &at(const int &key) const;
 
   std::string &operator[](const int &key);
+
+  void erase(const int &key);
 
 private:
   std::map<int, std::string> private_map{
@@ -122,14 +125,14 @@ private:
       {default_properties.fluid_flow_speed, "FLUID_FLOW_SPEED"}};
 };
 
-std::map<int, std::string> get_default_map();
-
 /**
  * @brief Function to check whether a custom map is a subset of the default map.
  *
  * @return True if the given custom map is a subset of the default map.
  */
 bool map_subset_check(std::map<int, std::string> custom_map);
+
+bool map_subset_check(const PropertiesMap &custom_map);
 }; // namespace VANTAGE::Reactions
 
 #endif

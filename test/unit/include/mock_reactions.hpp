@@ -111,8 +111,7 @@ struct TestReactionKernels : public ReactionKernelsBase {
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
       props.velocity, props.weight};
 
-  TestReactionKernels(
-      std::map<int, std::string> properties_map = get_default_map())
+  TestReactionKernels(const PropertiesMap properties_map = PropertiesMap())
       : ReactionKernelsBase(Properties<REAL>(required_simple_real_props), 0,
                             properties_map) {
 
@@ -391,8 +390,7 @@ struct TestEphemeralVarData
   constexpr static std::array<int, 2> required_simple_real_props_ephemeral = {
       props.boundary_intersection_point, props.boundary_intersection_normal};
 
-  TestEphemeralVarData(
-      std::map<int, std::string> properties_map = get_default_map())
+  TestEphemeralVarData(const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase<TestEphemeralVarDataOnDevice>(
             Properties<INT>(), Properties<REAL>(required_simple_real_props),
             Properties<INT>(),

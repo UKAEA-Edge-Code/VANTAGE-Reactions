@@ -6,7 +6,7 @@ SingleReactionDataArgumentPack::SingleReactionDataArgumentPack(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     Properties<INT> required_int_props_ephemeral,
     Properties<REAL> required_real_props_ephemeral,
-    const std::map<int, std::string> &properties_map)
+    const PropertiesMap properties_map)
     : required_int_props(
           ArgumentNameSet(required_int_props, properties_map)
               .merge_with(ArgumentNameSet(required_int_props_ephemeral,

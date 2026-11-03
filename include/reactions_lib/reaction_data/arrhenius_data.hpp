@@ -71,11 +71,11 @@ struct ArrheniusData : public ReactionDataBase<ArrheniusDataOnDevice> {
    * rate.
    * @param b_coeff REAL-valued power for the Arrhenius rate.
    * and the particle weight)
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names
    */
   ArrheniusData(REAL a_coeff, REAL b_coeff,
-                std::map<int, std::string> properties_map = get_default_map());
+                const PropertiesMap properties_map = PropertiesMap());
 
   /**
    * @brief Index the particle weight and fluid temperature on the on-device

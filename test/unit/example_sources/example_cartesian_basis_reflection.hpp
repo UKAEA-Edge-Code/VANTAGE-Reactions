@@ -1,7 +1,7 @@
 void cartesian_basis_reflection_example() {
 
   // In case we wish to remap the default boundary normal or velocity name
-  auto used_map = get_default_map();
+  auto used_map = PropertiesMap();
 
   // Reflect in the direction normal to the surface, and back into the domain
   std::array<REAL, 3> coords{0, 0, 1};

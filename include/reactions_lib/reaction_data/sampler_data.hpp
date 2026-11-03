@@ -63,11 +63,11 @@ struct SamplerData
    * @brief Constructor for SamplerData.
    *
    * @param rng_kernel Shared pointer to kernel to be used
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
   SamplerData(std::shared_ptr<RNG_KERNEL> rng_kernel,
-              std::map<int, std::string> properties_map = get_default_map())
+              const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase<SamplerDataOnDevice<RNG_KERNEL>, 1, RNG_KERNEL>(
             Properties<INT>(required_simple_int_props), properties_map) {
     this->on_device_obj = SamplerDataOnDevice<RNG_KERNEL>();

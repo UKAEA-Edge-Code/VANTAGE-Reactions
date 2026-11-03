@@ -4,8 +4,8 @@
 
 namespace VANTAGE::Reactions {
 
-FixedCoefficientData::FixedCoefficientData(
-    REAL rate_coefficient, std::map<int, std::string> properties_map)
+FixedCoefficientData::FixedCoefficientData(REAL rate_coefficient,
+                                           const PropertiesMap properties_map)
     : ReactionDataBase<FixedCoefficientDataOnDevice>(
           Properties<REAL>(required_simple_real_props), properties_map) {
 

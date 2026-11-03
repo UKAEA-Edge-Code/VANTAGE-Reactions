@@ -54,8 +54,8 @@ struct DummyData
       props.weight};
 
   DummyData(REAL rate_coefficient,
-            std::map<int, std::string> properties_map =
-                get_default_map() // Here we allow for property remapping
+            const PropertiesMap properties_map =
+                PropertiesMap() // Here we allow for property remapping
             )
       : ReactionDataBase(
             Properties<REAL>(

@@ -7,7 +7,7 @@ namespace VANTAGE::Reactions {
 SimpleThinningKernels::SimpleThinningKernels(
     REAL thinning_ratio,
     std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
-    std::map<int, std::string> properties_map)
+    const PropertiesMap properties_map)
     : DownsamplingKernelBase<DownsamplingMode::thinning,
                              DownsamplingReductionKernelOnDeviceBase<0, 0, 0>,
                              SimpleThinningOnDevice>(
@@ -32,7 +32,7 @@ SimpleThinningKernels::SimpleThinningKernels(
 std::shared_ptr<TransformationStrategy> make_simple_thinning_strategy(
     NP::ParticleGroupSharedPtr template_group, REAL thinning_ratio,
     std::shared_ptr<NP::HostPerParticleBlockRNG<REAL>> rng_kernel,
-    const std::map<int, std::string> &properties_map) {
+    const PropertiesMap properties_map) {
 
   auto r = std::make_shared<DownsamplingStrategy<SimpleThinningKernels>>(
       template_group,

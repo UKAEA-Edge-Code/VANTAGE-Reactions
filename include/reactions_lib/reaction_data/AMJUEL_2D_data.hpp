@@ -137,7 +137,7 @@ struct AMJUEL2DData : public ReactionDataBase<
    * @param time_normalisation Time normalisation in seconds
    * @param coeffs A real-valued 2D array of coefficients to be used in a 2D
    * AMJUEL reaction rate calculation.
-   * @param properties_map (Optional) A std::map<int, std::string> object to be
+   * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
   AMJUEL2DData(
@@ -145,7 +145,7 @@ struct AMJUEL2DData : public ReactionDataBase<
       const REAL &density_normalisation, const REAL &temperature_normalisation,
       const REAL &time_normalisation,
       const std::array<std::array<REAL, num_coeffs_n>, num_coeffs_T> &coeffs,
-      std::map<int, std::string> properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : ReactionDataBase<AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>>(
             Properties<REAL>(required_simple_real_props), properties_map) {
     this->on_device_obj = AMJUEL2DDataOnDevice<num_coeffs_T, num_coeffs_n>(

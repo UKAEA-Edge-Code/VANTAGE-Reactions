@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_DATA_ABSTRACT_H
 #define REACTIONS_REACTION_DATA_ABSTRACT_H
+#include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <memory>
@@ -163,9 +164,8 @@ struct AbstractReactionData {
     return true;
   }
 
-  AbstractReactionData(
-      ARGUMENT_PACK_T argument_pack,
-      std::map<int, std::string> properties_map = get_default_map())
+  AbstractReactionData(ARGUMENT_PACK_T argument_pack,
+                       PropertiesMap properties_map = PropertiesMap())
       : argument_pack(argument_pack), properties_map(properties_map) {
 
     static_assert(validate_on_device_type());
@@ -206,13 +206,13 @@ struct AbstractReactionData {
   }
 
 protected:
-  const std::map<int, std::string> &get_properties_map() const {
+  const PropertiesMap &get_properties_map() const {
     return this->properties_map;
   }
 
   std::optional<ON_DEVICE_T> on_device_obj;
   ARGUMENT_PACK_T argument_pack;
-  std::map<int, std::string> properties_map;
+  PropertiesMap properties_map;
   std::shared_ptr<RNG_KERNEL_T> rng_kernel;
 };
 
