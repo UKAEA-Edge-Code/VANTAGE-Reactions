@@ -19,166 +19,86 @@ struct PairScatteringKernelsOnDevice
   PairScatteringKernelsOnDevice() = default;
 
   /**
-   * @brief General pair scattering parent kernel. Sets the first products
-   * parent to the A particle and the second to the B particle
+   * @brief General pair scattering parent kernel. Sets the first product's
+   * parent to the A particle and the second to the B particle.
    *
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param out_states Array defining the IDs of descendant particles
+   * @param accessors Bundled pair-loop indices, input/descendant properties,
+   * and prerequisite data accessors.
+   * @param out_states Array defining the IDs of descendant particles.
    */
-  void
-  parent_kernel(NP::Access::PairLoopIndex::Read &index_a,
-                NP::Access::PairLoopIndex::Read &index_b,
-                NP::Access::DescendantProducts::Write &descendant_products_a,
-                NP::Access::DescendantProducts::Write &descendant_products_b,
-                const std::array<int, 2> &out_states) const {
-
-    descendant_products_a.set_parent(index_a, 0);
-    descendant_products_b.set_parent(index_b, 0);
+  void parent_kernel(PairReactionKernelAccessors &accessors,
+                     const std::array<int, 2> &out_states) const {
+    accessors.descendant_products_a.set_parent(accessors.index_a, 0);
+    accessors.descendant_products_b.set_parent(accessors.index_b, 0);
   }
+
   /**
    * @brief General pair scattering kernel - assumes that pre_req_data stores
-   * the 2*ndim_velocity components for the two scattering particles
+   * the 2*ndim_velocity components for the two scattering particles.
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
+   * @param accessors Bundled pair-loop indices, input/descendant properties,
+   * and prerequisite data accessors.
+   * @param out_states Array defining the IDs of descendant particles.
    * @param dt The current time step size.
    */
-  void scattering_kernel(
-      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::PairLoopIndex::Read &pair_index,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      NP::Access::SymVector::Write<INT> &req_int_props_a,
-      NP::Access::SymVector::Write<REAL> &req_real_props_a,
-      NP::Access::SymVector::Write<INT> &req_int_props_b,
-      NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, 2> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
+  void scattering_kernel(REAL &modified_weight,
+                         PairReactionKernelAccessors &accessors,
+                         const std::array<int, 2> &out_states,
+                         double dt) const {
+    const INT pair_row = accessors.pair_index.get_loop_linear_index();
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
-      descendant_products_a.at_real(index_a, 0, descendant_velocity_ind, dimx) =
-          pre_req_data.at(pair_index.get_loop_linear_index(), dimx);
-      descendant_products_b.at_real(index_b, 0, descendant_velocity_ind, dimx) =
-          pre_req_data.at(pair_index.get_loop_linear_index(),
-                          ndim_velocity + dimx);
+      accessors.descendant_products_a.at_real(
+          accessors.index_a, 0, this->descendant_velocity_ind_a, dimx) =
+          accessors.pre_req_data.at(pair_row, dimx);
+      accessors.descendant_products_b.at_real(
+          accessors.index_b, 0, this->descendant_velocity_ind_b, dimx) =
+          accessors.pre_req_data.at(pair_row, ndim_velocity + dimx);
     }
   }
 
   /**
    * @brief General pair scattering weight kernel - simply sets the product's
-   * weight to the weight change due to the reaction
+   * weight to the weight change due to the reaction.
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
+   * @param accessors Bundled pair-loop indices, input/descendant properties,
+   * and prerequisite data accessors.
+   * @param out_states Array defining the IDs of descendant particles.
    * @param dt The current time step size.
    */
-  void
-  weight_kernel(REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-                NP::Access::PairLoopIndex::Read &index_b,
-                NP::Access::PairLoopIndex::Read &pair_index,
-                NP::Access::DescendantProducts::Write &descendant_products_a,
-                NP::Access::DescendantProducts::Write &descendant_products_b,
-                NP::Access::SymVector::Write<INT> &req_int_props_a,
-                NP::Access::SymVector::Write<REAL> &req_real_props_a,
-                NP::Access::SymVector::Write<INT> &req_int_props_b,
-                NP::Access::SymVector::Write<REAL> &req_real_props_b,
-                const std::array<int, 2> &out_states,
-                NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                double dt) const {
-    descendant_products_a.at_real(index_a, 0, descendant_weight_ind, 0) =
+  void weight_kernel(REAL &modified_weight,
+                     PairReactionKernelAccessors &accessors,
+                     const std::array<int, 2> &out_states, double dt) const {
+    accessors.descendant_products_a.at_real(accessors.index_a, 0,
+                                            this->descendant_weight_ind_a, 0) =
         modified_weight;
-    descendant_products_b.at_real(index_b, 0, descendant_weight_ind, 0) =
+    accessors.descendant_products_b.at_real(accessors.index_b, 0,
+                                            this->descendant_weight_ind_b, 0) =
         modified_weight;
   }
 
   /**
-   * @brief General pair scattering transformation kernel
+   * @brief General pair scattering transformation kernel.
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
+   * @param accessors Bundled pair-loop indices, input/descendant properties,
+   * and prerequisite data accessors.
+   * @param out_states Array defining the IDs of descendant particles.
    * @param dt The current time step size.
-   *
    */
-  void transformation_kernel(
-      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::PairLoopIndex::Read &pair_index,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      NP::Access::SymVector::Write<INT> &req_int_props_a,
-      NP::Access::SymVector::Write<REAL> &req_real_props_a,
-      NP::Access::SymVector::Write<INT> &req_int_props_b,
-      NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, 2> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-    descendant_products_a.at_int(index_a, 0, descendant_internal_state_ind, 0) =
+  void transformation_kernel(REAL &modified_weight,
+                             PairReactionKernelAccessors &accessors,
+                             const std::array<int, 2> &out_states,
+                             double dt) const {
+    accessors.descendant_products_a.at_int(
+        accessors.index_a, 0, this->descendant_internal_state_ind_a, 0) =
         out_states[0];
-    descendant_products_b.at_int(index_b, 0, descendant_internal_state_ind, 0) =
+    accessors.descendant_products_b.at_int(
+        accessors.index_b, 0, this->descendant_internal_state_ind_b, 0) =
         out_states[1];
   }
 
@@ -188,72 +108,49 @@ struct PairScatteringKernelsOnDevice
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index_a Read-only accessor to a loop index for the first particle
-   * @param index_b Read-only accessor to a loop index for the second particle
-   * @param pair_index Read-only accessor to a pair loop index for a
-   * NP::ParticlePairLoop inside which apply is called. NP::Access using
-   * pair_index.get_loop_linear_index().
-   * @param descendant_products_a Write accessor to descendant products of the
-   * first particle
-   * @param descendant_products_b Write accessor to descendant products of the
-   * second particle
-   * @param req_int_props_a Vector of symbols for integer-valued properties of
-   * the first particle that need to be used for the reaction kernel.
-   * @param req_real_props_a Vector of symbols for real-valued properties of the
-   * first particle that need to be used for the reaction kernel.
-   * @param req_int_props_b Vector of symbols for integer-valued properties of
-   * the second particle that need to be used for the reaction kernel.
-   * @param req_real_props_b Vector of symbols for real-valued properties of the
-   * second particle that need to be used for the reaction kernel.
-   * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued local array containing pre-requisite
-   * data relating to a derived reaction.
+   * @param accessors Bundled pair-loop indices, input/descendant properties,
+   * and prerequisite data accessors.
+   * @param out_states Array defining the IDs of descendant particles.
    * @param dt The current time step size.
-   *
    */
-  void feedback_kernel(
-      REAL &modified_weight, NP::Access::PairLoopIndex::Read &index_a,
-      NP::Access::PairLoopIndex::Read &index_b,
-      NP::Access::PairLoopIndex::Read &pair_index,
-      NP::Access::DescendantProducts::Write &descendant_products_a,
-      NP::Access::DescendantProducts::Write &descendant_products_b,
-      NP::Access::SymVector::Write<INT> &req_int_props_a,
-      NP::Access::SymVector::Write<REAL> &req_real_props_a,
-      NP::Access::SymVector::Write<INT> &req_int_props_b,
-      NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, 2> &out_states,
-      NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
-
-    req_real_props_a.at(this->weight_ind, 0) -= modified_weight;
-    req_real_props_b.at(this->weight_ind, 0) -= modified_weight;
+  void feedback_kernel(REAL &modified_weight,
+                       PairReactionKernelAccessors &accessors,
+                       const std::array<int, 2> &out_states, double dt) const {
+    accessors.req_real_props_a.at(this->weight_ind_a, 0) -= modified_weight;
+    accessors.req_real_props_b.at(this->weight_ind_b, 0) -= modified_weight;
   }
 
 public:
-  INT weight_ind;
-  INT descendant_internal_state_ind, descendant_velocity_ind,
-      descendant_weight_ind;
+  INT weight_ind_a, weight_ind_b;
+  INT descendant_internal_state_ind_a, descendant_velocity_ind_a,
+      descendant_weight_ind_a;
+  INT descendant_internal_state_ind_b, descendant_velocity_ind_b,
+      descendant_weight_ind_b;
 };
 
 /**
  * @brief Host type for general pair scattering kernels - general kernels with
- * post-collision velocities defined by data calculator outputs
+ * post-collision velocities defined by data calculator outputs.
  *
  * @tparam ndim_velocity Optional number of dimensions for the particle velocity
- * property (default value of 2)
+ * property (default value of 2).
  */
 template <int ndim_velocity = 2>
-struct PairScatteringKernels : public PairReactionKernelsBase {
+struct PairScatteringKernels
+    : public PairReactionKernelsBase<
+          PairScatteringKernelsOnDevice<ndim_velocity>> {
+  using Base =
+      PairReactionKernelsBase<PairScatteringKernelsOnDevice<ndim_velocity>>;
 
   constexpr static auto props = default_properties;
 
   constexpr static std::array<int, 1> required_simple_real_props = {
       props.weight};
-  constexpr static std::array<int, 1> required_simple_int_props = {
-      props.weight};
   constexpr static std::array<int, 1> required_descendant_simple_int_props = {
       props.internal_state};
   constexpr static std::array<int, 2> required_descendant_simple_real_props = {
       props.velocity, props.weight};
+
   /**
    * @brief Constructor for PairScatteringKernels.
    *
@@ -261,51 +158,47 @@ struct PairScatteringKernels : public PairReactionKernelsBase {
    * used when remapping property names.
    */
   PairScatteringKernels(const PropertiesMap properties_map = PropertiesMap())
-      : PairReactionKernelsBase(Properties<REAL>(required_simple_real_props),
-                                2 * ndim_velocity, properties_map) {
+      : Base(Properties<REAL>(required_simple_real_props),
+             Properties<INT>(required_descendant_simple_int_props),
+             Properties<REAL>(required_descendant_simple_real_props),
+             2 * ndim_velocity, ndim_velocity, 1, 1, properties_map) {
+    this->on_device_obj = PairScatteringKernelsOnDevice<ndim_velocity>();
+    this->index_on_device_object();
+  }
 
-    this->pair_scattering_kernels_on_device.weight_ind =
-        this->required_real_props_a.simple_prop_index(props.weight,
-                                                      this->properties_map);
+  /** @brief Index A/B inputs and descendants from the argument pack. */
+  void index_on_device_object() override {
+    const auto &weight_name = this->get_properties_map().at(props.weight);
+    const auto &internal_state_name =
+        this->get_properties_map().at(props.internal_state);
+    const auto &velocity_name = this->get_properties_map().at(props.velocity);
 
-    this->set_required_descendant_int_props_a(
-        Properties<INT>(required_descendant_simple_int_props));
+    this->on_device_obj->weight_ind_a =
+        this->argument_pack.required_real_props_a.find_index(weight_name);
+    this->on_device_obj->weight_ind_b =
+        this->argument_pack.required_real_props_b.find_index(weight_name);
 
-    this->set_required_descendant_real_props_a(
-        Properties<REAL>(required_descendant_simple_real_props));
+    this->on_device_obj->descendant_internal_state_ind_a =
+        this->argument_pack.required_descendant_int_props_a.find_index(
+            internal_state_name);
+    this->on_device_obj->descendant_velocity_ind_a =
+        this->argument_pack.required_descendant_real_props_a.find_index(
+            velocity_name);
+    this->on_device_obj->descendant_weight_ind_a =
+        this->argument_pack.required_descendant_real_props_a.find_index(
+            weight_name);
 
-    this->set_required_descendant_int_props_b(
-        Properties<INT>(required_descendant_simple_int_props));
-
-    this->set_required_descendant_real_props_b(
-        Properties<REAL>(required_descendant_simple_real_props));
-
-    this->pair_scattering_kernels_on_device.descendant_internal_state_ind =
-        this->required_descendant_int_props_a.simple_prop_index(
-            props.internal_state, this->properties_map);
-    this->pair_scattering_kernels_on_device.descendant_velocity_ind =
-        this->required_descendant_real_props_a.simple_prop_index(
-            props.velocity, this->properties_map);
-    this->pair_scattering_kernels_on_device.descendant_weight_ind =
-        this->required_descendant_real_props_a.simple_prop_index(
-            props.weight, this->properties_map);
-
-    this->set_descendant_matrix_spec_a<ndim_velocity, 1>();
-    this->set_descendant_matrix_spec_b<ndim_velocity, 1>();
-  };
-
-private:
-  PairScatteringKernelsOnDevice<ndim_velocity>
-      pair_scattering_kernels_on_device;
-
-public:
-  /**
-   * @brief Getter for the SYCL device-specific struct.
-   */
-
-  PairScatteringKernelsOnDevice<ndim_velocity> get_on_device_obj() {
-    return this->pair_scattering_kernels_on_device;
+    this->on_device_obj->descendant_internal_state_ind_b =
+        this->argument_pack.required_descendant_int_props_b.find_index(
+            internal_state_name);
+    this->on_device_obj->descendant_velocity_ind_b =
+        this->argument_pack.required_descendant_real_props_b.find_index(
+            velocity_name);
+    this->on_device_obj->descendant_weight_ind_b =
+        this->argument_pack.required_descendant_real_props_b.find_index(
+            weight_name);
   }
 };
+
 }; // namespace VANTAGE::Reactions
 #endif

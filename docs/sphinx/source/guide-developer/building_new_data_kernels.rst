@@ -80,6 +80,10 @@ pattern to reaction data (see :code:`reactions_lib/reaction_kernels.hpp` and
    :class:`ProductMatrixSpec` automatically, exposing them via
    :code:`get_on_device_obj()` and :code:`get_descendant_matrix_spec()`.
 
+Kernel base constructors accept :class:`Properties` requirements and build their
+argument packs and descendant schemas using the same property map, then expose
+the resolved pack via :code:`get_arg_pack()`.
+
 All four device operations use the bundled accessor signature::
 
    void scattering_kernel(REAL &modified_weight,
@@ -96,6 +100,27 @@ The same signature applies to :code:`weight_kernel`,
 reaction associates parents with products and then invokes
 :code:`scattering_kernel`, :code:`weight_kernel`,
 :code:`transformation_kernel`, and :code:`feedback_kernel` in order.
+
+Pair reaction kernels follow the same pattern using
+:code:`PairReactionKernelsBaseOnDevice<N>`, :code:`PairReactionKernelsBase<Device>`,
+:code:`PairReactionKernelArgumentPack`, and :code:`PairReactionKernelAccessors`
+(see :code:`reactions_lib/pair_reaction_kernels.hpp`). A and B input and
+descendant requirements are indexed separately, prerequisite rows are indexed
+with :code:`accessors.pair_index.get_loop_linear_index()`, and device types
+additionally implement :code:`parent_kernel(PairReactionKernelAccessors &accessors, const std::array<int, N> &out_states) const`
+to associate channel A and B products with their respective parents.
+
+For pairs, :code:`N` is the **total number of products per pair**, not the number
+per parent. Supply nonnegative A/B counts whose sum equals :code:`N`::
+
+   PairReactionKernelsBase<Device>(req_int_a, req_real_a, req_int_b, req_real_b,
+                                   desc_int_a, desc_real_a, desc_int_b, desc_real_b,
+                                   pre_req_ndims, ndim_velocity,
+                                   num_products_a, num_products_b, properties_map)
+
+Constructors without A/B counts are only for zero-product kernels. For
+inherited-only products, use empty descendant requirements with explicit counts;
+the device still associates each product with its parent in :code:`parent_kernel`.
 
 Below is a version of the charge exchange kernels with comments explaining the above points as well as othern nuances. 
 

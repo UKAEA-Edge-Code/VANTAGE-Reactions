@@ -173,8 +173,7 @@ struct LinearReactionBaseImpl : public AbstractReaction {
   static_assert(
       is_single_reaction_kernel<ReactionKernels>::value,
       "Linear reaction kernels must derive from ReactionKernelsBase.");
-  static_assert(detail::has_matching_kernel_product_count<
-                    ReactionKernels, num_products_per_parent>::value,
+  static_assert(ReactionKernels::NUM_PRODUCTS == num_products_per_parent,
                 "Linear reaction and kernel product counts must agree.");
 
   /**
