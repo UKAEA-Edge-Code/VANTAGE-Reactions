@@ -47,7 +47,7 @@ struct SingleReactionDataArgumentPack
       Properties<INT> required_int_props, Properties<REAL> required_real_props,
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral,
-      const std::map<int, std::string> &properties_map = get_default_map());
+      const PropertiesMap properties_map = PropertiesMap());
 
   std::vector<NP::Sym<INT>> int_sym_vector() {
     return required_int_props.to_sym_vector();
@@ -122,7 +122,7 @@ struct ReactionDataBase
       Properties<INT> required_int_props, Properties<REAL> required_real_props,
       Properties<INT> required_int_props_ephemeral,
       Properties<REAL> required_real_props_ephemeral,
-      std::map<int, std::string> properties_map = get_default_map())
+      const PropertiesMap properties_map = PropertiesMap())
       : Base(SingleReactionDataArgumentPack(
                  required_int_props, required_real_props,
                  required_int_props_ephemeral, required_real_props_ephemeral,
