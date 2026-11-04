@@ -176,6 +176,22 @@ int main() {
   P3 *p3 = nullptr;
   (void)p3;
 
+  // Call the compiled constructor rather than merely naming its type.
+  auto pack = SingleReactionDataArgumentPack(
+      Properties<INT>(std::array<int, 1>{default_properties.panic}),
+      Properties<REAL>(std::array<int, 1>{default_properties.weight}),
+      Properties<INT>(std::array<int, 2>{default_properties.panic,
+                                         default_properties.internal_state}),
+      Properties<REAL>(std::array<int, 2>{default_properties.weight,
+                                          default_properties.velocity}));
+  if (pack.required_int_props.to_string_vector() !=
+          std::vector<std::string>{"INTERNAL_STATE", "REACTIONS_PANIC_FLAG"} ||
+      pack.required_real_props.to_string_vector() !=
+          std::vector<std::string>{"VELOCITY", "WEIGHT"}) {
+    std::cerr << "consumer_smoke: argument-pack construction failed\n";
+    return 1;
+  }
+
   // --- CollisionCellManager member-function template instantiations ---------
   void (CollisionCellManager::*m0)(NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>,
                                    int, NP::NDLocalArraySharedPtr<REAL, 2> &) =

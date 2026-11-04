@@ -34,44 +34,38 @@ struct DataCalculator : public AbstractDataCalculator {
    */
   DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
-    size_t type_check_counter = 0u;
-    (
-        [&] {
-          static_assert(
-              std::is_base_of_v<
-                  AbstractReactionData<
-                      typename decltype(data)::ON_DEVICE_OBJ_TYPE,
-                      typename decltype(data)::ARGUMENT_PACK_TYPE,
-                      data.get_dim(), typename decltype(data)::RNG_KERNEL_TYPE>,
-                  decltype(data)>,
-              "DATATYPE provided is not derived from AbstractReactionData.");
-          type_check_counter++;
-        }(),
-        ...);
+    constexpr bool valid_data =
+        (is_loop_reaction_data<DATATYPE,
+                               SingleReactionDataArgumentPack>::value &&
+         ...);
+    static_assert(
+        valid_data,
+        "DataCalculator requires zero-input AbstractReactionData with "
+        "SingleReactionDataArgumentPack and std::array<REAL, DIM> output.");
 
-    std::apply(
-        [&](auto &&...args) {
-          size_t dat_idx = 0u;
-          (
-              [&] {
-                this->data_loop_int_syms.push_back(
-                    args.get_arg_pack().required_int_props.to_sym_vector());
+    if constexpr (valid_data) {
+      std::apply(
+          [&](auto &&...args) {
+            (
+                [&] {
+                  this->data_loop_int_syms.push_back(
+                      args.get_arg_pack().required_int_props.to_sym_vector());
 
-                this->data_loop_real_syms.push_back(
-                    args.get_arg_pack().required_real_props.to_sym_vector());
-                dat_idx++;
-              }(),
-              ...);
-        },
-        this->data);
+                  this->data_loop_real_syms.push_back(
+                      args.get_arg_pack().required_real_props.to_sym_vector());
+                }(),
+                ...);
+          },
+          this->data);
+    }
   }
 
   /**
    * @brief Fills an NP::NDLocalArray buffer by invoking the stored ReactionData
    * objects for a given cell index
    *
-   * @param buffer NP::NDLocalArray buffer - size should conform to the stored
-   * ReactionData tuple size
+   * @param buffer NP::NDLocalArray buffer - column count should match the total
+   * output dimensionality of the stored ReactionData tuple
    * @param particle_sub_group Particle subgroup used to fill out the buffer
    * @param cell_idx_start Starting cell index for which to invoke the
    * corresponding particle loops
@@ -82,8 +76,8 @@ struct DataCalculator : public AbstractDataCalculator {
                    NP::ParticleSubGroupSharedPtr particle_sub_group,
                    INT cell_idx_start, INT cell_idx_end) {
     NESOASSERT(buffer->index.shape[1] == this->get_data_size(),
-               "Buffer size in fill_buffer does not correspond to the number "
-               "data calculation objects.");
+               "Buffer column count in fill_buffer does not correspond to the "
+               "total dimensionality of the data calculation objects.");
     std::apply(
         [&](auto &&...args) {
           size_t dat_idx = 0u;
