@@ -36,11 +36,9 @@ struct SWPMReactionController : ProfilingBase {
         swpm_specification(swpm_specification),
         coll_cell_manager(coll_cell_manager) {
 
-
     this->configure_buffer_limits(this->max_pairs_per_cell,
                                   this->cell_block_size);
 
-  
     this->reactant_set = std::make_tuple(species_a_id, species_b_id);
 
     auto ccm_species = coll_cell_manager->get_species_ids();

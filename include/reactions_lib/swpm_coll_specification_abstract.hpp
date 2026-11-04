@@ -23,9 +23,8 @@ struct has_swpm_weight_transfer<
         std::declval<PAIR_LIST_T &>(), std::declval<INT>(),
         std::declval<INT>()))>> : std::true_type {};
 
-template <typename SPEC_T,
-          typename PAIR_LIST_T = NP::CellwisePairListAbsolute<
-              NP::ParticleGroup, NP::CellwisePairList>>
+template <typename SPEC_T, typename PAIR_LIST_T = NP::CellwisePairListAbsolute<
+                               NP::ParticleGroup, NP::CellwisePairList>>
 inline constexpr bool has_swpm_weight_transfer_v =
     has_swpm_weight_transfer<SPEC_T, PAIR_LIST_T>::value;
 

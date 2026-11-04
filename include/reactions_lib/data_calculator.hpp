@@ -35,7 +35,8 @@ struct DataCalculator : public AbstractDataCalculator {
   DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
 
     constexpr bool valid_data =
-        (is_loop_reaction_data<DATATYPE, SingleReactionDataArgumentPack>::value &&
+        (is_loop_reaction_data<DATATYPE,
+                               SingleReactionDataArgumentPack>::value &&
          ...);
     static_assert(
         valid_data,

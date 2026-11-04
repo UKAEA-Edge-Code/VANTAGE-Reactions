@@ -164,7 +164,8 @@ template <int num_products_per_parent, typename ReactionData,
           typename ReactionKernels>
 struct LinearReactionBaseImpl : public AbstractReaction {
   static_assert(
-      is_loop_reaction_data<ReactionData, SingleReactionDataArgumentPack>::value,
+      is_loop_reaction_data<ReactionData,
+                            SingleReactionDataArgumentPack>::value,
       "Linear reaction rates require zero-input AbstractReactionData with "
       "SingleReactionDataArgumentPack and std::array<REAL, DIM> output.");
   static_assert(ReactionData::DIM == 1,

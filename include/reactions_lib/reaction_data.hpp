@@ -118,11 +118,11 @@ struct ReactionDataBase
    * @param properties_map (Optional) A PropertiesMap object to be
    * used when remapping property names.
    */
-  ReactionDataBase(
-      Properties<INT> required_int_props, Properties<REAL> required_real_props,
-      Properties<INT> required_int_props_ephemeral,
-      Properties<REAL> required_real_props_ephemeral,
-      const PropertiesMap properties_map = PropertiesMap())
+  ReactionDataBase(Properties<INT> required_int_props,
+                   Properties<REAL> required_real_props,
+                   Properties<INT> required_int_props_ephemeral,
+                   Properties<REAL> required_real_props_ephemeral,
+                   const PropertiesMap properties_map = PropertiesMap())
       : Base(SingleReactionDataArgumentPack(
                  required_int_props, required_real_props,
                  required_int_props_ephemeral, required_real_props_ephemeral,

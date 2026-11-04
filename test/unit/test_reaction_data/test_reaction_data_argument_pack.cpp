@@ -82,13 +82,13 @@ TEST(ReactionDataContract, LoopCompatibility) {
   static_assert(
       !is_loop_reaction_data<InputData, SingleReactionDataArgumentPack>::value);
   static_assert(!is_loop_reaction_data<ReactionDataBase<WrongReturnDevice>,
-                                    SingleReactionDataArgumentPack>::value);
+                                       SingleReactionDataArgumentPack>::value);
   static_assert(!is_loop_reaction_data<ReactionDataBase<WrongSizeDevice>,
-                                    SingleReactionDataArgumentPack>::value);
+                                       SingleReactionDataArgumentPack>::value);
   static_assert(is_loop_reaction_data<ConcatenatorData<SingleData, SingleData>,
-                                   SingleReactionDataArgumentPack>::value);
+                                      SingleReactionDataArgumentPack>::value);
   static_assert(is_loop_reaction_data<ConcatenatorData<PairData, PairData>,
-                                   PairReactionDataArgumentPack>::value);
+                                      PairReactionDataArgumentPack>::value);
   // Calculator prerequisites are arrays, not scalar reaction rates.
   auto single = DataCalculator(MultiData{});
   auto pair = PairDataCalculator(PairData{});
