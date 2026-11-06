@@ -75,11 +75,12 @@ struct OneWayMaxwellianFluxOnDevice
   }
 
   /**
-   * @brief Sample a drifting Maxwellian using Box-Muller, rejecting velocities
-   * that are not strictly positive. Alternative function used at large
-   * positive drift because default method becomes inefficient.
+   * @brief Sample the one-way flux using a shifted normal proposal generated
+   * with Box-Muller. Used at large positive drift because the default method
+   * becomes inefficient.
    *
-   * @param drift Drift velocity in the surface-normal direction.
+   * @param drift Drift velocity in the surface-normal direction (must be
+   * positive).
    * @param thermal_sigma Thermal velocity spread (must be positive).
    * @param index Read-only loop index passed to the RNG kernel.
    * @param kernel Random number generator kernel.
@@ -87,7 +88,7 @@ struct OneWayMaxwellianFluxOnDevice
    * @param is_kernel_valid RNG validity; false causes a zero return value.
    * @return A strictly positive velocity, or zero if the RNG is invalid.
    */
-  REAL sample_positive_drifting_maxwellian(
+  REAL sample_positive_maxwellian_normal_proposal(
       REAL drift, REAL thermal_sigma, const NP::Access::LoopIndex::Read &index,
       typename NP::HostAtomicBlockKernelRNG<REAL>::KernelType &kernel,
       int &sample_counter, bool &is_kernel_valid) const {
@@ -95,6 +96,7 @@ struct OneWayMaxwellianFluxOnDevice
       return 0.0;
     }
 
+    const REAL new_drift = drift + thermal_sigma * thermal_sigma / drift;
     do {
       const REAL rand1 = kernel.at(index, sample_counter++, &is_kernel_valid);
       const REAL rand2 = kernel.at(index, sample_counter++, &is_kernel_valid);
@@ -103,9 +105,20 @@ struct OneWayMaxwellianFluxOnDevice
       }
 
       const auto normal_samples = utils::box_muller_transform(rand1, rand2);
-      const REAL candidate = drift + thermal_sigma * normal_samples[0];
+      const REAL candidate = new_drift + thermal_sigma * normal_samples[0];
       if (candidate > REAL(0.0)) {
-        return candidate;
+        const REAL relative_candidate = candidate / drift;
+        // The target/proposal ratio is maximal at candidate == drift.
+        const REAL acceptance =
+            relative_candidate * NP::Kernel::exp(1.0 - relative_candidate);
+        const REAL compare =
+            kernel.at(index, sample_counter++, &is_kernel_valid);
+        if (!is_kernel_valid) {
+          return 0.0;
+        }
+        if (compare <= acceptance) {
+          return candidate;
+        }
       }
     } while (true);
   }
@@ -113,8 +126,8 @@ struct OneWayMaxwellianFluxOnDevice
   /**
    * @brief Samples a single value from a positive Maxwellian.
    *
-   * @tparam EnableOneWayMaxEdgeCase Use a positive drifting Maxwellian
-   * approximation when drift / thermal_sigma > 2 (default: true).
+   * @tparam EnableOneWayMaxEdgeCase Use a shifted normal proposal when
+   * drift / thermal_sigma > 1 (default: true).
    *
    * @param drift Drift velocity due to fluid flow speed in the basis_pi
    * direction.
@@ -139,10 +152,10 @@ struct OneWayMaxwellianFluxOnDevice
 
     const REAL d = drift / thermal_sigma;
     if constexpr (EnableOneWayMaxEdgeCase) {
-      if (d > REAL(2.0)) {
-        return sample_positive_drifting_maxwellian(drift, thermal_sigma, index,
-                                                   kernel, sample_counter,
-                                                   is_kernel_valid);
+      if (d > REAL(1.0)) {
+        return sample_positive_maxwellian_normal_proposal(
+            drift, thermal_sigma, index, kernel, sample_counter,
+            is_kernel_valid);
       }
     }
     const REAL maxval = rejection_function(d, cardano_cubic_solver(d));
@@ -166,8 +179,8 @@ struct OneWayMaxwellianFluxOnDevice
    * @brief Function to calculate the sampled ion velocities from a one way /
    * truncated Maxwellian.
    *
-   * @tparam EnableOneWayMaxEdgeCase Enable the large-positive-drift
-   * approximation for the surface-normal sample (default: true).
+   * @tparam EnableOneWayMaxEdgeCase Enable the shifted normal proposal for
+   * the large-positive-drift surface-normal sample (default: true).
    * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel
    *
