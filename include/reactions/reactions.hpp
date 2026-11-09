@@ -28,6 +28,7 @@
 #include "../reactions_lib/reaction_data_accumulator_base.hpp"
 #include "../reactions_lib/reaction_kernel_pre_reqs.hpp"
 #include "../reactions_lib/reaction_kernels.hpp"
+#include "../reactions_lib/reaction_kernels_abstract.hpp"
 #include "../reactions_lib/swpm_coll_specification_abstract.hpp"
 #include "../reactions_lib/swpm_reaction.hpp"
 #include "../reactions_lib/swpm_reaction_controller.hpp"

@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_DATA_ABSTRACT_H
 #define REACTIONS_REACTION_DATA_ABSTRACT_H
+#include "accessor_pack.hpp"
 #include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
@@ -269,29 +270,6 @@ struct AbstractReactionDataOnDevice {
   }
   static constexpr size_t get_dim() { return dim; }
 };
-
-/**
- * @brief Compile-time mapping from a host-side argument-pack type to its
- * matching device-side accessor-pack type.
- *
- * The primary template is deliberately left undefined so that only the known
- * (host, device) pack pairings are admissible. The specialisations cover the
- * single and pair reaction-data pack pairs. Concrete reaction-data leaf types
- * that are pack-agnostic (e.g. UnaryArrayTransformData) take an
- * ARGUMENT_PACK_T template argument and derive the accessor pack via
- * accessor_pack_for_t<ARGUMENT_PACK_T>, so they can sit inside either a single
- * or a pair pipeline.
- *
- * @tparam ARGUMENT_PACK_T A concrete argument-pack type deriving from
- * AbstractArgumentPack.
- */
-template <typename ARGUMENT_PACK_T> struct accessor_pack_for;
-
-/**
- * @brief Convenience alias for accessor_pack_for<ARGUMENT_PACK_T>::type.
- */
-template <typename ARGUMENT_PACK_T>
-using accessor_pack_for_t = typename accessor_pack_for<ARGUMENT_PACK_T>::type;
 
 /**
  * @brief Whether host data can supply a REAL array to a single or pair loop.
