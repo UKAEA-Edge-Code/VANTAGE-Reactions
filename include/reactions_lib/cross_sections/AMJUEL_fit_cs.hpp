@@ -126,9 +126,7 @@ struct AMJUELFitCrossSection : public AbstractCrossSection {
    * @return REAL-valued rate sigma*v_r
    */
   REAL sigma_v(const REAL &relative_vel) const {
-    return (relative_vel <= 0.0)
-               ? 0.0
-               : this->get_value_at(relative_vel) * relative_vel;
+    return this->get_value_at(relative_vel) * relative_vel;
   };
 
   /**

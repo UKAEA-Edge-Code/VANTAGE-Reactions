@@ -282,6 +282,13 @@ private:
   size_t max_particles_per_cell = 16384;
   std::shared_ptr<NP::ParticleGroupTemporary> particle_group_temporary;
 
+  /**
+   * @brief Configure the maximum number of particles per cell and the cell
+   * block size, and update the maximum buffer size on all registered reactions.
+   *
+   * @param max_num_parts Maximum number of particles per cell.
+   * @param block_size Number of cells to apply reactions to at a time.
+   */
   void configure_buffer_limits(size_t max_num_parts, size_t block_size) {
     NESOASSERT(max_num_parts > 0,
                "max_particles_per_cell must be greater than 0.");

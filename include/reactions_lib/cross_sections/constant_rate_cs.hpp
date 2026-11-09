@@ -35,7 +35,8 @@ struct ConstantRateCrossSection : public AbstractCrossSection {
    * @brief Returns the rate sigma*v_r at a given relative speed, which is
    * constant (K) for all relative speeds including v_r = 0.
    *
-   * @param relative_vel Relative velocity of projectile and target
+   * @param relative_vel Relative velocity of projectile and target (unused
+   * here)
    * @return REAL-valued constant rate K
    */
   REAL sigma_v(const REAL &relative_vel) const {

@@ -446,6 +446,14 @@ private:
 
   bool add_noise_to_partial_collisions;
 
+  /**
+   * @brief Configure the maximum number of collision pairs per cell and the
+   * cell block size, and update the maximum buffer size on all registered
+   * reactions.
+   *
+   * @param max_num_pairs Maximum number of collision pairs per cell.
+   * @param block_size Number of cells to apply reactions to at a time.
+   */
   void configure_buffer_limits(size_t max_num_pairs, size_t block_size) {
     NESOASSERT(max_num_pairs > 0,
                "max_particles_per_cell must be greater than 0.");

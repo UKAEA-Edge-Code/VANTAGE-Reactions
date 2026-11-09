@@ -10,19 +10,36 @@ namespace VANTAGE::Reactions {
 
 using DEFAULT_RNG_KERNEL = NP::NullKernelRNG<REAL>;
 
+/**
+ * @brief Trait checking whether an SWPM specification type implements
+ * `calculate_weight_transfer(pair_list, cell_idx_start, cell_idx_end)`.
+ *
+ * @tparam SPEC_T SWPM collision specification type.
+ * @tparam PAIR_LIST_T Cellwise pair-list type passed to
+ * `calculate_weight_transfer`.
+ */
 template <typename SPEC_T,
           typename PAIR_LIST_T = NP::CellwisePairListAbsolute<
               NP::ParticleGroup, NP::CellwisePairList>,
           typename = void>
 struct has_swpm_weight_transfer : std::false_type {};
 
+/// \cond
 template <typename SPEC_T, typename PAIR_LIST_T>
 struct has_swpm_weight_transfer<
     SPEC_T, PAIR_LIST_T,
     std::void_t<decltype(std::declval<SPEC_T &>().calculate_weight_transfer(
         std::declval<PAIR_LIST_T &>(), std::declval<INT>(),
         std::declval<INT>()))>> : std::true_type {};
+/// \endcond
 
+/**
+ * @brief Helper variable template for `has_swpm_weight_transfer`.
+ *
+ * @tparam SPEC_T SWPM collision specification type.
+ * @tparam PAIR_LIST_T Cellwise pair-list type passed to
+ * `calculate_weight_transfer`.
+ */
 template <typename SPEC_T, typename PAIR_LIST_T = NP::CellwisePairListAbsolute<
                                NP::ParticleGroup, NP::CellwisePairList>>
 inline constexpr bool has_swpm_weight_transfer_v =
