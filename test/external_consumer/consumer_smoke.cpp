@@ -176,6 +176,11 @@ int main() {
   P3 *p3 = nullptr;
   (void)p3;
 
+  using SR0 = SingleReactionDataArgumentPack;
+  SR0 sr0{Properties<INT>{}, Properties<REAL>{}, Properties<INT>{},
+          Properties<REAL>{}};
+  (void)sr0;
+
   // --- CollisionCellManager member-function template instantiations ---------
   void (CollisionCellManager::*m0)(NP::ParticleSubGroupSharedPtr, NP::Sym<REAL>,
                                    int, NP::NDLocalArraySharedPtr<REAL, 2> &) =

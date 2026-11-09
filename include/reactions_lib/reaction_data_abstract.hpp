@@ -1,5 +1,6 @@
 #ifndef REACTIONS_REACTION_DATA_ABSTRACT_H
 #define REACTIONS_REACTION_DATA_ABSTRACT_H
+#include "particle_properties_map.hpp"
 #include "reaction_kernel_pre_reqs.hpp"
 #include "reactions/neso_particles_namespace_alias.hpp"
 #include <memory>
@@ -109,138 +110,6 @@ template <typename Derived> struct AbstractArgumentPack {
   }
 };
 
-/**
- * @brief Non-template storage for the reaction-data property bookkeeping.
- *
- * Owns the required INT/REAL property sets and the property-name map that do
- * not depend on the on-device type, dimension or RNG type. It is composed (not
- * inherited) by AbstractReactionData so that AbstractReactionData remains the
- * root of the reaction-data hierarchy, while the non-template methods here are
- * compiled once into the shared library (src/reaction_data.cpp).
- */
-struct ReactionDataStorage {
-
-  /**
-   * @brief Constructor for ReactionDataStorage.
-   *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction data.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
-   * @param required_int_props_ephemeral Properties<INT> object containing
-   * information regarding the required INT-based ephemeral properties for the
-   * reaction data.
-   * @param required_real_props_ephemeral Properties<REAL> object containing
-   * information regarding the required REAL-based ephemeral properties for the
-   * reaction data.
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names.
-   */
-  ReactionDataStorage(Properties<INT> required_int_props,
-                      Properties<REAL> required_real_props,
-                      Properties<INT> required_int_props_ephemeral,
-                      Properties<REAL> required_real_props_ephemeral,
-                      const PropertiesMap properties_map = PropertiesMap());
-
-  /**
-   * \overload
-   * @brief Constructor for ReactionDataStorage that sets no required
-   * properties.
-   *
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names.
-   */
-  ReactionDataStorage(const PropertiesMap properties_map = PropertiesMap());
-
-  /**
-   * \overload
-   * @brief Constructor for ReactionDataStorage that sets only required int
-   * properties.
-   *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction data.
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names.
-   */
-  ReactionDataStorage(Properties<INT> required_int_props,
-                      const PropertiesMap properties_map = PropertiesMap());
-
-  /**
-   * \overload
-   * @brief Constructor for ReactionDataStorage that sets only required real
-   * properties.
-   *
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names.
-   */
-  ReactionDataStorage(Properties<REAL> required_real_props,
-                      const PropertiesMap properties_map = PropertiesMap());
-
-  /**
-   * \overload
-   * @brief Constructor for ReactionDataStorage that sets only required int and
-   * real properties.
-   *
-   * @param required_int_props Properties<INT> object containing information
-   * regarding the required INT-based properties for the reaction data.
-   * @param required_real_props Properties<REAL> object containing information
-   * regarding the required REAL-based properties for the reaction data.
-   * @param properties_map (Optional) A PropertiesMap object to be
-   * used when remapping property names.
-   */
-  ReactionDataStorage(Properties<INT> required_int_props,
-                      Properties<REAL> required_real_props,
-                      const PropertiesMap properties_map = PropertiesMap());
-
-  ~ReactionDataStorage();
-
-  /**
-   * @brief Return all required integer properties, including ephemeral.
-   */
-  ArgumentNameSet<INT> get_required_int_props() const;
-
-  /**
-   * @brief Setter for required integer properties.
-   *
-   * @param props ArgumentNameSet to use.
-   */
-  void set_required_int_props(const ArgumentNameSet<INT> &props);
-
-  /**
-   * @brief Return all required integer properties as a vector of Syms.
-   */
-  std::vector<NP::Sym<INT>> get_required_int_sym_vector();
-
-  /**
-   * @brief Return all required real properties, including ephemeral.
-   */
-  ArgumentNameSet<REAL> get_required_real_props() const;
-
-  /**
-   * @brief Setter for required real properties.
-   *
-   * @param props ArgumentNameSet to use.
-   */
-  void set_required_real_props(const ArgumentNameSet<REAL> &props);
-
-  /**
-   * @brief Return all required real properties as a vector of Syms.
-   */
-  std::vector<NP::Sym<REAL>> get_required_real_sym_vector();
-
-  /**
-   * @brief Return the property remapping map.
-   */
-  const PropertiesMap &get_properties_map() const;
-
-protected:
-  ArgumentNameSet<INT> required_int_props;
-  ArgumentNameSet<REAL> required_real_props;
-  PropertiesMap properties_map;
-};
-
 template <typename ON_DEVICE_T, typename ARGUMENT_PACK_T, size_t dim = 1,
           typename RNG_KERNEL_T = DEFAULT_RNG_KERNEL, size_t input_dim = 0>
 struct AbstractReactionData {
@@ -278,22 +147,30 @@ struct AbstractReactionData {
               input_t, const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
               typename RNG_KERNEL_T::KernelType &>(),
           "ON_DEVICE_T::calc_data return type mismatch");
+    } else {
+      static_assert(
+          is_abstract_calc_data_callable_v<
+              ON_DEVICE_T, const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
+              typename RNG_KERNEL_T::KernelType &>,
+          "ON_DEVICE_T::calc_data parameter signature mismatch");
+      static_assert(
+          check_abstract_calc_data_return_type<
+              ON_DEVICE_T,
+              std::array<typename ON_DEVICE_T::VALUE_TYPE, ON_DEVICE_T::DIM>,
+              const typename ON_DEVICE_T::ACCESSOR_PACK_TYPE &,
+              typename RNG_KERNEL_T::KernelType &>(),
+          "ON_DEVICE_T::calc_data return type mismatch");
     }
     return true;
   }
 
   AbstractReactionData(ARGUMENT_PACK_T argument_pack,
-                       ReactionDataStorage storage)
-      : argument_pack(argument_pack), storage(storage) {
+                       PropertiesMap properties_map = PropertiesMap())
+      : argument_pack(argument_pack), properties_map(properties_map) {
 
     static_assert(validate_on_device_type());
     this->rng_kernel = std::make_shared<RNG_KERNEL_T>();
   }
-
-  AbstractReactionData(ARGUMENT_PACK_T argument_pack,
-                       const PropertiesMap properties_map = PropertiesMap())
-      : AbstractReactionData(argument_pack,
-                             ReactionDataStorage(properties_map)) {}
 
   ARGUMENT_PACK_T get_arg_pack() { return this->argument_pack; }
   void set_arg_pack(const ARGUMENT_PACK_T &argument_pack) {
@@ -308,32 +185,6 @@ struct AbstractReactionData {
   std::shared_ptr<RNG_KERNEL_T> get_rng_kernel() { return this->rng_kernel; }
 
   static constexpr size_t get_dim() { return dim; }
-
-  ArgumentNameSet<INT> get_required_int_props() {
-    return this->storage.get_required_int_props();
-  }
-
-  void set_required_int_props(const ArgumentNameSet<INT> &props) {
-    this->storage.set_required_int_props(props);
-    this->index_on_device_object();
-  }
-
-  std::vector<NP::Sym<INT>> get_required_int_sym_vector() {
-    return this->storage.get_required_int_sym_vector();
-  }
-
-  ArgumentNameSet<REAL> get_required_real_props() {
-    return this->storage.get_required_real_props();
-  }
-
-  void set_required_real_props(const ArgumentNameSet<REAL> &props) {
-    this->storage.set_required_real_props(props);
-    this->index_on_device_object();
-  }
-
-  std::vector<NP::Sym<REAL>> get_required_real_sym_vector() {
-    return this->storage.get_required_real_sym_vector();
-  }
 
   virtual ~AbstractReactionData() = default;
 
@@ -356,12 +207,12 @@ struct AbstractReactionData {
 
 protected:
   const PropertiesMap &get_properties_map() const {
-    return this->storage.get_properties_map();
+    return this->properties_map;
   }
 
   std::optional<ON_DEVICE_T> on_device_obj;
   ARGUMENT_PACK_T argument_pack;
-  ReactionDataStorage storage;
+  PropertiesMap properties_map;
   std::shared_ptr<RNG_KERNEL_T> rng_kernel;
 };
 
@@ -441,6 +292,38 @@ template <typename ARGUMENT_PACK_T> struct accessor_pack_for;
  */
 template <typename ARGUMENT_PACK_T>
 using accessor_pack_for_t = typename accessor_pack_for<ARGUMENT_PACK_T>::type;
+
+/**
+ * @brief Whether host data can supply a REAL array to a single or pair loop.
+ *
+ * @tparam T Host reaction-data type.
+ * @tparam PACK Required host argument-pack type.
+ */
+template <typename T, typename PACK, typename = void>
+struct is_loop_reaction_data : std::false_type {};
+
+/// \cond
+template <typename T, typename PACK>
+struct is_loop_reaction_data<
+    T, PACK,
+    std::void_t<typename T::ON_DEVICE_OBJ_TYPE, typename T::ARGUMENT_PACK_TYPE,
+                typename T::RNG_KERNEL_TYPE, decltype(T::DIM),
+                decltype(T::INPUT_DIM),
+                decltype(T::ON_DEVICE_OBJ_TYPE::INPUT_DIM)>>
+    : std::bool_constant<
+          std::is_base_of_v<
+              AbstractReactionData<typename T::ON_DEVICE_OBJ_TYPE,
+                                   typename T::ARGUMENT_PACK_TYPE, T::DIM,
+                                   typename T::RNG_KERNEL_TYPE, T::INPUT_DIM>,
+              T> &&
+          std::is_same_v<typename T::ARGUMENT_PACK_TYPE, PACK> &&
+          T::INPUT_DIM == 0 && T::ON_DEVICE_OBJ_TYPE::INPUT_DIM == 0 &&
+          std::is_same_v<abstract_calc_data_return_t<
+                             typename T::ON_DEVICE_OBJ_TYPE,
+                             const accessor_pack_for_t<PACK> &,
+                             typename T::RNG_KERNEL_TYPE::KernelType &>,
+                         std::array<REAL, T::DIM>>> {};
+/// \endcond
 
 }; // namespace VANTAGE::Reactions
 #endif

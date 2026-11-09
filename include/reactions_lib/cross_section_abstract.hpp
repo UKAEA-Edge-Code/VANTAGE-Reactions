@@ -28,6 +28,17 @@ struct AbstractCrossSection {
   };
 
   /**
+   * @brief Get the value of sigma*v_r where sigma is this cross-section
+   * evaluated at v_r and v_r is the relative speed of the projectile and target
+   *
+   * @param relative_vel Magnitude of relative velocity of target and projectile
+   * @return REAL-valued rate sigma*v_r at requested relative speed
+   */
+  REAL sigma_v(const REAL &relative_vel) const {
+    return std::numeric_limits<REAL>::lowest();
+  };
+
+  /**
    * @brief Get the maximum value of sigma*v_r where sigma is this cross-section
    * evaluated at v_r and v_r is the relative speed of the projectile and target
    *

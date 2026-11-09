@@ -372,3 +372,74 @@ TEST(PairDataCalculator, cs_reaction_data_simple_and_constant_binary_add) {
   A->sycl_target->free();
   A->domain->mesh->free();
 }
+
+TEST(PairDataCalculator, cs_reaction_data_zero_relative_speed) {
+  const int N_total = 160;
+  auto [A, B] = create_test_particle_groups_pairs(N_total);
+
+  for (auto &group : {A, B}) {
+    NP::particle_loop(
+        "set_equal_vel", group,
+        [=](auto vel) {
+          vel[0] = 3.0;
+          vel[1] = -1.5;
+        },
+        NP::Access::write(NP::Sym<REAL>("VELOCITY")))
+        ->execute();
+  }
+
+  const int cell_count = A->domain->mesh->get_cell_count();
+  auto cellwise_pair_list =
+      std::make_shared<NP::CellwisePairListSimple>(A->sycl_target, cell_count);
+
+  std::vector<int> c, i, j;
+  for (int cellx = 0; cellx < cell_count; cellx++) {
+    const int npart_cell = A->get_npart_cell(cellx);
+    for (int px = 0; px < npart_cell; px++) {
+      c.push_back(cellx);
+      i.push_back(px);
+      j.push_back(px);
+    }
+  }
+  cellwise_pair_list->push_back(c, i, j);
+
+  auto pair_list =
+      NP::CellwisePairListAbsolute<NP::ParticleGroup, NP::CellwisePairList>(
+          A, B, cellwise_pair_list);
+
+  struct DivergentZeroVelCS : public AbstractCrossSection {
+    REAL get_value_at(const REAL &relative_vel) const {
+      return 1.0 / relative_vel;
+    }
+    REAL get_max_rate_val() const { return 1.0; }
+  };
+
+  auto cs_rate_pos = CSPairData<2>(ConstantRateCrossSection(2.5));
+  auto cs_rate_zero = CSPairData<2>(ConstantRateCrossSection(0.0));
+  auto cs_const =
+      CSPairData<2, ConstantCrossSection>(ConstantCrossSection(2.5, 1.0));
+  auto cs_ipl =
+      CSPairData<2, IPLCrossSection>(IPLCrossSection(2.5, 1.0, 0.5, 10.0));
+  auto cs_custom = CSPairData<2, DivergentZeroVelCS>(DivergentZeroVelCS{});
+  auto calc = PairDataCalculator(cs_rate_pos, cs_rate_zero, cs_const, cs_ipl,
+                                 cs_custom);
+
+  const int total_pairs = static_cast<int>(c.size());
+  auto nd_arr = std::make_shared<NP::NDLocalArray<REAL, 2>>(A->sycl_target,
+                                                            total_pairs, 5);
+  nd_arr->fill(-1.0);
+
+  calc.fill_buffer(nd_arr, pair_list, 0, cell_count);
+  auto host_vals = nd_arr->get();
+
+  for (int px = 0; px < total_pairs; px++) {
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 0), 2.5);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 1), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 2), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 3), 0.0);
+    EXPECT_DOUBLE_EQ(host_vals.at(px * 5 + 4), 0.0);
+  }
+
+  A->sycl_target->free();
+  A->domain->mesh->free();
+}
