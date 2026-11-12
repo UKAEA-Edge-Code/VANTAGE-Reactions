@@ -56,7 +56,10 @@ TEST(OneWayMaxwellianFluxSampler, SamplesExpectedVelocityWithDeterministicRNG) {
       (-5.0 * std::sqrt(2.0) + 7.0 * std::sqrt(3.0) + 11.0 * std::sqrt(5.0)) /
           std::sqrt(195.0) -
       std::sqrt(2.0 * norm_ratio) * std::sqrt(-2 * std::log(0.75));
-  const REAL sampled_pi = 3.0 * std::sqrt(2.0 * norm_ratio);
+  const REAL drift_pi =
+      (-3.0 * std::sqrt(2.0) + 5.0 * std::sqrt(3.0) + 7.0 * std::sqrt(5.0)) /
+      std::sqrt(83.0);
+  const REAL sampled_pi = drift_pi + 2.0 * norm_ratio / drift_pi;
 
   std::array<REAL, 3> expected_vals;
 
@@ -222,16 +225,18 @@ void check_normal_sampling(const REAL drift,
 
 TEST(OneWayMaxwellianFluxSampler, LargeDriftRejectsNonpositiveSamples) {
   const REAL expected =
-      4.0 + std::sqrt(-2.0 * std::log(0.8)) * std::cos(2.0 * M_PI * 0.01);
-  // Reject -1 and 0 before accepting the positive Box-Muller sample.
-  check_normal_sampling<true>(
-      4.0, {0.75, 0.75, std::exp(-12.5), 0.5, std::exp(-8.0), 0.5, 0.8, 0.01},
-      expected);
+      4.25 + std::sqrt(-2.0 * std::log(0.8)) * std::cos(2.0 * M_PI * 0.01);
+  // The shifted proposal has mean 4.25; reject -1 and 0 before acceptance.
+  check_normal_sampling<true>(4.0,
+                              {0.75, 0.75, std::exp(-0.5 * 5.25 * 5.25), 0.5,
+                               std::exp(-0.5 * 4.25 * 4.25), 0.5, 0.8, 0.01,
+                               0.01},
+                              expected);
 }
 
 TEST(OneWayMaxwellianFluxSampler, UsesOriginalSamplerWhenEdgeCaseDoesNotApply) {
   check_normal_sampling<false>(3.0, {0.75, 0.75, 0.8, 0.01}, 4.0);
-  check_normal_sampling<true>(2.0, {0.75, 0.75, 0.8, 0.01}, 4.0);
+  check_normal_sampling<true>(1.0, {0.75, 0.75, 0.8, 0.01}, 4.0);
 }
 
 TEST(OneWayMaxwellianFluxSampler, LargeDriftReportsExhaustedRNG) {
