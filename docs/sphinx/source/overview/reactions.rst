@@ -304,7 +304,7 @@ One-way Maxwellian flux sampler
 
 The device method ``calc_data<EnableOneWayMaxEdgeCase>`` defaults the compile-time
 flag to ``true``. When the normal drift divided by the thermal spread is greater
-than 2, it approximates the normal flux with a drifting Maxwellian, using
+than 1, it approximates the normal flux with a drifting Maxwellian, using
 Box-Muller sampling and rejecting nonpositive velocities. Use
 ``calc_data<false>(accessors, kernel)`` to retain the original rejection sampler
 at all drifts. RNG exhaustion sets the existing panic flag and returns a zero
