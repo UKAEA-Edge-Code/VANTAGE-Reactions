@@ -48,7 +48,7 @@ struct SourceReaction
                            LinearScatteringKernels<ndim, with_sources, false>,
                            DataCalculator<VelocityData>>(
             sycl_target, marker_species.get_id(),
-            std::array<int, 1>{static_cast<int>(product_species.get_id())},
+            std::array<INT, 1>{product_species.get_id()},
             FixedRateData(1.0),
             LinearScatteringKernels<ndim, with_sources, false>(product_species,
                                                                properties_map),

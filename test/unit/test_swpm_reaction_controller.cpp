@@ -437,9 +437,8 @@ TEST(SWPMReactionController, double_step) {
           SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                        decltype(pair_data_calculator)>>(
           A->sycl_target,
-          std::array<int, 2>{static_cast<int>(species_2.get_id()),
-                             static_cast<int>(species_1.get_id())},
-          std::array<int, 2>{2, 3}, cs_data, scattering_kernels,
+          std::array<INT, 2>{species_2.get_id(), species_1.get_id()},
+          std::array<INT, 2>{2, 3}, cs_data, scattering_kernels,
           pair_data_calculator);
       EXPECT_THROW(controller.add_reaction(swapped_reaction), std::logic_error);
 
@@ -447,8 +446,8 @@ TEST(SWPMReactionController, double_step) {
           SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                        decltype(pair_data_calculator)>>(
           A->sycl_target,
-          std::array<int, 2>{static_cast<int>(species_1.get_id()), 99},
-          std::array<int, 2>{2, 3}, cs_data, scattering_kernels,
+          std::array<INT, 2>{species_1.get_id(), 99},
+          std::array<INT, 2>{2, 3}, cs_data, scattering_kernels,
           pair_data_calculator);
       EXPECT_THROW(controller.add_reaction(wrong_species_reaction),
                    std::logic_error);
