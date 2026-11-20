@@ -28,8 +28,8 @@ void reaction_controller_example(NP::ParticleGroupSharedPtr particle_group) {
       LinearReactionBase<1, FixedRateData, CXReactionKernels<2>,
                          DataCalculator<FixedRateData, FixedRateData>>>(
       particle_group->sycl_target, ion_species_1.get_id(),
-      std::array<int, 1>{static_cast<int>(ion_species_2.get_id())}, rate_data,
-      cx_kernel, data_calculator);
+      std::array<INT, 1>{ion_species_2.get_id()}, rate_data, cx_kernel,
+      data_calculator);
 
   // Ionisation reactions
   auto ionise_reaction_1 =

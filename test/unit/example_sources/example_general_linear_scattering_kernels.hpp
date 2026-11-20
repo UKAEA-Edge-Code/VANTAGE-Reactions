@@ -27,7 +27,7 @@ void general_linear_scattering_kernels_example(
   auto data_calculator = DataCalculator<decltype(pipeline)>(pipeline);
 
   auto scattering_kernel =
-      LinearScatteringKernels<2,   // velocity dat dimensionality
+      LinearScatteringKernels<2,    // velocity dat dimensionality
                               true, // Whether sources should be written to
                               true  // Whether parent weight is reduced
                               >(projectile_species, // Scattered species
@@ -43,7 +43,7 @@ void general_linear_scattering_kernels_example(
   auto specular_reflection_reaction =
       LinearReactionBase<1, FixedRateData, decltype(scattering_kernel),
                          decltype(data_calculator)>(
-          particle_group->sycl_target, 0, std::array<int, 1>{0},
+          particle_group->sycl_target, 0, std::array<INT, 1>{0},
           FixedRateData(1.0), scattering_kernel, data_calculator);
 
   return;

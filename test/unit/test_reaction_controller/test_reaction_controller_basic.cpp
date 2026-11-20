@@ -27,7 +27,7 @@ TEST(ReactionController, single_reaction_multi_apply) {
 
   auto test_reaction = TestReaction<num_products_per_parent>(
       particle_group->sycl_target, test_rate, 0,
-      std::array<int, num_products_per_parent>{1});
+      std::array<INT, num_products_per_parent>{1});
 
   reaction_controller.add_reaction(
       std::make_shared<TestReaction<num_products_per_parent>>(test_reaction));
@@ -106,25 +106,25 @@ TEST(ReactionController, single_reaction_multi_apply) {
     EXPECT_THROW(reaction_controller.add_reaction(nullptr), std::logic_error);
 
     struct InspectableReaction : TestReaction<1> {
-      std::vector<int> in_states;
+      std::vector<INT> in_states;
       InspectableReaction(NP::SYCLTargetSharedPtr sycl_target,
-                          std::vector<int> in_states)
-          : TestReaction<1>(sycl_target, 1.0, 0, std::array<int, 1>{1}),
+                          std::vector<INT> in_states)
+          : TestReaction<1>(sycl_target, 1.0, 0, std::array<INT, 1>{1}),
             in_states(std::move(in_states)) {}
-      std::vector<int> get_in_states() override { return this->in_states; }
+      std::vector<INT> get_in_states() override { return this->in_states; }
       size_t max_buffer_size() { return this->get_max_buffer_size(); }
     };
     EXPECT_THROW(
         reaction_controller.add_reaction(std::make_shared<InspectableReaction>(
-            particle_group->sycl_target, std::vector<int>{})),
+            particle_group->sycl_target, std::vector<INT>{})),
         std::logic_error);
     EXPECT_THROW(
         reaction_controller.add_reaction(std::make_shared<InspectableReaction>(
-            particle_group->sycl_target, std::vector<int>{0, 1})),
+            particle_group->sycl_target, std::vector<INT>{0, 1})),
         std::logic_error);
 
     auto valid_reaction = std::make_shared<InspectableReaction>(
-        particle_group->sycl_target, std::vector<int>{0});
+        particle_group->sycl_target, std::vector<INT>{0});
     reaction_controller.add_reaction(valid_reaction);
 
     EXPECT_THROW(reaction_controller.set_cell_block_size(0), std::logic_error);

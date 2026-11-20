@@ -68,8 +68,8 @@ struct SWPMDSMCSpecification
 
   void
   calculate_q_hat(NP::ParticleSubGroupSharedPtr target,
-                  std::shared_ptr<CollisionCellManager> &ccm, int species_id_a,
-                  int species_id_b,
+                  std::shared_ptr<CollisionCellManager> &ccm, INT species_id_a,
+                  INT species_id_b,
                   NP::NDLocalArraySharedPtr<REAL, 2> &sigma_v_bound,
                   NP::NDLocalArraySharedPtr<REAL, 2> &result_buffer) override {
 

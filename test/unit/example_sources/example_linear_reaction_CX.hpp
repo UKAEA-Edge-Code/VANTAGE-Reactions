@@ -71,12 +71,11 @@ void linear_reaction_CX_example(NP::ParticleGroupSharedPtr particle_group) {
       >(particle_group
             ->sycl_target, // The reaction class needs access to the sycl_target
                            // of the group whose subgroups it's to be applied to
-        projectile_species.get_id(), // Ingoing partice state id
-        std::array<int, 1>{static_cast<int>(
-            target_species
-                .get_id())}, // State IDs of all the products - here just one
-        rate_data,           // Reaction data used for the rate calculation
-        cx_kernel,           // Reaction kernel object to be used
+        projectile_species.get_id(),                 // Ingoing partice state id
+        std::array<INT, 1>{target_species.get_id()}, // State IDs of all the
+                                                     // products - here just one
+        rate_data, // Reaction data used for the rate calculation
+        cx_kernel, // Reaction kernel object to be used
         data_calculator,
         prop_map // Map used for getting weight and total rate syms
   );

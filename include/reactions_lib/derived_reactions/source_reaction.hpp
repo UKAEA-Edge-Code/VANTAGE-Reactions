@@ -40,16 +40,15 @@ struct SourceReaction
    * the reaction and its kernels. Source properties must be mapped as needed
    * when with_sources is true.
    */
-  SourceReaction(
-      NP::SYCLTargetSharedPtr sycl_target, VelocityData velocity_data,
-      Species marker_species, Species product_species,
-      const PropertiesMap properties_map = PropertiesMap())
+  SourceReaction(NP::SYCLTargetSharedPtr sycl_target,
+                 VelocityData velocity_data, Species marker_species,
+                 Species product_species,
+                 const PropertiesMap properties_map = PropertiesMap())
       : LinearReactionBase<1, FixedRateData,
                            LinearScatteringKernels<ndim, with_sources, false>,
                            DataCalculator<VelocityData>>(
             sycl_target, marker_species.get_id(),
-            std::array<int, 1>{static_cast<int>(product_species.get_id())},
-            FixedRateData(1.0),
+            std::array<INT, 1>{product_species.get_id()}, FixedRateData(1.0),
             LinearScatteringKernels<ndim, with_sources, false>(product_species,
                                                                properties_map),
             DataCalculator<VelocityData>(velocity_data), properties_map) {}

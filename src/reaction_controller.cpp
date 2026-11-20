@@ -60,7 +60,7 @@ void ReactionController::controller_pre_process() {
   for (int r = 0; r < this->reactions.size(); r++) {
     this->reactions[r]->set_max_buffer_size(this->max_particles_per_cell *
                                             this->cell_block_size);
-    for (int in_state : this->reactions[r]->get_in_states()) {
+    for (INT in_state : this->reactions[r]->get_in_states()) {
       this->parent_ids.insert(in_state);
 
       this->sub_group_selectors.emplace(std::make_pair(
@@ -73,7 +73,7 @@ void ReactionController::controller_pre_process() {
     if (!this->reactions[r]->get_out_states().empty()) {
       auto out_states = this->reactions[r]->get_out_states();
 
-      for (int out_state : out_states) {
+      for (INT out_state : out_states) {
         this->child_ids.insert(out_state);
 
         this->sub_group_selectors.emplace(std::make_pair(
@@ -187,7 +187,7 @@ void ReactionController::apply_impl(NP::ParticleSubGroupSharedPtr target,
     break;
   }
 
-  for (int in_state : this->parent_ids) {
+  for (INT in_state : this->parent_ids) {
     auto species_group =
         this->sub_group_selectors[in_state]->make_marker_subgroup(target);
     this->species_groups[in_state] = species_group;

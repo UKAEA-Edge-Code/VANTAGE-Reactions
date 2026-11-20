@@ -31,7 +31,7 @@ TEST(ReactionData, EphemeralPropertiesReactionData) {
 
   auto test_reaction =
       LinearReactionBase<0, TestEphemeralVarData, TestReactionKernels<0>>(
-          particle_group->sycl_target, 0, std::array<int, 0>{}, test_data,
+          particle_group->sycl_target, 0, std::array<INT, 0>{}, test_data,
           TestReactionKernels<0>());
 
   int cell_count = particle_group->domain->mesh->get_cell_count();

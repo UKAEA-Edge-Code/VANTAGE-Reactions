@@ -289,7 +289,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
       NP::Access::PairLoopIndex::Read &index_b,
       NP::Access::DescendantProducts::Write &descendant_products_a,
       NP::Access::DescendantProducts::Write &descendant_products_b,
-      const std::array<int, num_products_per_parent> &out_states) const {
+      const std::array<INT, num_products_per_parent> &out_states) const {
     return;
   }
 
@@ -331,7 +331,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
       NP::Access::SymVector::Write<REAL> &req_real_props_a,
       NP::Access::SymVector::Write<INT> &req_int_props_b,
       NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
+      const std::array<INT, num_products_per_parent> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
@@ -373,7 +373,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
       NP::Access::SymVector::Write<REAL> &req_real_props_a,
       NP::Access::SymVector::Write<INT> &req_int_props_b,
       NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
+      const std::array<INT, num_products_per_parent> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
@@ -417,7 +417,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
       NP::Access::SymVector::Write<REAL> &req_real_props_a,
       NP::Access::SymVector::Write<INT> &req_int_props_b,
       NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, num_products_per_parent> &out_states,
+      const std::array<INT, num_products_per_parent> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     return;
   }
@@ -460,7 +460,7 @@ template <int num_products_per_parent> struct PairReactionKernelsBaseOnDevice {
                 NP::Access::SymVector::Write<REAL> &req_real_props_a,
                 NP::Access::SymVector::Write<INT> &req_int_props_b,
                 NP::Access::SymVector::Write<REAL> &req_real_props_b,
-                const std::array<int, num_products_per_parent> &out_states,
+                const std::array<INT, num_products_per_parent> &out_states,
                 NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                 double dt) const {
     return;

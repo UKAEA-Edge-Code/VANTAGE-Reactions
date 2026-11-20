@@ -35,7 +35,7 @@ struct PairScatteringKernelsOnDevice
                 NP::Access::PairLoopIndex::Read &index_b,
                 NP::Access::DescendantProducts::Write &descendant_products_a,
                 NP::Access::DescendantProducts::Write &descendant_products_b,
-                const std::array<int, 2> &out_states) const {
+                const std::array<INT, 2> &out_states) const {
 
     descendant_products_a.set_parent(index_a, 0);
     descendant_products_b.set_parent(index_b, 0);
@@ -78,7 +78,7 @@ struct PairScatteringKernelsOnDevice
       NP::Access::SymVector::Write<REAL> &req_real_props_a,
       NP::Access::SymVector::Write<INT> &req_int_props_b,
       NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, 2> &out_states,
+      const std::array<INT, 2> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     for (int dimx = 0; dimx < ndim_velocity; dimx++) {
       descendant_products_a.at_real(index_a, 0, descendant_velocity_ind, dimx) =
@@ -127,7 +127,7 @@ struct PairScatteringKernelsOnDevice
                 NP::Access::SymVector::Write<REAL> &req_real_props_a,
                 NP::Access::SymVector::Write<INT> &req_int_props_b,
                 NP::Access::SymVector::Write<REAL> &req_real_props_b,
-                const std::array<int, 2> &out_states,
+                const std::array<INT, 2> &out_states,
                 NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
                 double dt) const {
     descendant_products_a.at_real(index_a, 0, descendant_weight_ind, 0) =
@@ -174,7 +174,7 @@ struct PairScatteringKernelsOnDevice
       NP::Access::SymVector::Write<REAL> &req_real_props_a,
       NP::Access::SymVector::Write<INT> &req_int_props_b,
       NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, 2> &out_states,
+      const std::array<INT, 2> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
     descendant_products_a.at_int(index_a, 0, descendant_internal_state_ind, 0) =
         out_states[0];
@@ -221,7 +221,7 @@ struct PairScatteringKernelsOnDevice
       NP::Access::SymVector::Write<REAL> &req_real_props_a,
       NP::Access::SymVector::Write<INT> &req_int_props_b,
       NP::Access::SymVector::Write<REAL> &req_real_props_b,
-      const std::array<int, 2> &out_states,
+      const std::array<INT, 2> &out_states,
       NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data, double dt) const {
 
     req_real_props_a.at(this->weight_ind, 0) -= modified_weight;
