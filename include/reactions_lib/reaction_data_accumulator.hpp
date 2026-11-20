@@ -8,16 +8,16 @@
 
 namespace VANTAGE::Reactions {
 /**
- * @brief Transformation evaluating a ReactionData object and reducing the
+ * @brief Transformation evaluating a REACTION_DATA_T object and reducing the
  * results cellwise
  *
- * @tparam ReactionData Type of object whose outputs are to be reduced cellwise
- * (must be derived from ReactionDataBase).
+ * @tparam REACTION_DATA_T Type of object whose outputs are to be reduced
+ * cellwise (must be derived from ReactionDataBase).
  */
-template <typename ReactionData>
+template <typename REACTION_DATA_T>
 struct CellwiseReactionDataAccumulator
     : CellwiseReactionDataAccumulatorBase<
-          typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE> {
+          typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE::VALUE_TYPE> {
 
   CellwiseReactionDataAccumulator() = delete;
 
@@ -26,31 +26,33 @@ struct CellwiseReactionDataAccumulator
    *
    * @param template_group A template particle group used to provide the
    * CellDatConsts for the dats specified by dat_names.
-   * @param reaction_data ReactionData whose outputs are to be reduced cellwise
+   * @param reaction_data REACTION_DATA_T whose outputs are to be reduced
+   * cellwise
    */
   CellwiseReactionDataAccumulator(NP::ParticleGroupSharedPtr template_group,
-                                  ReactionData reaction_data)
+                                  REACTION_DATA_T reaction_data)
       : CellwiseReactionDataAccumulatorBase<
-            typename ReactionData::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>(
+            typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE::VALUE_TYPE>(
             template_group,
             reaction_data.get_arg_pack().required_int_props.to_sym_vector(),
             reaction_data.get_arg_pack().required_real_props.to_sym_vector(),
-            ReactionData::DIM),
+            REACTION_DATA_T::DIM),
         reaction_data(reaction_data) {
 
     static_assert(
         std::is_base_of_v<
-            AbstractReactionData<typename ReactionData::ON_DEVICE_OBJ_TYPE,
-                                 typename ReactionData::ARGUMENT_PACK_TYPE,
-                                 ReactionData::DIM,
-                                 typename ReactionData::RNG_KERNEL_TYPE>,
-            ReactionData>,
-        "Template parameter ReactionData is not derived from "
+            AbstractReactionData<typename REACTION_DATA_T::ON_DEVICE_OBJ_TYPE,
+                                 typename REACTION_DATA_T::ARGUMENT_PACK_TYPE,
+                                 REACTION_DATA_T::DIM,
+                                 typename REACTION_DATA_T::RNG_KERNEL_TYPE>,
+            REACTION_DATA_T>,
+        "Template parameter REACTION_DATA_T is not derived from "
         "AbstractReactionData...");
   }
 
   /**
-   * @brief Accumulate the results of evaluating the stored ReactionData object
+   * @brief Accumulate the results of evaluating the stored REACTION_DATA_T
+   * object
    *
    * @param target_subgroup Subgroup containing particles whose dats should be
    * accumulated
@@ -61,7 +63,7 @@ struct CellwiseReactionDataAccumulator
 
     // TODO: add sycl_target consistency test
 
-    constexpr auto data_dim = ReactionData::DIM;
+    constexpr auto data_dim = REACTION_DATA_T::DIM;
 
     auto loop = particle_loop(
         "CellwiseReactionDataAccumulator_loop", target_subgroup,
@@ -88,7 +90,7 @@ struct CellwiseReactionDataAccumulator
   }
 
 private:
-  ReactionData reaction_data;
+  REACTION_DATA_T reaction_data;
 };
 } // namespace VANTAGE::Reactions
 #endif

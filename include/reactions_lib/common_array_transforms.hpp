@@ -12,11 +12,11 @@ namespace VANTAGE::Reactions {
  * @brief Unary array transform taking each element of the input array and
  * calculating the value of its polynomial with given coefficients
  *
- * @tparam DIM The expected input/output size
- * @tparam POLY_ORDER The order of the applied polynomial
+ * @tparam dim The expected input/output size
+ * @tparam poly_order The order of the applied polynomial
  */
-template <size_t DIM, size_t POLY_ORDER>
-struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
+template <size_t dim, size_t poly_order>
+struct PolynomialArrayTransform : AbstractUnaryArrayTransform<dim, dim> {
 
   PolynomialArrayTransform() = default;
   /**
@@ -25,27 +25,27 @@ struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    * @param coeffs The array of polynomial coefficients, given in ascending
    * order from 0
    */
-  PolynomialArrayTransform(const std::array<REAL, POLY_ORDER + 1> &coeffs)
+  PolynomialArrayTransform(const std::array<REAL, poly_order + 1> &coeffs)
       : coeffs(coeffs) {};
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input REAL-valued array of size DIM to which the transform is
+   * @param input REAL-valued array of size dim to which the transform is
    * applied.
    *
-   * @return REAL-valued array of size DIM that is the transformed array.
+   * @return REAL-valued array of size dim that is the transformed array.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input) const {
 
-    std::array<REAL, DIM> result;
+    std::array<REAL, dim> result;
     REAL buffer;
 
-    for (int i = 0; i < DIM; i++) {
+    for (int i = 0; i < dim; i++) {
 
       buffer = 1;
       result[i] = 0;
-      for (int j = 0; j < POLY_ORDER + 1; j++) {
+      for (int j = 0; j < poly_order + 1; j++) {
         result[i] += this->coeffs[j] * buffer;
         buffer *= input[i];
       }
@@ -55,17 +55,17 @@ struct PolynomialArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
   };
 
 private:
-  std::array<REAL, POLY_ORDER + 1> coeffs;
+  std::array<REAL, poly_order + 1> coeffs;
 };
 
 /**
  * @brief Unary array transform multiplying each element of the array with a
  * scalar
  *
- * @tparam DIM The expected input/output size
+ * @tparam dim The expected input/output size
  */
-template <size_t DIM>
-struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
+template <size_t dim>
+struct ScalerArrayTransform : AbstractUnaryArrayTransform<dim, dim> {
 
   ScalerArrayTransform() = default;
   /**
@@ -78,16 +78,16 @@ struct ScalerArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
   /**
    * @brief Function to apply the transform.
    *
-   * @param input REAL-valued array of size DIM to which the transform is
+   * @param input REAL-valued array of size dim to which the transform is
    * applied.
    *
-   * @return REAL-valued array of size DIM that is the transformed array.
+   * @return REAL-valued array of size dim that is the transformed array.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input) const {
 
-    std::array<REAL, DIM> result;
+    std::array<REAL, dim> result;
 
-    for (int i = 0; i < DIM; i++) {
+    for (int i = 0; i < dim; i++) {
 
       result[i] = this->mult * input[i];
     }
@@ -102,10 +102,10 @@ private:
 /**
  * @brief Unary array transform projecting the input on a fixed input vector
  *
- * @tparam DIM The expected input/output size
+ * @tparam dim The expected input/output size
  */
-template <size_t DIM>
-struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
+template <size_t dim>
+struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<dim, dim> {
 
   UnaryProjectArrayTransform() = default;
   /**
@@ -113,23 +113,23 @@ struct UnaryProjectArrayTransform : AbstractUnaryArrayTransform<DIM, DIM> {
    *
    * @param dir The array representing the projection direction vector
    */
-  UnaryProjectArrayTransform(const std::array<REAL, DIM> &dir) : dir(dir) {};
+  UnaryProjectArrayTransform(const std::array<REAL, dim> &dir) : dir(dir) {};
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input REAL-valued array of size DIM to which the transform is
+   * @param input REAL-valued array of size dim to which the transform is
    * applied.
    *
-   * @return REAL-valued array of size DIM that is the transformed array.
+   * @return REAL-valued array of size dim that is the transformed array.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input) const {
 
     return utils::project_vector(input, this->dir);
   };
 
 private:
-  std::array<REAL, DIM> dir;
+  std::array<REAL, dim> dir;
 };
 
 /**
@@ -137,11 +137,11 @@ private:
  * fixed vector, i.e. (I-P)*x where P is the projection operator and x the
  * input.
  *
- * @tparam DIM The expected input/output size
+ * @tparam dim The expected input/output size
  */
-template <size_t DIM>
+template <size_t dim>
 struct UnaryProjectNormalArrayTransform
-    : AbstractUnaryArrayTransform<DIM, DIM> {
+    : AbstractUnaryArrayTransform<dim, dim> {
 
   UnaryProjectNormalArrayTransform() = default;
   /**
@@ -149,22 +149,22 @@ struct UnaryProjectNormalArrayTransform
    *
    * @param dir The array representing the projection direction vector
    */
-  UnaryProjectNormalArrayTransform(const std::array<REAL, DIM> &dir)
+  UnaryProjectNormalArrayTransform(const std::array<REAL, dim> &dir)
       : dir(dir) {};
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input REAL-valued array of size DIM to which the transform is
+   * @param input REAL-valued array of size dim to which the transform is
    * applied.
    *
-   * @return REAL-valued array of size DIM that is the transformed array.
+   * @return REAL-valued array of size dim that is the transformed array.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input) const {
 
-    std::array<REAL, DIM> proj = utils::project_vector(input, this->dir);
+    std::array<REAL, dim> proj = utils::project_vector(input, this->dir);
 
-    for (auto i = 0; i < DIM; i++) {
+    for (auto i = 0; i < dim; i++) {
 
       proj[i] = input[i] - proj[i];
     }
@@ -173,31 +173,31 @@ struct UnaryProjectNormalArrayTransform
   };
 
 private:
-  std::array<REAL, DIM> dir;
+  std::array<REAL, dim> dir;
 };
 
 /**
  * @brief Binary array transform projecting the first input onto the second one
  *
- * @tparam DIM The size of the transformed array
+ * @tparam dim The size of the transformed array
  */
-template <size_t DIM>
+template <size_t dim>
 struct BinaryProjectArrayTransform
-    : AbstractBinaryArrayTransform<DIM, DIM, DIM> {
+    : AbstractBinaryArrayTransform<dim, dim, dim> {
 
   BinaryProjectArrayTransform() = default;
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input_1 Input REAL-valued array of size DIM to project onto input_2.
-   * @param input_2 Input REAL-valued array of size DIM on which input_1 is
+   * @param input_1 Input REAL-valued array of size dim to project onto input_2.
+   * @param input_2 Input REAL-valued array of size dim on which input_1 is
    * projected.
    *
-   * @return REAL-valued array of size DIM, that's the result of the projection.
+   * @return REAL-valued array of size dim, that's the result of the projection.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
-                              const std::array<REAL, DIM> &input_2) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input_1,
+                              const std::array<REAL, dim> &input_2) const {
 
     return utils::project_vector(input_1, input_2);
   };
@@ -207,30 +207,30 @@ struct BinaryProjectArrayTransform
  * @brief Binary array transform projecting the first input onto the plane
  * normal to the second one
  *
- * @tparam DIM The size of the transformed array
+ * @tparam dim The size of the transformed array
  */
-template <size_t DIM>
+template <size_t dim>
 struct BinaryProjectNormalArrayTransform
-    : AbstractBinaryArrayTransform<DIM, DIM, DIM> {
+    : AbstractBinaryArrayTransform<dim, dim, dim> {
 
   BinaryProjectNormalArrayTransform() = default;
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input_1 Input REAL-valued array of size DIM to project onto the
+   * @param input_1 Input REAL-valued array of size dim to project onto the
    * plane normal to input_2.
-   * @param input_2 Input REAL-valued array of size DIM whose plane normal
+   * @param input_2 Input REAL-valued array of size dim whose plane normal
    * input_1 is projected onto.
    *
-   * @return REAL-valued array of size DIM, that's the result of the projection.
+   * @return REAL-valued array of size dim, that's the result of the projection.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input_1,
-                              const std::array<REAL, DIM> &input_2) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input_1,
+                              const std::array<REAL, dim> &input_2) const {
 
-    std::array<REAL, DIM> proj = utils::project_vector(input_1, input_2);
+    std::array<REAL, dim> proj = utils::project_vector(input_1, input_2);
 
-    for (auto i = 0; i < DIM; i++) {
+    for (auto i = 0; i < dim; i++) {
 
       proj[i] = input_1[i] - proj[i];
     }
@@ -242,14 +242,14 @@ struct BinaryProjectNormalArrayTransform
 /**
  * @brief Unary full array transform
  *
- * @tparam DIM_IN The size of the transformed array
- * @tparam DIM_OUT The size of the transformed array
- * @tparam OP Unary operator to be used (a struct with operator(const
- * std::array<REAL,DIM_IN>& input) defined)
+ * @tparam dim_in The size of the transformed array
+ * @tparam dim_out The size of the transformed array
+ * @tparam OP_T Unary operator to be used (a struct with operator(const
+ * std::array<REAL,dim_in>& input) defined)
  */
-template <size_t DIM_IN, size_t DIM_OUT, typename OP>
+template <size_t dim_in, size_t dim_out, typename OP_T>
 struct UnaryArrayOperatorTransform
-    : AbstractUnaryArrayTransform<DIM_IN, DIM_OUT> {
+    : AbstractUnaryArrayTransform<dim_in, dim_out> {
 
   UnaryArrayOperatorTransform() = default;
 
@@ -258,34 +258,34 @@ struct UnaryArrayOperatorTransform
    *
    * @param op Unary operator.
    */
-  UnaryArrayOperatorTransform(const OP &op) : op(op) {};
+  UnaryArrayOperatorTransform(const OP_T &op) : op(op) {};
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input REAL-valued array of size DIM to which the transform is
+   * @param input REAL-valued array of size dim to which the transform is
    * applied.
    *
-   * @return REAL-valued array of size DIM that is the transformed array.
+   * @return REAL-valued array of size dim that is the transformed array.
    */
-  std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM_IN> &input) const {
+  std::array<REAL, dim_out> apply(const std::array<REAL, dim_in> &input) const {
 
     return this->op(input);
   };
 
 private:
-  OP op;
+  OP_T op;
 };
 /**
  * @brief Unary element-wise transform
  *
- * @tparam DIM The size of the transformed array
- * @tparam OP Unary operator to be used (a struct with operator(const REAL&
+ * @tparam dim The size of the transformed array
+ * @tparam OP_T Unary operator to be used (a struct with operator(const REAL&
  * input) defined)
  */
-template <size_t DIM, typename OP>
+template <size_t dim, typename OP_T>
 struct UnaryElementwiseOperatorTransform
-    : AbstractUnaryArrayTransform<DIM, DIM> {
+    : AbstractUnaryArrayTransform<dim, dim> {
 
   UnaryElementwiseOperatorTransform() = default;
 
@@ -294,21 +294,21 @@ struct UnaryElementwiseOperatorTransform
    *
    * @param op Unary operator.
    */
-  UnaryElementwiseOperatorTransform(const OP &op) : op(op) {};
+  UnaryElementwiseOperatorTransform(const OP_T &op) : op(op) {};
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input REAL-valued array of size DIM to which the transform is
+   * @param input REAL-valued array of size dim to which the transform is
    * applied.
    *
-   * @return REAL-valued array of size DIM that is the transformed array.
+   * @return REAL-valued array of size dim that is the transformed array.
    */
-  std::array<REAL, DIM> apply(const std::array<REAL, DIM> &input) const {
+  std::array<REAL, dim> apply(const std::array<REAL, dim> &input) const {
 
-    std::array<REAL, DIM> result;
+    std::array<REAL, dim> result;
 
-    for (int i = 0; i < DIM; i++) {
+    for (int i = 0; i < dim; i++) {
 
       result[i] = this->op(input[i]);
     }
@@ -316,21 +316,21 @@ struct UnaryElementwiseOperatorTransform
   };
 
 private:
-  OP op;
+  OP_T op;
 };
 
 /**
  * @brief Binary full array transform supporting broadcasting from size 1
  * arrays
  *
- * @tparam DIM1 The size of the first transformed array
- * @tparam DIM2 The size of the second transformed array
- * @tparam DIM_OUT The size of the output array
- * @tparam OP Binary operator to be used (acting on std::arrays)
+ * @tparam dim1 The size of the first transformed array
+ * @tparam dim2 The size of the second transformed array
+ * @tparam dim_out The size of the output array
+ * @tparam OP_T Binary operator to be used (acting on std::arrays)
  */
-template <size_t DIM1, size_t DIM2, size_t DIM_OUT, typename OP>
+template <size_t dim1, size_t dim2, size_t dim_out, typename OP_T>
 struct BinaryArrayOperatorTransform
-    : AbstractBinaryArrayTransform<DIM1, DIM2, DIM_OUT> {
+    : AbstractBinaryArrayTransform<dim1, dim2, dim_out> {
 
   BinaryArrayOperatorTransform() = default;
 
@@ -339,39 +339,39 @@ struct BinaryArrayOperatorTransform
    *
    * @param op Binary operator.
    */
-  BinaryArrayOperatorTransform(const OP &op) : op(op) {};
+  BinaryArrayOperatorTransform(const OP_T &op) : op(op) {};
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input_1 REAL-valued array of size DIM1 that's passed to the binary
+   * @param input_1 REAL-valued array of size dim1 that's passed to the binary
    * operator.
-   * @param input_2 REAL-valued array of size DIM2 that's passed to the binary
+   * @param input_2 REAL-valued array of size dim2 that's passed to the binary
    * operator.
    *
-   * @return REAL-valued array of size DIM_OUT that is the transformed array.
+   * @return REAL-valued array of size dim_out that is the transformed array.
    */
-  std::array<REAL, DIM_OUT> apply(const std::array<REAL, DIM1> &input_1,
-                                  const std::array<REAL, DIM2> &input_2) const {
+  std::array<REAL, dim_out> apply(const std::array<REAL, dim1> &input_1,
+                                  const std::array<REAL, dim2> &input_2) const {
 
     return this->op(input_1, input_2);
   };
 
 private:
-  OP op;
+  OP_T op;
 };
 
 /**
  * @brief Binary element-wise transform supporting broadcasting from size 1
  * arrays
  *
- * @tparam DIM1 The size of the first transformed array
- * @tparam DIM2 The size of the second transformed array
- * @tparam OP Binary operator to be used
+ * @tparam dim1 The size of the first transformed array
+ * @tparam dim2 The size of the second transformed array
+ * @tparam OP_T Binary operator to be used
  */
-template <size_t DIM1, size_t DIM2, typename OP>
+template <size_t dim1, size_t dim2, typename OP_T>
 struct BinaryElementwiseOperatorTransform
-    : AbstractBinaryArrayTransform<DIM1, DIM2, std::max(DIM1, DIM2)> {
+    : AbstractBinaryArrayTransform<dim1, dim2, std::max(dim1, dim2)> {
 
   BinaryElementwiseOperatorTransform() = default;
 
@@ -380,12 +380,12 @@ struct BinaryElementwiseOperatorTransform
    *
    * @param op Binary operator.
    */
-  BinaryElementwiseOperatorTransform(const OP &op) : op(op) {
+  BinaryElementwiseOperatorTransform(const OP_T &op) : op(op) {
 
-    if constexpr (DIM1 != DIM2) {
+    if constexpr (dim1 != dim2) {
 
       static_assert(
-          DIM1 == 1 || DIM2 == 1,
+          dim1 == 1 || dim2 == 1,
           "BinaryElementwiseOperatorTransform supports different array sizes "
           "only if one of them is size 1");
     };
@@ -394,33 +394,33 @@ struct BinaryElementwiseOperatorTransform
   /**
    * @brief Function to apply the transform.
    *
-   * @param input_1 REAL-valued array of size DIM1 that's passed elementwise to
+   * @param input_1 REAL-valued array of size dim1 that's passed elementwise to
    * the binary operator.
-   * @param input_2 REAL-valued array of size DIM2 that's passed elementwise to
+   * @param input_2 REAL-valued array of size dim2 that's passed elementwise to
    * the binary operator.
    *
-   * @return REAL-valued array of size max(DIM1, DIM2) that is the transformed
+   * @return REAL-valued array of size max(dim1, dim2) that is the transformed
    * array.
    */
-  std::array<REAL, std::max(DIM1, DIM2)>
-  apply(const std::array<REAL, DIM1> &input_1,
-        const std::array<REAL, DIM2> &input_2) const {
+  std::array<REAL, std::max(dim1, dim2)>
+  apply(const std::array<REAL, dim1> &input_1,
+        const std::array<REAL, dim2> &input_2) const {
 
-    if constexpr (DIM1 == DIM2) {
+    if constexpr (dim1 == dim2) {
 
-      const size_t DIM = DIM1;
-      std::array<REAL, DIM1> result;
+      const size_t dim = dim1;
+      std::array<REAL, dim1> result;
 
-      for (int i = 0; i < DIM; i++) {
+      for (int i = 0; i < dim; i++) {
 
         result[i] = this->op(input_1[i], input_2[i]);
       }
       return result;
-    } else if constexpr (DIM1 == 1) {
+    } else if constexpr (dim1 == 1) {
 
-      std::array<REAL, DIM2> result;
+      std::array<REAL, dim2> result;
 
-      for (int i = 0; i < DIM2; i++) {
+      for (int i = 0; i < dim2; i++) {
 
         result[i] = this->op(input_1[0], input_2[i]);
       }
@@ -429,9 +429,9 @@ struct BinaryElementwiseOperatorTransform
 
     else {
 
-      std::array<REAL, DIM1> result;
+      std::array<REAL, dim1> result;
 
-      for (int i = 0; i < DIM1; i++) {
+      for (int i = 0; i < dim1; i++) {
 
         result[i] = this->op(input_1[i], input_2[0]);
       }
@@ -440,31 +440,31 @@ struct BinaryElementwiseOperatorTransform
   };
 
 private:
-  OP op;
+  OP_T op;
 };
 /**
  * @brief Binary array transform returning the dot-product of two arrays
  *
- * @tparam DIM The size of the transformed array
+ * @tparam dim The size of the transformed array
  */
-template <size_t DIM>
-struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<DIM, DIM, 1> {
+template <size_t dim>
+struct BinaryDotArrayTransform : AbstractBinaryArrayTransform<dim, dim, 1> {
 
   BinaryDotArrayTransform() = default;
 
   /**
    * @brief Function to apply the transform.
    *
-   * @param input_1 REAL-valued array of size DIM.
-   * @param input_2 REAL-valued array of size DIM.
+   * @param input_1 REAL-valued array of size dim.
+   * @param input_2 REAL-valued array of size dim.
    *
    * @return REAL-valued array of size 1 that is the result of the dot product.
    */
-  std::array<REAL, 1> apply(const std::array<REAL, DIM> &input_1,
-                            const std::array<REAL, DIM> &input_2) const {
+  std::array<REAL, 1> apply(const std::array<REAL, dim> &input_1,
+                            const std::array<REAL, dim> &input_2) const {
     std::array<REAL, 1> result{0};
 
-    for (auto i = 0; i < DIM; i++) {
+    for (auto i = 0; i < dim; i++) {
 
       result[0] += input_1[i] * input_2[i];
     }
@@ -623,11 +623,11 @@ inline auto dot_product(const T &lhs, const U &rhs) {
  * elementwise multiplication of the output of the calc_data of a ReactionData
  * object.
  */
-template <size_t DIM, typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
+template <size_t dim, typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
 inline auto scale_by(const REAL &mult) {
 
-  return UnaryArrayTransformData<ScalerArrayTransform<DIM>, ARGUMENT_PACK_T>(
-      ScalerArrayTransform<DIM>(mult));
+  return UnaryArrayTransformData<ScalerArrayTransform<dim>, ARGUMENT_PACK_T>(
+      ScalerArrayTransform<dim>(mult));
 }
 
 /**
@@ -656,14 +656,15 @@ inline auto scale_by(const REAL &mult) {
  * transformation of the output of the calc_data of a ReactionData object
  * according to the lamdba argument.
  */
-template <size_t DIM_IN, typename LAMBDA,
+template <size_t dim_in, typename LAMBDA_T,
           typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
-inline auto uatData(const LAMBDA &lambda) {
+inline auto uatData(const LAMBDA_T &lambda) {
 
   return UnaryArrayTransformData<
-      UnaryArrayOperatorTransform<DIM_IN, LAMBDA::OUTPUT_DIM, LAMBDA>,
+      UnaryArrayOperatorTransform<dim_in, LAMBDA_T::OUTPUT_DIM, LAMBDA_T>,
       ARGUMENT_PACK_T>(
-      UnaryArrayOperatorTransform<DIM_IN, LAMBDA::OUTPUT_DIM, LAMBDA>(lambda));
+      UnaryArrayOperatorTransform<dim_in, LAMBDA_T::OUTPUT_DIM, LAMBDA_T>(
+          lambda));
 }
 
 /**
@@ -689,13 +690,13 @@ inline auto uatData(const LAMBDA &lambda) {
  * elementwise transformation of the output of the calc_data of a ReactionData
  * object according to the lamdba argument.
  */
-template <size_t DIM_IN, typename LAMBDA,
+template <size_t dim_in, typename LAMBDA_T,
           typename ARGUMENT_PACK_T = SingleReactionDataArgumentPack>
-inline auto uetData(const LAMBDA &lambda) {
+inline auto uetData(const LAMBDA_T &lambda) {
 
   return UnaryArrayTransformData<
-      UnaryElementwiseOperatorTransform<DIM_IN, LAMBDA>, ARGUMENT_PACK_T>(
-      UnaryElementwiseOperatorTransform<DIM_IN, LAMBDA>(lambda));
+      UnaryElementwiseOperatorTransform<dim_in, LAMBDA_T>, ARGUMENT_PACK_T>(
+      UnaryElementwiseOperatorTransform<dim_in, LAMBDA_T>(lambda));
 }
 
 /**
@@ -712,18 +713,18 @@ inline auto uetData(const LAMBDA &lambda) {
  * two ReactionData objects according to the lambda argument.
  */
 template <
-    typename LAMBDA, typename T, typename U,
+    typename LAMBDA_T, typename T, typename U,
     std::enable_if_t<std::is_base_of<AbstractReactionData<
                                          typename T::ON_DEVICE_OBJ_TYPE,
                                          typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
                                      T>::value,
                      bool> = true>
-inline auto batData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
+inline auto batData(const LAMBDA_T &lambda, const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
-      BinaryArrayOperatorTransform<T::DIM, U::DIM, LAMBDA::OUTPUT_DIM, LAMBDA>(
-          lambda),
+      BinaryArrayOperatorTransform<T::DIM, U::DIM, LAMBDA_T::OUTPUT_DIM,
+                                   LAMBDA_T>(lambda),
       lhs, rhs);
 }
 
@@ -742,17 +743,17 @@ inline auto batData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
  * calc_data of two ReactionData objects according to the lambda argument.
  */
 template <
-    typename LAMBDA, typename T, typename U,
+    typename LAMBDA_T, typename T, typename U,
     std::enable_if_t<std::is_base_of<AbstractReactionData<
                                          typename T::ON_DEVICE_OBJ_TYPE,
                                          typename T::ARGUMENT_PACK_TYPE, T::DIM,
                                          typename T::RNG_KERNEL_TYPE, 0>,
                                      T>::value,
                      bool> = true>
-inline auto betData(const LAMBDA &lambda, const T &lhs, const U &rhs) {
+inline auto betData(const LAMBDA_T &lambda, const T &lhs, const U &rhs) {
 
   return BinaryArrayTransformData(
-      BinaryElementwiseOperatorTransform<T::DIM, U::DIM, LAMBDA>(lambda), lhs,
+      BinaryElementwiseOperatorTransform<T::DIM, U::DIM, LAMBDA_T>(lambda), lhs,
       rhs);
 }
 } // namespace VANTAGE::Reactions
