@@ -74,7 +74,8 @@ struct AbstractSWPMSpecification {
     this->weight_sym =
         NP::Sym<REAL>(properties_map.at(default_properties.weight));
     this->total_reaction_rate_sym =
-        NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
+        NP::Sym<REAL>(propertis_particle_groupies_map.at(
+            default_properties.tot_reaction_rate));
     this->coll_cell_sym =
         NP::Sym<INT>(properties_map.at(default_properties.collision_cell_id));
     this->cell_id_sym =
@@ -99,9 +100,9 @@ struct AbstractSWPMSpecification {
    * @param cell_idx_end Cell index to which to invoke the corresponding
    * pair loop
    */
-  template <typename TARGET, typename PAIR_LIST>
+  template <typename TARGET_T, typename PAIR_LIST_T>
   void calculate_weight_transfer(
-      NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list,
+      NP::CellwisePairListAbsolute<TARGET_T, PAIR_LIST_T> pair_list,
       INT cell_idx_start, INT cell_idx_end) = delete;
 
   /**

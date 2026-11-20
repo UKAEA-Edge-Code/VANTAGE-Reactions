@@ -160,8 +160,8 @@ public:
    * @param target The NP::ParticleGroup or NP::ParticleSubGroup to apply the
    * transforms to
    */
-  template <typename PARENT>
-  void apply_parent_transforms(std::shared_ptr<PARENT> target) {
+  template <typename PARENT_T>
+  void apply_parent_transforms(std::shared_ptr<PARENT_T> target) {
     auto particle_group = get_particle_group(target);
     auto target_as_subgroup = particle_sub_group(target);
     this->apply_parent_transforms_impl(target_as_subgroup, particle_group);
@@ -184,8 +184,8 @@ public:
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
    */
-  template <typename PARENT>
-  void apply(std::shared_ptr<PARENT> target, double dt,
+  template <typename PARENT_T>
+  void apply(std::shared_ptr<PARENT_T> target, double dt,
              NP::ParticleGroupSharedPtr product_group,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
     auto particle_group = get_particle_group(target);
@@ -208,8 +208,8 @@ public:
    * @param controller_mode The mode to run the controller in. Either
    * standard_mode (default) or semi_dsmc_mode.
    */
-  template <typename PARENT>
-  void apply(std::shared_ptr<PARENT> target, double dt,
+  template <typename PARENT_T>
+  void apply(std::shared_ptr<PARENT_T> target, double dt,
              ControllerMode controller_mode = ControllerMode::standard_mode) {
     NP::ParticleGroupSharedPtr particle_group = get_particle_group(target);
     this->apply(target, dt, particle_group, controller_mode);

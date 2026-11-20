@@ -168,8 +168,8 @@ struct SWPMReactionController : ProfilingBase {
    * @param target The ParticleGroup or ParticleSubGroup to apply the transforms
    * to
    */
-  template <typename PARENT>
-  void apply_parent_transforms(std::shared_ptr<PARENT> target) {
+  template <typename PARENT_T>
+  void apply_parent_transforms(std::shared_ptr<PARENT_T> target) {
 
     NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
 
@@ -207,8 +207,8 @@ struct SWPMReactionController : ProfilingBase {
    * @param product_group The ParticleGroup into which to add the products,
    * should have the same spec as the parent.
    */
-  template <typename PARENT>
-  void apply(std::shared_ptr<PARENT> target, double dt,
+  template <typename PARENT_T>
+  void apply(std::shared_ptr<PARENT_T> target, double dt,
              NP::ParticleGroupSharedPtr product_group) {
 
     NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
@@ -397,8 +397,8 @@ struct SWPMReactionController : ProfilingBase {
    * reactions to.
    * @param dt The current time step size.
    */
-  template <typename PARENT>
-  void apply(std::shared_ptr<PARENT> target, double dt) {
+  template <typename PARENT_T>
+  void apply(std::shared_ptr<PARENT_T> target, double dt) {
 
     NP::ParticleGroupSharedPtr particle_group = NP::get_particle_group(target);
 

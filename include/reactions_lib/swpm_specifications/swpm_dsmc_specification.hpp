@@ -21,9 +21,9 @@ struct SWPMDSMCSpecification
       : AbstractSWPMSpecification(rng_kernel, rate_norm_const, properties_map) {
         };
 
-  template <typename TARGET, typename PAIR_LIST>
+  template <typename TARGET_T, typename PAIR_LIST_T>
   void calculate_weight_transfer(
-      NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> pair_list,
+      NP::CellwisePairListAbsolute<TARGET_T, PAIR_LIST_T> pair_list,
       INT cell_idx_start, INT cell_idx_end) {
 
     NP::particle_pair_loop(

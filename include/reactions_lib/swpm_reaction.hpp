@@ -48,22 +48,23 @@ public:
  * @brief Calculator-independent template implementation base for binary
  * reactions based on the Stochastic Weighted Particle Method.
  *
- * A thinner implementation version of SWPMReaction (the open-ended DataCalc
- * template parameter is omitted here.) Holds the DataCalc-independent members
- * and behaviour.
+ * A thinner implementation version of SWPMReaction (the open-ended DATA_CALC_T
+ * template parameter is omitted here.) Holds the DATA_CALC_T-independent
+ * members and behaviour.
  *
  * @tparam num_products The number of products produced per pair of reactants.
- * @tparam ReactionData typename for reaction_data constructor argument
- * @tparam ReactionKernels template class for reaction_kernels constructor
+ * @tparam REACTION_DATA_T typename for reaction_data constructor argument
+ * @tparam REACTION_KERNELS_T template class for reaction_kernels constructor
  * argument
  */
-template <int num_products, typename ReactionData, typename ReactionKernels>
+template <int num_products, typename REACTION_DATA_T,
+          typename REACTION_KERNELS_T>
 struct SWPMReactionImpl : AbstractPairReaction {
   static_assert(
-      is_loop_reaction_data<ReactionData, PairReactionDataArgumentPack>::value,
+      is_loop_reaction_data<REACTION_DATA_T, PairReactionDataArgumentPack>::value,
       "SWPM reaction rates require zero-input AbstractReactionData with "
       "PairReactionDataArgumentPack and std::array<REAL, DIM> output.");
-  static_assert(ReactionData::DIM == 1,
+  static_assert(REACTION_DATA_T::DIM == 1,
                 "SWPM reaction rates require scalar data (DIM == 1).");
   SWPMReactionImpl() = default;
 
@@ -84,11 +85,11 @@ struct SWPMReactionImpl : AbstractPairReaction {
    * @param properties_map (Optional) A PropertiesMap object used
    * when remapping property names (tot_reaction_rate,weight_change)
    */
-  SWPMReactionImpl(NP::SYCLTargetSharedPtr sycl_target,
-                   std::array<int, 2> reactants,
-                   std::array<int, num_products> products,
-                   ReactionData reaction_data, ReactionKernels reaction_kernels,
-                   const PropertiesMap properties_map = PropertiesMap())
+  SWPMReactionImpl(
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      std::array<int, num_products> products, REACTION_DATA_T reaction_data,
+      REACTION_KERNELS_T reaction_kernels,
+      const PropertiesMap properties_map = PropertiesMap())
       : reactants(reactants), products(products), reaction_data(reaction_data),
         reaction_kernels(reaction_kernels), sycl_target_stored(sycl_target),
         device_rate_buffer(
@@ -103,20 +104,21 @@ struct SWPMReactionImpl : AbstractPairReaction {
     this->weight_change_sym =
         NP::Sym<REAL>(properties_map.at(default_properties.weight_change));
 
-    // These assertions are necessary since the typenames for ReactionData and
-    // ReactionKernels could be any type and for calculate_rates and
-    // apply to operate correctly, ReactionData and
-    // ReactionKernels have to be derived from CSPairData and
+    // These assertions are necessary since the typenames for REACTION_DATA_T
+    // and REACTION_KERNELS_T could be any type and for calculate_rates and
+    // apply to operate correctly, REACTION_DATA_T and
+    // REACTION_KERNELS_T have to be derived from CSPairData and
     // PairReactionKernelsBase respectively
+    static_assert(std::is_base_of_v<
+                      CSPairData<REACTION_DATA_T::VEL_NDIM,
+                                 typename REACTION_DATA_T::CROSS_SECTION_TYPE>,
+                      REACTION_DATA_T>,
+                  "Template parameter REACTION_DATA_T is not derived from "
+                  "CSPairData...");
     static_assert(
-        std::is_base_of_v<CSPairData<ReactionData::VEL_NDIM,
-                                     typename ReactionData::CROSS_SECTION_TYPE>,
-                          ReactionData>,
-        "Template parameter ReactionData is not derived from "
-        "CSPairData...");
-    static_assert(std::is_base_of_v<PairReactionKernelsBase, ReactionKernels>,
-                  "Template parameter ReactionKernels is not derived from "
-                  "PairReactionKernelsBase...");
+        std::is_base_of_v<PairReactionKernelsBase, REACTION_KERNELS_T>,
+        "Template parameter REACTION_KERNELS_T is not derived from "
+        "PairReactionKernelsBase...");
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
@@ -178,10 +180,10 @@ public:
    * pair loop
    * @param cell_idx_end The index up to which to run the loop over
    */
-  template <typename TARGET, typename PAIR_LIST>
-  void
-  calculate_rates_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
-                    INT cell_idx_start, INT cell_idx_end) {
+  template <typename TARGET_T, typename PAIR_LIST_T>
+  void calculate_rates_v(
+      NP::CellwisePairListAbsolute<TARGET_T, PAIR_LIST_T> &pair_list,
+      INT cell_idx_start, INT cell_idx_end) {
 
     auto reaction_data_on_device = this->reaction_data.get_on_device_obj();
 
@@ -359,8 +361,8 @@ protected:
   size_t max_buffer_size; //!< max buffer size for data on the reactions object
   std::array<int, 2> reactants;
   std::array<int, num_products> products;
-  ReactionData reaction_data;
-  ReactionKernels reaction_kernels;
+  REACTION_DATA_T reaction_data;
+  REACTION_KERNELS_T reaction_kernels;
   std::shared_ptr<NP::DescendantProducts> descendant_particles_a;
   std::shared_ptr<NP::DescendantProducts> descendant_particles_b;
 
@@ -380,15 +382,16 @@ protected:
  * Method
  *
  * @tparam num_products The number of products produced per pair of reactants.
- * @tparam ReactionData typename for reaction_data constructor argument
- * @tparam ReactionKernels typename for reaction_kernels constructor
+ * @tparam REACTION_DATA_T typename for reaction_data constructor argument
+ * @tparam REACTION_KERNELS_T typename for reaction_kernels constructor
  * argument
- * @tparam DataCalc typename for data_calculator constructor argument
+ * @tparam DATA_CALC_T typename for data_calculator constructor argument
  */
-template <int num_products, typename ReactionData, typename ReactionKernels,
-          typename DataCalc = PairDataCalculator<>>
+template <int num_products, typename REACTION_DATA_T,
+          typename REACTION_KERNELS_T,
+          typename DATA_CALC_T = PairDataCalculator<>>
 struct SWPMReaction
-    : SWPMReactionImpl<num_products, ReactionData, ReactionKernels> {
+    : SWPMReactionImpl<num_products, REACTION_DATA_T, REACTION_KERNELS_T> {
   SWPMReaction() = default;
 
   /**
@@ -410,19 +413,18 @@ struct SWPMReaction
    * @param properties_map (Optional) A PropertiesMap object used
    * when remapping property names (tot_reaction_rate,weight_change)
    */
-  SWPMReaction(NP::SYCLTargetSharedPtr sycl_target,
-               std::array<int, 2> reactants,
-               std::array<int, num_products> products,
-               ReactionData reaction_data, ReactionKernels reaction_kernels,
-               DataCalc data_calculator,
-               const PropertiesMap properties_map = PropertiesMap())
-      : SWPMReactionImpl<num_products, ReactionData, ReactionKernels>(
+  SWPMReaction(
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      std::array<int, num_products> products, REACTION_DATA_T reaction_data,
+      REACTION_KERNELS_T reaction_kernels, DATA_CALC_T data_calculator,
+      const PropertiesMap properties_map = PropertiesMap())
+      : SWPMReactionImpl<num_products, REACTION_DATA_T, REACTION_KERNELS_T>(
             sycl_target, reactants, products, reaction_data, reaction_kernels,
             properties_map),
         data_calculator(data_calculator) {
 
-    static_assert(std::is_base_of_v<AbstractPairDataCalculator, DataCalc>,
-                  "Template parameter DataCalc is not derived from "
+    static_assert(std::is_base_of_v<AbstractPairDataCalculator, DATA_CALC_T>,
+                  "Template parameter DATA_CALC_T is not derived from "
                   "AbstractPairDataCalculator...");
     NESOASSERT(
         this->data_calculator.get_data_size() ==
@@ -457,15 +459,15 @@ struct SWPMReaction
    * @param properties_map (Optional) A PropertiesMap object used when
    * remapping property names (tot_reaction_rate,weight_change)
    */
-  template <typename U = DataCalc,
+  template <typename U = DATA_CALC_T,
             std::enable_if_t<std::is_default_constructible_v<U>, int> = 0>
-  SWPMReaction(NP::SYCLTargetSharedPtr sycl_target,
-               std::array<int, 2> reactants,
-               std::array<int, num_products> products,
-               ReactionData reaction_data, ReactionKernels reaction_kernels,
-               const PropertiesMap properties_map = PropertiesMap())
+  SWPMReaction(
+      NP::SYCLTargetSharedPtr sycl_target, std::array<int, 2> reactants,
+      std::array<int, num_products> products, REACTION_DATA_T reaction_data,
+      REACTION_KERNELS_T reaction_kernels,
+      const PropertiesMap properties_map = PropertiesMap())
       : SWPMReaction(sycl_target, reactants, products, reaction_data,
-                     reaction_kernels, DataCalc(), properties_map) {}
+                     reaction_kernels, DATA_CALC_T(), properties_map) {}
 
   virtual ~SWPMReaction() = default;
 
@@ -488,8 +490,8 @@ public:
    * @param child_group NP::ParticleGroupSharedPtr that contains a particle
    * group into which descendants are placed after generation.
    */
-  template <typename TARGET, typename PAIR_LIST>
-  void apply_v(NP::CellwisePairListAbsolute<TARGET, PAIR_LIST> &pair_list,
+  template <typename TARGET_T, typename PAIR_LIST_T>
+  void apply_v(NP::CellwisePairListAbsolute<TARGET_T, PAIR_LIST_T> &pair_list,
                INT cell_idx_start, INT cell_idx_end, double dt,
                NP::ParticleGroupSharedPtr child_group) {
 
@@ -592,7 +594,7 @@ public:
   }
 
 private:
-  DataCalc data_calculator;
+  DATA_CALC_T data_calculator;
 };
 }; // namespace VANTAGE::Reactions
 #endif
