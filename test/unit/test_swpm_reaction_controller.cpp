@@ -445,8 +445,7 @@ TEST(SWPMReactionController, double_step) {
       auto wrong_species_reaction = std::make_shared<
           SWPMReaction<2, decltype(cs_data), decltype(scattering_kernels),
                        decltype(pair_data_calculator)>>(
-          A->sycl_target,
-          std::array<INT, 2>{species_1.get_id(), 99},
+          A->sycl_target, std::array<INT, 2>{species_1.get_id(), 99},
           std::array<INT, 2>{2, 3}, cs_data, scattering_kernels,
           pair_data_calculator);
       EXPECT_THROW(controller.add_reaction(wrong_species_reaction),
