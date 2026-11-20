@@ -82,7 +82,7 @@ struct SWPMReactionController : ProfilingBase {
       if (!this->reactions[r]->get_in_states().empty()) {
         auto in_states = this->reactions[r]->get_in_states();
 
-        for (int in_state : in_states) {
+        for (INT in_state : in_states) {
           this->parent_ids.insert(in_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
@@ -96,7 +96,7 @@ struct SWPMReactionController : ProfilingBase {
       if (!this->reactions[r]->get_out_states().empty()) {
         auto out_states = this->reactions[r]->get_out_states();
 
-        for (int out_state : out_states) {
+        for (INT out_state : out_states) {
           this->child_ids.insert(out_state);
 
           this->sub_group_selectors.emplace(std::make_pair(
@@ -410,7 +410,7 @@ private:
     return "SWPMReactionController";
   }
 
-  std::map<int, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
+  std::map<INT, std::shared_ptr<MarkingStrategy>> sub_group_selectors;
   NP::ParticleGroupSharedPtr reference_particle_group = nullptr;
 
   std::tuple<int, int> reactant_set;
@@ -419,8 +419,8 @@ private:
   std::shared_ptr<RNG_GEN_T> rng_generation_fun;
   std::shared_ptr<NP::DSMC::PairSamplerNoReplacement> sampler;
   std::shared_ptr<CollisionCellManager> coll_cell_manager;
-  std::set<int> parent_ids;
-  std::set<int> child_ids;
+  std::set<INT> parent_ids;
+  std::set<INT> child_ids;
 
   std::vector<std::shared_ptr<AbstractPairReaction>> reactions;
   std::vector<std::shared_ptr<TransformationWrapper>> parent_transform;
