@@ -38,7 +38,7 @@ TEST(ReactionController, mode_switching) {
     const auto parent_count = particle_group->get_npart_local();
     auto reaction_controller = ReactionController();
     reaction_controller.add_reaction(std::make_shared<TestReaction<1>>(
-        particle_group->sycl_target, 1.0, 0, std::array<int, 1>{1}));
+        particle_group->sycl_target, 1.0, 0, std::array<INT, 1>{1}));
     reaction_controller.set_rng_kernel(
         NP::host_per_particle_block_rng<REAL>([]() -> REAL { return 0.9; }, 1));
 
@@ -74,7 +74,7 @@ TEST(ReactionController, target_switching) {
   const auto parent_count = particle_group->get_npart_local();
   auto reaction_controller = ReactionController();
   reaction_controller.add_reaction(std::make_shared<TestReaction<1>>(
-      particle_group->sycl_target, 1.0, 0, std::array<int, 1>{1}));
+      particle_group->sycl_target, 1.0, 0, std::array<INT, 1>{1}));
   auto even_particles = NP::particle_sub_group(
       particle_group, [](auto id) { return id[0] % 2 == 0; },
       NP::Access::read(NP::Sym<INT>("ID")));
@@ -196,7 +196,7 @@ TEST(ReactionController, semi_dsmc_rng_validation) {
   auto particle_group = create_test_particle_group(32);
   auto reaction_controller = ReactionController();
   reaction_controller.add_reaction(std::make_shared<TestReaction<1>>(
-      particle_group->sycl_target, 1.0, 0, std::array<int, 1>{1}));
+      particle_group->sycl_target, 1.0, 0, std::array<INT, 1>{1}));
 
   // Standard mode does not require an RNG kernel.
   EXPECT_NO_THROW(reaction_controller.apply(particle_group, 0.25,

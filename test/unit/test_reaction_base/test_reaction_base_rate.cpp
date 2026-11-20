@@ -85,9 +85,9 @@ TEST(LinearReactionBase, zero_denominator_guards) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
 
     auto zero_reaction = TestReaction<1>(particle_group->sycl_target, 0.0, 0,
-                                         std::array<int, 1>{1});
+                                         std::array<INT, 1>{1});
     auto pos_reaction = TestReaction<1>(particle_group->sycl_target, 2.0, 0,
-                                        std::array<int, 1>{2});
+                                        std::array<INT, 1>{2});
 
     zero_reaction.calculate_rates(subgroup, 0, cell_count);
     pos_reaction.calculate_rates(subgroup, 0, cell_count);
@@ -124,7 +124,7 @@ TEST(LinearReactionBase, zero_denominator_guards) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
 
     auto zero_reaction = TestReaction<1>(particle_group->sycl_target, 0.0, 0,
-                                         std::array<int, 1>{1});
+                                         std::array<INT, 1>{1});
     zero_reaction.calculate_rates(subgroup, 0, cell_count);
     zero_reaction.apply(subgroup, 0, cell_count, 0.25, descendants,
                         full_weight);
@@ -151,7 +151,7 @@ TEST(LinearReactionBase, zero_denominator_guards) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
 
     auto pos_reaction = TestReaction<1>(particle_group->sycl_target, 2.0, 0,
-                                        std::array<int, 1>{1});
+                                        std::array<INT, 1>{1});
     pos_reaction.calculate_rates(subgroup, 0, cell_count);
     pos_reaction.apply(subgroup, 0, cell_count, 0.0, descendants);
 
@@ -181,7 +181,7 @@ TEST(LinearReactionBase, zero_denominator_guards) {
     const int cell_count = particle_group->domain->mesh->get_cell_count();
 
     auto pos_reaction = TestReaction<1>(particle_group->sycl_target, 2.0, 0,
-                                        std::array<int, 1>{1});
+                                        std::array<INT, 1>{1});
     pos_reaction.calculate_rates(subgroup, 0, cell_count);
     pos_reaction.apply(subgroup, 0, cell_count, 0.25, descendants, full_weight);
 
