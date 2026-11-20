@@ -74,8 +74,7 @@ struct AbstractSWPMSpecification {
     this->weight_sym =
         NP::Sym<REAL>(properties_map.at(default_properties.weight));
     this->total_reaction_rate_sym =
-        NP::Sym<REAL>(propertis_particle_groupies_map.at(
-            default_properties.tot_reaction_rate));
+        NP::Sym<REAL>(properties_map.at(default_properties.tot_reaction_rate));
     this->coll_cell_sym =
         NP::Sym<INT>(properties_map.at(default_properties.collision_cell_id));
     this->cell_id_sym =
