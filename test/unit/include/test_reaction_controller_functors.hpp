@@ -7,7 +7,8 @@
  * @brief Functor for reducing particle weights into a cellwise accumulator.
  */
 struct WeightReducer {
-  template <typename W, typename GA> void operator()(const W &w, GA &ga) const {
+  template <typename W, typename GA_T>
+  void operator()(const W &w, GA_T &ga) const {
     ga.fetch_add(0, 0, w[0]);
   }
 };

@@ -13,12 +13,12 @@ namespace VANTAGE::Reactions {
  * @brief Device reaction data returning an array based on lookup table for
  * integer-valued key
  *
- * @tparam N The size of the REAL-valued array stored in the lookup table
+ * @tparam dim The size of the REAL-valued array stored in the lookup table
  * @tparam ephemeral_dat True if the NP::Sym storing the key value is an
  * ephemeral dat
  */
-template <size_t N, bool ephemeral_dat>
-struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
+template <size_t dim, bool ephemeral_dat>
+struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<dim> {
 
   ArrayLookupDataOnDevice() = default;
   /**
@@ -28,7 +28,7 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
    * @param default_data REAL-valued array returned if the key is not found
    */
   ArrayLookupDataOnDevice(const int &key_comp,
-                          const std::array<REAL, N> &default_data)
+                          const std::array<REAL, dim> &default_data)
       : key_comp(key_comp), default_data(default_data) {};
 
   /**
@@ -38,13 +38,13 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
    * @param kernel The random number generator kernel potentially used in the
    * calculation
    *
-   * @return REAL-valued array of size N containing the values from the
+   * @return REAL-valued array of size dim containing the values from the
    * lookup-table for a given key_val (retrieved from ParticleDat using
    * key_ind).
    */
-  std::array<REAL, N>
+  std::array<REAL, dim>
   calc_data(const SingleReactionDataAccessors &accessors,
-            typename ReactionDataBaseOnDevice<N>::RNG_KERNEL_TYPE::KernelType
+            typename ReactionDataBaseOnDevice<dim>::RNG_KERNEL_TYPE::KernelType
                 &kernel) const {
 
     int key_val;
@@ -59,7 +59,7 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
                                            this->key_comp);
     }
 
-    const std::array<REAL, N> *val_ptr = nullptr;
+    const std::array<REAL, dim> *val_ptr = nullptr;
 
     const bool exists = this->lut_root->get(key_val, &val_ptr);
 
@@ -71,11 +71,11 @@ struct ArrayLookupDataOnDevice : public ReactionDataBaseOnDevice<N> {
   }
 
 private:
-  std::array<REAL, N> default_data;
+  std::array<REAL, dim> default_data;
   INT key_comp;
 
 public:
-  NP::BlockedBinaryNode<int, std::array<REAL, N>, 8> *lut_root;
+  NP::BlockedBinaryNode<int, std::array<REAL, dim>, 8> *lut_root;
   INT key_ind;
 };
 
@@ -83,14 +83,15 @@ public:
  * @brief Host reaction data returning an array based on lookup table for
  * integer-valued key
  *
- * @tparam N The size of the REAL-valued array stored in the lookup table
+ * @tparam dim The size of the REAL-valued array stored in the lookup table
  * @tparam ephemeral_dat True if the NP::Sym storing the key value is an
  * ephemeral dat
  * @param key_comp The key dat component index to use as the lookup key
  */
-template <size_t N, bool ephemeral_dat = false>
+template <size_t dim, bool ephemeral_dat = false>
 struct ArrayLookupData
-    : public ReactionDataBase<ArrayLookupDataOnDevice<N, ephemeral_dat>, N> {
+    : public ReactionDataBase<ArrayLookupDataOnDevice<dim, ephemeral_dat>,
+                              dim> {
 
   /**
    * @brief Constructor for ArrayLookupData
@@ -99,26 +100,27 @@ struct ArrayLookupData
    * for the key.
    * @param key_sym_comp The component of the NP::ParticleDat signified by
    * key_sym to be used as the key.
-   * @param lookup_table A map between int and std::array<REAL, N> that contains
-   * the lookup table (this will be used to fill a NP::BlockedBinaryNode).
+   * @param lookup_table A map between int and std::array<REAL, dim> that
+   * contains the lookup table (this will be used to fill a
+   * NP::BlockedBinaryNode).
    * @default_values The default array to be returned in case the lookup key
    * cannot be found.
    * @sycl_target SYCL target shared pointer used for initialization of
    * NP::BlockedBinaryTree.
    */
   ArrayLookupData(const NP::Sym<INT> &key_sym, int key_sym_comp,
-                  const std::map<int, std::array<REAL, N>> &lookup_table,
-                  const std::array<REAL, N> &default_values,
+                  const std::map<int, std::array<REAL, dim>> &lookup_table,
+                  const std::array<REAL, dim> &default_values,
                   NP::SYCLTargetSharedPtr sycl_target)
-      : ReactionDataBase<ArrayLookupDataOnDevice<N, ephemeral_dat>, N>(),
+      : ReactionDataBase<ArrayLookupDataOnDevice<dim, ephemeral_dat>, dim>(),
         key_sym(key_sym) {
 
-    this->on_device_obj =
-        ArrayLookupDataOnDevice<N, ephemeral_dat>(key_sym_comp, default_values);
+    this->on_device_obj = ArrayLookupDataOnDevice<dim, ephemeral_dat>(
+        key_sym_comp, default_values);
 
     this->argument_pack.required_int_props.add(key_sym.name);
     this->lut =
-        std::make_shared<NP::BlockedBinaryTree<int, std::array<REAL, N>, 8>>(
+        std::make_shared<NP::BlockedBinaryTree<int, std::array<REAL, dim>, 8>>(
             sycl_target);
 
     for (const auto &[key, value] : lookup_table)
@@ -140,7 +142,7 @@ struct ArrayLookupData
 
 private:
   NP::Sym<INT> key_sym;
-  std::shared_ptr<NP::BlockedBinaryTree<int, std::array<REAL, N>, 8>> lut;
+  std::shared_ptr<NP::BlockedBinaryTree<int, std::array<REAL, dim>, 8>> lut;
 };
 }; // namespace VANTAGE::Reactions
 

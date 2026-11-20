@@ -22,9 +22,9 @@ struct AbstractDataCalculator {
 /**
  * @brief A static container class for ReactionData objects
  *
- * @tparam DATATYPE ReactionData types
+ * @tparam DATA_T ReactionData types
  */
-template <typename... DATATYPE>
+template <typename... DATA_T>
 struct DataCalculator : public AbstractDataCalculator {
 
   /**
@@ -32,11 +32,10 @@ struct DataCalculator : public AbstractDataCalculator {
    *
    * @param data List of ReactionData objects (as multiple arguments).
    */
-  DataCalculator(DATATYPE... data) : data(std::make_tuple(data...)) {
+  DataCalculator(DATA_T... data) : data(std::make_tuple(data...)) {
 
     constexpr bool valid_data =
-        (is_loop_reaction_data<DATATYPE,
-                               SingleReactionDataArgumentPack>::value &&
+        (is_loop_reaction_data<DATA_T, SingleReactionDataArgumentPack>::value &&
          ...);
     static_assert(
         valid_data,
@@ -61,8 +60,8 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Fills an NP::NDLocalArray buffer by invoking the stored ReactionData
-   * objects for a given cell index
+   * @brief Fills an NP::NDLocalArray buffer by invoking the stored
+   * ReactionData objects for a given cell index
    *
    * @param buffer NP::NDLocalArray buffer - column count should match the total
    * output dimensionality of the stored ReactionData tuple
@@ -122,7 +121,7 @@ struct DataCalculator : public AbstractDataCalculator {
 
   /**
    * @brief Getter for the total number of dimensions of the objects in the
-   * ReactionData tuple
+   * REACTION_DATA_T tuple
    */
   size_t get_data_size() const {
     size_t dat_idx = 0u;
@@ -140,12 +139,12 @@ struct DataCalculator : public AbstractDataCalculator {
   }
 
   /**
-   * @brief Getter of the total number of objects in the ReactionData tuple
+   * @brief Getter of the total number of objects in the REACTION_DATA_T tuple
    */
-  size_t get_data_tuple_size() const { return sizeof...(DATATYPE); }
+  size_t get_data_tuple_size() const { return sizeof...(DATA_T); }
 
 private:
-  std::tuple<DATATYPE...> data;
+  std::tuple<DATA_T...> data;
   std::vector<std::vector<NP::Sym<INT>>> data_loop_int_syms;
   std::vector<std::vector<NP::Sym<REAL>>> data_loop_real_syms;
 };

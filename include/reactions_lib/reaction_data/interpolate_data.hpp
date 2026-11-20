@@ -97,19 +97,19 @@ enum class ExtrapolationType { continue_linear, clamp_to_zero, clamp_to_edge };
  * derived object.
  *
  * @tparam output_ndim The number of dimensions that correspond to the output of
- * calc_data from DATATYPE.
+ * calc_data from DATA_T.
  * @tparam interp_ndim The number of dimensions that correspond to the number of
  * interpolation points.
  * @tparam non_interp_ndim The number of dimensions that are not interpolated
- * and are used by calc_data from DATATYPE.
- * @tparam DATATYPE ReactionDataBaseOnDevice derived type corresponding to the
+ * and are used by calc_data from DATA_T.
+ * @tparam DATA_T ReactionDataBaseOnDevice derived type corresponding to the
  * on-device grid-function evaluation reaction data object.
  */
 template <size_t output_ndim, size_t interp_ndim, size_t non_interp_ndim,
-          typename DATATYPE>
+          typename DATA_T>
 struct InterpolateDataOnDevice
     : public CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim,
-                                   REAL, REAL, DATATYPE> {
+                                   REAL, REAL, DATA_T> {
 
   InterpolateDataOnDevice() = default;
   /**
@@ -123,12 +123,11 @@ struct InterpolateDataOnDevice
    * interpolation is not possible for a set of points.
    */
   InterpolateDataOnDevice(
-      DATATYPE interp_data,
-      const std::array<size_t, interp_ndim> &interp_indices,
+      DATA_T interp_data, const std::array<size_t, interp_ndim> &interp_indices,
       ExtrapolationType extrapolation_type = ExtrapolationType::continue_linear)
       : interp_indices(interp_indices),
         CompositeDataOnDevice<output_ndim, interp_ndim + non_interp_ndim, REAL,
-                              REAL, DATATYPE>(interp_data) {
+                              REAL, DATA_T>(interp_data) {
     switch (extrapolation_type) {
     case VANTAGE::Reactions::ExtrapolationType::continue_linear:
       this->continue_linear = true;
@@ -161,19 +160,18 @@ struct InterpolateDataOnDevice
    * @param accessors Bundled accessors for the ParticleLoop.
    * @param kernel The random number generator kernel potentially used in the
    * calculation (the kernel type is inherited from the kernel type for
-   * DATATYPE)
+   * DATA_T)
    *
    * @return A REAL-valued array of size output_ndim that contains the
    * interpolated function evaluation at the given interpolation points.
    */
-  std::array<REAL, output_ndim>
-  calc_data(const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
-            const typename CompositeDataOnDevice<
-                output_ndim, interp_ndim + non_interp_ndim, REAL, REAL,
-                DATATYPE>::ACCESSOR_PACK_TYPE &accessors,
-            typename NP::TupleRNG<
-                std::shared_ptr<typename DATATYPE::RNG_KERNEL_TYPE>>::KernelType
-                &kernel) const {
+  std::array<REAL, output_ndim> calc_data(
+      const std::array<REAL, interp_ndim + non_interp_ndim> &input_array,
+      const typename CompositeDataOnDevice<
+          output_ndim, interp_ndim + non_interp_ndim, REAL, REAL,
+          DATA_T>::ACCESSOR_PACK_TYPE &accessors,
+      typename NP::TupleRNG<std::shared_ptr<typename DATA_T::RNG_KERNEL_TYPE>>::
+          KernelType &kernel) const {
 
     std::array<REAL, interp_ndim> mut_interpolation_points;
     for (size_t i = 0; i < interp_ndim; i++) {
@@ -286,7 +284,7 @@ struct InterpolateDataOnDevice
 
     // Initial function evaluation (ie values of the coeffs_vec) based on the
     // origin_indices and the vertices of the hypercube and any data needed for
-    // DATATYPE.calc_data(...).
+    // DATA_T.calc_data(...).
     interp_utils::initial_func_eval_on_device<
         decltype(interp_data), output_ndim, interp_ndim, non_interp_ndim>(
         vertex_func_evals_ptr, vertex_coord_ptr, interp_data,
@@ -369,22 +367,22 @@ public:
  * unchanged to the underlying reaction data object.
  *
  * @tparam output_ndim The number of dimensions that correspond to the output of
- * calc_data from DATATYPE.
+ * calc_data from DATA_T.
  * @tparam interp_ndim The number of dimensions that correspond to the number of
  * interpolation points.
- * @tparam DATATYPE ReactionDataBase derived type corresponding to the
+ * @tparam DATA_T ReactionDataBase derived type corresponding to the
  * grid-function evaluation reaction data object.
  * @tparam non_interp_ndim The number of dimensions that are not interpolated
- * and are used by calc_data from DATATYPE. (default is 0)
+ * and are used by calc_data from DATA_T. (default is 0)
  */
 
-template <size_t output_ndim, size_t interp_ndim, typename DATATYPE,
+template <size_t output_ndim, size_t interp_ndim, typename DATA_T,
           size_t non_interp_ndim = 0>
 struct InterpolateData
     : public CompositeData<
           InterpolateDataOnDevice<output_ndim, interp_ndim, non_interp_ndim,
-                                  typename DATATYPE::ON_DEVICE_OBJ_TYPE>,
-          output_ndim, interp_ndim + non_interp_ndim, DATATYPE> {
+                                  typename DATA_T::ON_DEVICE_OBJ_TYPE>,
+          output_ndim, interp_ndim + non_interp_ndim, DATA_T> {
   /**
    * @brief Constructor for InterpolateData
    *
@@ -409,12 +407,12 @@ struct InterpolateData
                   const std::vector<REAL> &coords_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
                   NP::SYCLTargetSharedPtr sycl_target,
-                  const DATATYPE &interp_data,
+                  const DATA_T &interp_data,
                   const ExtrapolationType &extrapolation_type)
       : CompositeData<
             InterpolateDataOnDevice<output_ndim, interp_ndim, non_interp_ndim,
-                                    typename DATATYPE::ON_DEVICE_OBJ_TYPE>,
-            output_ndim, interp_ndim + non_interp_ndim, DATATYPE>(interp_data),
+                                    typename DATA_T::ON_DEVICE_OBJ_TYPE>,
+            output_ndim, interp_ndim + non_interp_ndim, DATA_T>(interp_data),
         dims_vec(dims_vec), coords_vec(coords_vec),
         interp_indices(interp_indices), sycl_target(sycl_target),
         extrapolation_type(extrapolation_type) {
@@ -444,7 +442,7 @@ struct InterpolateData
                   const std::vector<REAL> &coords_vec,
                   const std::array<size_t, interp_ndim> &interp_indices,
                   NP::SYCLTargetSharedPtr sycl_target,
-                  const DATATYPE &interp_data)
+                  const DATA_T &interp_data)
       : InterpolateData(dims_vec, coords_vec, interp_indices, sycl_target,
                         interp_data, ExtrapolationType::continue_linear) {};
 
@@ -469,7 +467,7 @@ struct InterpolateData
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &coords_vec,
                   NP::SYCLTargetSharedPtr sycl_target,
-                  const DATATYPE &interp_data)
+                  const DATA_T &interp_data)
       : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data) {
     for (size_t i = 0; i < interp_ndim; i++)
@@ -499,7 +497,7 @@ struct InterpolateData
   InterpolateData(const std::vector<size_t> &dims_vec,
                   const std::vector<REAL> &coords_vec,
                   NP::SYCLTargetSharedPtr sycl_target,
-                  const DATATYPE &interp_data,
+                  const DATA_T &interp_data,
                   const ExtrapolationType &extrapolation_type)
       : InterpolateData(dims_vec, coords_vec, std::array<size_t, interp_ndim>(),
                         sycl_target, interp_data, extrapolation_type) {
@@ -523,7 +521,7 @@ struct InterpolateData
 
     this->on_device_obj =
         InterpolateDataOnDevice<output_ndim, interp_ndim, non_interp_ndim,
-                                typename DATATYPE::ON_DEVICE_OBJ_TYPE>(
+                                typename DATA_T::ON_DEVICE_OBJ_TYPE>(
             std::get<0>(this->data).get_on_device_obj(), this->interp_indices,
             this->extrapolation_type);
 

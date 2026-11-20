@@ -112,10 +112,10 @@ std::string species_property(const Species &species,
  * @brief Struct for defining the Properties that a ReactionData or
  * ReactionKernel object might need.
  *
- * @tparam PROP_TYPE Property type of the properties to be stored in this struct
+ * @tparam PROP_T Property type of the properties to be stored in this struct
  * (either INT or REAL).
  */
-template <typename PROP_TYPE> struct Properties {
+template <typename PROP_T> struct Properties {
   Properties() = default;
 
   /**
@@ -174,8 +174,8 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Constructor for Properties that uses std::arrays instead of
    * std::vectors for the props.
    *
-   * @tparam N Size of simple props array.
-   * @tparam M Size of species props array.
+   * @tparam num_simple_props Size of simple props array.
+   * @tparam num_species_props Size of species props array.
    *
    * @param simple_props An integer array defining the required simple
    * properties (either particle or field properties that don't depend on
@@ -188,12 +188,13 @@ template <typename PROP_TYPE> struct Properties {
    * species properties that are to be combined with species_ to produce
    * property names.
    */
-  template <size_t N, size_t M>
+  template <size_t num_simple_props, size_t num_species_props>
   Properties(
-      const std::array<int, N> &simple_props, // simple_props (including
-                                              // fluid_density for example)
+      const std::array<int, num_simple_props>
+          &simple_props, // simple_props (including
+                         // fluid_density for example)
       std::vector<Species> species,
-      const std::array<int, M> &species_props) // species_props
+      const std::array<int, num_species_props> &species_props) // species_props
       : simple_props(
             std::vector<int>(simple_props.begin(), simple_props.end())),
         species(species), species_props(std::vector<int>(species_props.begin(),
@@ -208,24 +209,23 @@ template <typename PROP_TYPE> struct Properties {
    * @brief Constructor for Properties that only sets the simple props using
    * std::array.
    *
-   * @tparam N Size of simple props array.
+   * @tparam num_simple_props Size of simple props array.
    *
    * @param simple_props An integer array defining the required simple
    * properties (either particle or field properties that don't depend on
    * species). The values in the array will be enums from a
    * StandardPropertiesEnum (or derived) struct.
    */
-  template <size_t N>
-  Properties(const std::array<int, N> &simple_props)
-      : Properties(simple_props, std::vector<Species>{},
-                   std::array<int, 0>{}){};
+  template <size_t num_simple_props>
+  Properties(const std::array<int, num_simple_props> &simple_props)
+      : Properties(simple_props, std::vector<Species>{}, std::array<int, 0>{}) {};
 
   /**
    * \overload
    * @brief Constructor for Properties that only sets Species props using
    * std::array.
    *
-   * @tparam M Size of species props array.
+   * @tparam num_species_props Size of species props array.
    *
    * @param species A vector of Species structs that contain the species(plural)
    * that the species_props_ need to be combined with in order to produce
@@ -234,10 +234,10 @@ template <typename PROP_TYPE> struct Properties {
    * species properties that are to be combined with species_ to produce
    * property names.
    */
-  template <size_t M>
+  template <size_t num_species_props>
   Properties(std::vector<Species> species,
-             const std::array<int, M> &species_props)
-      : Properties(std::array<int, 0>{}, species, species_props){};
+             const std::array<int, num_species_props> &species_props)
+      : Properties(std::array<int, 0>{}, species, species_props) {};
 
   /**
    * @brief Merge with another property, taking care of duplicates. The
@@ -247,7 +247,7 @@ template <typename PROP_TYPE> struct Properties {
    *
    * @return Merged Properties object.
    */
-  Properties<PROP_TYPE> merge_with(Properties<PROP_TYPE> other) const {
+  Properties<PROP_T> merge_with(Properties<PROP_T> other) const {
 
     auto new_simple_props = this->simple_props;
 
@@ -286,8 +286,7 @@ template <typename PROP_TYPE> struct Properties {
         new_species.push_back(other_species);
       }
     }
-    return Properties<PROP_TYPE>(new_simple_props, new_species,
-                                 new_species_props);
+    return Properties<PROP_T>(new_simple_props, new_species, new_species_props);
   }
 
   /**
@@ -470,10 +469,10 @@ private:
  * @brief Wrapper type for holding a set of NP::Sym names that can be derived
  * from Properties
  *
- * @tparam PROP_TYPE INT or REAL, used in constructing the corresponding
+ * @tparam PROP_T INT or REAL, used in constructing the corresponding
  * SymVector
  */
-template <typename PROP_TYPE> struct ArgumentNameSet {
+template <typename PROP_T> struct ArgumentNameSet {
   ArgumentNameSet() = default;
 
   /**
@@ -484,7 +483,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    * @param properties_map Property map used to map property enums in the
    * Properties object to strings
    */
-  ArgumentNameSet(Properties<PROP_TYPE> properties,
+  ArgumentNameSet(Properties<PROP_T> properties,
                   const PropertiesMap properties_map = PropertiesMap()) {
 
     auto name_vector = properties.get_prop_names(properties_map);
@@ -497,8 +496,8 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    * @param other ArgumentNameSet of the same type to merge with
    * @return ArgumentNameSet containing union of argument names
    */
-  ArgumentNameSet<PROP_TYPE>
-  merge_with(const ArgumentNameSet<PROP_TYPE> &other) const {
+  ArgumentNameSet<PROP_T>
+  merge_with(const ArgumentNameSet<PROP_T> &other) const {
 
     auto new_set = *this;
     new_set.name_set.insert(other.name_set.begin(), other.name_set.end());
@@ -528,9 +527,9 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    *
    * @return std::vector of Syms of the corresponding type
    */
-  std::vector<NP::Sym<PROP_TYPE>> to_sym_vector() {
+  std::vector<NP::Sym<PROP_T>> to_sym_vector() {
 
-    return utils::build_sym_vector<PROP_TYPE>(this->to_string_vector());
+    return utils::build_sym_vector<PROP_T>(this->to_string_vector());
   };
 
   /**
