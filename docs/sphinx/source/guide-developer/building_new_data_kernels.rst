@@ -58,15 +58,69 @@ Constructor-only indexing is insufficient when the object is later composed.
 Reaction kernels
 ================ 
 
-Developing new kernels follows a similar process to the construction of new reaction data:
+Developing new single-particle reaction kernels follows a similar host/device
+pattern to reaction data (see :code:`reactions_lib/reaction_kernels.hpp` and
+:code:`reactions_lib/reaction_kernels_abstract.hpp`):
 
-#. The device type should be stored on the host type and constructed in the host constructor in order to hide it from users 
-#. Required properties work similarly to reaction data, but descendant particle properties are also required
-#. Any required properties must be associated with public indices on the device type in the host constructor, as with reaction data 
-#. A device object getter must be defined 
-#. If descendant particles are produced, a call to :code:`set_descendant_matrix_spec<ndim_velocity,num_products_per_parent>()` is required. Here the template arguments are the velocity 
-   space dimension and the number of products in the reaction 
-#. When defining kernels that use data produced in :code:`DataCalculator` objects, the required data dimensionality must be set 
+#. Derive the device type from :code:`ReactionKernelsBaseOnDevice<N>`, where
+   :code:`N` is the number of products per parent particle. Inherited operation
+   hooks are no-ops; override only the operations needed.
+#. Derive the host type from :code:`ReactionKernelsBase<Device>` and pass the
+   required input (and optional ephemeral/descendant) :class:`Properties`
+   containers, prerequisite data dimensionality, and property map to the base
+   constructor.
+#. Initialize :code:`this->on_device_obj` and any non-index parameters (such as
+   species masses) in the host constructor, then call
+   :code:`index_on_device_object()`.
+#. Implement :code:`index_on_device_object()` using
+   :code:`this->argument_pack` and :code:`this->get_properties_map()` (using
+   :code:`species_property(...)` for species-qualified names) to populate the
+   public property indices on the device object.
+#. The base class owns the device object and builds the descendant
+   :class:`ProductMatrixSpec` automatically, exposing them via
+   :code:`get_on_device_obj()` and :code:`get_descendant_matrix_spec()`.
+
+Kernel base constructors accept :class:`Properties` requirements and build their
+argument packs and descendant schemas using the same property map, then expose
+the resolved pack via :code:`get_arg_pack()`.
+
+All four device operations use the bundled accessor signature::
+
+   void scattering_kernel(REAL &modified_weight,
+                          SingleReactionKernelAccessors &accessors,
+                          const std::array<int, N> &out_states,
+                          double dt) const;
+
+The same signature applies to :code:`weight_kernel`,
+:code:`transformation_kernel`, and :code:`feedback_kernel`. The
+:code:`SingleReactionKernelAccessors` bundle contains :code:`index`,
+:code:`req_int_props`, :code:`req_real_props`, :code:`descendant_products`, and
+:code:`pre_req_data`. Prerequisite rows are indexed with
+:code:`accessors.index.get_loop_linear_index()`. During reaction application, the
+reaction associates parents with products and then invokes
+:code:`scattering_kernel`, :code:`weight_kernel`,
+:code:`transformation_kernel`, and :code:`feedback_kernel` in order.
+
+Pair reaction kernels follow the same pattern using
+:code:`PairReactionKernelsBaseOnDevice<N>`, :code:`PairReactionKernelsBase<Device>`,
+:code:`PairReactionKernelArgumentPack`, and :code:`PairReactionKernelAccessors`
+(see :code:`reactions_lib/pair_reaction_kernels.hpp`). A and B input and
+descendant requirements are indexed separately, prerequisite rows are indexed
+with :code:`accessors.pair_index.get_loop_linear_index()`, and device types
+additionally implement :code:`parent_kernel(PairReactionKernelAccessors &accessors, const std::array<int, N> &out_states) const`
+to associate channel A and B products with their respective parents.
+
+For pairs, :code:`N` is the **total number of products per pair**, not the number
+per parent. Supply nonnegative A/B counts whose sum equals :code:`N`::
+
+   PairReactionKernelsBase<Device>(req_int_a, req_real_a, req_int_b, req_real_b,
+                                   desc_int_a, desc_real_a, desc_int_b, desc_real_b,
+                                   pre_req_ndims, ndim_velocity,
+                                   num_products_a, num_products_b, properties_map)
+
+Constructors without A/B counts are only for zero-product kernels. For
+inherited-only products, use empty descendant requirements with explicit counts;
+the device still associates each product with its parent in :code:`parent_kernel`.
 
 Below is a version of the charge exchange kernels with comments explaining the above points as well as othern nuances. 
 

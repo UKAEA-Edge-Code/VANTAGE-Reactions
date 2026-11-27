@@ -65,6 +65,11 @@ struct SWPMReactionImpl : AbstractPairReaction {
       "PairReactionDataArgumentPack and std::array<REAL, DIM> output.");
   static_assert(ReactionData::DIM == 1,
                 "SWPM reaction rates require scalar data (DIM == 1).");
+  static_assert(
+      is_pair_reaction_kernel<ReactionKernels>::value,
+      "Pair reaction kernels must derive from PairReactionKernelsBase.");
+  static_assert(ReactionKernels::NUM_PRODUCTS == num_products,
+                "Pair reaction and kernel product counts must agree.");
   SWPMReactionImpl() = default;
 
   /**
@@ -114,9 +119,6 @@ struct SWPMReactionImpl : AbstractPairReaction {
                           ReactionData>,
         "Template parameter ReactionData is not derived from "
         "CSPairData...");
-    static_assert(std::is_base_of_v<PairReactionKernelsBase, ReactionKernels>,
-                  "Template parameter ReactionKernels is not derived from "
-                  "PairReactionKernelsBase...");
 
     auto reaction_data_buffer = this->reaction_data;
     auto reaction_kernel_buffer = this->reaction_kernels;
@@ -137,17 +139,17 @@ struct SWPMReactionImpl : AbstractPairReaction {
         reaction_data_buffer.get_arg_pack()
             .required_real_props_b.to_sym_vector();
 
-    this->apply_int_syms_a = utils::build_sym_vector<INT>(
-        reaction_kernel_buffer.get_required_int_props_a());
+    this->apply_int_syms_a = reaction_kernel_buffer.get_arg_pack()
+                                 .required_int_props_a.to_sym_vector();
 
-    this->apply_real_syms_a = utils::build_sym_vector<REAL>(
-        reaction_kernel_buffer.get_required_real_props_a());
+    this->apply_real_syms_a = reaction_kernel_buffer.get_arg_pack()
+                                  .required_real_props_a.to_sym_vector();
 
-    this->apply_int_syms_b = utils::build_sym_vector<INT>(
-        reaction_kernel_buffer.get_required_int_props_b());
+    this->apply_int_syms_b = reaction_kernel_buffer.get_arg_pack()
+                                 .required_int_props_b.to_sym_vector();
 
-    this->apply_real_syms_b = utils::build_sym_vector<REAL>(
-        reaction_kernel_buffer.get_required_real_props_b());
+    this->apply_real_syms_b = reaction_kernel_buffer.get_arg_pack()
+                                  .required_real_props_b.to_sym_vector();
 
     auto descendant_matrix_spec_a =
         reaction_kernel_buffer.get_descendant_matrix_spec_a();
@@ -521,34 +523,30 @@ public:
           REAL modified_weight =
               (total_rate > 0.0) ? deltaweight * (rate / total_rate) : 0.0;
           if (modified_weight > 0.0) {
+            auto accessors = PairReactionKernelAccessors{particle_index_a,
+                                                         particle_index_b,
+                                                         pair_index,
+                                                         req_int_props_a,
+                                                         req_real_props_a,
+                                                         req_int_props_b,
+                                                         req_real_props_b,
+                                                         descendant_particles_a,
+                                                         descendant_particles_b,
+                                                         pre_req_data};
 
-            reaction_kernel_on_device.parent_kernel(
-                particle_index_a, particle_index_b, descendant_particles_a,
-                descendant_particles_b, products);
+            reaction_kernel_on_device.parent_kernel(accessors, products);
 
             reaction_kernel_on_device.scattering_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
+                modified_weight, accessors, products, dt);
 
-            reaction_kernel_on_device.weight_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
+            reaction_kernel_on_device.weight_kernel(modified_weight, accessors,
+                                                    products, dt);
 
             reaction_kernel_on_device.transformation_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
+                modified_weight, accessors, products, dt);
 
-            reaction_kernel_on_device.feedback_kernel(
-                modified_weight, particle_index_a, particle_index_b, pair_index,
-                descendant_particles_a, descendant_particles_b, req_int_props_a,
-                req_real_props_a, req_int_props_b, req_real_props_b, products,
-                pre_req_data, dt);
+            reaction_kernel_on_device.feedback_kernel(modified_weight,
+                                                      accessors, products, dt);
           }
         },
         NP::Access::read(this->weight_change_sym),

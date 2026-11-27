@@ -26,46 +26,35 @@ struct SpecularReflectionKernelsOnDevice
    *
    * @param modified_weight The weight modification needed for calculating
    * the changes to the background fields.
-   * @param index Read-only accessor to a loop index for a NP::ParticleLoop
-   * inside which descendant_product_loop is called. NP::Access using either
-   * index.get_loop_linear_index(), index.get_local_linear_index(),
-   * index.get_sub_linear_index() as required.
-   * @param descendant_products Write accessor to descendant products
-   * that may need to operated on
-   * @param req_int_props Vector of symbols for integer-valued properties that
-   * need to be used for operations inside the kernel.
-   * @param req_real_props Vector of symbols for real-valued properties that
-   * need to be used for operations inside the kernel.
+   * @param accessors Bundled loop index, input/descendant properties, and
+   * prerequisite data accessors.
    * @param out_states Array defining the IDs of descendant particles
-   * @param pre_req_data Real-valued NP::NDLocalArray containing pre-calculated
-   * data
    * @param dt The current time step size.
    */
-  void
-  feedback_kernel(REAL &modified_weight, NP::Access::LoopIndex::Read &index,
-                  NP::Access::DescendantProducts::Write &descendant_products,
-                  NP::Access::SymVector::Write<INT> &req_int_props,
-                  NP::Access::SymVector::Write<REAL> &req_real_props,
-                  const std::array<int, 0> &out_states,
-                  NP::Access::NDLocalArray::Read<REAL, 2> &pre_req_data,
-                  double dt) const {
+  void feedback_kernel(REAL &modified_weight,
+                       SingleReactionKernelAccessors &accessors,
+                       const std::array<int, 0> &out_states, double dt) const {
     std::array<REAL, ndim_velocity> k_V;
     std::array<REAL, ndim_velocity> surface_n;
     REAL proj_factor = 0.0;
 
     // Calculate 2 * v_in dot n
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
-      k_V[vdim] = req_real_props.at(velocity_ind, index, vdim);
-      surface_n[vdim] = req_real_props.at(normal_ind, index, vdim);
+      k_V[vdim] = accessors.req_real_props.at(this->velocity_ind,
+                                              accessors.index, vdim);
+      surface_n[vdim] =
+          accessors.req_real_props.at(this->normal_ind, accessors.index, vdim);
     }
 
     std::array<REAL, ndim_velocity> reflected =
         utils::reflect_vector(k_V, surface_n);
     // reflect across surface normal
     for (int vdim = 0; vdim < ndim_velocity; vdim++) {
-      req_real_props.at(velocity_ind, index, vdim) = reflected[vdim];
+      accessors.req_real_props.at(this->velocity_ind, accessors.index, vdim) =
+          reflected[vdim];
     }
-    req_real_props.at(this->weight_ind, index, 0) = modified_weight;
+    accessors.req_real_props.at(this->weight_ind, accessors.index, 0) =
+        modified_weight;
   }
 
 public:
@@ -80,7 +69,11 @@ public:
  * property (default value of 2)
  */
 template <int ndim_velocity = 2>
-struct SpecularReflectionKernels : public ReactionKernelsBase {
+struct SpecularReflectionKernels
+    : public ReactionKernelsBase<
+          SpecularReflectionKernelsOnDevice<ndim_velocity>> {
+  using Base =
+      ReactionKernelsBase<SpecularReflectionKernelsOnDevice<ndim_velocity>>;
 
   constexpr static auto props = default_properties;
 
@@ -91,38 +84,26 @@ struct SpecularReflectionKernels : public ReactionKernelsBase {
    * @brief Specular reflection host type constructor
    *
    * @param properties_map A PropertiesMap object to be to be
-   * passed to ReactionKernelsBase, used in remapping property names.
+   * used by the argument pack and device indexing to remap property names.
    */
   SpecularReflectionKernels(
       const PropertiesMap properties_map = PropertiesMap())
-      : ReactionKernelsBase(Properties<INT>(),
-                            Properties<REAL>(required_simple_real_props),
-                            Properties<INT>(), Properties<REAL>()) {
+      : Base(Properties<REAL>(required_simple_real_props), 0, properties_map) {
+    this->on_device_obj = SpecularReflectionKernelsOnDevice<ndim_velocity>();
+    this->index_on_device_object();
+  }
 
-    this->specular_reflection_kernels_on_device.velocity_ind =
-        this->required_real_props.simple_prop_index(props.velocity,
-                                                    this->properties_map);
-
-    this->specular_reflection_kernels_on_device.weight_ind =
-        this->required_real_props.simple_prop_index(props.weight,
-                                                    this->properties_map);
-
-    this->specular_reflection_kernels_on_device.normal_ind =
-        this->required_real_props.simple_prop_index(
-            props.boundary_intersection_normal);
-  };
-
-private:
-  SpecularReflectionKernelsOnDevice<ndim_velocity>
-      specular_reflection_kernels_on_device;
-
-public:
-  /**
-   * @brief Getter for the SYCL device-specific struct.
-   */
-
-  auto get_on_device_obj() {
-    return this->specular_reflection_kernels_on_device;
+  /** @brief Index inputs from the argument pack. */
+  void index_on_device_object() override {
+    this->on_device_obj->velocity_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.velocity));
+    this->on_device_obj->weight_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.weight));
+    this->on_device_obj->normal_ind =
+        this->argument_pack.required_real_props.find_index(
+            this->get_properties_map().at(props.boundary_intersection_normal));
   }
 };
 

@@ -518,7 +518,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    *
    * @return std::vector<std::string>> containing the names in the set
    */
-  std::vector<std::string> to_string_vector() {
+  std::vector<std::string> to_string_vector() const {
 
     return std::vector(this->name_set.begin(), this->name_set.end());
   };
@@ -528,7 +528,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    *
    * @return std::vector of Syms of the corresponding type
    */
-  std::vector<NP::Sym<PROP_TYPE>> to_sym_vector() {
+  std::vector<NP::Sym<PROP_TYPE>> to_sym_vector() const {
 
     return utils::build_sym_vector<PROP_TYPE>(this->to_string_vector());
   };
@@ -540,7 +540,7 @@ template <typename PROP_TYPE> struct ArgumentNameSet {
    * @param name String to search for in the set
    * @return Integer index - distance from first element in the set
    */
-  int find_index(std::string name) {
+  int find_index(std::string name) const {
 
     auto it = this->name_set.find(name);
 

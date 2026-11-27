@@ -1,98 +1,36 @@
-
 #include "../include/reactions_lib/reaction_kernels.hpp"
-#include "reactions/neso_particles_namespace_alias.hpp"
 
 namespace VANTAGE::Reactions {
 
-ReactionKernelsBase::ReactionKernelsBase(
+SingleReactionKernelArgumentPack::SingleReactionKernelArgumentPack(
     Properties<INT> required_int_props, Properties<REAL> required_real_props,
     Properties<INT> required_int_props_ephemeral,
-    Properties<REAL> required_real_props_ephemeral, INT pre_req_ndims,
-    const PropertiesMap properties_map)
+    Properties<REAL> required_real_props_ephemeral,
+    Properties<INT> required_descendant_int_props,
+    Properties<REAL> required_descendant_real_props,
+    const PropertiesMap &properties_map)
     : required_int_props(
-          required_int_props.merge_with(required_int_props_ephemeral)),
+          ArgumentNameSet(std::move(required_int_props), properties_map)
+              .merge_with(ArgumentNameSet(
+                  std::move(required_int_props_ephemeral), properties_map))),
       required_real_props(
-          required_real_props.merge_with(required_real_props_ephemeral)),
-      required_int_props_ephemeral(required_int_props_ephemeral),
-      required_real_props_ephemeral(required_real_props_ephemeral),
-      pre_req_ndims(pre_req_ndims) {
-  this->properties_map = properties_map;
-}
+          ArgumentNameSet(std::move(required_real_props), properties_map)
+              .merge_with(ArgumentNameSet(
+                  std::move(required_real_props_ephemeral), properties_map))),
+      required_descendant_int_props(std::move(required_descendant_int_props),
+                                    properties_map),
+      required_descendant_real_props(std::move(required_descendant_real_props),
+                                     properties_map) {}
 
-ReactionKernelsBase::ReactionKernelsBase(const PropertiesMap properties_map)
-    : ReactionKernelsBase(Properties<INT>(), Properties<REAL>(),
-                          Properties<INT>(), Properties<REAL>(), 0,
-                          properties_map) {}
-
-ReactionKernelsBase::ReactionKernelsBase(Properties<INT> required_int_props,
-                                         INT pre_req_ndims,
-                                         const PropertiesMap properties_map)
-    : ReactionKernelsBase(required_int_props, Properties<REAL>(),
-                          Properties<INT>(), Properties<REAL>(), pre_req_ndims,
-                          properties_map) {}
-
-ReactionKernelsBase::ReactionKernelsBase(Properties<REAL> required_real_props,
-                                         INT pre_req_ndims,
-                                         const PropertiesMap properties_map)
-    : ReactionKernelsBase(Properties<INT>(), required_real_props,
-                          Properties<INT>(), Properties<REAL>(), pre_req_ndims,
-                          properties_map) {}
-
-ReactionKernelsBase::ReactionKernelsBase(Properties<INT> required_int_props,
-                                         Properties<REAL> required_real_props,
-                                         INT pre_req_ndims,
-                                         const PropertiesMap properties_map)
-    : ReactionKernelsBase(required_int_props, required_real_props,
-                          Properties<INT>(), Properties<REAL>(), pre_req_ndims,
-                          properties_map) {}
-
-std::vector<std::string> ReactionKernelsBase::get_required_int_props() {
-  return this->required_int_props.get_prop_names(this->properties_map);
-}
-
-std::vector<std::string> ReactionKernelsBase::get_required_real_props() {
-  return this->required_real_props.get_prop_names(this->properties_map);
-}
-
-std::vector<std::string>
-ReactionKernelsBase::get_required_int_props_ephemeral() {
-  return this->required_int_props_ephemeral.get_prop_names(
-      this->properties_map);
-}
-
-std::vector<std::string>
-ReactionKernelsBase::get_required_real_props_ephemeral() {
-  return this->required_real_props_ephemeral.get_prop_names(
-      this->properties_map);
-}
-
-const Properties<INT> &
-ReactionKernelsBase::get_required_descendant_int_props() {
-  return this->required_descendant_int_props;
-}
-
-const Properties<REAL> &
-ReactionKernelsBase::get_required_descendant_real_props() {
-  return this->required_descendant_real_props;
-}
-
-std::shared_ptr<NP::ProductMatrixSpec>
-ReactionKernelsBase::get_descendant_matrix_spec() {
-  return this->descendant_matrix_spec;
-}
-
-const INT &ReactionKernelsBase::get_pre_ndims() const {
-  return this->pre_req_ndims;
-}
-
-void ReactionKernelsBase::set_required_descendant_int_props(
-    const Properties<INT> &required_descendant_int_props) {
-  this->required_descendant_int_props = required_descendant_int_props;
-}
-
-void ReactionKernelsBase::set_required_descendant_real_props(
-    const Properties<REAL> &required_descendant_real_props) {
-  this->required_descendant_real_props = required_descendant_real_props;
-}
+SingleReactionKernelArgumentPack::SingleReactionKernelArgumentPack(
+    Properties<INT> required_int_props, Properties<REAL> required_real_props,
+    Properties<INT> required_int_props_ephemeral,
+    Properties<REAL> required_real_props_ephemeral,
+    const PropertiesMap &properties_map)
+    : SingleReactionKernelArgumentPack(
+          std::move(required_int_props), std::move(required_real_props),
+          std::move(required_int_props_ephemeral),
+          std::move(required_real_props_ephemeral), Properties<INT>(),
+          Properties<REAL>(), properties_map) {}
 
 } // namespace VANTAGE::Reactions
